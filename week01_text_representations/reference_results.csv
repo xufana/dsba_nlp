@@ -1,0 +1,5 @@
+representation,dim,accuracy,macro_f1,vectorize_s,fit_s
+"counts, words",29350,0.9091,0.909,2.9,13.4
+"tf-idf, words 1-1",29350,0.9179,0.9177,2.9,4.2
+"tf-idf, words 1-2",196911,0.9195,0.9193,9.4,19.5
+"tf-idf, chars 3-5",177100,0.9162,0.916,36.0,50.7

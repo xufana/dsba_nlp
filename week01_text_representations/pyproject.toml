@@ -1,0 +1,28 @@
+[project]
+name = "nlp-dsba-week01"
+version = "0.1.0"
+description = "Week 1 — text representations. Self-contained seminar environment."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy>=2.0",
+    "pandas>=2.2",
+    "matplotlib>=3.9",
+    "scikit-learn>=1.5",
+    "nltk>=3.9",
+    "gensim>=4.4",
+    "tiktoken>=0.7",
+    "shap>=0.46",
+    "lime>=0.2.0.1",
+    "ipykernel>=6.29",
+    "jupyterlab>=4.2",
+    "openai>=3.6.0",
+]
+
+# Only needed to regenerate the LLM-baseline artifact (precompute.py --only llm).
+# Students never need this: `uv sync --group llm` if you do.
+[dependency-groups]
+llm = ["openai>=1.40"]
+
+[tool.uv]
+package = false
