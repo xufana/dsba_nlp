@@ -7,9 +7,9 @@ The rule for what lives here:
     > 5 min in Colab  -> artifact, committed to seminars/week01/artifacts/
     < 5 min in Colab  -> trained live in the notebook
 
-Run:
-    python precompute.py --data-dir ../data --out artifacts
-    python precompute.py --data-dir ../data --out artifacts --only glove lda
+Run from week01_text_representations/ (also how the notebook invokes it):
+    python scripts/precompute.py --data-dir data --out artifacts
+    python scripts/precompute.py --data-dir data --out artifacts --only glove lda
 
 Nothing here is required to *read* the notebook: every artifact has the code
 that produced it sitting a few lines above the load, behind RECOMPUTE.
@@ -321,7 +321,7 @@ STEPS = {
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data-dir", default="../data")
+    ap.add_argument("--data-dir", default="data")
     ap.add_argument("--out", default="artifacts")
     ap.add_argument("--only", nargs="*", choices=sorted(STEPS), default=None)
     args = ap.parse_args()

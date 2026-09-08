@@ -1,15 +1,18 @@
-"""Assemble demo/parts/* + demo/demo_data.json into the interactive seminar page.
+"""Assemble parts/* + demo_data.json into the interactive seminar page.
+
+Run from week01_text_representations/demo/:
+    uv run python build_demo.py
 
 Writes two builds of the same content:
-  demo/week01_demo.html   standalone, opens straight from disk
-  demo/artifact.html      bare fragment, for hosts that supply their own skeleton
+  week01_demo.html   standalone, opens straight from disk
+  artifact.html      bare fragment, for hosts that supply their own skeleton
 """
 import hashlib
 import json
 import os
 
-P = "demo/parts"
-data = open("demo/demo_data.json").read()
+P = "parts"
+data = open("demo_data.json").read()
 head_part = "00_head.html"
 body_parts = ["10_body_a.html", "11_body_b.html"]
 js_parts = ["20_core.js", "21_blocks_a.js", "22_blocks_b.js", "23_blocks_c.js"]
@@ -23,7 +26,7 @@ body = "\n".join(
 )
 
 artifact = head + "\n" + body
-STAMP = "demo/.build-stamp.json"
+STAMP = ".build-stamp.json"
 
 
 def guard(path, new_text):
@@ -34,7 +37,7 @@ def guard(path, new_text):
         if stamps.get(path, on_disk) != on_disk:
             raise SystemExit(
                 "\n" + path + " has changed since the last build.\n"
-                "Building would discard those edits — port them into demo/parts/ first,\n"
+                "Building would discard those edits — port them into parts/ first,\n"
                 "or delete " + STAMP + " to build anyway.\n")
     with open(path, "w") as f:
         f.write(new_text)
@@ -42,7 +45,7 @@ def guard(path, new_text):
     json.dump(stamps, open(STAMP, "w"), indent=1)
 
 
-guard("demo/artifact.html", artifact)
+guard("artifact.html", artifact)
 
 standalone = (
     '<!doctype html>\n<html lang="en">\n<head>\n'
@@ -53,7 +56,7 @@ standalone = (
     + body
     + "\n</body>\n</html>\n"
 )
-guard("demo/week01_demo.html", standalone)
+guard("week01_demo.html", standalone)
 
-for f in ("demo/week01_demo.html", "demo/artifact.html"):
+for f in ("week01_demo.html", "artifact.html"):
     print(f"{f}  {os.path.getsize(f) / 1e6:.2f} MB")

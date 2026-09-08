@@ -1,8 +1,8 @@
 """Export everything the interactive HTML demo needs into one JSON bundle.
 
-Run from week01_text_representations/:
+Run from week01_text_representations/demo/:
     uv run python export_demo_data.py
-Writes demo/demo_data.json (consumed by build_demo.py).
+Writes demo_data.json (consumed by build_demo.py).
 """
 import base64
 import json
@@ -17,9 +17,9 @@ import pandas as pd
 warnings.filterwarnings("ignore")
 
 SEED = 42
-DATA_DIR = "data"
-ART_DIR = "artifacts"
-OUT_DIR = "demo"
+DATA_DIR = "../data"
+ART_DIR = "../artifacts"
+OUT_DIR = "."
 CLASS_NAMES = ["World", "Sports", "Business", "Sci/Tech"]
 
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -371,6 +371,18 @@ print(f"  {len(gw2):,} vectors")
 tg = np.load(f"{ART_DIR}/tsne_grid.npz", allow_pickle=True)
 D["tsne"] = {"words": [str(w) for w in tg["words"]],
              "grids": {k: f16(tg[k].ravel()) for k in ["2", "5", "30", "100"]}}
+
+# ------------------------------------------- preprocessing grid (block 02)
+# Twelve A/B experiments over four task families; see scripts/preprocessing_grid.py.
+grid_path = f"{ART_DIR}/preprocessing_grid.json"
+if os.path.exists(grid_path):
+    with open(grid_path) as f:
+        grid = json.load(f)
+    D["preproc"] = {"rows": grid["rows"], "topics": grid.get("topics", {})}
+    print(f"preprocessing grid: {len(grid['rows'])} rows")
+else:
+    print(f"no {grid_path} — run scripts/preprocessing_grid.py; the demo block will be empty")
+    D["preproc"] = {"rows": [], "topics": {}}
 
 # ------------------------------------------------------------------- write
 path = f"{OUT_DIR}/demo_data.json"

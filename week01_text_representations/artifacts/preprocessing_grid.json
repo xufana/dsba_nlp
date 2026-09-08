@@ -1,0 +1,553 @@
+{
+ "rows": [
+  {
+   "family": "classification",
+   "dataset": "AG News",
+   "task": "topic, 4 classes \u00b7 38-word headlines",
+   "knob": "drop stopwords",
+   "metric": "accuracy",
+   "baselineName": "every token",
+   "variantName": "stoplist removed",
+   "baseline": 0.9175,
+   "variant": 0.917,
+   "delta": -0.0005,
+   "verdict": "no change",
+   "nTrain": 120000,
+   "dims": [
+    41938,
+    41796
+   ],
+   "note": "The topic is carried by content words, and there are 120 000 labels to learn them from. The stoplist is neither signal nor much noise.",
+   "eps": 0.005,
+   "chance": 0.25
+  },
+  {
+   "family": "classification",
+   "dataset": "Movie reviews",
+   "task": "sentiment, 2 classes \u00b7 700-word reviews",
+   "knob": "drop stopwords",
+   "metric": "accuracy",
+   "baselineName": "every token",
+   "variantName": "stoplist removed",
+   "baseline": 0.816,
+   "variant": 0.826,
+   "delta": 0.01,
+   "verdict": "helps",
+   "nTrain": 1500,
+   "dims": [
+    21120,
+    20978
+   ],
+   "note": "The textbook warning is that not good becomes good. In a 700-word review dozens of sentiment words vote, one lost negation changes little, and the denoising wins.",
+   "eps": 0.005,
+   "chance": 0.5
+  },
+  {
+   "family": "classification",
+   "dataset": "Sentence polarity",
+   "task": "sentiment, 2 classes \u00b7 21-word sentences",
+   "knob": "drop stopwords",
+   "metric": "accuracy",
+   "baselineName": "every token",
+   "variantName": "stoplist removed",
+   "baseline": 0.7682,
+   "variant": 0.7562,
+   "delta": -0.012,
+   "verdict": "hurts",
+   "nTrain": 7996,
+   "dims": [
+    8404,
+    8269
+   ],
+   "note": "Same task, same knob, one twentieth of the document length. Here a single not is a large share of the evidence, and the warning is real.",
+   "eps": 0.005,
+   "chance": 0.5
+  },
+  {
+   "family": "classification",
+   "dataset": "SMS spam",
+   "task": "spam, 13% positive \u00b7 15-word messages",
+   "knob": "lowercase, strip digits and punctuation",
+   "metric": "macro F1",
+   "baselineName": "FREE, free, 150, !!! and \u00a3 all distinct",
+   "variantName": "letters only, lowercased",
+   "baseline": 0.9503,
+   "variant": 0.9556,
+   "delta": 0.0053,
+   "verdict": "helps",
+   "nTrain": 4180,
+   "dims": [
+    4191,
+    3183
+   ],
+   "note": "Folklore says shouting and punctuation are the signal. They are real, but redundant: free, txt, claim and win already separate the classes, and splitting each word across casings costs more than the casing is worth.",
+   "eps": 0.005,
+   "chance": 0.4641
+  },
+  {
+   "family": "classification",
+   "dataset": "Gutenberg",
+   "task": "authorship, Austen vs Chesterton \u00b7 50-word passages",
+   "knob": "drop stopwords",
+   "metric": "accuracy",
+   "baselineName": "every token",
+   "variantName": "stoplist removed",
+   "baseline": 0.9597,
+   "variant": 0.9374,
+   "delta": -0.0223,
+   "verdict": "hurts",
+   "nTrain": 9471,
+   "dims": [
+    9491,
+    9348
+   ],
+   "note": "Held-out novel per author, so plot words cannot give it away. Style lives in exactly the words the stoplist deletes.",
+   "eps": 0.005,
+   "chance": 0.6716
+  },
+  {
+   "family": "classification",
+   "dataset": "Gutenberg",
+   "task": "authorship, Austen vs Chesterton \u00b7 50-word passages",
+   "knob": "keep ONLY stopwords",
+   "metric": "accuracy",
+   "baselineName": "every token",
+   "variantName": "stoplist only, 143 features",
+   "baseline": 0.9597,
+   "variant": 0.8728,
+   "delta": -0.0868,
+   "verdict": "hurts",
+   "nTrain": 9471,
+   "dims": [
+    9491,
+    143
+   ],
+   "note": "The knob that did nothing on AG News is, inverted, almost the whole task here: a few hundred function words against a 50/50 chance baseline.",
+   "eps": 0.005,
+   "chance": 0.6716
+  },
+  {
+   "family": "data size",
+   "dataset": "AG News",
+   "task": "topic, 4 classes",
+   "knob": "Porter stemming",
+   "metric": "accuracy",
+   "baselineName": "surface forms",
+   "variantName": "stemmed",
+   "baseline": 0.7597,
+   "variant": 0.7734,
+   "delta": 0.0137,
+   "verdict": "helps",
+   "nTrain": 500,
+   "dims": [
+    1914,
+    1784
+   ],
+   "note": "Stemming merges forms the classifier has not seen enough of.",
+   "eps": 0.005,
+   "chance": 0.25
+  },
+  {
+   "family": "data size",
+   "dataset": "AG News",
+   "task": "topic, 4 classes",
+   "knob": "Porter stemming",
+   "metric": "accuracy",
+   "baselineName": "surface forms",
+   "variantName": "stemmed",
+   "baseline": 0.9175,
+   "variant": 0.9145,
+   "delta": -0.003,
+   "verdict": "no change",
+   "nTrain": 120000,
+   "dims": [
+    41938,
+    28849
+   ],
+   "note": "With enough labels the classifier learns each form separately, and stemming only destroys distinctions.",
+   "eps": 0.005,
+   "chance": 0.25
+  },
+  {
+   "family": "retrieval",
+   "dataset": "NFCorpus",
+   "task": "BM25 over 3,633 docs, 323 queries",
+   "knob": "Porter stemming",
+   "metric": "nDCG@10",
+   "baselineName": "surface forms",
+   "variantName": "stemmed",
+   "baseline": 0.3042,
+   "variant": 0.3193,
+   "delta": 0.0151,
+   "verdict": "helps",
+   "nTrain": 3633,
+   "dims": [
+    26417,
+    19096
+   ],
+   "note": "A query says 'treating diabetes', the document says 'treatment of diabetic'. Without stemming they share nothing.",
+   "eps": 0.005,
+   "chance": null
+  },
+  {
+   "family": "retrieval",
+   "dataset": "NFCorpus",
+   "task": "BM25 over 3,633 docs, 323 queries",
+   "knob": "drop stopwords",
+   "metric": "nDCG@10",
+   "baselineName": "every token",
+   "variantName": "stoplist removed",
+   "baseline": 0.3042,
+   "variant": 0.3122,
+   "delta": 0.008,
+   "verdict": "helps",
+   "nTrain": 3633,
+   "dims": [
+    26417,
+    26295
+   ],
+   "note": "BM25 already discounts terms that appear everywhere, so the stoplist mostly saves index space.",
+   "eps": 0.005,
+   "chance": null
+  },
+  {
+   "family": "topic modelling",
+   "dataset": "AG News",
+   "task": "LDA, 8 topics, 20,000 docs",
+   "knob": "drop stopwords",
+   "metric": "NPMI coherence",
+   "baselineName": "every token",
+   "variantName": "stoplist removed",
+   "baseline": -0.0104,
+   "variant": 0.0308,
+   "delta": 0.0413,
+   "verdict": "helps",
+   "nTrain": 20000,
+   "dims": [
+    10616,
+    10488
+   ],
+   "note": "Raw topics are led by the, and, for \u2014 the model spends its capacity on grammar.",
+   "eps": 0.01,
+   "chance": null
+  },
+  {
+   "family": "topic modelling",
+   "dataset": "AG News",
+   "task": "LDA, 8 topics, 20,000 docs",
+   "knob": "lemmatise (stoplist removed in both)",
+   "metric": "NPMI coherence",
+   "baselineName": "surface forms",
+   "variantName": "lemmatised",
+   "baseline": 0.0308,
+   "variant": 0.0178,
+   "delta": -0.013,
+   "verdict": "hurts",
+   "nTrain": 20000,
+   "dims": [
+    10488,
+    9362
+   ],
+   "note": "The expected win is that one concept stops being scattered across eight surface forms. What actually arrives is ha, u and wa: WordNet without POS tags mangles frequent words, and the mangled forms are frequent enough to lead topics.",
+   "eps": 0.01,
+   "chance": null
+  }
+ ],
+ "topics": {
+  "raw": [
+   [
+    "for",
+    "his",
+    "on",
+    "39",
+    "and",
+    "he",
+    "has",
+    "that",
+    "with",
+    "was"
+   ],
+   [
+    "39",
+    "on",
+    "and",
+    "china",
+    "that",
+    "for",
+    "is",
+    "its",
+    "search",
+    "will"
+   ],
+   [
+    "and",
+    "on",
+    "for",
+    "gt",
+    "lt",
+    "that",
+    "microsoft",
+    "with",
+    "new",
+    "is"
+   ],
+   [
+    "on",
+    "39",
+    "for",
+    "at",
+    "his",
+    "after",
+    "with",
+    "and",
+    "first",
+    "win"
+   ],
+   [
+    "39",
+    "and",
+    "its",
+    "for",
+    "it",
+    "said",
+    "company",
+    "million",
+    "on",
+    "has"
+   ],
+   [
+    "and",
+    "on",
+    "iraq",
+    "said",
+    "at",
+    "an",
+    "reuters",
+    "for",
+    "as",
+    "us"
+   ],
+   [
+    "on",
+    "reuters",
+    "gt",
+    "lt",
+    "and",
+    "as",
+    "oil",
+    "prices",
+    "stocks",
+    "new"
+   ],
+   [
+    "and",
+    "39",
+    "for",
+    "on",
+    "ap",
+    "with",
+    "it",
+    "is",
+    "at",
+    "that"
+   ]
+  ],
+  "no_stopwords": [
+   [
+    "reuters",
+    "oil",
+    "said",
+    "prices",
+    "stocks",
+    "new",
+    "us",
+    "39",
+    "percent",
+    "inc"
+   ],
+   [
+    "39",
+    "chief",
+    "year",
+    "sales",
+    "oracle",
+    "executive",
+    "peoplesoft",
+    "new",
+    "us",
+    "said"
+   ],
+   [
+    "ap",
+    "39",
+    "new",
+    "space",
+    "red",
+    "first",
+    "sox",
+    "bush",
+    "may",
+    "election"
+   ],
+   [
+    "39",
+    "ap",
+    "game",
+    "season",
+    "win",
+    "first",
+    "team",
+    "night",
+    "two",
+    "victory"
+   ],
+   [
+    "iraq",
+    "said",
+    "killed",
+    "people",
+    "iraqi",
+    "two",
+    "reuters",
+    "39",
+    "police",
+    "baghdad"
+   ],
+   [
+    "gt",
+    "lt",
+    "39",
+    "quot",
+    "india",
+    "new",
+    "pakistan",
+    "gold",
+    "china",
+    "australia"
+   ],
+   [
+    "39",
+    "said",
+    "president",
+    "us",
+    "reuters",
+    "government",
+    "court",
+    "talks",
+    "afp",
+    "united"
+   ],
+   [
+    "new",
+    "microsoft",
+    "39",
+    "software",
+    "internet",
+    "computer",
+    "company",
+    "service",
+    "web",
+    "search"
+   ]
+  ],
+  "lemmatised": [
+   [
+    "new",
+    "microsoft",
+    "39",
+    "ha",
+    "service",
+    "internet",
+    "software",
+    "company",
+    "computer",
+    "system"
+   ],
+   [
+    "gt",
+    "lt",
+    "39",
+    "search",
+    "world",
+    "cup",
+    "google",
+    "gold",
+    "olympic",
+    "athens"
+   ],
+   [
+    "reuters",
+    "oil",
+    "price",
+    "stock",
+    "gt",
+    "lt",
+    "said",
+    "new",
+    "profit",
+    "sale"
+   ],
+   [
+    "39",
+    "company",
+    "million",
+    "ha",
+    "said",
+    "court",
+    "u",
+    "deal",
+    "chief",
+    "executive"
+   ],
+   [
+    "ap",
+    "game",
+    "39",
+    "season",
+    "wa",
+    "win",
+    "first",
+    "night",
+    "year",
+    "new"
+   ],
+   [
+    "ap",
+    "president",
+    "bush",
+    "election",
+    "new",
+    "said",
+    "state",
+    "39",
+    "ha",
+    "say"
+   ],
+   [
+    "39",
+    "quot",
+    "ha",
+    "india",
+    "wa",
+    "new",
+    "nuclear",
+    "iran",
+    "sun",
+    "said"
+   ],
+   [
+    "iraq",
+    "said",
+    "39",
+    "reuters",
+    "u",
+    "killed",
+    "people",
+    "iraqi",
+    "official",
+    "attack"
+   ]
+  ]
+ },
+ "seed": 42
+}
