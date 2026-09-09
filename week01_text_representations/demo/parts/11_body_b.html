@@ -1,0 +1,439 @@
+<!-- ========================================================== 04 train -->
+<section id="train">
+  <p class="eyebrow">Block 04 · under the hood</p>
+  <h2>Watch the classifier learn its vocabulary</h2>
+  <div class="prose">
+    <p>The same logistic regression that produces the second row of the results table in block 10, but small enough to run here: 6 000 documents, a 4 000-word vocabulary, softmax regression trained by minibatch SGD <em>in this page</em>. Nothing is precomputed. The curves are the usual ones — the third panel is the one to watch, because the weights of a linear model on a sparse representation are literally words, and you can see them arrive.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>Multinomial logistic regression · TF-IDF · minibatch SGD</span>
+      <span class="btnrow">
+        <button id="btn-train-run" class="primary">Train</button>
+        <button id="btn-train-step">One epoch</button>
+        <button id="btn-train-reset">Reset weights</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div class="stat-row" style="margin-bottom:18px">
+        <div class="stat"><span class="v" id="tr-epoch">0</span><span class="k">epoch</span></div>
+        <div class="stat"><span class="v" id="tr-loss">—</span><span class="k">train loss</span></div>
+        <div class="stat"><span class="v" id="tr-acc">—</span><span class="k">test accuracy</span></div>
+        <div class="stat"><span class="v" id="tr-nz">0</span><span class="k">non-zero weights</span></div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Learning curve</div>
+          <div id="train-chart"></div>
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Weight magnitude, all 16 000 coefficients</div>
+          <div id="train-hist"></div>
+        </div>
+      </div>
+      <div class="eyebrow" style="margin:22px 0 8px">Top-weighted words, per class, right now</div>
+      <div class="grid-4" id="train-words"></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">sklearn.linear_model · LogisticRegression · SGDClassifier · LinearSVC · MultinomialNB · Ridge</span></summary>
+      <pre>from sklearn.linear_model import LogisticRegression, SGDClassifier, Ridge
+from sklearn.svm import LinearSVC
+from sklearn.naive_bayes import MultinomialNB
+
+clf = LogisticRegression(max_iter=1000, random_state=42).fit(X_train, y_train)
+clf.coef_          # 4 × 29 350 — the lists above, once it converges
+clf.predict_proba(X_test)          # calibrated-ish scores you can threshold
+
+# swapping the head is one line, and buys ±0.002 on this matrix
+LinearSVC(); MultinomialNB(); SGDClassifier(loss="modified_huber")
+Ridge()            # same features, continuous target — text regression, done</pre>
+      <div class="why"><code>SGDClassifier</code> is the one to reach for when the matrix stops fitting in memory: it takes <code>partial_fit</code>, so you can stream. For a stronger non-linear head on sparse text, <code>LinearSVC</code> first, then <code>lightgbm</code> — but read block 10 before you spend the time.</div>
+    </details>
+    </div>
+    <div class="panel-note">At epoch 0 every coefficient is zero and the four lists are empty. Words arrive in order of how much evidence they carry, and the news agencies — <span class="mono">afp</span>, <span class="mono">ap</span>, <span class="mono">reuters</span> — surface among the first, which is block 05 arriving on its own before anyone points at it. The full model in the table is this, run to convergence on twenty times the data.</div>
+  </div>
+</section>
+
+<!-- ======================================================== 05 weights -->
+<section id="weights">
+  <p class="eyebrow">Block 05 · reading a linear model</p>
+  <h2>The weights are readable, we can guess from the data</h2>
+  <div class="prose">
+    <p>Here are the top-weighted features of the real model from the table, with the class names hidden. Match them up — it takes about ten seconds, and that is the point: remember how easy this was.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>tf-idf, words 1-1 · LogisticRegression · top 15 coefficients</span><span class="btnrow"><button id="btn-guess-reveal">Reveal</button><button id="btn-guess-reset">Shuffle again</button></span></div>
+    <div class="panel-body"><div class="grid-4" id="guess-cols"></div></div>
+    <div class="panel-note" id="guess-note">Assign a class to each column, then reveal.</div>
+  </div>
+
+  <h3>A leak is hiding in the data</h3>
+  <div class="prose">
+    <p>Look at the very first training example: <span class="mono" id="first-doc"></span></p>
+    <p>The source is written into the text. If sources are not spread evenly across categories, the model can classify the <em>news agency</em> instead of the news.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Source marker × class · training set</span><span class="mono" id="shortcut-coverage"></span></div>
+    <div class="panel-body scroll-x"><table id="shortcut-table"></table></div>
+    <div class="panel-note">Not evenly distributed at all — several sources sit almost entirely inside one category.</div>
+  </div>
+  <div class="prose">
+    <p><strong>Bet, two parts.</strong> Given <em>only</em> the source marker and nothing else, how accurate can a model be — chance is 25%? And if we strip the markers and retrain, how much accuracy do we lose?</p>
+  </div>
+  <div class="panel">
+    <div class="panel-body">
+      <div class="grid-2">
+        <div>
+          <label class="field" for="bet-marker">Your guess: accuracy from the marker alone</label>
+          <input type="range" id="bet-marker" min="25" max="100" value="60" step="1">
+          <div class="mono" style="margin-top:4px"><span id="bet-marker-v">60</span>%</div>
+        </div>
+        <div>
+          <label class="field" for="bet-strip">Your guess: accuracy lost after stripping</label>
+          <input type="range" id="bet-strip" min="0" max="30" value="8" step="1">
+          <div class="mono" style="margin-top:4px">−<span id="bet-strip-v">8</span> points</div>
+        </div>
+      </div>
+      <div class="btnrow" style="margin-top:16px"><button class="primary" id="btn-shortcut-reveal">Run both experiments</button></div>
+      <div id="shortcut-result" style="margin-top:18px" hidden></div>
+    </div>
+    <div class="panel-note" id="shortcut-note" hidden>
+      <strong>Don’t be fooled by the two numbers.</strong> The marker alone beats chance by a wide margin — the shortcut is real and carries genuine class information. But stripping it costs essentially nothing, because the signal is fully redundant: the headline says “oil prices” as well as “(Reuters)”. A shortcut being present in the data does not mean the model depends on it. Run only the strip experiment and you conclude there is no shortcut; run only the marker-only experiment and you conclude the model is cheating. Neither is true. <strong>Open question:</strong> what would a dataset look like where stripping the shortcut <em>does</em> collapse accuracy?
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================= 06 attack -->
+<section id="attack">
+  <p class="eyebrow">Block 06 · break it</p>
+  <h2>The real model, running in your browser</h2>
+  <div class="prose">
+    <p>So, we've trained the model, got a few options, checked if there is a shortcut/leak, but can we actualy break it?</p>
+    <p>Your turn: write a headline the classifier confidently gets wrong. Confident means <span class="mono">max(predict_proba) &gt; 0.8</span>.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>predict_proba · and where it came from</span><span class="mono" id="attack-timing"></span></div>
+    <div class="panel-body">
+      <label class="field" for="attack-input">Headline</label>
+      <input type="text" id="attack-input" value="Apple sued over patent dispute in federal court" spellcheck="false">
+      <div class="btnrow" style="margin-top:10px" id="attack-presets"></div>
+      <div style="margin-top:20px" id="attack-probs"></div>
+      <div class="eyebrow" style="margin:24px 0 8px">Word contributions · coef × tf-idf, in logit units, for the predicted class</div>
+      <div id="attack-words"></div>
+      <div class="footnote" style="margin-top:10px">Click any word to delete it and re-run the model — that is <em>occlusion</em>, the exact version of the estimate SHAP and LIME spend hundreds of model calls approximating.</div>
+      <div id="attack-occl" style="margin-top:12px"></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">clf.coef_ · shap · lime.lime_text · sklearn.pipeline.make_pipeline</span></summary>
+      <pre># free and exact, because the model is linear
+x = vec.transform([headline])
+contrib = clf.coef_[cls, x.indices] * x.data     # the highlighting above
+
+# model-agnostic, and three orders of magnitude more expensive
+import shap, lime.lime_text
+shap.Explainer(pipe.predict_proba, shap.maskers.Text(r"\W+"))(texts)
+lime.lime_text.LimeTextExplainer().explain_instance(text, pipe.predict_proba,
+                                                    num_samples=5000)</pre>
+      <div class="why">LIME samples, so its output is a random variable — with <code>num_samples</code> too low, two runs of the same explanation disagree on a deterministic model. SHAP repeats exactly and still disagrees with plain occlusion, because they answer different questions.</div>
+    </details>
+    </div>
+    <div class="panel-note">A word’s coefficient answers “how much does this push towards class <em>c</em>”; deleting it answers “how much does the <em>probability</em> move”. Those are different questions, and they disagree — a softmax probability is a competition between classes, so a word can be weak evidence <em>for</em> the predicted class and still raise its probability by hurting a rival more. Explanations are measurements with their own assumptions, not a readout of the model’s reasoning. A full seminar on xAI is planned on the week 14th right now.</div>
+  </div>
+</section>
+
+<!-- ======================================================= 07 skipgram -->
+<section id="skipgram">
+  <p class="eyebrow">Block 07 · dense embeddings</p>
+  <h2>Skip-gram, from noise to neighbourhoods</h2>
+  <div class="prose">
+    <p>Everything so far represents a word by its identity — a column index — so <span class="mono">oil</span> and <span class="mono">petroleum</span> are exactly as far apart as <span class="mono">oil</span> and <span class="mono">basketball</span>. But didn't we want to make embeddings in a way that distance between words (and their vectors as well) means something? Here is how they get there.</p>
+    <p>First the sampling: a window slides over a real headline, and every (centre, context) pair inside it becomes one training example. Negative sampling adds a handful of words drawn from the corpus that were <em>not</em> in the window, and the model is asked to tell the two apart.</p>
+    <p><strong>A window of four words is not a four-word input.</strong> This is the part of skip-gram that is easy to picture wrongly, so it is worth being explicit: the context is never combined. A window is <em>decomposed</em> into independent (centre, context) pairs, each one a separate training example with its own forward pass and its own update. Four context words around <span class="mono">oil</span> means four passes that all happen to read the same row of <span class="mono">W_in</span> — not one pass over a four-word context. That is why two matrices are enough: the model never has to represent a set of words, only a pair of them.</p>
+    <p>The variant that <em>does</em> combine a multi-word context is <strong>CBOW</strong>, the mirror image of skip-gram: it averages the context rows into one vector and predicts the centre word from it. Same two matrices, opposite direction — <span class="mono">sg=1</span> versus <span class="mono">sg=0</span> in gensim. Skip-gram makes more examples out of the same corpus and does better on rare words; CBOW is faster and smoother on frequent ones.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Window = 2 · one headline · what a single step sees</span><span class="btnrow"><button id="btn-win-play" class="primary">Slide the window</button><button id="btn-win-back" title="Previous centre word">◀ Back</button><button id="btn-win-step" title="Next centre word">Step ▶</button><button id="btn-win-reset">Reset</button></span></div>
+    <div class="panel-body">
+      <div id="window-text" style="font-family:var(--mono);font-size:16.8px;line-height:2.4"></div>
+      <div id="window-pairs" style="margin-top:16px"></div>
+    </div>
+    <div class="panel-note">Every line above is its own training example. The four positives from this position are not fed in together — they are four separate passes that share a centre row, and the model would behave identically if you shuffled them into different parts of the epoch. One honest simplification here: real word2vec draws the window size uniformly from 1…<span class="mono">window</span> for every token, so near words are sampled more often than far ones; this demo keeps the window fixed at 2.</div>
+  </div>
+  <div class="prose">
+    <p>And this is the whole model that consumes those pairs. The textbook drawing of it — <span class="mono">x → W_in → h → W_out → ŷ</span> — is right, and worth reading carefully, because two of its boxes are less than they look. The input <span class="mono">x</span> is one-hot, so <span class="mono">h = W_inᵀx</span> does not compute anything: it <em>selects a row</em>, and that row is the embedding, <span class="mono">h = v_c</span>. And the hidden layer has no activation function, so there is nothing non-linear anywhere before the output. What is left is two lookup tables — one row per word in <span class="mono">W_in</span> for when the word is the centre, one row per word in <span class="mono">W_out</span> for when it is the context — and a dot product between them. The entire parameter count is <span class="mono">2 × V × d</span>: for this demo 2 × 1 500 × 24 = 72 000 numbers, for the full AG News run 2 × 65 000 × 100 = 13 million.</p>
+    <p><strong>So what is being predicted?</strong> One context word. The scores <span class="mono">u = W_out·h</span> are a number for every word in the vocabulary; a softmax turns them into <span class="mono">ŷ</span>, a distribution over all 1 500 of them, and the label <span class="mono">y</span> is the one-hot of the word that actually stood next to the centre. Nobody wants that prediction. It is a <em>pretext task</em>: an excuse to force the rows of <span class="mono">W_in</span> into positions where words that keep the same company end up close, after which the classifier head is thrown away and the table is what you ship.</p>
+    <p>The catch is the cost. A softmax over the vocabulary touches every row of <span class="mono">W_out</span> on every single pair — O(V) work per example, on billions of examples. <strong>Negative sampling replaces the output layer and nothing else.</strong> Instead of “which of the 1 500 words is it”, it asks “is this pair real, or drawn from noise?” for the true context word and a handful of random ones: k + 1 independent sigmoids instead of one normalized distribution. The input, the row lookup and the hidden layer are untouched — flip the switch on the panel below and watch which half of the picture changes.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>The architecture · live weights from the model below</span>
+      <span class="btnrow">
+        <button id="btn-arch-back" title="Previous centre word">◀</button>
+        <button id="btn-arch-step" title="Next centre word">▶</button>
+        <button id="btn-arch-mode">output: negative sampling</button>
+        <button id="btn-arch-math">Show the loss and its gradient</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div id="sg-arch"></div>
+      <div id="sg-math" hidden></div>
+      <div class="footnote" style="margin-top:10px">Every number in the strips is read out of the matrices being trained in the next panel — press <em>Train</em> there and come back, or step the window here to see a different pair go through. The original 2013 formulation put a softmax over the whole vocabulary at the end; negative sampling replaces it with one sigmoid per sampled word, which is what makes this cheap enough to run in a browser tab.</div>
+    </div>
+    <div class="panel-note">Three things fall out of the picture. <strong>The embedding is not computed, it is stored</strong> — the “model” for the word <span class="mono">oil</span> is literally row <span class="mono">oil</span> of <span class="mono">W_in</span>, and training is gradient descent on that row. <strong>Every word has two vectors</strong>, one in each table; the one you ship is <span class="mono">W_in</span>, and <span class="mono">W_out</span> is thrown away after training — a detail almost every diagram of word2vec leaves out. And <strong>nothing here is deep</strong>: with no non-linearity the whole network is one bilinear form, <span class="mono">v_cᵀu_o</span>. Levy &amp; Goldberg (2014) took that seriously and showed skip-gram with negative sampling is implicitly factorising a shifted PMI matrix — the 2013 headline method turning out to be a 1990 method in different clothes.</div>
+  </div>
+  <div class="prose">
+    <p>Now run it. We'll take only 5 000 headlines for the demo, a 1 500-word vocabulary, 24 dimensions, five negatives per pair — trained here, in your browser, from random initialization. The map is a live PCA of the vectors as they move; the neighbour list is the thing you would actually use.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>Skip-gram with negative sampling · SGD</span>
+      <span class="btnrow">
+        <button id="btn-sg-run" class="primary">Train</button>
+        <button id="btn-sg-reset">Reset</button>
+        <button id="btn-sg-stop">without stopwords</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div class="stat-row" style="margin-bottom:16px">
+        <div class="stat"><span class="v" id="sg-epoch">0</span><span class="k">epoch</span></div>
+        <div class="stat"><span class="v" id="sg-pairs">0</span><span class="k">pairs seen</span></div>
+        <div class="stat"><span class="v" id="sg-loss">—</span><span class="k">loss</span></div>
+        <div class="stat"><span class="v" id="sg-mode">with stopwords</span><span class="k">corpus</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:minmax(0,1.75fr) minmax(230px,1fr);gap:22px;align-items:start">
+        <div id="sg-map"></div>
+        <div>
+          <label class="field" for="sg-word">Nearest neighbours of</label>
+          <select id="sg-word"></select>
+          <div id="sg-neighbours" style="margin-top:14px"></div>
+        </div>
+      </div>
+    </div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">gensim.models · Word2Vec(sg=1) · FastText · model.wv · model.syn1neg</span></summary>
+      <pre>from gensim.models import Word2Vec, FastText
+
+w2v = Word2Vec(corpus, vector_size=100, window=5, min_count=5,
+               sg=1, negative=5, epochs=5, seed=42, workers=1).wv
+w2v.most_similar("oil")            # the neighbour list above
+w2v["oil"]                         # one row of W_in
+
+# the two matrices, if you want to look at them
+model.wv.vectors                   # W_in  — this is what you ship
+model.syn1neg                      # W_out — negative-sampling output table
+
+FastText(corpus, min_n=3, max_n=5)  # same call, plus character n-grams:
+                                    # an unseen word still gets a vector</pre>
+      <div class="why"><code>sg=1</code> is skip-gram, <code>sg=0</code> is CBOW. <code>workers&gt;1</code> makes training faster and non-reproducible — for a seminar keep it at 1 with a fixed <code>seed</code>. Note gensim's <code>window</code> is the <em>maximum</em>: the actual window is resampled per token.</div>
+    </details>
+    <div class="panel-note">Watch the order the structure arrives in: frequent function words collapse into one blob almost immediately, then sports, then markets, then tech. Train the same corpus with the stopwords removed and the neighbourhoods change — words that were six positions apart become adjacent, so the window is measuring a different thing. Whether that helps depends entirely on what you want the neighbourhood to mean.</div>
+  </div>
+
+
+</section>
+
+<!-- ========================================================== 08 space -->
+<section id="space">
+  <p class="eyebrow">Block 08 · pretrained vectors</p>
+  <h2>The semantics and the space</h2>
+  <div class="prose">
+    <p>Remember, we wanted to create embeddings where the distance between words means something? Type any three words and the arithmetic runs for real, so we can test how we're doing.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>a − b + c · cosine nearest neighbours</span>
+      <span class="btnrow"><button id="btn-excl" class="on">exclude the input words</button><button id="btn-noexcl">keep them</button></span>
+    </div>
+    <div class="panel-body">
+      <div class="grid-4" style="margin-bottom:16px">
+        <div><label class="field" for="an-a">positive</label><input type="text" id="an-a" value="king" spellcheck="false"></div>
+        <div><label class="field" for="an-b">minus</label><input type="text" id="an-b" value="man" spellcheck="false"></div>
+        <div><label class="field" for="an-c">plus</label><input type="text" id="an-c" value="woman" spellcheck="false"></div>
+        <div><label class="field">&nbsp;</label><div class="btnrow" id="an-presets"></div></div>
+      </div>
+      <div class="grid-2" style="align-items:start">
+        <div id="an-map"></div>
+        <div id="an-out"></div>
+      </div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">gensim.downloader · KeyedVectors · most_similar · HuggingFace Hub</span></summary>
+      <pre>import gensim.downloader as api
+kv = api.load("glove-twitter-100")        # 406 MB; a catalogue frozen around 2020
+
+kv.most_similar(positive=["king", "woman"], negative=["man"])
+# note: most_similar drops the input words from the result by construction
+
+from gensim.models import KeyedVectors
+KeyedVectors.load_word2vec_format(path, binary=True)   # anything off the Hub</pre>
+      <div class="why">Newer vectors live on the HuggingFace Hub rather than in gensim's catalogue — the same GloVe files are mirrored as <code>fse/glove-twitter-100</code>. The library is not the stale part: gensim 4.4 shipped in October 2025, while <code>torchtext</code> was archived in 2024.</div>
+    </details>
+    </div>
+    <div class="panel-note" id="an-note">With the inputs kept, the nearest vector to <span class="mono">king − man + woman</span> is <strong>king itself</strong>; <span class="mono">queen</span> is second, and close. The arithmetic is not moving you to a new region of the space — it is actually barely moving you at all, and <span class="mono">most_similar</span> excludes the inputs by construction. See Nissim, van Noord &amp; van der Goot (2020), <em>Fair is Better than Sensational</em>.</div>
+  </div>
+
+  <h3>Bias</h3>
+  <div class="panel">
+    <div class="panel-head"><span>Twitter, ~2014 · what the corpus said about who does which job</span><span class="btnrow" id="bias-presets"></span></div>
+    <div class="panel-body" id="bias-out"></div>
+    <div class="panel-note">Remember, we used the twits from 2014. Twitter itself is a pretty... specific place, and have always been. They encode what that corpus said about who does which job, and any system built on top inherits it silently, so model will accept every type of -ism you'll show it. The same concept will follow us during the whole course — it is the same mechanism in every model this course will touch, even the biggest ones and the modern ones. See Bolukbasi et al. (2016) to know more about language models' bias.</div>
+  </div>
+
+  <h3>There is actually no such thing as a map</h3>
+  <div class="prose">
+    <p>Every two-dimensional picture of an embedding space is a projection with parameters, and the parameters change the picture. The same 1 000 words, the same vectors, four values of t-SNE’s perplexity:</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>t-SNE · 1 000 GloVe words</span><span class="btnrow" id="tsne-btns"></span></div>
+    <div class="panel-body"><div id="tsne-map"></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">sklearn.manifold.TSNE · umap-learn</span></summary>
+      <pre>from sklearn.manifold import TSNE
+TSNE(n_components=2, perplexity=30, init="pca", random_state=42).fit_transform(X)
+
+import umap                        # pip install umap-learn
+umap.UMAP(n_neighbors=15, min_dist=0.1).fit_transform(X)</pre>
+      <div class="why">Both have a knob that changes the picture without changing the data, and neither preserves global distances. Use them to look, never to measure — if you need a number, compute it in the original space.</div>
+    </details>
+    </div>
+    <div class="panel-note">Cluster sizes, distances between clusters and the amount of empty space are all artefacts of the setting, not properties of the data. See Wattenberg, Viégas &amp; Johnson, <em>How to Use t-SNE Effectively</em> (Distill, 2016).</div>
+  </div>
+
+  <h3>From words to documents — and the bill for it</h3>
+  <div class="prose">
+    <p>To classify with word embeddings you need one vector per document, and the simplest way is to average the vectors of the words in it. Same test set, same logistic regression on top, only the left factor changes:</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Document vectors · AG News · same head, same test set</span><span class="mono">three rows from block 10</span></div>
+    <div class="panel-body scroll-x"><table id="pooling-table"></table></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">numpy mean pooling · SIF weighting · sentence-transformers</span></summary>
+      <pre>def embed_mean(texts, kv, idf=None):
+    for text in texts:
+        toks = [t for t in re.findall(r"\w+", text.lower()) if t in kv]
+        vecs = np.stack([kv[t] for t in toks])
+        yield vecs.mean(0) if idf is None else \
+              (vecs * [[idf.get(t, 1.0)] for t in toks]).sum(0) / w.sum()</pre>
+      <div class="why">Better aggregations exist and are still three lines: SIF weighting (Arora et al. 2017) plus removing the first principal component beats the plain mean reliably. Past that you stop pooling word vectors and encode the sentence directly — <code>sentence-transformers</code>, which is where week 6 and later go.</div>
+    </details>
+
+    <div class="panel-note">Mean pooling and IDF-weighted pooling land in the same place, and both lose to a bag of counts from 1972 — while costing four times the vectorizing time. The full table in block 10 puts these two rows next to everything else built today.</div>
+  </div>
+  <div class="prose">
+    <p><strong>And then the punchline from the table.</strong> Averaged embeddings lose to TF-IDF. A representation from 2013 with real semantics inside it loses to one from 1972 that knows nothing but counts. TF-IDF hands the classifier one parameter per word. Mean pooling hands it 100 numbers produced before the labels were seen: every word's contribution is fixed by the embedding, and a single decisive rare word is diluted to 1/n of the average. The head cannot undo that compression, however good the compression is.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 09 llm -->
+<section id="llm">
+  <p class="eyebrow">Block 09 · zero-shot</p>
+  <h2>Asking an LLM, and reading the bill</h2>
+  <div class="prose">
+    <p>It is not a secret, that you can perform the simpliest classification by just asking any LLM "what the class is this out of four?" (using a so-called zero-shot or few-shot prompting). The method exists, it is used in industry, and it needs no labelled data at all, which is another huge advantage, on what the previous models and methods weren't capable of. But there is another thing we need to discuss. I've run it earlier on 200 test examples, wrote two prompts differing only in the order of the class list, made three repeatitions for each, using <span class="mono">temperature=0</span>.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span id="llm-head"></span><span class="mono">precomputed · see precompute.py --only llm</span></div>
+    <div class="panel-body">
+      <div class="eyebrow" style="margin-bottom:8px">Accuracy by prompt and repeat</div>
+      <div id="llm-chart"></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">anthropic / vendor SDK · temperature=0 · structured output</span></summary>
+      <pre>from anthropic import Anthropic          # or the vendor SDK you use
+
+client.messages.create(
+    model="claude-sonnet-4-5", max_tokens=8, temperature=0,
+    messages=[{"role": "user",
+               "content": f"Classify into World/Sports/Business/Sci-Tech: {text}"}])
+# then parse the string back into a label — and handle the ones that don't parse</pre>
+      <div class="why">Everything expensive about this is in the last line: no schema, no calibrated score, and a parse step that fails on real traffic. Structured output or tool-use schemas remove the parsing problem; they do not give you back <code>predict_proba</code>.</div>
+    </details>
+      <div class="stat-row" style="margin-top:24px">
+        <div class="stat"><span class="v" id="llm-unstable"></span><span class="k">examples where 3 identical calls disagreed</span></div>
+        <div class="stat"><span class="v" id="llm-lat"></span><span class="k">median latency per example</span></div>
+        <div class="stat"><span class="v">~0.4 ms</span><span class="k">TF-IDF, same measurement</span></div>
+      </div>
+    </div>
+    <div class="panel-note">So, what it costs: latency per example is three to four orders of magnitude above TF-IDF. On the full test set that is the difference between three seconds and an hour. Also, identical calls at <span class="mono">temperature=0</span> can disagree. The same input does not reliably produce the same output at all. Reordering the class list in the prompt — a change with no semantic content — moves accuracy. Moreover, there is no calibrated probability. <span class="mono">predict_proba</span> from the logistic regression is a real number you can threshold (if you don't get the reference, check out the topic of calibration curves from ML); a generated string is not. And we cannot interpret the model's reasoning, because it is not a model at all — it is a black box that produces text. But it is still good, cuz there is needed zero labelled examples. On a task where nobody has annotated 120 000 documents, that is not a minor convenience — it is the difference between having a system and not having one. <strong>Open question:</strong> why does <span class="mono">temperature=0</span> not guarantee identical output? It has nothing to do with sampling — look up batching and floating-point non-associativity.</div>
+  </div>
+</section>
+
+<!-- ========================================================== 10 table -->
+<section id="table">
+  <p class="eyebrow">Block 10 · the results table</p>
+  <h2>So, who's the winner by now?</h2>
+  <div class="prose">
+    <p>This is the artefact of the seminar. Every run in the notebook lands here, and the point is not which row wins — it is how little separates them, and what each one charges for its place.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>AG News · 120 000 train / 7 600 test · accuracy</span>
+      <span class="btnrow">
+        <span class="mono" id="table-shown">0 / 10 revealed</span>
+        <button id="btn-row-next" class="primary">Reveal next row</button>
+        <button id="btn-row-all">Reveal all</button>
+        <button id="btn-row-reset">Reset</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div class="btnrow" style="margin-bottom:14px" id="table-axes"></div>
+      <div id="table-chart"></div>
+    </div>
+    <div class="panel-body" style="border-top:1px solid var(--rule)">
+      <div class="scroll-x"><table id="table-rows"></table></div>
+    </div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">sklearn.metrics · accuracy_score · f1_score · pandas.DataFrame</span></summary>
+      <pre>results = []
+
+def record(representation, head, y_true, y_pred, vectorize_s=None, fit_s=None):
+    results.append({
+        "representation": representation, "head": head,
+        "accuracy": accuracy_score(y_true, y_pred),
+        "macro_f1": f1_score(y_true, y_pred, average="macro"),
+        "vectorize_s": vectorize_s, "fit_s": fit_s})
+    return pd.DataFrame(results)</pre>
+      <div class="why">Four lines, written before the first model. Without them every comparison on this page would have been a memory of a number rather than a number, and the seminar's whole claim rests on the rows being commensurable.</div>
+    </details>
+    <div class="panel-note" id="table-note">Counts → TF-IDF is the first row; then n-grams, then characters, then three different heads on <em>the same matrix</em>, then embeddings, then an LLM with no training data at all.</div>
+  </div>
+  <div class="prose">
+    <p><strong>The head is not where the variance lives.</strong> Swapping logistic regression for a linear SVM, naive Bayes or SGD on the identical TF-IDF matrix moves accuracy by ±0.002, and the expensive options are not the winners. On text, almost all the quality sits in the left factor. That is the result that lets the course stop coming back to classification.</p>
+  </div>
+</section>
+
+<!-- ======================================================== 11 ceiling -->
+<section id="ceiling">
+  <p class="eyebrow">Block 11 · the ceiling</p>
+  <h2>Where the missing accuracy actually is</h2>
+  <div class="prose">
+    <p>Look at the spread in the table. A 1972 representation, a 2013 one and a 2026 one all land within a few points of each other. That is suspicious: either every method is equally good, or something other than the method is setting the limit.</p>
+    <p>Twenty mistakes from the best model, read by hand:</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>tf-idf 1-1 · LogisticRegression · 20 errors, sampled</span><span class="mono">gold ≠ predicted</span></div>
+    <div class="panel-body scroll-x"><table id="mistakes-table"></table></div>
+  </div>
+  <div class="prose">
+    <p>Now the twelve you labelled at the start, with what the dataset claims and what the model said:</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The disputed twelve · you / dataset / model</span><span class="mono" id="ceiling-agree"></span></div>
+    <div class="panel-body scroll-x"><table id="ceiling-table"></table></div>
+    <div class="panel-note">A cricket match filed under World. The anniversary of the Kennedy assassination filed under Sci/Tech. A travel column about Aboriginal-owned tours, also Sci/Tech. Those are not hard examples — they are <strong>wrong labels</strong>, and no representation fixes them.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Agreement with the dataset · one measure, four populations</span><span class="mono" id="ceiling-spread"></span></div>
+    <div class="panel-body"><div id="ceiling-bars"></div></div>
+    <div class="panel-note">On items where the label itself is contested, both you and the best model collapse towards chance. On the full test set every method built today sits inside a ten-point band — which means the distance between a 1972 representation and a 2026 one is smaller than the distance between two careful readers of the same headline. The accuracy still missing is not sitting in a better representation. It is sitting in the label definition: if you want the next point, you go back to the annotation guidelines, not the hyperparameters.</div>
+  </div>
+
+  <h2 style="margin-top:56px">Four things that transfer</h2>
+  <div class="prose">
+    <p><strong>1 · Strong sparse baseline first, always.</strong> It is an hour of work and it is frequently the answer.<br>
+    <strong>2 · Complexity has to pay for itself</strong> in whichever column your problem actually cares about — labelled data, latency, interpretability, predictability.<br>
+    <strong>3 · Explanations are a debugging tool for your data</strong>, not a deliverable.<br>
+    <strong>4 · The ceiling is set by the data.</strong> When every method lands in the same narrow band, stop tuning and go read the labels.</p>
+    <p class="footnote" style="margin-top:30px">Full notebook, homework and the reading list: <span class="mono">week01_text_representations/</span>. Everything marked 🏠 there runs as-is — the learning curve of accuracy against number of labelled examples is the graph that actually answers “should I use an LLM here”.</p>
+  </div>
+</section>
+
+</div>
+</main>
+</div>

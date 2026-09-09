@@ -1,0 +1,274 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 1<br>Representations of Text</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div style="margin-top:10px">Every number on this page comes from the seminar notebook, or is computed in your browser right now.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>classifier =<br>representation × head</h1>
+  <p class="lede">As the course authors we usually struggle with the idea on how to present the key ideas of NLP without showing the "old stuff", that is not used anymore, but at the same time keep the field's evolution presented correctly. This year I'll make an attempt this way: we'll begin with the most boring concepts, that are common for the whole NLP field (text classification and regression), but try to reformulate the underlying ideas onto the actual, a bit more fair and challenging task.</p>
+  <div class="panel">
+    <div class="panel-head"><span>Seventy years of answers to one question</span><span>how to turn text into a numerical representation</span></div>
+    <div class="scroll-x"><table id="tbl-history"></table></div>
+    <div class="panel-note">We'll discuss the ideas behind each way of text representation, what it costs and what it gains.</div>
+  </div>
+  <div class="prose">
+    <p>An LLM will classify these headlines without any of the code below. The reason this seminar exists is that the thing the field has been solving for seventy years was never “build a model”. It was: turn a string into a representation, that is going to be understandable by a computer in the same way it is understandable by a human, so we can perform different logic on it.</p>
+    <p>Before each block, make a guess. In the seminar, as a teacher and a field's expert, I want you to be curious enough to ask questions and think about them even after the seminars, to be able to continue exploring the ideas on your own. So, feel free to ask questions and share your thoughts.</p>
+  </div>
+</section>
+
+<!-- ========================================================== 01 label -->
+<section id="label">
+  <p class="eyebrow">Block 00 · before you see a model</p>
+  <h2>Twelve headlines you label yourself</h2>
+  <div class="prose">
+    <p>Before you see any model, label these twelve by hand. Write your answers down. We will collect the class's agreement rate and it becomes a horizontal line on every chart today. The resulting labelling will be important a bit later. I might be not very original, but still want to remind you something.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>AG News · test set · 12 items</span>
+      <span class="btnrow">
+        <span id="label-progress" class="mono">0 / 12 labelled</span>
+        <button id="btn-label-reveal" disabled>Reveal the dataset’s answer</button>
+        <button id="btn-label-reset">Reset</button>
+      </span>
+    </div>
+    <div class="panel-body tight"><div id="label-list"></div></div>
+    <div class="panel-note" id="label-score" hidden></div>
+  </div>
+</section>
+
+<!-- ========================================================= 02 tokens -->
+<section id="tokens">
+  <p class="eyebrow">Block 01 · tokenization</p>
+  <h2>Where the vocabulary comes from</h2>
+  <div class="prose">
+    <p>First, we need to split the text into parts in a way that will represent the text, its meaning and properties. It is called tokenization. Tokenization splits a string into units. The set of units becomes your vocabulary, and the vocabulary decides what kind of data the model can possibly represent.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>Four tokenizers, one string</span>
+      <span class="btnrow" id="tok-cases"></span>
+    </div>
+    <div class="panel-body">
+      <div id="tok-input-row" style="margin-bottom:14px">
+        <label class="field" for="tok-input">Type your own — <span class="mono">naive</span>, <span class="mono">regex</span> and <span class="mono">wordpunct</span> run live in the browser</label>
+        <input type="text" id="tok-input" value="Contact alex.smith_92@hse.ru for details." spellcheck="false">
+      </div>
+      <div id="tok-out"></div>
+    </div>
+    <div class="panel-note">
+      <strong>Read what each one did.</strong> Only <span class="mono">word_tokenize</span> keeps <span class="mono">alex.smith_92</span> and <span class="mono">hse.ru</span> intact; the others shred an identifier into five pieces no downstream model can put back. <span class="mono">regex</span> keeps <span class="mono">smith_92</span> because <span class="mono">_</span> is a word character while <span class="mono">naive</span> splits it because <span class="mono">_</span> is in <span class="mono">string.punctuation</span> — nobody designed that disagreement. <span class="mono">3.5%</span> becomes <span class="mono">3</span>, <span class="mono">5</span>; on a financial corpus that is the signal being deleted. And <span class="mono">Don’t</span> → <span class="mono">Do</span> + <span class="mono">n’t</span> is not a split at all: it is a rewrite. It is not a tokenization error, it is a design choice. The tokenizer’s design choices are the model’s design choices, and we'll talk about it later in more detail during the course (I believe, week 4 or 5?)
+    </div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">nltk.tokenize · word_tokenize · wordpunct_tokenize · re.findall · spaCy</span></summary>
+      <pre>import re, nltk
+from nltk.tokenize import word_tokenize, wordpunct_tokenize
+
+re.findall(r"\w+", text)          # the regex tokenizer above
+wordpunct_tokenize(text)          # splits on every non-word character
+word_tokenize(text)               # Treebank rules: needs nltk.download("punkt_tab")</pre>
+      <div class="why"><code>word_tokenize</code> is the one that rewrites rather than splits. For production text pick by what your downstream step needs: <code>spaCy</code> for linguistically-aware splitting, <code>regex</code> for speed, a trained subword tokenizer for anything that feeds a neural model.</div>
+    </details>
+  </div>
+
+  <h3>Stemming and lemmatization</h3>
+  <div class="prose">
+    <p>But first, stemming & lemmatization. Why? Cuz we need to shrink the vocabulary a bit and get rid of the noise. The textbook table says <span class="mono">went → go</span> and <span class="mono">better → good</span>. <strong>Bet first:</strong> does <span class="mono">nltk</span>’s lemmatizer reproduce it?</p>
+  </div>
+  <div class="panel reveal-wrap">
+    <div class="panel-head"><span>nltk · WordNetLemmatizer + PorterStemmer</span><span class="mono">textbook vs. reality</span></div>
+    <div class="panel-body">
+      <div class="veil" id="veil-morph">
+        <span>Commit to an answer, then look.</span>
+        <button class="primary" data-reveal="morph">Show what nltk returns</button>
+      </div>
+      <div id="morph-out" hidden></div>
+    </div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">nltk.stem · PorterStemmer · WordNetLemmatizer · nltk.pos_tag · pymorphy3</span></summary>
+      <pre>from nltk.stem import PorterStemmer, WordNetLemmatizer
+
+PorterStemmer().stem("studies")            # 'studi' — rules, no dictionary
+WordNetLemmatizer().lemmatize("was")       # 'wa'    — pos defaults to 'n'
+WordNetLemmatizer().lemmatize("was", "v")  # 'be'    — with the right tag</pre>
+      <div class="why">Real lemmatization needs POS tags, so in practice you run a tagger first — <code>nltk.pos_tag</code>, or <code>spaCy</code>, which gives you <code>token.lemma_</code> already tagged. For Russian: <code>pymorphy3</code> or <code>spaCy</code>'s <code>ru_core_news_*</code>.</div>
+    </details>
+    <div class="panel-note" id="morph-note" hidden>
+      It does not. <span class="mono">went → went</span>, <span class="mono">better → better</span>, and <span class="mono">was → wa</span>, which is not a word in any language. The default is <span class="mono">pos='n'</span>: the lemmatizer assumes every token is a noun and strips what looks like a plural. The textbook table describes lemmatization <em>with</em> part-of-speech tags. The column you usually see in a tutorial is lemmatization <em>without</em> them — a different operation, and on this corpus roughly an expensive stemmer with worse coverage. So, overall it works as intended, depending on the library you're using and other nuances. This is also a part of a design choice (sometimes you'll need it, sometimes you'll lose the important information using it)
+    </div>
+  </div>
+
+  <h3>Subword: the boundary is a trained artefact</h3>
+  <div class="prose">
+    <p>Everything above draws the word boundary by hand. Modern systems learn it from data instead. <strong>Bet:</strong> the same sentence in English and Russian — which costs more tokens, and by what factor?</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>tiktoken · cl100k_base</span><span class="mono">precomputed — the encoder does not run in a browser</span></div>
+    <div class="panel-body" id="bpe-out">
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">tiktoken · tokenizers (BpeTrainer, Unigram) · sentencepiece · transformers.AutoTokenizer</span></summary>
+      <pre>import tiktoken
+enc = tiktoken.get_encoding("cl100k_base")
+enc.encode("unbelievability")     # [1234, ...] — ids, not strings
+[enc.decode([t]) for t in ids]    # what each id actually is</pre>
+      <div class="why"><code>tiktoken</code> only <em>uses</em> OpenAI's tokenizers. To train your own, or to load one from the Hub: <code>tokenizers</code> (<code>BpeTrainer</code>, <code>WordPiece</code>, <code>Unigram</code>) or <code>sentencepiece</code>; to load a model's tokenizer, <code>transformers.AutoTokenizer</code>.</div>
+    </details>
+    </div>
+    <div class="panel-note">Russian costs two to three times more tokens for the same content, and somebody pays for that per API call, forever. Numbers, whitespace and casing split in ways nobody designed deliberately — they fell out of training-data statistics. <strong>Open question:</strong> is it the alphabet, the morphology, or the corpus? How would you test which? Don't be sad if you don't have an answer, it is also a part of a biiig lecture about the tokenizers and their influence on the system.</div>
+  </div>
+</section>
+
+<!-- =========================================================== 03 prep -->
+<section id="prep">
+  <p class="eyebrow">Block 02 · preprocessing</p>
+  <h2>To clean or not to clean</h2>
+  <div class="prose">
+    <p>The usual advice is “clean your text”. The usual advice is wrong roughly half the time.</p>
+  </div>
+
+  <h3>Where you must not skip it</h3>
+  <div class="prose">
+    <p>LDA (Latent Dirichlet Allocation) is a bag of words with no notion of synonymy or morphology. Feed it raw text and end up with the topics that are described primarly by the most frequent words like <span class="mono">the</span>, <span class="mono">and</span>, <span class="mono">for</span>. Let's compare:</p>
+  </div>
+  <div class="panel reveal-wrap">
+    <div class="panel-head"><span>LDA · <span id="lda-topic-count">topics</span> · raw vs lemmatised</span><span class="btnrow"><button id="btn-lda-raw" class="on">raw</button><button id="btn-lda-lem">lemmatised</button></span></div>
+    <div class="panel-body" id="lda-out">
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">sklearn.decomposition.LatentDirichletAllocation · gensim.LdaModel · CoherenceModel · BERTopic</span></summary>
+      <pre>from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+
+X = CountVectorizer(max_df=0.95, min_df=5).fit_transform(docs)
+lda = LatentDirichletAllocation(n_components=8, random_state=42).fit(X)
+lda.components_          # topic × term weights; sort each row for the top words</pre>
+      <div class="why"><code>gensim.models.LdaModel</code> is the other standard implementation and gives you coherence scores (<code>CoherenceModel</code>) to pick the number of topics; <code>BERTopic</code> is the modern embedding-based alternative. All of them are bags of words, so the preprocessing decision above applies to every one.</div>
+    </details>
+    </div>
+    <div class="panel-note"><span class="mono">39</span> is a mangled <span class="mono">&amp;#39;</span> and <span class="mono">quot</span> a mangled <span class="mono">&amp;quot;</span>. Here preprocessing is not a tuning knob — it is the difference between a model that works and a model that models punctuation. Same for lexical search (<span class="mono">cats</span> will not find <span class="mono">cat</span>), dictionary methods, and small data. Question: would you also try lemmatization here for this task?</div>
+  </div>
+
+  <h3>Where it destroys the signal</h3>
+  <div class="prose">
+    <p><strong>Bet:</strong> <span class="mono">nltk</span>’s English stoplist has 198 entries. Is <span class="mono">not</span> one of them?</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Drop the stopwords · live</span><span class="mono" id="stop-count"></span></div>
+    <div class="panel-body">
+      <label class="field" for="stop-input">Any sentence — the full 198-word nltk list is loaded</label>
+      <input type="text" id="stop-input" value="the movie was not good" spellcheck="false">
+      <div id="stop-out" style="margin-top:14px"></div>
+      <div class="btnrow" style="margin-top:12px" id="stop-presets"></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">nltk.corpus.stopwords · TfidfVectorizer(stop_words=…)</span></summary>
+      <pre>from nltk.corpus import stopwords
+stop = set(stopwords.words("english"))     # 198 entries, "not" among them
+
+# or let the vectorizer do it — and notice you cannot see the list
+TfidfVectorizer(stop_words="english")      # sklearn's own list, 318 entries</pre>
+      <div class="why">The two lists disagree, and neither is documented at the point of use. If dropping stopwords matters for your task, own the list: start from one of these, print it, and delete what carries your signal.</div>
+    </details>
+    </div>
+    <div class="panel-note"><span class="mono">not good</span> becomes <span class="mono">good</span>; <span class="mono">never recommend</span> becomes <span class="mono">recommend</span>. That is the mechanism. Whether it costs you accuracy is a different question, and the grid below answers it with numbers instead of folklore.</div>
+  </div>
+
+  <h3>Which cleaning, for which task</h3>
+  <div class="prose">
+    <p>Twelve A/B experiments over six datasets and four task families. Each one flips a single knob and holds everything else fixed — same split, same seed, same model, same vectorizer — so the difference belongs to the knob and to nothing else.</p>
+    <p><strong>Bet on every row before you reveal.</strong> Three answers per row: the cleaning <em>helps</em>, it <em>hurts</em>, or it changes <em>nothing</em> (under half a point). The rows are ordered so that the same knob comes back on a different task.</p>
+  </div>
+  <div class="panel reveal-wrap">
+    <div class="panel-head">
+      <span>Preprocessing &times; task &middot; <span class="mono" id="preproc-progress">0 / 12 bets placed</span></span>
+      <span class="btnrow"><button id="btn-preproc-reveal" class="primary">Reveal all</button><button id="btn-preproc-reset">Reset</button></span>
+    </div>
+    <div class="panel-body">
+      <div id="preproc-grid" class="scroll-x"></div>
+      <div id="preproc-score" class="stat-row" style="margin-top:18px" hidden></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">TfidfVectorizer(analyzer=&hellip;) &middot; rank_bm25 &middot; LatentDirichletAllocation &middot; gensim.CoherenceModel</span></summary>
+      <pre>def ab(analyzer):                 # one knob; split, seed, model all fixed
+    v = TfidfVectorizer(analyzer=analyzer, min_df=2)
+    X = v.fit_transform(train_texts)
+    m = LogisticRegression(max_iter=2000, random_state=42).fit(X, y_train)
+    return m.score(v.transform(test_texts), y_test)
+
+plain  = lambda t: re.findall(r"(?u)\b\w\w+\b", t.lower())
+nostop = lambda t: [w for w in plain(t) if w not in stop]
+
+ab(nostop) - ab(plain)            # the delta is the whole answer</pre>
+      <div class="why">The comparison is only worth anything if the two runs differ in exactly one place: same train/test split, same random seed, same classifier, same <code>min_df</code>. Retrieval rows are scored with nDCG@10 over BM25, topic rows with NPMI coherence — different metrics, same discipline. Full code: <code>preprocessing_grid.py</code>.</div>
+    </details>
+    </div>
+    <div class="panel-note" id="preproc-note" hidden></div>
+  </div>
+
+</section>
+
+<!-- ========================================================== 04 tfidf -->
+<section id="tfidf">
+  <p class="eyebrow">Block 03 · sparse representations</p>
+  <h2>Building TF-IDF by hand, understanding how does the vector look like</h2>
+  <div class="prose">
+    <p>Before running anything on 120 000 documents, build the thing on four. Every number below is computed in your browser with <span class="mono">sklearn</span>’s exact formulas — edit the documents and watch the matrix move.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>The vectorizer, stage by stage</span>
+      <span class="btnrow" id="tfidf-stages"></span>
+    </div>
+    <div class="panel-body">
+      <div class="grid-2" style="align-items:start">
+        <div>
+          <label class="field">Four documents — editable</label>
+          <textarea id="toy-input" rows="4" spellcheck="false" style="line-height:1.7"></textarea>
+          <div class="footnote" style="margin-top:8px" id="tfidf-caption"></div>
+        </div>
+        <div id="tfidf-formula"></div>
+      </div>
+      <div class="scroll-x" style="margin-top:18px"><table id="tfidf-matrix"></table></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">sklearn.feature_extraction.text · CountVectorizer · TfidfVectorizer · rank_bm25</span></summary>
+      <pre>from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+
+CountVectorizer(min_df=4)                                   # the raw counts
+TfidfVectorizer(min_df=4, max_df=0.95)                      # the five stages above
+TfidfVectorizer(min_df=4, ngram_range=(1, 2))               # + bigrams
+TfidfVectorizer(min_df=4, analyzer="char_wb", ngram_range=(3, 5))
+
+vec.idf_, vec.get_feature_names_out()   # the two arrays that explain any row</pre>
+      <div class="why">The defaults matter more than the class: <code>lowercase=True</code>, <code>token_pattern=r"(?u)\b\w\w+\b"</code> (one-character tokens are dropped), <code>norm="l2"</code>, and the smoothed IDF you see in stage 3. For retrieval rather than classification, reach for BM25 instead — <code>rank_bm25</code>, or Elasticsearch/OpenSearch.</div>
+    </details>
+    </div>
+    <div class="panel-note" id="tfidf-note"></div>
+  </div>
+
+  <h3>What the bag threw away in step zero</h3>
+  <div class="prose">
+    <p><strong>Bet:</strong> two headlines, the same five words, opposite meaning. What is the cosine similarity of their TF-IDF vectors?</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Word order · cosine similarity</span><span class="btnrow"><button id="btn-ng-1" class="on">unigrams</button><button id="btn-ng-2">unigrams + bigrams</button></span></div>
+    <div class="panel-body" id="order-out"></div>
+    <div class="panel-note">To a bag of words those two headlines are <em>the same document</em>. One says oil fell and stocks rose; the other says the opposite. No classifier on top can tell them apart. Bigrams buy the local part of word order back — and on AG News take the vocabulary from 29 350 to 196 911 for <strong>+0.002 accuracy</strong>. On a task where order carries the label — sentiment, negation, intent — the same change is worth far more.</div>
+  </div>
+
+
+</section>

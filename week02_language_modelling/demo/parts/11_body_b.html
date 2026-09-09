@@ -1,0 +1,335 @@
+<!-- ============================================================= 04 rnn -->
+<section id="rnn">
+  <p class="eyebrow">Block 04 · learning</p>
+  <h2>Recurrent language models</h2>
+  <div class="prose">
+    <p>Counting has a ceiling and we just hit it. The reason is not the amount of data; it is that a count-based model treats every prefix as an unrelated symbol. <em>Штирлиц открыл</em> and <em>Мюллер открыл</em> share nothing — even though whatever follows one probably follows the other. Last week gave us the tool for that: embeddings. The <strong>recurrent</strong> network drops the fixed window entirely: it keeps a state vector h<sub>t</sub>, updated once per token, that is supposed to summarise everything so far. Same chain rule, same next-token prediction, but the context is — in principle — unbounded. In practice it is bounded by how much a 256-dimensional vector can hold and by how far a gradient can travel; we measure both.</p>
+  </div>
+<div class="formula"><span class="fn">The recurrent language model · Elman 1990, Mikolov 2010</span><math display="block"><mrow><msub><mi>h</mi><mi>t</mi></msub><mo>=</mo><mi>f</mi><mrow><mo>(</mo><msub><mi>h</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>x</mi><mi>t</mi></msub><mo>)</mo></mrow><mo>,</mo><mspace width="0.5em"/><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>|</mo><msub><mi>w</mi><mrow><mo>≤</mo><mi>t</mi></mrow></msub><mo>)</mo></mrow><mo>=</mo><mi mathvariant="normal">softmax</mi><mrow><mo>(</mo><mi>W</mi><msub><mi>h</mi><mi>t</mi></msub><mo>)</mo></mrow></mrow></math><math display="block"><mrow><mtext>plain RNN:</mtext><mspace width="0.5em"/><msub><mi>h</mi><mi>t</mi></msub><mo>=</mo><mi mathvariant="normal">tanh</mi><mrow><mo>(</mo><mi>W</mi><msub><mi>x</mi><mi>t</mi></msub><mo>+</mo><mi>U</mi><msub><mi>h</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow></mrow></math></div>  <div class="panel">
+    <div class="panel-head"><span>A recurrent language model, unrolled over one joke · training against inference</span><span class="mono">same weights, same joke, two different loops</span></div>
+    <div class="panel-body">
+      <div class="eyebrow" style="margin-bottom:4px">Training · teacher forcing · the output is compared with the next gold token, never fed back</div>
+      <div id="unroll-train"></div>
+      <div class="eyebrow" style="margin:18px 0 4px">Inference · autoregressive · the model has to <em>produce</em> the joke</div>
+      <div id="unroll-infer"></div>
+      <div class="scroll-x" style="margin-top:18px"><table id="unroll-table">
+        <thead><tr><th></th><th>training</th><th>inference</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">input at step t</td><td>the <strong>gold</strong> token w<sub>t</sub>, whatever the model predicted a step earlier — the prediction is scored by the loss and then dropped</td><td>the model's <strong>own</strong> previous output ŵ<sub>t</sub>, fed back in</td></tr>
+          <tr><td class="mono">what comes out</td><td>a distribution at every position, compared with the target w<sub>t+1</sub></td><td>a distribution at the last position only — the decoding rule picks one token from it</td></tr>
+          <tr><td class="mono">the loss</td><td>cross-entropy averaged over all positions = log perplexity; padding excluded</td><td>none — there is no gold text to compare with</td></tr>
+          <tr><td class="mono">how it runs</td><td>all T positions in <strong>one</strong> forward pass, in parallel: the inputs are known in advance</td><td><strong>one token at a time</strong>, T sequential steps, the state h<sub>t</sub> carried across them</td></tr>
+          <tr><td class="mono">when it stops</td><td>at the end of the joke — <span class="mono">[EOS]</span> is just the last target</td><td>when it samples <span class="mono">[EOS]</span> itself, or hits the length limit</td></tr>
+          <tr><td class="mono">what the prefix looks like</td><td>always correct</td><td>may already contain the model's own mistakes, which it never saw in training — <strong>exposure bias</strong> (block 07)</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="panel-note">Top: every position is a classification problem with 8 000 classes — given the state, predict the next piece. The pills are what the LSTM in this page actually outputs at each step (the argmax of its softmax), and the dashed line runs from each output to the token that goes in next — which is always the gold one. Red ≠: the output was wrong and the loss at that step is large; green =: it was right. Either way the output is only scored; what gets fed is the joke. The input sequence is the joke with <span class="mono">[BOS]</span> in front, the target is the same joke shifted left by one with <span class="mono">[EOS]</span> at the end, and because the whole input is known before the forward pass, all positions are scored at once. The loss is the average cross-entropy over them — log perplexity — so <strong>training minimises perplexity directly</strong>. Padding has to be excluded from that average (<span class="mono">ignore_index=PAD</span>); get it wrong and the model learns to predict <span class="mono">[PAD]</span> after <span class="mono">[EOS]</span> with near-certainty, which is easy, worthless, and makes perplexity look better than it is. Bottom: at inference nothing is known in advance. The model gets <span class="mono">[BOS]</span>, emits a distribution, a decoding rule (block 05) picks a token, and that token becomes the next input — the dashed green loop. The recurrence is the same, the weights are the same; only the source of the inputs changed, and that is why the text can drift: one odd sample, and every later step conditions on it.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The data pipeline · one batch, third joke, first twelve positions</span><span class="mono" id="pipe-shape"></span></div>
+    <div class="panel-body scroll-x"><table id="pipe-table"></table></div>
+  </div>
+
+  <h3>A live LSTM against the trigram</h3>
+  <div class="prose">
+    <p>In the notebook we train an LSTM on a slice of the data — 8 000 jokes, two epochs, 21 seconds on a laptop — enough to watch the perplexity move. <strong>Bet:</strong> does it beat the interpolated BPE trigram, which was counted on 40 000 jokes in a few seconds?</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>LSTM · 8 000 jokes × 2 epochs · emb 256, hidden 256</span><span class="btnrow"><button class="primary" id="btn-live-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-live"><span class="q">After two epochs on 8 000 jokes, the LSTM's test perplexity is …</span></div>
+      <div id="live-out" hidden></div>
+    </div>
+    <div class="panel-note" id="live-note" hidden>It does not — with 7% of the data and two passes, the network is still behind counting on all of it. And its samples are letter soup. Worth remembering the next time someone shows you a neural model losing to a baseline: the question is always <em>how much data and how much compute each one got</em>.</div>
+  </div>
+
+  <h3>RNN vs LSTM vs GRU, on more data</h3>
+  <div class="prose">
+    <p>Three cells, the same 256-dimensional size, the same 12 000 jokes, the same three epochs each (trained overnight on CPU; <span class="mono">precompute.py</span> redraws it). <strong>Bet:</strong> the LSTM has 4× the recurrent parameters of the plain RNN. On short jokes, trained for a few epochs, how far apart do the three land in perplexity?</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Validation perplexity per epoch · solid validation, dashed train</span><span class="btnrow"><button class="primary" id="btn-cells-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-cells"><span class="q">RNN, GRU and LSTM land within …</span></div>
+      <div id="cells-out" hidden>
+        <div id="cells-chart"></div>
+        <div class="scroll-x" style="margin-top:14px"><table id="cells-table"></table></div>
+        <div class="eyebrow" style="margin:18px 0 6px">The LSTM's samples, plain sampling, seeds 0–2</div>
+        <div class="gen-list" id="cells-samples"></div>
+      </div>
+    </div>
+    <div class="panel-note" id="cells-note" hidden><strong>The neural models do not beat the count baseline here.</strong> Same tokenizer and test set, so both columns are fair — and the interpolated BPE trigram sits below all three small networks. A 4.6M-parameter network trained for three epochs on a slice of the data does not clear a count model trained on all of it in seconds. Same lesson as last week's "averaged embeddings lose to TF-IDF": run the strong simple baseline first. <strong>Among the neural models the three are close</strong>, within ~20%, and the plain RNN keeps up with the gated cells: our jokes are short, and the dependencies that pick the next subword are mostly local, so there is little for a gate to save. So why bother? Because the network <em>generalises instead of memorising</em> — its text is not in the corpus — and because its curve is still falling while the trigram is at its ceiling. One of these has somewhere to go.</div>
+  </div>
+
+  <h3>Why the plain RNN is living on borrowed time: gradients through time</h3>
+  <div class="panel">
+    <div class="panel-head"><span>The gradient of the loss at the last token, travelling back · one box = 5 steps</span><span class="btnrow"><span class="mono" id="grad-anim-status"></span><button id="btn-grad-replay">Replay</button></span></div>
+    <div class="panel-body"><div id="grad-anim"></div></div>
+    <div class="panel-note">Dot size and the numbers are the measured mean ‖∂ loss / ∂ input embedding‖ on 50 test jokes, relative to the position next to the loss — the same data as the chart below, on a log scale. Through a <span class="mono">tanh</span> recurrence the gradient is multiplied by a Jacobian at every step; through the LSTM's cell state it is added to, and passes through the forget gate instead of a weight matrix.</div>
+  </div>
+<div class="formula"><span class="fn">Gradients through time · a product of Jacobians, and the LSTM's additive path</span><math display="block"><mrow><mfrac><mrow><mo>∂</mo><mi>ℒ</mi></mrow><mrow><mo>∂</mo><msub><mi>h</mi><mn>1</mn></msub></mrow></mfrac><mo>=</mo><mfrac><mrow><mo>∂</mo><mi>ℒ</mi></mrow><mrow><mo>∂</mo><msub><mi>h</mi><mi>T</mi></msub></mrow></mfrac><munderover><mo>∏</mo><mrow><mi>t</mi><mo>=</mo><mn>2</mn></mrow><mi>T</mi></munderover><mfrac><mrow><mo>∂</mo><msub><mi>h</mi><mi>t</mi></msub></mrow><mrow><mo>∂</mo><msub><mi>h</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub></mrow></mfrac></mrow></math><math display="block"><mrow><msub><mi>c</mi><mi>t</mi></msub><mo>=</mo><msub><mi>f</mi><mi>t</mi></msub><mo>⊙</mo><msub><mi>c</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><msub><mi>i</mi><mi>t</mi></msub><mo>⊙</mo><msub><mover accent="true"><mi>c</mi><mo>~</mo></mover><mi>t</mi></msub></mrow></math></div>  <div class="panel">
+    <div class="panel-head"><span>‖∂ loss / ∂ input embedding‖ · mean over 50 test jokes · loss at position 40</span><span class="mono">log scale</span></div>
+    <div class="panel-body">
+      <div class="grid-2">
+        <div><div class="eyebrow" style="margin-bottom:6px">Gradient against distance from the loss</div><div id="grad-chart"></div></div>
+        <div><div class="eyebrow" style="margin-bottom:6px">Gradient norm before clipping, every 20th step</div><div id="gnorm-chart"></div></div>
+      </div>
+    </div>
+    <div class="panel-note">Left: every step of the same measurement, log scale — the RNN loses four orders of magnitude over forty steps, the gated cells about two. Right: the gradient norm before clipping, every 20th training step; the largest batch is about three times the typical one, and <span class="mono">clip_grad_norm_</span> at 1.0 caps anything larger.</div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">nn.LSTM · nn.GRU · nn.RNN · cross_entropy(ignore_index=PAD) · clip_grad_norm_ · retain_grad</span></summary>
+      <pre>class RNNLM(nn.Module):                      # embedding -> recurrent cell -> linear over V
+    def forward(self, x, state=None):
+        h, state = self.rnn(self.emb(x), state)
+        return self.out(h), state
+
+loss = F.cross_entropy(logits.reshape(-1, V), y.reshape(-1), ignore_index=PAD)
+loss.backward()
+nn.utils.clip_grad_norm_(model.parameters(), 1.0)   # the one line that saves the run
+
+e = model.emb(x); e.retain_grad()            # gradient through time: loss at the last position only
+F.cross_entropy(model.out(model.rnn(e)[0])[0, -1:], y[-1:]).backward()
+e.grad[0].norm(dim=-1)                       # one number per input position</pre>
+      <div class="why">Homework in the notebook: weight tying (<code>self.out.weight = self.emb.weight</code>, removes a third of the parameters and usually helps), dropout, a second layer. Everything there runs as written.</div>
+    </details>
+  </div>
+</section>
+
+<!-- ========================================================== 05 decode -->
+<section id="decode">
+  <p class="eyebrow">Block 05 · the decoding rule</p>
+  <h2>Turning a distribution into text — with the real LSTM, here</h2>
+  <div class="prose">
+    <p>We have a model that, given a prefix, returns a distribution over 8 000 next tokens. Sampling from it was one choice among many, and it turns out to be the choice that matters most for how the text reads. This is the right factor of the opening equation, and for the whole RNN era it was an afterthought; Holtzman et al. (2019) made the field take it seriously. Everything below operates on a single vector of logits for one position, and each method is a small function that turns it into a token id. That interface is why the code that generates from a 4.6M-parameter LSTM is byte-for-byte the code that drives a 400B-parameter LLM.</p>
+    <p><strong>Bet first.</strong> The two obvious rules sit at opposite ends: <em>greedy</em> takes the most probable token every time; <em>pure sampling</em> draws from the distribution as the model gives it. One of these produces repetitive, looping text; the other produces incoherent, drifting text. Which is which?</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The two extremes · notebook run · LSTM, 12k jokes × 3 epochs</span><span class="btnrow"><button class="primary" id="btn-ext-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-ext"><span class="q">Greedy loops, sampling drifts — or the other way round?</span></div>
+      <div class="grid-2" id="ext-out" hidden></div>
+    </div>
+    <div class="panel-note" id="ext-note" hidden><strong>Greedy loops</strong> — and it is deterministic, so the seed changes nothing, and once it enters a loop it cannot leave. This is Holtzman's central, counter-intuitive result: the most probable continuation is a <em>worse</em> continuation than a random one. Maximising probability at every step walks you into the high-probability, low-information regions of the language — the phrases that are safe everywhere and mean nothing. <strong>Pure sampling drifts:</strong> the model puts a small probability on thousands of tokens, the <em>sum</em> of that tail is large, so at almost every step there is a real chance of drawing something the model thought unlikely. One unlucky token and the prefix is nonsense, which makes the next token worse. Every method below is an attempt to sit between them.</div>
+  </div>
+
+  <h3>The sampler</h3>
+  <div class="prose">
+    <p>The notebook's LSTM — the same 4.6M weights, quantised to fit in this page — runs in your browser. Type a prompt, pick a rule, generate. Every token is coloured by the probability the model gave it (dark: the model was sure; pale: a surprise), and the bars show the distribution at the <em>next</em> step with the part the current rule would keep. <strong>Temperature</strong> divides the logits before the softmax: T → 0 is greedy, T &gt; 1 flattens toward uniform. <strong>Top-k</strong> keeps the k most probable tokens; <strong>top-p</strong> keeps the smallest set whose probability sums to p, so the kept set adapts — three tokens when the model is confident, two hundred when it is not; <strong>min-p</strong> keeps every token at least p<sub>min</sub> times as probable as the top one. <strong>Repetition penalty</strong> divides the logit of any token already emitted, and <strong>no-repeat-n-gram</strong> hard-bans a token that would complete an n-gram already generated. Both are hacks that fight a symptom rather than its cause; every serious API exposes them.</p>
+  </div>
+<div class="formula"><span class="fn">Temperature · one dial over the whole distribution</span><math display="block"><mrow><msub><mi>P</mi><mi>i</mi></msub><mo>=</mo><mfrac><mrow><mi mathvariant="normal">exp</mi><mrow><mo>(</mo><msub><mi>z</mi><mi>i</mi></msub><mo>/</mo><mi>T</mi><mo>)</mo></mrow></mrow><mrow><munder><mo>∑</mo><mi>j</mi></munder><mi mathvariant="normal">exp</mi><mrow><mo>(</mo><msub><mi>z</mi><mi>j</mi></msub><mo>/</mo><mi>T</mi><mo>)</mo></mrow></mrow></mfrac></mrow></math></div><div class="formula"><span class="fn">Truncation · keep a set V′, zero the rest, renormalise</span><math display="block"><mrow><mtext>top-k:</mtext><mspace width="0.5em"/><msub><mi>V</mi><mi>k</mi></msub><mo>=</mo><mtext>the k most probable tokens</mtext><mo>;</mo><mspace width="0.5em"/><mtext>top-p:</mtext><mspace width="0.5em"/><mtext>the smallest</mtext><mspace width="0.5em"/><msub><mi>V</mi><mi>p</mi></msub><mspace width="0.5em"/><mtext>with</mtext><mspace width="0.5em"/><munder><mo>∑</mo><mrow><mi>w</mi><mo>∈</mo><msub><mi>V</mi><mi>p</mi></msub></mrow></munder><mi>P</mi><mrow><mo>(</mo><mi>w</mi><mo>)</mo></mrow><mo>≥</mo><mi>p</mi></mrow></math><math display="block"><mrow><mtext>min-p:</mtext><mspace width="0.5em"/><msub><mi>V</mi><mtext>min</mtext></msub><mo>=</mo><mo>{</mo><mi>w</mi><mo>:</mo><mi>P</mi><mrow><mo>(</mo><mi>w</mi><mo>)</mo></mrow><mo>≥</mo><msub><mi>p</mi><mtext>min</mtext></msub><mo>·</mo><munder><mo>max</mo><mi>v</mi></munder><mi>P</mi><mrow><mo>(</mo><mi>v</mi><mo>)</mo></mrow><mo>}</mo><mo>;</mo><mspace width="0.5em"/><mi>P′</mi><mrow><mo>(</mo><mi>w</mi><mo>)</mo></mrow><mo>=</mo><mfrac><mrow><mi>P</mi><mrow><mo>(</mo><mi>w</mi><mo>)</mo></mrow></mrow><mrow><munder><mo>∑</mo><mrow><mi>v</mi><mo>∈</mo><mi>V′</mi></mrow></munder><mi>P</mi><mrow><mo>(</mo><mi>v</mi><mo>)</mo></mrow></mrow></mfrac><mspace width="0.5em"/><mtext>for</mtext><mspace width="0.5em"/><mi>w</mi><mo>∈</mo><mi>V′</mi></mrow></math></div>  <div class="panel">
+    <div class="panel-head">
+      <span>generate(lm, decode_step) · in this page</span>
+      <span class="btnrow">
+        <span class="mono" id="gen-timing"></span>
+        <button class="primary" id="btn-gen">Generate</button>
+        <button id="btn-gen-step">One token</button>
+        <button id="btn-gen-clear">Clear</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <label class="field" for="gen-prompt">prompt</label>
+      <input type="text" id="gen-prompt" value="Заходит мужик в бар" spellcheck="false">
+      <div class="btnrow" id="gen-presets" style="margin-top:8px"></div>
+      <div class="btnrow" id="gen-methods" style="margin-top:14px"></div>
+      <div class="sliders">
+        <div id="sl-T"><label class="field">temperature <b>1.0</b></label><input type="range" min="0.1" max="2.5" step="0.1" value="1.0"></div>
+        <div id="sl-k"><label class="field">top-k <b>40</b></label><input type="range" min="1" max="400" step="1" value="40"></div>
+        <div id="sl-p"><label class="field">top-p <b>0.90</b></label><input type="range" min="0.05" max="1" step="0.05" value="0.9"></div>
+        <div id="sl-mp"><label class="field">min-p <b>0.05</b></label><input type="range" min="0.01" max="0.5" step="0.01" value="0.05"></div>
+        <div id="sl-rep"><label class="field">repetition penalty <b>1.0</b></label><input type="range" min="1" max="2" step="0.05" value="1"></div>
+        <div id="sl-ng"><label class="field">no-repeat n-gram <b>off</b></label><input type="range" min="0" max="6" step="1" value="0"></div>
+        <div id="sl-seed"><label class="field">seed <b>0</b></label><input type="range" min="0" max="50" step="1" value="0"></div>
+      </div>
+      <div class="grid-2" style="grid-template-columns:minmax(0,1.3fr) minmax(280px,.7fr)">
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Output · colour = P the model gave that token</div>
+          <div class="gen" id="gen-out"><span class="prompt">nothing generated yet</span></div>
+          <div class="footnote" id="gen-stats"></div>
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Next-token distribution · top 12 of 8 000</div>
+          <div id="gen-dist"></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-note">Low temperature is safe and repetitive; it approaches greedy. High temperature is adventurous and, past a point, incoherent — at T = 1.5 the tail is thick enough to derail the joke. There is no correct value, only a value that suits the task: code completion wants T near 0, brainstorming near 1. Temperature is a blunt instrument, though: it rescales the <em>whole</em> distribution and cannot say "keep the sensible options and delete the absurd ones". Truncation can — and the bars show the difference between a fixed k and a p that adapts. On a confident step top-p keeps a handful of tokens and top-k = 40 is already reaching into noise; on an uncertain step top-p opens up and top-k keeps forty either way.</div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">torch.softmax · torch.multinomial · topk · cumsum · transformers.generate(top_p, temperature, repetition_penalty)</span></summary>
+      <pre>def truncated_step(method, value, T=1.0):
+    def step(logits, g=None):
+        p = torch.softmax(logits / T, dim=-1)
+        if method == "top_k":   keep = p.topk(value).indices
+        elif method == "top_p": sp, si = p.sort(descending=True); keep = si[:int((sp.cumsum(0) &lt; value).sum()) + 1]
+        elif method == "min_p": keep = (p &gt;= value * p.max()).nonzero().squeeze(-1)
+        m = torch.zeros_like(p); m[keep] = p[keep]
+        return int(torch.multinomial(m / m.sum(), 1, generator=g))
+    return step
+
+gpt.generate(**inp, do_sample=True, top_p=0.9, temperature=0.9, repetition_penalty=1.3)  # the same knobs</pre>
+      <div class="why">HuggingFace's <code>generate</code> is doing exactly what this block does — its <code>LogitsProcessor</code> classes <em>are</em> these <code>decode_step</code> functions. The notebook runs the identical rules on a Russian GPT-2; the outputs are in block 06.</div>
+    </details>
+  </div>
+  <div class="prose">
+    <p>Now the same thing without the sampling noise: one real distribution, the model's prediction after a prompt, and the dials applied to it directly. Drag the temperature and watch the shape; then look at what each truncation rule keeps <em>of that shape</em>. Switch between a confident prompt and an uncertain one — that is where the three rules stop agreeing.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>P(next token | prompt) · the LSTM in this page</span><span class="btnrow" id="dist-presets"></span></div>
+    <div class="panel-body">
+      <label class="field" for="dist-prompt">prompt</label>
+      <input type="text" id="dist-prompt" value="Заходит мужик в бар" spellcheck="false">
+      <div class="sliders" style="grid-template-columns:repeat(auto-fit, minmax(150px, 1fr))">
+        <div id="dsl-T"><label class="field">temperature <b>1.0</b></label><input type="range" min="0.1" max="3" step="0.1" value="1"></div>
+        <div id="dsl-k"><label class="field">top-k <b>10</b></label><input type="range" min="1" max="40" step="1" value="10"></div>
+        <div id="dsl-p"><label class="field">top-p <b>0.90</b></label><input type="range" min="0.05" max="1" step="0.05" value="0.9"></div>
+        <div id="dsl-mp"><label class="field">min-p <b>0.05</b></label><input type="range" min="0.01" max="0.5" step="0.01" value="0.05"></div>
+      </div>
+      <div class="eyebrow" style="margin-bottom:6px">Temperature · top 25 tokens · solid bars at T, outlines at T = 1</div>
+      <div id="dist-temp-chart"></div>
+      <div class="stat-row" id="dist-temp-stats" style="margin:10px 0 4px"></div>
+      <div class="eyebrow" style="margin:22px 0 6px">Truncation · top 40 tokens at T · what each rule keeps</div>
+      <div id="dist-trunc-chart"></div>
+      <div class="stat-row" id="dist-trunc-stats" style="margin:10px 0 4px"></div>
+    </div>
+    <div class="panel-note">Temperature changes contrast, not order. Top-k cuts at a fixed rank; top-p follows the cumulative mass; min-p cuts at p<sub>min</sub> × the top probability — the last two adapt, but to different things. After <em>Доктор говорит</em> half the mass sits on one token, yet top-p = 0.9 keeps over a thousand and min-p keeps two; after <em>Заходит мужик в бар</em> the top token is 1.5% and everything lets thousands in. min-p works exactly as far as the distribution has a head — and at 309 perplexity there is less head than the samples suggest.
+      <div class="scroll-x" style="margin-top:12px"><table id="dist-grid"></table></div></div>
+  </div>
+
+</section>
+
+<!-- =========================================================== 06 holtz -->
+<section id="holtz">
+  <p class="eyebrow">Block 06 · likelihood is not quality</p>
+  <h2>The picture that named the problem</h2>
+  <div class="prose">
+    <p>Take a real joke from the test set and, at every position, ask the model: <em>what probability did you assign to the token that actually came next?</em> Do the same for the model's own greedy continuation from the same first three tokens. Then look at the two curves. Pick any joke — both curves are computed here, by the LSTM in this page.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>P assigned to the chosen token, per position</span><span class="btnrow" id="holtz-picks"></span></div>
+    <div class="panel-body">
+      <div id="holtz-chart"></div>
+      <div class="grid-2" style="margin-top:12px">
+        <div><div class="eyebrow" style="margin-bottom:4px">The actual joke</div><div class="gen" id="holtz-human"></div></div>
+        <div><div class="eyebrow" style="margin-bottom:4px">The model's greedy continuation</div><div class="gen" id="holtz-greedy"></div></div>
+      </div>
+    </div>
+    <div class="panel-note">The human text is <strong>jagged</strong>: real language constantly includes tokens the model found unlikely — a surprising word is what makes a sentence worth reading. The greedy continuation is a <strong>flat line near 1.0</strong>: it only ever emits tokens it was already sure of, which is precisely why it reads as bland and loops. "Natural language does not maximise probability" is the one-sentence version, and the fix is not a better model — it is a decoding rule that reintroduces the jaggedness on purpose.</div>
+  </div>
+
+  <h3>Every method, two numbers</h3>
+  <div class="prose">
+    <p>Turn jaggedness into numbers and measure every rule at once, on five prompts and six seeds each: <strong>repetition</strong> — the share of generated tokens that repeat one from the last twenty; <strong>distinct-2</strong> — the share of generated bigrams that are unique; and the average log-probability the model gave its own output.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Six decoding rules · 5 prompts × 6 seeds · notebook run</span><span class="mono">repetition · distinct-2 · avg logprob / token</span></div>
+    <div class="panel-body scroll-x"><table id="decode-table"></table></div>
+    <div class="panel-note">Greedy has the <strong>highest</strong> average log-probability — by construction, it is the most probable text — and the <strong>worst</strong> repetition. The sampling methods give up log-probability and buy back diversity. This is the likelihood trap made quantitative: the objective the model was <em>trained</em> on is not the objective you <em>decode</em> for, and optimising the first too hard destroys the second. Open question: distinct-2 keeps rising as you sample more aggressively, but past some point the text is nonsense, so higher is not simply better. Human text has a <em>particular</em> value of these statistics. How would you turn "reads like a human wrote it" into a target for the sampler?</div>
+  </div>
+  <div class="grid-2">
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>Repetition penalty · patching the symptom</span></div>
+      <div class="panel-body"><div class="gen-list" id="penalty-out"></div></div>
+      <div class="panel-note">Greedy, unpatched, loops. Greedy plus a penalty of 1.3 and a no-repeat-3-gram ban stops — it has nothing safe left to say. A hack, and a cheap one that works.</div>
+    </div>
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>The same rules on a real LLM · ruGPT-3 small</span></div>
+      <div class="panel-body"><div class="gen-list" id="gpt2-out"></div></div>
+      <div class="panel-note">Nothing above was specific to our LSTM. The notebook drives a pretrained Russian GPT-2 with the identical parameters — <span class="mono">top_p</span>, <span class="mono">temperature</span>, <span class="mono">repetition_penalty</span> — and greedy loops there too. What about beam search? It approximates the most probable <em>sequence</em>, which for jokes is the blandest text of all. It comes back the moment there is a right answer to approximate — next block.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 07 s2s -->
+<section id="s2s">
+  <p class="eyebrow">Block 07 · conditioning on another sequence</p>
+  <h2>Encoder–decoder: a language model that starts from a summary</h2>
+  <div class="prose">
+    <p>Everything so far generates from nothing but a prefix. The moment you want to generate text <em>from an input</em> — translate, summarise, answer — you need one more idea: condition the language model on a second sequence. The encoder–decoder does it in the most direct way imaginable. One RNN reads the input and boils it down to a fixed-size vector. A second RNN is a language model exactly like block 04, except its initial state is that vector instead of zeros. Same chain rule, same decoding rules — one extra input. The task is the classic teaching one: German → English on Multi30k, 29 000 image captions.</p>
+  </div>
+<div class="formula"><span class="fn">Encoder–decoder · the same chain rule, conditioned on one vector</span><math display="block"><mrow><mi>P</mi><mrow><mo>(</mo><mi>y</mi><mo>|</mo><mi>x</mi><mo>)</mo></mrow><mo>=</mo><munderover><mo>∏</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><mi>P</mi><mrow><mo>(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>|</mo><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>,</mo><mi>c</mi><mo>)</mo></mrow><mo>,</mo><mspace width="0.5em"/><mi>c</mi><mo>=</mo><mi mathvariant="normal">encoder</mi><mrow><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mo>∈</mo><msup><mi>ℝ</mi><mn>256</mn></msup></mrow></math></div>  <div class="panel">
+    <div class="panel-head"><span>Seq2SeqLSTM · bidirectional encoder → one vector → decoder</span><span class="mono">8.0M parameters · no attention</span></div>
+    <div class="panel-body"><div id="s2s-diagram"></div></div>
+    <div class="panel-note">The diagram is the whole model, and it contains its famous flaw. Everything the decoder knows about the German sentence has to pass through the red vector — the encoder's final state, two directions concatenated (512 numbers) and projected down to 256. A three-word caption and a twenty-word caption are compressed to the same 256 numbers. That is the <strong>bottleneck</strong>, and next week's entire topic exists to remove it. Training uses <strong>teacher forcing</strong> — the decoder is fed the gold prefix no matter what it would have predicted — which is what makes training fast and parallel, and which plants <strong>exposure bias</strong>: at generation time the decoder feeds on its own, possibly wrong, output, a situation it never saw in training.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Training · 6 epochs · Multi30k</span><span class="mono" id="s2s-train-stats"></span></div>
+    <div class="panel-body"><div class="grid-2"><div id="s2s-loss-chart"></div><div id="s2s-bleu-chart"></div></div></div>
+    <div class="panel-note"><strong>BLEU</strong> is the score: what fraction of the generated n-grams (n = 1..4) appear in the reference, combined geometrically, times a brevity penalty that punishes translations shorter than the reference. It is crude — it does not know synonyms — and it is the metric machine translation ran on for twenty years, because it correlates with human judgement in aggregate. One rule: BLEU implementations disagree, so use <em>one</em> throughout. We use <span class="mono">sacrebleu</span>.</div>
+  </div>
+
+<div class="formula"><span class="fn">BLEU · Papineni et al. 2002</span><math display="block"><mrow><mi mathvariant="normal">BLEU</mi><mo>=</mo><munder><mrow><mi mathvariant="normal">min</mi><mrow><mo>(</mo><mn>1</mn><mo>,</mo><msup><mi>e</mi><mrow><mn>1</mn><mo>−</mo><mi>r</mi><mo>/</mo><mi>c</mi></mrow></msup><mo>)</mo></mrow></mrow><mtext>brevity penalty</mtext></munder><mo>·</mo><msup><mrow><mo>(</mo><munderover><mo>∏</mo><mrow><mi>n</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><msub><mi>p</mi><mi>n</mi></msub><mo>)</mo></mrow><mrow><mn>1</mn><mo>/</mo><mn>4</mn></mrow></msup></mrow></math></div>  <h3>Browse the test set</h3>
+  <div class="prose">
+    <p>All 1 000 test sentences, translated greedily and with beam search (width 5, length-normalised), with the sentence-level BLEU of each. Filter by source length and read what survives the bottleneck.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>Multi30k test · greedy vs beam-5</span>
+      <span class="btnrow">
+        <span class="btnrow" id="tr-buckets"></span>
+        <button class="primary" id="btn-tr-random">Random sentence</button>
+      </span>
+    </div>
+    <div class="panel-body" id="tr-out"></div>
+    <div class="panel-note" id="tr-note">The translations get the nouns right — the actors and objects survive — and often get the <em>action</em> wrong. A red shirt becomes a blue shirt; the participants make it through the bottleneck, the details do not. That is the fingerprint of the fixed-size summary: it has room for <em>what the sentence is about</em> but not for <em>everything it says</em>.</div>
+  </div>
+</section>
+
+<!-- ====================================================== 08 bottleneck -->
+<section id="bottleneck">
+  <p class="eyebrow">Block 08 · the bottleneck, measured</p>
+  <h2>Two experiments that make it visible instead of asserted</h2>
+  <div class="prose">
+    <p><strong>First: BLEU as a function of input length.</strong> If one vector is the limit, short sentences should translate well and long ones should fall off, because a longer sentence has more to cram through the same 256 numbers. The sweep ran at three bottleneck widths — 64, 128, 256. <strong>Bet</strong>, two questions.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>BLEU per source-length bucket · three bottleneck widths</span><span class="btnrow"><button class="primary" id="btn-len-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-len"><span class="q">(1) For the 256-wide model, BLEU from the shortest bucket to the longest …</span></div>
+      <div class="bet" id="bet-flat"><span class="q">(2) Which width has the flattest line?</span></div>
+      <div id="len-out" hidden><div id="bleu-len-chart"></div></div>
+    </div>
+    <div class="panel-note" id="len-note" hidden><strong>The capable models slope down.</strong> For hidden = 256, BLEU falls steadily from short sentences to long — the longer the German, the more has to squeeze through the same 256 numbers. This is the plot that motivates attention: Bahdanau et al. (2015) opens by showing exactly this decay and proposes letting the decoder look back at <em>all</em> encoder states, which flattens the curve. The hidden = 64 line is flat because it is near the floor everywhere — a bottleneck that narrow barely translates <em>any</em> length, so there is no slope left to see. You need a model good enough to have something to lose. <strong>A wider bottleneck lifts the whole line</strong>, but the slope is still there at 256: the failure is architectural, not a matter of size. Attention removes the slope; width only raises the line.</div>
+  </div>
+  <div class="grid-2">
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>Second: the summary vectors · PCA of 600 test sentences</span><span class="mono" id="pca-stats"></span></div>
+      <div class="panel-body"><div id="pca-chart"></div></div>
+      <div class="panel-note">The bottleneck is a real vector — look at what it encodes. Coloured by source length, the leading axis of the "meaning" vector is <em>bookkeeping</em>: how long the sentence was. Real information, but it is telling that the fixed budget is spent on it first. Sutskever et al. (2014) showed the same PCA revealed clusters by voice and word order.</div>
+    </div>
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>Beam search · now it earns its place</span><span class="btnrow"><button class="primary" id="btn-beam-reveal">Reveal</button></span></div>
+      <div class="panel-body">
+<div class="formula" style="margin-top:0"><span class="fn">Length-normalised beam score · Wu et al. 2016 · <span style="text-transform:none">α</span> ≈ 0.6</span><math display="block"><mrow><mi mathvariant="normal">score</mi><mrow><mo>(</mo><mi>y</mi><mo>)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><msup><mrow><mo>|</mo><mi>y</mi><mo>|</mo></mrow><mi>α</mi></msup></mfrac><munder><mo>∑</mo><mi>t</mi></munder><mi mathvariant="normal">log</mi><mspace width="0.5em"/><mi>P</mi><mrow><mo>(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>|</mo><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>,</mo><mi>x</mi><mo>)</mo></mrow></mrow></math></div>
+        <div class="bet" id="bet-beam"><span class="q">Beam width 1 → 3 → 5 on translation: BLEU …</span></div>
+        <div id="beam-out" hidden></div>
+      </div>
+      <div class="panel-note" id="beam-note" hidden>Wider beams find higher-probability translations and BLEU climbs — for a while. Then it flattens, and can even dip: beyond a point the extra probability is spent on making the translation <em>shorter and safer</em>, the same likelihood trap as block 06, milder because here probability and quality are better aligned. Every unit of beam width is a linear increase in compute. Beam 5 is the usual default; the table shows why nobody uses beam 50. <strong>Bet answered:</strong> beam search helped here (a right answer to approximate) and would have hurt on the jokes (no right answer, likelihood ≠ quality). Same algorithm, opposite verdict — because the <em>task</em> changed, not the decoder.</div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 09 table -->
+<section id="table">
+  <p class="eyebrow">Block 09 · where this goes</p>
+  <h2>The results table, read as one story</h2>
+  <div class="panel">
+    <div class="panel-head"><span>Every language model built today · 5 000 test jokes</span><span class="mono">test_ppl · bits/char · params · seconds</span></div>
+    <div class="panel-body"><div id="table-chart"></div></div>
+    <div class="panel-body scroll-x" style="border-top:1px solid var(--rule)"><table id="table-rows"></table></div>
+    <div class="panel-note">Every row is the same equation — P(next token | prefix) × a decoding rule — with the left factor built a different way. <strong>Counting</strong> is a strong, cheap baseline that generalises not at all; well-smoothed, it beat our small networks on perplexity today. <strong>A recurrent network</strong> generalises through embeddings and an unbounded-in-principle state; at laptop scale it matched the trigram rather than beating it — but it writes novel text instead of reciting, its curve is still falling, and, decisively, it can be conditioned. <strong>An encoder–decoder</strong> conditions the whole thing on a second sequence, bottlenecked by the one vector between the halves. And the right factor turned out to carry as much weight as the left. None of that is about the model.</div>
+  </div>
+
+  <h2 style="margin-top:56px">Five things that transfer</h2>
+  <div class="prose">
+    <p><strong>1 · Everything is next-token prediction.</strong> The training loss is cross-entropy, which is log perplexity; the model outputs a distribution, and text is a second decision on top. Transformers change how P is computed, not this frame.<br>
+    <strong>2 · Perplexity is comparable only under a fixed tokenizer and test set</strong> — and bits/char only lifts the tokenizer restriction for models that are lossless over the text. Off that, the number lies.<br>
+    <strong>3 · The decoding rule is a design choice with its own failure modes.</strong> Temperature, top-p, min-p, repetition penalty, beam width — the same knobs on our LSTM and on a 400B LLM.<br>
+    <strong>4 · A fixed-size bottleneck loses information as the input grows, with a measurable slope.</strong> That slope is next week's motivation.<br>
+    <strong>5 · Likelihood is not quality.</strong> The most probable continuation is usually not the one to show a human — the single most important thing decoding taught the field.</p>
+    <p class="footnote" style="margin-top:30px">Full notebook, homework and the reading list: <span class="mono">week02_language_modelling/</span>. Everything marked 🏠 there runs as-is — Kneser–Ney against the LSTM per bits/char, weight tying and dropout, scheduled sampling, and min-p at T = 2 are the ones worth an evening.</p>
+  </div>
+</section>
+
+</div>
+</main>
+</div>

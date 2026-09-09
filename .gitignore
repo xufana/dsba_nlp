@@ -212,3 +212,12 @@ __marimo__/
 # per-week uv envs
 .venv/
 week*/.venv/
+
+# corpora downloaded on demand by preprocessing_grid.py
+week*/data/cache/
+
+# the demo pages are built from parts/, which the Python template above ignores
+!week*/demo/parts/
+
+# headless-Chrome check output (screenshots, throwaway profile)
+week*/demo/check_out/

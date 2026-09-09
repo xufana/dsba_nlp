@@ -1,0 +1,269 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 2<br>Language Modelling and Text Generation</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div style="margin-top:10px">Every number on this page comes from the seminar notebook, or is computed in your browser right now — including the LSTM, which is loaded into this page and generates here.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>generator =<br>P(next token | prefix)<br>× decoding rule</h1>
+  <p class="lede">Last week the string was the input and the head barely mattered. Today the string is the <em>output</em>, and the question changes: how do you get a model to produce text at all? The honest answer is that nothing produces text. Every generator you have ever used — a 1950s n-gram model, the RNN we train today, the LLM in your browser — returns a probability distribution over the next token, and the text you see is a second decision on top: a rule that picks tokens out of that distribution, one at a time.</p>
+  <div class="michael">
+    <figure style="margin:0">
+      <img id="michael-img" alt="Michael Scott: Sometimes I'll start a sentence and I don't even know where it's going. I just hope I find it along the way.">
+      <figcaption>Autoregressive generation, explained by Michael Scott. Start a sentence, pick the next token, hope you find the joke along the way.</figcaption>
+    </figure>
+    <div class="prose keep">
+      <p>Both factors are yours to choose, and both change the text you get. The field spent sixty years on the left factor and until about 2019 treated the right one as a footnote. We build the left factor three ways (counting, a recurrent network, an encoder–decoder), the right factor six ways, and watch what each one changes — on one corpus, one test set, one table.</p>
+      <p>The corpus is 124 000 Russian jokes. They are short, they have a fixed structure, they are impossible to model well, and everybody in the room can tell instantly whether the output is any good. That last property is worth more than any metric today :)</p>
+    </div>
+  </div>
+  <div class="prose">
+    <p>A <strong>language model</strong> is a probability distribution over strings. That is the whole definition — nothing about neural networks, nothing about generation. Nobody can estimate that joint distribution directly: the number of possible 30-token sentences over an 8 000-token vocabulary is <math><msup><mn>8000</mn><mn>30</mn></msup></math>. So the first move — Shannon's, in 1948 — is the chain rule. Nothing is lost, it is an identity; but it changes the question from "how likely is this text" to "how likely is the <em>next token</em>, given everything so far", and <em>that</em> a model can answer one step at a time.</p>
+  </div>
+<div class="formula"><span class="fn">The chain rule · Shannon 1948</span><math display="block"><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mi>T</mi></msub><mo>)</mo></mrow><mo>=</mo><munderover><mo>∏</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow></mrow></mrow></math></div>
+</section>
+
+<!-- ============================================================ 00 data -->
+<section id="data">
+  <p class="eyebrow">Block 00 · the data</p>
+  <h2>124 000 jokes, and why counting words will not be enough</h2>
+  <div class="prose">
+    <p>One joke per block, scraped from a Telegram channel, nothing shorter than 20 characters. Fair warning: the corpus is not curated, so the humour ranges from sharp to crude — as will, therefore, everything our models generate. One shuffle with the seed, then a cut: 5 000 test jokes we never train on, 2 000 for validation curves, the rest is training data. Every artifact on this page was trained on exactly that split.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Corpus · split with seed 42</span><span class="mono" id="data-split"></span></div>
+    <div class="panel-body">
+      <div class="stat-row" id="data-stats" style="margin-bottom:18px"></div>
+      <div class="grid-2">
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Characters per joke</div>
+          <div id="len-chart"></div>
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Three jokes from the training set</div>
+          <div class="gen-list" id="data-examples"></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-note">Short texts, a long tail. That shape is the reason the whole seminar works on a laptop: the model has to hold a hundred characters in mind, not a chapter.</div>
+  </div>
+
+  <h3>Zipf, and the bill for working with words</h3>
+  <div class="prose">
+    <p>Before any model, a guess. The training set has about two million word occurrences. How many <em>distinct</em> words is that, and what share of those distinct words occurs <strong>exactly once</strong>? Move the slider, then reveal.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Word frequencies · training set</span><span class="btnrow"><button class="primary" id="btn-zipf-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="grid-2" style="align-items:start">
+        <div>
+          <label class="field" for="bet-hapax">Share of the vocabulary seen exactly once: <b id="bet-hapax-v">20</b>%</label>
+          <input type="range" id="bet-hapax" min="1" max="90" value="20">
+          <div id="zipf-stats" hidden style="margin-top:18px"></div>
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Frequency against rank, both axes log</div>
+          <div id="zipf-chart"></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-note" id="zipf-note" hidden>Roughly half the vocabulary was seen <strong>once</strong>. Not "rarely" — once. Any estimate of P(next word | …) for those words is a single coin flip, and for the words that show up in the test set for the first time it is exactly zero. The straight line on log-log axes is Zipf's law, and it is the bill for working with words as units: no matter how much text you collect, a constant fraction of it is made of things you have never seen. Russian makes it worse — <em>кот, кота, коту, котом, коте</em> are five different words to a word tokenizer. Two answers, and we need both: change the unit (block 01) and stop assigning zero to the unseen (block 02).</div>
+  </div>
+</section>
+
+<!-- ============================================================= 01 bpe -->
+<section id="bpe">
+  <p class="eyebrow">Block 01 · tokenization, for real this time</p>
+  <h2>BPE in twenty lines, running in your browser</h2>
+  <div class="prose">
+    <p>Byte-pair encoding is a greedy algorithm: start from characters, so nothing is ever out of vocabulary; then, repeatedly, find the pair of adjacent units that occurs most often and glue it into a new unit; stop when the vocabulary is as big as you want. Every word carries an end-of-word marker <span class="mono eow">&lt;/w&gt;</span>, so a word-final <span class="mono">ов</span> is a different pair from a word-internal <span class="mono">ов</span>.</p>
+    <p><strong>Bet:</strong> what will the very first merge be on a Russian corpus? Pick, then press <em>Train</em> — it runs the same 300 merges on the same 3 000 jokes as the notebook, here.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>bpe_train · 3 000 jokes · 300 merges · in this page</span>
+      <span class="btnrow">
+        <span class="mono" id="bpe-progress">0 merges</span>
+        <button class="primary" id="btn-bpe-train">Train</button>
+        <button id="btn-bpe-step">One merge</button>
+        <button id="btn-bpe-reset">Reset</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div class="bet" id="bet-merge"><span class="q">The first merge on Russian jokes is …</span></div>
+      <div id="bpe-merges"></div>
+      <div id="bpe-encode" hidden style="margin-top:18px">
+        <label class="field" for="bpe-word">Encode a word with the merges you just trained, in training order</label>
+        <input type="text" id="bpe-word" value="мужиками" spellcheck="false">
+        <div id="bpe-word-out" style="margin-top:8px"></div>
+        <div class="btnrow" id="bpe-word-presets" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="panel-note" id="bpe-note" hidden>The first merges are not words. They are the most frequent letter pairs in Russian — the end of a word attached to its last letter, then the commonest bigrams — and only after a few dozen merges do whole short words (<em>не, что, это</em>) appear. The algorithm has no idea what a word is. It only counts. And look at <span class="mono">мужик / мужика / мужиками</span>: one piece plus a suffix. That is Russian morphology recovered from statistics alone, and it is the reason the Zipf tail hurts less. <span class="mono">инквизиция</span> is shredded, because 3 000 jokes do not mention the Inquisition much: rare words are expensive in sequence length, not in vocabulary. Nothing is <span class="mono">[UNK]</span>, and nothing ever will be.</div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">collections.Counter · bpe_train · bpe_encode · tokenizers.trainers.BpeTrainer</span></summary>
+      <pre>word_freq = Counter(tuple(w) + ("&lt;/w&gt;",) for text in texts for w in tokenize_words(text))
+for i in range(num_merges):
+    pairs = Counter()
+    for word, freq in word_freq.items():
+        for a, b in zip(word, word[1:]):
+            pairs[(a, b)] += freq
+    best = max(pairs, key=pairs.get)           # the most frequent adjacent pair
+    word_freq = merge_everywhere(word_freq, best)
+    merges.append(best)                        # the order IS the model</pre>
+      <div class="why">Encoding applies the same merges in the same order. The Python version takes minutes on the full corpus; <code>tokenizers</code> (Rust underneath) does the identical algorithm in about a second and adds a pre-tokenizer that decides where merges may not cross.</div>
+    </details>
+  </div>
+
+  <h3>The same thing, from a library — with 8 000 tokens</h3>
+  <div class="prose">
+    <p>The <span class="mono">tokenizers</span> library trains the same algorithm on all 117 000 jokes in about a second, and adds two details: a <strong>pre-tokenizer</strong> (word starts are marked with <span class="mono">▁</span>, so decoding is reversible, and punctuation is split off, so a comma never gets glued onto a word) and <strong>special tokens</strong> with fixed ids. The 8 000-token vocabulary below is the one every neural model on this page shares. Type anything — the encoder runs here, on the saved merges.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>BPE · 8 000 tokens · trained on 117 098 jokes</span><span class="mono" id="tok-stats"></span></div>
+    <div class="panel-body">
+      <input type="text" id="tok-input" spellcheck="false">
+      <div id="tok-out" style="margin-top:10px"></div>
+      <div class="btnrow" id="tok-presets" style="margin-top:10px"></div>
+    </div>
+    <div class="panel-note">Frequent words are one token; a rare surname is three or four pieces; <span class="mono">[UNK]</span> appears only for a character the corpus never contained. The round trip is exact — spaces included — and that reversibility is going to matter in block 03, when we compare models across tokenizers.</div>
+  </div>
+
+  <h3>Vocabulary size is a dial, not a fact</h3>
+  <div class="prose">
+    <p>Characters give a vocabulary of ~150 and a hundred tokens per joke. Words give 134 000 types and seventeen tokens. BPE puts a dial between the two, and where you set it is a trade: every token the model has to predict is a step of computation and a place to make a mistake; every token you add to the vocabulary is a row of the embedding matrix that needs enough data to train.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Seven tokenizers · 2 000 test jokes</span><span class="btnrow"><button class="primary" id="btn-dial-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-dial"><span class="q">Going from a 1 000-token vocabulary to 32 000, the average joke gets shorter by …</span></div>
+      <div class="grid-2" id="dial-out" hidden>
+        <div><div id="dial-chart"></div></div>
+        <div class="scroll-x"><table id="dial-table"></table></div>
+      </div>
+    </div>
+    <div class="panel-note" id="dial-note" hidden></div>
+  </div>
+</section>
+
+<!-- =========================================================== 02 ngram -->
+<section id="ngram">
+  <p class="eyebrow">Block 02 · counting</p>
+  <h2>The n-gram language model, and its first text</h2>
+  <div class="prose">
+    <p>The chain rule needs P(w<sub>t</sub> | everything so far). Nobody has counts for entire prefixes, so the second move is an approximation — the <strong>Markov assumption</strong>: only the last n−1 tokens matter. With n = 3 the model needs counts of triples, and triples we have. The estimate is the obvious ratio of counts. Two bookkeeping details every implementation needs: pad the start with n−1 copies of <span class="mono">[BOS]</span>, and append <span class="mono">[EOS]</span> and count it like any other token, so the model can learn <em>when a joke ends</em>.</p>
+  </div>
+<div class="formula"><span class="fn">The Markov assumption · only the last n−1 tokens matter</span><math display="block"><mrow><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow></mrow><mo>≈</mo><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow></mrow></math></div><div class="formula"><span class="fn">Maximum likelihood · the ratio of counts</span><math display="block"><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><mtext>prefix</mtext><mo>)</mo></mrow><mo>=</mo><mfrac><mrow><mi mathvariant="normal">Count</mi><mrow><mo>(</mo><mtext>prefix</mtext><mo>,</mo><msub><mi>w</mi><mi>t</mi></msub><mo>)</mo></mrow></mrow><mrow><munder><mo>∑</mo><mrow><mi>w</mi><mo>∈</mo><mi>V</mi></mrow></munder><mi mathvariant="normal">Count</mi><mrow><mo>(</mo><mtext>prefix</mtext><mo>,</mo><mi>w</mi><mo>)</mo></mrow></mrow></mfrac></mrow></math></div>  <div class="prose">
+    <p>To get text we <em>pick</em> from the distribution, one token at a time, feeding each choice back in as context — autoregressive generation, the way every LLM works too. Generate, then read the highlight: the orange run is the longest stretch that occurs verbatim in the training jokes.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>NGramLM · words · 8 000 jokes · counted in this page</span>
+      <span class="btnrow">
+        <span class="mono" id="ng-status">not counted yet</span>
+        <button class="primary" id="btn-ng-gen">Generate</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div class="sliders" style="grid-template-columns:2fr 1fr 1fr">
+        <div><label class="field" for="ng-prefix">prefix (optional)</label><input type="text" id="ng-prefix" value="" placeholder="штирлиц" spellcheck="false"></div>
+        <div><label class="field" for="ng-n">n <b id="ng-n-v">3</b></label><input type="range" id="ng-n" min="1" max="5" value="3"></div>
+        <div><label class="field" for="ng-seed">seed <b id="ng-seed-v">0</b></label><input type="range" id="ng-seed" min="0" max="30" value="0"></div>
+      </div>
+      <div class="gen-list" id="ng-out"></div>
+      <div class="footnote" id="ng-copied" style="margin-top:10px"></div>
+    </div>
+    <div class="panel-note">Every three words came from a real joke, but two words later the model has forgotten what the joke was about — the Markov assumption, as advertised. Small n babbles, large n quotes; nothing in between generalises, because counting has no notion that two prefixes are similar.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The notebook's run · 40 000 jokes · 30 samples per n</span><span class="mono" id="ng-nb-stats"></span></div>
+    <div class="panel-body">
+      <div class="grid-2">
+        <div><div class="eyebrow" style="margin-bottom:6px">3-gram · seeds 0–2</div><div class="gen-list" id="ng-nb-3"></div></div>
+        <div><div class="eyebrow" style="margin-bottom:6px">5-gram · seeds 0–2</div><div class="gen-list" id="ng-nb-5"></div></div>
+      </div>
+      <div class="stat-row" id="ng-nb-copied" style="margin-top:18px"></div>
+    </div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">count_ngrams · NGramLM.next_distribution · np.random.RandomState · nltk.lm · kenlm</span></summary>
+      <pre>counts = defaultdict(Counter)                      # prefix tuple -> Counter of what followed
+for tokens in corpus_tokens:
+    padded = ["[BOS]"] * (n - 1) + tokens + ["[EOS]"]
+    for i in range(n - 1, len(padded)):
+        counts[tuple(padded[i - n + 1:i])][padded[i]] += 1
+
+dist = lm.next_distribution(prefix, n)             # {token: count / total}
+nxt = rng.choice(list(dist), p=list(dist.values()))  # sample, feed back, repeat until [EOS]</pre>
+      <div class="why">For anything beyond a seminar: <code>nltk.lm</code> has the smoothing methods below already written, and <code>kenlm</code> counts billions of n-grams in C++ with modified Kneser–Ney — still the baseline to beat when you have text and no GPU.</div>
+    </details>
+  </div>
+</section>
+
+<!-- ========================================================== 03 smooth -->
+<section id="smooth">
+  <p class="eyebrow">Block 03 · perplexity and smoothing</p>
+  <h2>A number for the model — and the number that lies</h2>
+  <div class="prose">
+    <p>Looking at samples is not a metric. The metric for a language model is how much probability it assigns to text it has not seen, reported as <strong>perplexity</strong>: exp of the average negative log-likelihood per token — exp of the cross-entropy, the exact quantity a network minimises as its training loss. If the model were uniformly unsure between k tokens at every step, its perplexity would be exactly k; so a perplexity of 60 means "as confused as choosing among 60 equally likely tokens". Lower is better.</p>
+  </div>
+<div class="formula"><span class="fn">Perplexity · exp of the cross-entropy per token</span><math display="block"><mrow><mi mathvariant="normal">PPL</mi><mrow><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>…</mo><msub><mi>w</mi><mi>T</mi></msub><mo>)</mo></mrow><mo>=</mo><msup><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mi>T</mi></msub><mo>)</mo></mrow></mrow><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mi>T</mi></mrow></msup><mo>=</mo><mi mathvariant="normal">exp</mi><mrow><mo>(</mo><mo>−</mo><mfrac><mn>1</mn><mi>T</mi></mfrac><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><mi mathvariant="normal">log</mi><mspace width="0.5em"/><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>)</mo></mrow></mrow><mo>)</mo></mrow></mrow></math></div>  <div class="prose">
+    <p><strong>Bet:</strong> before running it — what will the unsmoothed trigram model's perplexity on the 5 000 test jokes be? Type a number.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>evaluate_ngram · trigram · no smoothing · 5 000 test jokes</span><span class="btnrow"><button class="primary" id="btn-ppl-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div style="max-width:320px"><label class="field" for="bet-ppl">Your perplexity</label><input type="text" id="bet-ppl" placeholder="e.g. 250" inputmode="decimal"></div>
+      <div id="ppl-out" hidden style="margin-top:18px"></div>
+    </div>
+    <div class="panel-note" id="ppl-note" hidden><strong>Infinity.</strong> Not a large number — infinity. One unseen trigram anywhere in 5 000 jokes gives P = 0 for that token, log 0 = −∞ for the sum, and the whole test set is "impossible" according to the model. How often does this happen? Count, for each n, the share of test n-grams that never occurred in training:</div>
+  </div>
+  <div class="panel" id="sparsity-panel" hidden>
+    <div class="panel-head"><span>Share of test n-grams never seen in training · 117 098 training jokes</span><span class="mono">words vs BPE 8k</span></div>
+    <div class="panel-body"><div id="sparsity-chart"></div></div>
+    <div class="panel-note">This plot is the reason the rest of the seminar exists. At n = 1 the word model already has a few percent of test tokens it has never seen; the BPE model has none — that is what subwords bought us. At n = 3 roughly a third of the test trigrams are new; at n = 5, almost all of them. Ten times more data would move these points a little, not change the shape, because the number of possible n-grams grows exponentially with n and the corpus grows linearly. The problem has a name — <strong>sparsity</strong> — and the classical fix is to stop trusting the counts.</div>
+  </div>
+
+  <h3>Smoothing: stop assigning zero</h3>
+  <div class="prose">
+    <p>Every smoothing method is the same idea: take a little probability mass away from the n-grams you have seen and spread it over the ones you have not. <strong>Add-δ</strong> pretends every possible continuation was seen δ extra times — nothing is zero any more, but with |V| = 134 000 and δ = 1, a prefix seen ten times gets 134 000 imaginary observations added, and the ten real ones drown. <strong>Interpolation</strong> (Jelinek–Mercer) is the smarter move: when the trigram estimate is unreliable, lean on the bigram, and behind it the unigram. Kneser–Ney is the best classical method; we do not implement it — <span class="mono">nltk.lm</span> and KenLM have.</p>
+  </div>
+<div class="formula"><span class="fn">Add-δ (Laplace) smoothing · every continuation seen δ extra times</span><math display="block"><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><mtext>prefix</mtext><mo>)</mo></mrow><mo>=</mo><mfrac><mrow><mi mathvariant="normal">Count</mi><mrow><mo>(</mo><mtext>prefix</mtext><mo>,</mo><msub><mi>w</mi><mi>t</mi></msub><mo>)</mo></mrow><mo>+</mo><mi>δ</mi></mrow><mrow><munder><mo>∑</mo><mrow><mi>w</mi><mo>∈</mo><mi>V</mi></mrow></munder><mi mathvariant="normal">Count</mi><mrow><mo>(</mo><mtext>prefix</mtext><mo>,</mo><mi>w</mi><mo>)</mo></mrow><mo>+</mo><mi>δ</mi><mo>|</mo><mi>V</mi><mo>|</mo></mrow></mfrac></mrow></math></div><div class="formula"><span class="fn">Interpolation · Jelinek–Mercer 1980</span><math display="block"><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>2</mn></mrow></msub><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow><mo>=</mo><msub><mi>λ</mi><mn>3</mn></msub><msub><mi>P</mi><mn>3</mn></msub><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>2</mn></mrow></msub><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow><mo>+</mo><msub><mi>λ</mi><mn>2</mn></msub><msub><mi>P</mi><mn>2</mn></msub><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow><mo>+</mo><msub><mi>λ</mi><mn>1</mn></msub><msub><mi>P</mi><mn>1</mn></msub><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>)</mo></mrow><mo>,</mo><mspace width="0.5em"/><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>λ</mi><mi>i</mi></msub><mo>=</mo><mn>1</mn></mrow></math></div>  <div class="prose">
+    <p><strong>Bet, three questions.</strong> Answer all three, then reveal the table.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Eight configurations · words · 40 000 jokes counted · 5 000 test jokes</span><span class="btnrow"><span class="mono" id="smooth-score"></span><button class="primary" id="btn-smooth-reveal" disabled>Reveal the table</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-sm-n"><span class="q">(1) Which n wins once we smooth?</span></div>
+      <div class="bet" id="bet-sm-delta"><span class="q">(2) Laplace with δ = 1 against δ = 0.01 — which is better?</span></div>
+      <div class="bet" id="bet-sm-interp"><span class="q">(3) Does interpolation beat the best single-order model?</span></div>
+      <div id="smooth-out" hidden style="margin-top:14px"></div>
+    </div>
+    <div class="panel-note" id="smooth-note" hidden><strong>Add-1 is a disaster</strong> and gets worse with n: the trigram with δ = 1 is worse than the unigram. Two hundred thousand imaginary observations per prefix flatten every distribution toward uniform. Add-0.01 is far better — the smoothing constant is a hyperparameter, and the textbook value of 1 is the wrong one on any realistic vocabulary. <strong>Interpolation wins</strong>, by letting the model fall back gracefully: when the trigram has never seen the prefix, the bigram usually has. <strong>The 5-gram does not win</strong>, even interpolated: the 4- and 5-gram counts are almost all ones (look at the sparsity plot again). More context is only useful if you have the data to estimate it. This is the ceiling of counting.</div>
+  </div>
+
+  <h3>The number that lies</h3>
+  <div class="prose">
+    <p>Now the same experiment on BPE tokens — the units every neural model on this page uses. Look at the two <span class="mono">test_ppl</span> columns. The BPE trigram has a perplexity several times <em>lower</em> than the word trigram. Is it a better model?</p>
+  </div>
+<div class="formula"><span class="fn">Training loss · cross-entropy, i.e. log perplexity — and its tokenizer-free cousin</span><math display="block"><mrow><mi>ℒ</mi><mo>=</mo><mo>−</mo><mfrac><mn>1</mn><mi>T</mi></mfrac><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><mi mathvariant="normal">log</mi><mspace width="0.5em"/><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>)</mo></mrow></mrow><mo>=</mo><mi mathvariant="normal">log</mi><mspace width="0.5em"/><mi mathvariant="normal">PPL</mi></mrow></math><math display="block"><mrow><mtext>bits/char</mtext><mo>=</mo><mo>−</mo><mfrac><mn>1</mn><msub><mi>N</mi><mtext>chars</mtext></msub></mfrac><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><msub><mi mathvariant="normal">log</mi><mn>2</mn></msub><mspace width="0.5em"/><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>)</mo></mrow></mrow></mrow></math></div>  <div class="panel">
+    <div class="panel-head"><span>Interpolated n-grams · words against BPE 8k · same 40 000 jokes, same test set</span><span class="mono">test_ppl vs bits/char</span></div>
+    <div class="panel-body"><div class="grid-2" id="lies-out"></div></div>
+    <div class="panel-note">No. It is the same algorithm on the same text. What changed is <strong>what a token is</strong>. Predicting a subword piece is an easier task than predicting a whole word — half the time the next piece is the obvious end of the current word. Per-token perplexity rewards you for cutting the text finer, and it rewards you for nothing; it is useless for comparing across tokenizers. The fix is to divide the same negative log-likelihood by the number of <em>characters</em>: that is <span class="mono">bits/char</span>, and it is a real quantity — how many bits per character an ideal compressor built on this model would need. But read that column carefully, because it contains a second trap: the word model's bits/char comes out <em>lower</em>. The word tokenizer throws away every space and punctuation mark — one character in five — and is never charged for predicting them. Divide a smaller description length by the full character count and you get a flattering number for a model that is simply modelling less of the string. <strong>Even bits/char is only fair when the models account for the same string.</strong> BPE is reversible, so within the BPE family the number is honest, and the honest baseline to beat is the interpolated <strong>BPE trigram</strong>. Keep it in mind — a well-smoothed count model is not a weak opponent.</div>
+  </div>
+</section>

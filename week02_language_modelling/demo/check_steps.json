@@ -1,0 +1,144 @@
+{
+ "steps": [
+  {
+   "name": "sections",
+   "expr": "return SECTIONS.map(([id]) => !!document.getElementById(id)).join(',')"
+  },
+  {
+   "name": "tokenizer",
+   "expr": "let ok=0,bad=[]; D.tokCheck.forEach(c=>{const ids=TOK.encode(c.text); if(JSON.stringify(ids)===JSON.stringify(c.ids)) ok++; else bad.push(c.text.slice(0,30));}); let dec=0; D.tokCheck.forEach(c=>{ if(TOK.decode(c.ids)===c.decoded) dec++; }); return 'encode '+ok+'/'+D.tokCheck.length+' decode '+dec+'/'+D.tokCheck.length+' '+bad.join('|')"
+  },
+  {
+   "name": "lstm-greedy",
+   "expr": "LSTM.init(); const t0=performance.now(); const res=D.lstmCheck.greedy.map(g=>{const st=LSTM.newState(); const pids=TOK.encode(g.prompt); let lg=LSTM.feed([TOK.BOS].concat(pids),st); const out=pids.slice(); for(let k=0;k<60;k++){const n=argmax(lg); out.push(n); if(n===TOK.EOS) break; lg=LSTM.step(n,st);} const ref=g.ids.slice(0, g.ids.indexOf(TOK.EOS)>=0? g.ids.indexOf(TOK.EOS)+1:60); return JSON.stringify(out.slice(0,ref.length))===JSON.stringify(ref);}); return res.join(',')+' '+((performance.now()-t0)/5).toFixed(0)+'ms/run'"
+  },
+  {
+   "name": "lstm-top10",
+   "expr": "const st=LSTM.newState(); const lg=LSTM.feed([TOK.BOS].concat(TOK.encode(D.lstmCheck.top.prompt)),st); const p=softmax(lg); const top=topIdx(p,10); const maxd=Math.max(...D.lstmCheck.top.ids.map((id,i)=>Math.abs(p[id]-D.lstmCheck.top.probs[i]))); const temps=D.temperature.panel.map(tp=>{const pt=softmax(lg,tp.T); const ti=topIdx(pt,10).map(i=>TOK.vocab[i]); return JSON.stringify(ti.slice(0,5))===JSON.stringify(tp.tokens.slice(0,5));}); return 'ids '+(JSON.stringify(top)===JSON.stringify(D.lstmCheck.top.ids))+' maxdiff '+maxd.toExponential(1)+' temps '+temps.join(',')"
+  },
+  {
+   "name": "holtz",
+   "expr": "const r=window.__demo.holtz.compute(0); const ref=D.lstmCheck.pHuman; const maxd=Math.max(...ref.map((v,i)=>Math.abs(v-r.pHuman[i]))); const maxg=Math.max(...D.holtzman.pGreedy.map((v,i)=>Math.abs(v-r.pGreedy[i]))); window.__demo.holtz.paint(); return 'len '+r.pHuman.length+'/'+ref.length+' human maxdiff '+maxd.toExponential(1)+' greedy-vs-float '+maxg.toExponential(1)+' svg '+!!document.querySelector('#holtz-chart svg')"
+  },
+  {
+   "name": "ng-build",
+   "expr": "NG.build(); return NG.buildMs.toFixed(0)+'ms sizes '+[1,2,3,4,5].map(n=>NG.counts[n].size).join('/')"
+  },
+  {
+   "name": "ng-gen3",
+   "expr": "const g=NG.generate([],3,0,40); return g.toks.join(' ')"
+  },
+  {
+   "name": "ng-gen5",
+   "expr": "const g=NG.generate([],5,0,40); window.__g5=g; return g.toks.join(' ')"
+  },
+  {
+   "name": "ng-copied",
+   "expr": "return JSON.stringify(NG.longestCopied(window.__g5.toks))"
+  },
+  {
+   "name": "ng-click",
+   "expr": "$('#btn-ng-gen').click(); return 'clicked'"
+  },
+  {
+   "name": "ng-click-wait",
+   "expr": "return new Promise(r=>setTimeout(()=>r($('#ng-out').textContent.slice(0,120)),400))",
+   "timeout": 5000
+  },
+  {
+   "name": "sampler",
+   "expr": "$('#gen-prompt').value='Заходит мужик в бар'; window.__demo.start(); while(window.__demo.stepOnce()){} return TOK.decode(window.__demo.sampler.ids).slice(0,100)"
+  },
+  {
+   "name": "reveal-zipf",
+   "expr": "$('#btn-zipf-reveal').click(); return !$('#zipf-stats').hidden"
+  },
+  {
+   "name": "reveal-dial",
+   "expr": "$('#btn-dial-reveal').click(); return !$('#dial-out').hidden+' svg '+!!document.querySelector('#dial-chart svg')"
+  },
+  {
+   "name": "reveal-ppl",
+   "expr": "$('#btn-ppl-reveal').click(); return !$('#ppl-out').hidden+' svg '+!!document.querySelector('#sparsity-chart svg')"
+  },
+  {
+   "name": "reveal-live",
+   "expr": "$('#btn-live-reveal').click(); return !$('#live-out').hidden"
+  },
+  {
+   "name": "reveal-cells",
+   "expr": "$('#btn-cells-reveal').click(); return !$('#cells-out').hidden+' svg '+!!document.querySelector('#cells-chart svg')"
+  },
+  {
+   "name": "reveal-ext",
+   "expr": "$('#btn-ext-reveal').click(); return !$('#ext-out').hidden"
+  },
+  {
+   "name": "reveal-len",
+   "expr": "$('#btn-len-reveal').click(); return !$('#len-out').hidden+' svg '+!!document.querySelector('#len-chart svg')"
+  },
+  {
+   "name": "reveal-beam",
+   "expr": "$('#btn-beam-reveal').click(); return !$('#beam-out').hidden"
+  },
+  {
+   "name": "smooth",
+   "expr": "$$('#bet-sm-n button[data-opt]')[0].click(); $$('#bet-sm-delta button[data-opt]')[1].click(); $$('#bet-sm-interp button[data-opt]')[0].click(); $('#btn-smooth-reveal').click(); return $('#smooth-score').textContent+' '+!$('#smooth-out').hidden"
+  },
+  {
+   "name": "translations",
+   "expr": "$('#btn-tr-random').click(); return $$('#tr-out .tr-row').length"
+  },
+  {
+   "name": "bpe-1",
+   "expr": "$('#btn-bpe-step').click(); return $('#bpe-progress').textContent+' '+$('#bpe-merges').textContent.slice(0,80)"
+  },
+  {
+   "name": "bpe-299",
+   "expr": "for(let i=0;i<299;i++) $('#btn-bpe-step').click(); return $('#bpe-progress').textContent",
+   "timeout": 60000
+  },
+  {
+   "name": "bpe-encode",
+   "expr": "$('#bpe-word').value='инквизиция'; $('#bpe-word').dispatchEvent(new Event('input')); const pieces=$$('#bpe-word-out .tok').map(t=>t.textContent); const ref=D.bpeToy.words.find(w=>w.w==='инквизиция').pieces; return JSON.stringify(pieces)+' vs '+JSON.stringify(ref)+' merges-match '+(JSON.stringify(D.bpeToy.merges.slice(0,300))===JSON.stringify(window.__demo.toyMerges()))"
+  },
+  {
+   "name": "labels",
+   "expr": "let clipped=[]; $$('svg').forEach(s=>{const vb=s.viewBox.baseVal; $$('text',s).filter(t=>!t.getAttribute('transform')).forEach(t=>{try{const b=t.getBBox(); if(b.x<-1||b.x+b.width>vb.width+1||b.y<-1||b.y+b.height>vb.height+1) clipped.push(t.textContent+'@'+(s.parentElement.id||s.parentElement.className)+' '+[b.x|0,b.y|0,b.width|0,b.height|0]+' vb '+vb.width+'x'+vb.height);}catch(_){}});}); return clipped.length+' clipped: '+clipped.slice(0,6).join(' | ')"
+  },
+  {
+   "name": "overlaps",
+   "expr": "let ov=[]; $$('svg').forEach(s=>{const ts=$$('text',s).filter(t=>!t.getAttribute('transform')).map(t=>{const b=t.getBBox(); return {t:t.textContent,b};}).filter(x=>x.b.width>0); for(let i=0;i<ts.length;i++) for(let j=i+1;j<ts.length;j++){const a=ts[i].b,b=ts[j].b; if(a.x<b.x+b.width-1&&b.x<a.x+a.width-1&&a.y<b.y+b.height-1&&b.y<a.y+a.height-1) ov.push(ts[i].t+'/'+ts[j].t+'@'+(s.parentElement.id||''));}}); return ov.length+' overlaps: '+ov.slice(0,8).join(' | ')"
+  },
+  {
+   "name": "gen-click",
+   "expr": "$('#btn-gen').click(); return new Promise(r=>setTimeout(()=>r($('#gen-out').textContent.slice(0,80)+' | '+$('#gen-timing').textContent+' | bars '+$$('#gen-dist .pbar').length),2500))",
+   "timeout": 8000
+  }
+ ],
+ "screens": [
+  {
+   "sel": "#data",
+   "file": "s_data.png",
+   "height": 1500
+  },
+  {
+   "sel": "#rnn",
+   "file": "s_rnn.png",
+   "height": 1500,
+   "dy": 2900
+  },
+  {
+   "sel": "#decode",
+   "file": "s_decode.png",
+   "height": 1500,
+   "dy": 1300,
+   "expr": "$('#gen-prompt').value='Заходит мужик в бар'; window.__demo.start(); while(window.__demo.stepOnce()){} window.__demo.paintOut(); window.__demo.paintDist();"
+  },
+  {
+   "sel": "#table",
+   "file": "s_table.png",
+   "height": 1200
+  }
+ ]
+}

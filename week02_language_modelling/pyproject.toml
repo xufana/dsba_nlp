@@ -1,0 +1,27 @@
+[project]
+name = "nlp-dsba-week02"
+version = "0.1.0"
+description = "Week 2 — language modelling and text generation. Self-contained seminar environment."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "matplotlib>=3.8",
+    "scikit-learn>=1.4",
+    "torch>=2.2",
+    "tokenizers>=0.20",
+    "sacrebleu>=2.4",
+    "ipywidgets>=8.1",
+    "tqdm>=4.66",
+    "ipykernel>=6.29",
+    "jupyterlab>=4.2",
+    "transformers>=5.16.1",
+]
+
+# Only needed to run the optional GPT-2 comparison in block 4 (RUN_LLM = True).
+[dependency-groups]
+llm = ["transformers>=4.44"]
+
+[tool.uv]
+package = false
