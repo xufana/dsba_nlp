@@ -941,6 +941,24 @@ xy = vecs @ Vt[:2].T
 D["pca"] = {"xy": [[round(float(a), 3), round(float(b), 3)] for a, b in xy], "len": vlens.tolist(),
             "explained": [float(S[0] ** 2 / (S ** 2).sum()), float(S[1] ** 2 / (S ** 2).sum())]}
 
+# the one-screen recipe from block 3 (notebook cell "The whole recipe on one screen"), run as written
+RECIPE = open("recipe.py", encoding="utf-8").read()
+seed_all()
+t = time.time()
+_ns = dict(globals()); exec(RECIPE, _ns)
+D["recipe"] = {"ppl": float(_ns["math"].exp(_ns["nll"] / _ns["n"])), "seconds": time.time() - t, "device": str(device),
+               "params": int(sum(p.numel() for p in _ns["model"].parameters())), "lines": len(RECIPE.strip().splitlines())}
+log(f"recipe: ppl {D['recipe']['ppl']:.1f} in {D['recipe']['seconds']:.1f}s")
+
+# the one-screen encoder–decoder recipe (demo section 07), run as written
+RECIPE_S2S = open("recipe_s2s.py", encoding="utf-8").read()
+seed_all()
+t = time.time()
+_ns = dict(globals()); exec(RECIPE_S2S, _ns)
+D["recipeS2s"] = {"bleu": float(sacrebleu.corpus_bleu(_ns["hyps"], [te_en]).score), "seconds": time.time() - t, "device": str(device),
+                  "params": int(sum(p.numel() for p in _ns["model"].parameters())), "lines": len(RECIPE_S2S.strip().splitlines())}
+log(f"recipe s2s: BLEU {D['recipeS2s']['bleu']:.2f} in {D['recipeS2s']['seconds']:.1f}s")
+
 D["results"] = results
 
 # ================================================================ extras

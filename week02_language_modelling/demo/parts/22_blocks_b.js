@@ -84,6 +84,8 @@
     <tr><td class="mono">x (input)</td>${P.x.map(t => `<td class="mono nowrap">${esc(t)}</td>`).join("")}</tr>
     <tr><td class="mono">y (target)</td>${P.y.map(t => `<td class="mono nowrap" style="color:var(--bad)">${esc(t)}</td>`).join("")}</tr></tbody>`;
 
+  if (D.recipe) $("#recipe-stats").textContent = `prints: test perplexity ${D.recipe.ppl.toFixed(1)} · ${D.recipe.seconds.toFixed(1)}s on ${D.recipe.device} · ${(D.recipe.params / 1e6).toFixed(2)}M params`;
+  if (D.recipeS2s) $("#recipe-s2s-stats").textContent = `prints: test BLEU ${D.recipeS2s.bleu.toFixed(2)} · ${D.recipeS2s.seconds.toFixed(1)}s on ${D.recipeS2s.device} · ${(D.recipeS2s.params / 1e6).toFixed(2)}M params`;
   /* live LSTM bet */
   const LV = D.lmLive, tri = D.results.find(r => r.tokens === "BPE 8k" && r.note === "count-based");
   const betLive = makeBet("#bet-live", ["below the trigram's " + fmt(tri.ppl, 0), "above it"], LV.ppl < tri.ppl ? 0 : 1);

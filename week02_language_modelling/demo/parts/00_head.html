@@ -340,6 +340,15 @@ math { font-family: "STIX Two Math", "Latin Modern Math", "Cambria Math", "Times
 .formula mtext { font-family: var(--body); font-size: .82em; color: var(--ink-2); }
 body.present .formula { margin-top: 10px; }
 
+/* the one-screen recipe */
+.recipe { padding: 4px 16px 6px; }
+.recipe .step { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--rule); }
+.recipe .step:first-child { border-top: none; }
+.recipe .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.recipe .k b { display: block; font-family: var(--display); font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1; margin-bottom: 4px; }
+.recipe pre { margin: 0; font-family: var(--mono); font-size: 14.5px; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--ink); }
+.recipe .c { color: var(--ink-3); }
+
 /* --------------------------------------------------- presentation mode */
 body.present .prose:not(.keep) { display: none; }
 body.present .footnote { display: none; }

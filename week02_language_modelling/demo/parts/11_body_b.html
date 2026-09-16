@@ -44,6 +44,60 @@
     <div class="panel-note" id="live-note" hidden>It does not — with 7% of the data and two passes, the network is still behind counting on all of it. And its samples are letter soup. Worth remembering the next time someone shows you a neural model losing to a baseline: the question is always <em>how much data and how much compute each one got</em>.</div>
   </div>
 
+  <h3>The whole recipe on one screen</h3>
+  <div class="prose">
+    <p>The pipeline, the model and the training loop again — this time with nothing in between. Same names as the notebook, no validation, no shuffling, no progress bar: four steps, one screen. It runs as written; this is the cell to copy into your own project.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>data → batches → model → training → perplexity · 45 lines</span><span class="mono" id="recipe-stats"></span></div>
+    <div class="panel-body recipe">
+      <div class="step"><div class="k"><b>1</b>data</div><pre><span class="c"># 1. data: [BOS] tokens [EOS] per joke; a batch is padded,</span>
+<span class="c">#    and the target is the input shifted by one</span>
+seqs = [torch.tensor([BOS] + e.ids + [EOS]) for e in tok.encode_batch(train[:2_000])]
+
+def batches(seqs, batch_size=64):
+    for i in range(0, len(seqs), batch_size):
+        chunk = seqs[i:i + batch_size]
+        x = pad_sequence([s[:-1] for s in chunk], batch_first=True, padding_value=PAD)
+        y = pad_sequence([s[1:] for s in chunk], batch_first=True, padding_value=PAD)
+        yield x.to(device), y.to(device)
+</pre></div>
+      <div class="step"><div class="k"><b>2</b>model</div><pre><span class="c"># 2. model: embedding → LSTM → linear over the vocabulary; state carries h and c between calls</span>
+class LM(nn.Module):
+    def __init__(self, vocab_size, d=256):
+        super().__init__()
+        self.emb = nn.Embedding(vocab_size, d, padding_idx=PAD)
+        self.rnn = nn.LSTM(d, d, batch_first=True)
+        self.out = nn.Linear(d, vocab_size)
+
+    def forward(self, x, state=None):
+        h, state = self.rnn(self.emb(x), state)
+        return self.out(h), state
+</pre></div>
+      <div class="step"><div class="k"><b>3</b>training</div><pre><span class="c"># 3. training: cross-entropy at every position except padding, clip the gradient, step</span>
+model = LM(V).to(device)
+opt = torch.optim.AdamW(model.parameters(), lr=2e-3)
+for x, y in batches(seqs):
+    logits, _ = model(x)<span class="c">                                             # (B, T, V)</span>
+    loss = nn.functional.cross_entropy(logits.reshape(-1, V), y.reshape(-1), ignore_index=PAD)
+    opt.zero_grad(); loss.backward()
+    nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    opt.step()
+</pre></div>
+      <div class="step"><div class="k"><b>4</b>the number</div><pre><span class="c"># 4. the number: exp of the mean per-token loss on held-out jokes is the perplexity</span>
+with torch.no_grad():
+    nll, n = 0.0, 0
+    for x, y in batches(test_seqs[:1_000]):
+        logits, _ = model(x)
+        nll += nn.functional.cross_entropy(logits.reshape(-1, V), y.reshape(-1),
+                                           ignore_index=PAD, reduction=&quot;sum&quot;).item()
+        n += (y != PAD).sum().item()
+print(f&quot;one epoch on 2 000 jokes: test perplexity {math.exp(nll / n):.1f}&quot;)</pre></div>
+    </div>
+    <div class="panel-note">Read the four comments and you have the whole seminar so far in one place: the data is the joke shifted by one, the model is three layers, the loss is cross-entropy over every position except padding, and the number is exp of that loss on held-out text. Everything else on this page — cells, dropout, clipping schedules, decoding rules — is a knob on one of these four lines.
+      <div class="footnote" style="margin-top:10px">In the notebook, with the prose between the pieces: <a href="https://github.com/xufana/dsba_nlp/blob/autumn-2026/week02_language_modelling/week02_language_modelling.ipynb" target="_blank" rel="noopener">3.1 The data pipeline · 3.2 The model · 3.3 RNN vs LSTM vs GRU</a>.</div></div>
+  </div>
+
   <h3>RNN vs LSTM vs GRU, on more data</h3>
   <div class="prose">
     <p>Three cells, the same 256-dimensional size, the same 12 000 jokes, the same three epochs each (trained overnight on CPU; <span class="mono">precompute.py</span> redraws it). <strong>Bet:</strong> the LSTM has 4× the recurrent parameters of the plain RNN. On short jokes, trained for a few epochs, how far apart do the three land in perplexity?</p>
@@ -257,7 +311,85 @@ gpt.generate(**inp, do_sample=True, top_p=0.9, temperature=0.9, repetition_penal
     <div class="panel-note"><strong>BLEU</strong> is the score: what fraction of the generated n-grams (n = 1..4) appear in the reference, combined geometrically, times a brevity penalty that punishes translations shorter than the reference. It is crude — it does not know synonyms — and it is the metric machine translation ran on for twenty years, because it correlates with human judgement in aggregate. One rule: BLEU implementations disagree, so use <em>one</em> throughout. We use <span class="mono">sacrebleu</span>.</div>
   </div>
 
-<div class="formula"><span class="fn">BLEU · Papineni et al. 2002</span><math display="block"><mrow><mi mathvariant="normal">BLEU</mi><mo>=</mo><munder><mrow><mi mathvariant="normal">min</mi><mrow><mo>(</mo><mn>1</mn><mo>,</mo><msup><mi>e</mi><mrow><mn>1</mn><mo>−</mo><mi>r</mi><mo>/</mo><mi>c</mi></mrow></msup><mo>)</mo></mrow></mrow><mtext>brevity penalty</mtext></munder><mo>·</mo><msup><mrow><mo>(</mo><munderover><mo>∏</mo><mrow><mi>n</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><msub><mi>p</mi><mi>n</mi></msub><mo>)</mo></mrow><mrow><mn>1</mn><mo>/</mo><mn>4</mn></mrow></msup></mrow></math></div>  <h3>Browse the test set</h3>
+<div class="formula"><span class="fn">BLEU · Papineni et al. 2002</span><math display="block"><mrow><mi mathvariant="normal">BLEU</mi><mo>=</mo><munder><mrow><mi mathvariant="normal">min</mi><mrow><mo>(</mo><mn>1</mn><mo>,</mo><msup><mi>e</mi><mrow><mn>1</mn><mo>−</mo><mi>r</mi><mo>/</mo><mi>c</mi></mrow></msup><mo>)</mo></mrow></mrow><mtext>brevity penalty</mtext></munder><mo>·</mo><msup><mrow><mo>(</mo><munderover><mo>∏</mo><mrow><mi>n</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><msub><mi>p</mi><mi>n</mi></msub><mo>)</mo></mrow><mrow><mn>1</mn><mo>/</mo><mn>4</mn></mrow></msup></mrow></math></div>  <h3>The encoder–decoder on one screen</h3>
+  <div class="prose">
+    <p>Everything block 07 said, as one piece of code: pairs into padded batches, the encoder that packs its input so it never reads <span class="mono">[PAD]</span>, the projection that <em>is</em> the bottleneck, and one decoder with two entry points — <span class="mono">forward</span> for training, where the gold prefix goes in, and <span class="mono">greedy</span> for inference, where its own output does. Then the loop and the score.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>pairs → batches → model → teacher-forced training → greedy decoding → BLEU · 70 lines</span><span class="mono" id="recipe-s2s-stats"></span></div>
+    <div class="panel-body recipe">
+      <div class="step"><div class="k"><b>1</b>data</div><pre><span class="c"># 1. data: German ids on the source side; [BOS] English [EOS] on the target side</span>
+def encode_pairs(de, en):
+    return [(torch.tensor(s.ids), torch.tensor([BOS] + t.ids + [EOS]))
+            for s, t in zip(tok_de.encode_batch(de), tok_en.encode_batch(en))]
+
+def batches(pairs, batch_size=64):
+    for i in range(0, len(pairs), batch_size):
+        src, trg = zip(*pairs[i:i + batch_size])
+        yield (pad_sequence(src, batch_first=True, padding_value=PAD).to(device),
+               torch.tensor([len(s) for s in src]),<span class="c">           # true lengths: packing skips [PAD]</span>
+               pad_sequence(trg, batch_first=True, padding_value=PAD).to(device))
+
+pairs, te_pairs = encode_pairs(tr_de[:5_000], tr_en[:5_000]), encode_pairs(te_de, te_en)
+</pre></div>
+      <div class="step"><div class="k"><b>2</b>model</div><pre><span class="c"># 2. model: bidirectional encoder → one vector → a decoder that is an LM started from it</span>
+class Seq2Seq(nn.Module):
+    def __init__(self, src_vocab, trg_vocab, d=256):
+        super().__init__()
+        self.src_emb = nn.Embedding(src_vocab, d, padding_idx=PAD)
+        self.trg_emb = nn.Embedding(trg_vocab, d, padding_idx=PAD)
+        self.encoder = nn.LSTM(d, d, batch_first=True, bidirectional=True)
+        self.h_proj = nn.Linear(2 * d, d)<span class="c">                    # 512 → 256: the bottleneck</span>
+        self.c_proj = nn.Linear(2 * d, d)
+        self.decoder = nn.LSTM(d, d, batch_first=True)
+        self.out = nn.Linear(d, trg_vocab)
+
+    def encode(self, src, src_len):
+        packed = pack_padded_sequence(self.src_emb(src), src_len, batch_first=True,
+                                      enforce_sorted=False)
+        _, (h, c) = self.encoder(packed)<span class="c">                     # (2, B, d): forward and backward</span>
+        h, c = torch.cat([h[0], h[1]], -1), torch.cat([c[0], c[1]], -1)
+        return torch.tanh(self.h_proj(h))[None], torch.tanh(self.c_proj(c))[None]
+
+    def forward(self, src, src_len, trg_in):<span class="c">                 # training: the gold prefix goes in</span>
+        o, _ = self.decoder(self.trg_emb(trg_in), self.encode(src, src_len))
+        return self.out(o)
+
+    @torch.no_grad()
+    def greedy(self, src, src_len, max_len=40):<span class="c">              # inference: its own output goes in</span>
+        state, out = self.encode(src, src_len), []
+        y = torch.full((src.size(0), 1), BOS, device=src.device)
+        for _ in range(max_len):
+            o, state = self.decoder(self.trg_emb(y), state)
+            y = self.out(o).argmax(-1)
+            out.append(y)
+        return torch.cat(out, 1)
+</pre></div>
+      <div class="step"><div class="k"><b>3</b>training</div><pre><span class="c"># 3. training: the decoder reads trg[:, :-1], is scored against trg[:, 1:] — teacher forcing</span>
+model = Seq2Seq(tok_de.get_vocab_size(), tok_en.get_vocab_size()).to(device)
+opt = torch.optim.AdamW(model.parameters(), lr=2e-3)
+for src, src_len, trg in batches(pairs):
+    logits = model(src, src_len, trg[:, :-1])
+    loss = nn.functional.cross_entropy(logits.reshape(-1, logits.size(-1)),
+                                       trg[:, 1:].reshape(-1), ignore_index=PAD)
+    opt.zero_grad(); loss.backward()
+    nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    opt.step()
+</pre></div>
+      <div class="step"><div class="k"><b>4</b>the number</div><pre><span class="c"># 4. the number: translate the test set greedily, cut at [EOS], score with sacrebleu</span>
+def to_text(row):
+    ids = row.tolist()
+    return tok_en.decode(ids[:ids.index(EOS)] if EOS in ids else ids)
+
+hyps = [to_text(row) for src, src_len, _ in batches(te_pairs)
+        for row in model.greedy(src, src_len)]
+print(f&quot;one epoch on 5 000 pairs: test BLEU {sacrebleu.corpus_bleu(hyps, [te_en]).score:.2f}&quot;)</pre></div>
+    </div>
+    <div class="panel-note">The two methods of the decoder are the two diagrams from block 04 again. <span class="mono">forward</span> takes the whole target at once and returns logits for every position, because the inputs are known; <span class="mono">greedy</span> takes one token, returns one distribution, picks, and feeds the pick back — forty sequential calls where training needed one. Same weights, same recurrence; everything block 08 measures about the bottleneck is a property of the two <span class="mono">_proj</span> lines.
+      <div class="footnote" style="margin-top:10px">In the notebook, with the prose between the pieces: <a href="https://github.com/xufana/dsba_nlp/blob/autumn-2026/week02_language_modelling/week02_language_modelling.ipynb" target="_blank" rel="noopener">5.1 The architecture · 5.2 Teacher forcing · 5.3 Training · 5.4 BLEU</a>.</div></div>
+  </div>
+
+  <h3>Browse the test set</h3>
   <div class="prose">
     <p>All 1 000 test sentences, translated greedily and with beam search (width 5, length-normalised), with the sentence-level BLEU of each. Filter by source length and read what survives the bottleneck.</p>
   </div>
