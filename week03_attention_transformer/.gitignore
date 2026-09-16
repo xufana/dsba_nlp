@@ -1,0 +1,4 @@
+artifacts_smoke/
+_smoke*.ipynb
+__pycache__/
+.ipynb_checkpoints/

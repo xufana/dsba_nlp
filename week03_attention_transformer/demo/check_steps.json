@@ -1,0 +1,213 @@
+{
+ "steps": [
+  {
+   "name": "sections",
+   "expr": "return SECTIONS.map(([id]) => !!document.getElementById(id)).join(',')"
+  },
+  {
+   "name": "load-marks",
+   "expr": "return __T.map((m, i) => i ? m[0] + ':' + (m[1] - __T[i-1][1]).toFixed(0) : m[0] + '@' + m[1].toFixed(0)).join(' ')"
+  },
+  {
+   "name": "figures",
+   "expr": "return ['fig-s2s-attn','fig-qkv','fig-matrix','fig-mha','fig-pe','fig-layer','fig-residual','base-len-chart','attn-bleu-chart','attn-len-chart','align-lstm','align-tf','temp-bars','masks-out','pe-heat','pe-lines','head-grid','head-big','date-hm','rev-hm'].map(id => id + ':' + !!document.querySelector('#' + id + ' svg')).join(' ')"
+  },
+  {
+   "name": "checks",
+   "expr": "return window.__demo.CHECKS_DONE.then(() => ['ck-sdpa','ck-mha','ck-pe','ck-layer','ck-tf','ck-date','ck-rev'].map(id => $('#' + id).textContent.trim().slice(0, 90)).join(' | '))",
+   "timeout": 60000
+  },
+  {
+   "name": "tiny-date",
+   "expr": "const c = window.__demo.ckD; return c.ok + '/' + c.n + ' maxdiff ' + c.maxd.toExponential(1) + ' out=' + $('#date-res').textContent"
+  },
+  {
+   "name": "tiny-rev",
+   "expr": "const c = window.__demo.ckR; return 'sin ' + c.sin.ok + '/' + c.sin.n + ' ' + c.sin.maxd.toExponential(1) + ' learned ' + c.learned.ok + '/' + c.learned.n + ' ' + c.learned.maxd.toExponential(1)"
+  },
+  {
+   "name": "date-type",
+   "expr": "const c = D.dates.check; const okRows = c.filter(x => x.trg != null && x.trg === x.out).length; $('#date-in').value = '31.12.1999'; $('#date-in').dispatchEvent(new Event('input')); return 'known-truth rows right: ' + okRows + '/' + c.filter(x => x.trg != null).length + ' · default input: ' + (D.dates.check.find(x => x.trg != null && x.trg === x.out) || {}).src + ' · 31.12.1999 → ' + $('#date-res').textContent"
+  },
+  {
+   "name": "rev-13",
+   "expr": "$('#rev-in').value = 'abcdefghijklm'; $('#rev-in').dispatchEvent(new Event('input')); const a = $('#rev-res').textContent; $('#rev-in').value = 'abcdefghijkl'; $('#rev-in').dispatchEvent(new Event('input')); return '13: ' + a + ' | 12: ' + $('#rev-res').textContent"
+  },
+  {
+   "name": "bets-stop",
+   "expr": "$$('#bet-stop-which button[data-opt]')[1].click(); $$('#bet-stop-params button[data-opt]')[0].click(); $('#btn-stop-reveal').click(); return $('#stop-score').textContent + ' ' + !$('#stop-out').hidden + ' svg ' + !!document.querySelector('#stop-len-chart svg')"
+  },
+  {
+   "name": "bets-score",
+   "expr": "$$('#bet-score-worst button[data-opt]')[1].click(); $$('#bet-score-gap button[data-opt]')[0].click(); $('#btn-score-reveal').click(); return $('#score-score').textContent + ' rows ' + $$('#score-table tbody tr').length + ' svg ' + !!document.querySelector('#score-chart svg')"
+  },
+  {
+   "name": "bets-res",
+   "expr": "$$('#bet-res-depth button[data-opt]')[0].click(); $$('#bet-res-noca button[data-opt]')[1].click(); $$('#bet-res-nope button[data-opt]')[1].click(); $('#btn-res-reveal').click(); return $('#res-score').textContent + ' rows ' + $$('#res-table tbody tr').length + ' ' + $('#res-depth-say').textContent.slice(0, 80)"
+  },
+  {
+   "name": "bets-tasks",
+   "expr": "$$('#bet-date button[data-opt]')[2].click(); $('#btn-date-reveal').click(); $$('#bet-rev-13 button[data-opt]')[2].click(); $$('#bet-rev-which button[data-opt]')[0].click(); $('#btn-rev-reveal').click(); return $('#date-out').textContent.slice(0, 60) + ' | ' + $('#rev-score').textContent + ' ' + $('#rev-say').textContent.slice(0, 120)"
+  },
+  {
+   "name": "align-random",
+   "expr": "$('#btn-align-random').click(); return $('#align-tf-title').textContent + ' cells ' + $$('#align-lstm rect.cell').length"
+  },
+  {
+   "name": "grid-click",
+   "expr": "$$('#head-grid svg')[10].dispatchEvent(new MouseEvent('click', {bubbles: true})); const t = $('#head-big-title').textContent; $$('#grid-kind button')[1].click(); return t + ' || ' + $('#head-big-title').textContent + ' || ' + $('#inside-say').textContent.slice(0, 140)"
+  },
+  {
+   "name": "translations",
+   "expr": "$('#btn-tr-random').click(); return $$('#tr-out .tr-row').length + ' rows; ' + $$('#tr-buckets button')[5].click() + $$('#tr-out .tr-row').length"
+  },
+  {
+   "name": "temperature",
+   "expr": "$('#temp-dk').value = 6; $('#temp-dk').dispatchEvent(new Event('input')); return $('#temp-table').textContent.replace(/\\s+/g, ' ').slice(0, 260)"
+  },
+  {
+   "name": "hover-link",
+   "expr": "const n = $('pre.code .ln[data-f=\"softmax\"]'); n.dispatchEvent(new PointerEvent('pointerenter')); const k = $$('.hi').length; n.dispatchEvent(new PointerEvent('pointerleave')); return 'lit ' + k + ' then ' + $$('.hi').length"
+  },
+  {
+   "name": "code-width",
+   "expr": "let wide = []; $$('pre.code').forEach(p => { if (p.scrollWidth > p.clientWidth + 2) wide.push((p.closest('.panel') && p.closest('.panel').querySelector('.panel-head') || {textContent: '?'}).textContent.trim().slice(0, 40) + ' +' + (p.scrollWidth - p.clientWidth)); }); return wide.length + ' scrolling code blocks: ' + wide.join(' | ')"
+  },
+  {
+   "name": "labels",
+   "expr": "let clipped=[]; $$('svg').forEach(s=>{const vb=s.viewBox.baseVal; $$('text',s).filter(t=>!t.getAttribute('transform')).forEach(t=>{try{const b=t.getBBox(); if(b.x<-1||b.x+b.width>vb.width+1||b.y<-1||b.y+b.height>vb.height+1) clipped.push(t.textContent.slice(0,30)+'@'+(s.parentElement.id||s.parentElement.className)+' '+[b.x|0,b.y|0,b.width|0,b.height|0]+' vb '+vb.width+'x'+vb.height);}catch(_){}});}); return clipped.length+' clipped: '+clipped.slice(0,8).join(' | ')"
+  },
+  {
+   "name": "overlaps",
+   "expr": "let ov=[]; $$('svg').forEach(s=>{ if (s.closest('.headgrid')) return; const ts=$$('text',s).filter(t=>!t.getAttribute('transform')).map(t=>{const b=t.getBBox(); return {t:t.textContent,b};}).filter(x=>x.b.width>0); for(let i=0;i<ts.length;i++) for(let j=i+1;j<ts.length;j++){const a=ts[i].b,b=ts[j].b; if(a.x<b.x+b.width-1&&b.x<a.x+a.width-1&&a.y<b.y+b.height-1&&b.y<a.y+a.height-1) ov.push(ts[i].t.slice(0,20)+'/'+ts[j].t.slice(0,20)+'@'+(s.parentElement.id||s.parentElement.className));}}); return ov.length+' overlaps: '+ov.slice(0,12).join(' | ')"
+  },
+  {
+   "name": "theme",
+   "expr": "$('#btn-theme').click(); return document.documentElement.getAttribute('data-theme') + ' svgs ' + $$('svg').length"
+  }
+ ],
+ "screens": [
+  {
+   "sel": "#hero",
+   "file": "s_hero.png",
+   "height": 1400
+  },
+  {
+   "sel": "#stop",
+   "file": "s_stop.png",
+   "height": 1600
+  },
+  {
+   "sel": "#seq2seq",
+   "file": "s_seq2seq.png",
+   "height": 1800
+  },
+  {
+   "sel": "#seq2seq",
+   "file": "s_seq2seq_b.png",
+   "height": 1800,
+   "dy": 1800
+  },
+  {
+   "sel": "#seq2seq",
+   "file": "s_seq2seq_c.png",
+   "height": 1800,
+   "dy": 3600
+  },
+  {
+   "sel": "#score",
+   "file": "s_score.png",
+   "height": 1800
+  },
+  {
+   "sel": "#score",
+   "file": "s_score_b.png",
+   "height": 1800,
+   "dy": 1800
+  },
+  {
+   "sel": "#masks",
+   "file": "s_masks.png",
+   "height": 1200
+  },
+  {
+   "sel": "#tf",
+   "file": "s_tf.png",
+   "height": 1800
+  },
+  {
+   "sel": "#tf",
+   "file": "s_tf_b.png",
+   "height": 1800,
+   "dy": 1800
+  },
+  {
+   "sel": "#tf",
+   "file": "s_tf_c.png",
+   "height": 1800,
+   "dy": 3600
+  },
+  {
+   "sel": "#tf",
+   "file": "s_tf_d.png",
+   "height": 1800,
+   "dy": 5400
+  },
+  {
+   "sel": "#tf",
+   "file": "s_tf_e.png",
+   "height": 1800,
+   "dy": 7200
+  },
+  {
+   "sel": "#results",
+   "file": "s_results.png",
+   "height": 1800
+  },
+  {
+   "sel": "#results",
+   "file": "s_results_b.png",
+   "height": 1800,
+   "dy": 1800
+  },
+  {
+   "sel": "#inside",
+   "file": "s_inside.png",
+   "height": 1500
+  },
+  {
+   "sel": "#tasks",
+   "file": "s_tasks.png",
+   "height": 1800
+  },
+  {
+   "sel": "#tasks",
+   "file": "s_tasks_b.png",
+   "height": 1800,
+   "dy": 1800
+  },
+  {
+   "sel": "#end",
+   "file": "s_end.png",
+   "height": 1400
+  },
+  {
+   "sel": "#fig-layer",
+   "file": "s_layer.png",
+   "height": 1000,
+   "dy": -80
+  },
+  {
+   "sel": "#fig-residual",
+   "file": "s_residual.png",
+   "height": 900,
+   "dy": -80
+  },
+  {
+   "sel": "#bet-res-depth",
+   "file": "s_bets.png",
+   "height": 700,
+   "dy": -120
+  }
+ ]
+}

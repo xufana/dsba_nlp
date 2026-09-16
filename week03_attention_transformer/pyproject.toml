@@ -1,0 +1,21 @@
+[project]
+name = "nlp-dsba-week03"
+version = "0.1.0"
+description = "Week 3 — attention and the transformer. Self-contained seminar environment (data and tokenizers come from ../week02_language_modelling)."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "matplotlib>=3.8",
+    "torch>=2.2",
+    "tokenizers>=0.20",
+    "sacrebleu>=2.4",
+    "nbformat>=5.10",
+    "tqdm>=4.66",
+    "ipykernel>=6.29",
+    "jupyterlab>=4.2",
+]
+
+[tool.uv]
+package = false

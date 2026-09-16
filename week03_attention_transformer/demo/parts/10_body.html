@@ -1,0 +1,780 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 3<br>Attention and the Transformer</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div style="margin-top:10px">Every number on this page comes from the seminar notebook, or is computed in your browser right now — including the two small transformers of block 07, which are loaded into this page and decode here.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>context =<br>Σ softmax(score(q, kᵢ)) · vᵢ</h1>
+  <p class="lede">So, do you remember where we stopped last week? A bidirectional LSTM read a German sentence, squeezed everything it knew into 256 numbers, and a second LSTM wrote the English from that one vector. It worked — BLEU 13 on Multi30k — and it worked worse the longer the sentence was: 18 BLEU on short captions, 8.5 on long ones. We called that the bottleneck, we showed that a wider vector lifts the whole curve without flattening it, and we promised the fix would be this week's topic.</p>
+  <div class="prose">
+    <p>Here it is. The fix is embarrassingly simple to state: let's stop trying to put all the info into one cell, but instead let the decoder see everything before it. The mechanism that does the looking is called attention, and it turned out to be something more than a patch for translation. So we'll take it and use different architectures with the same concept.</p>
+  </div>
+<div class="formula"><span class="fn">The claim for today</span><math display="block"><mrow><msub><mtext>context</mtext><mi>t</mi></msub><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><munder><mrow><msub><mi mathvariant="normal">softmax</mi><mi>i</mi></msub><mrow><mo>(</mo><mi mathvariant="normal">score</mi><mrow><mo>(</mo><msub><mi>q</mi><mi>t</mi></msub><mo>,</mo><msub><mi>k</mi><mi>i</mi></msub><mo>)</mo></mrow><mo>)</mo></mrow></mrow><mtext>weights</mtext></munder><mspace width="0.3em"/><msub><mi>v</mi><mi>i</mi></msub></mrow></math></div>
+  <div class="prose keep">
+    <p><strong>Attention is a differentiable lookup: a query, a set of keys, a weighted sum of values.</strong> One formula, three degrees of freedom (three matrices, see) — <em>how</em> the score is computed, <em>what</em> plays query and key, and <em>which set</em> the keys come from — and everything sits somewhere on those three axes. We'll approach it step by step.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Three claims we will test against numbers today</span></div>
+    <div class="panel-body">
+      <ol style="margin:0; padding-left:1.3em; line-height:1.6">
+        <li><strong>The bottleneck is cured by access, not by width.</strong> We've already stated it, so the only thing left is to check it.</li>
+        <li><strong>The score function barely matters; the scale does.</strong> Additive and dot-product attention land within noise of each other.</li>
+        <li><strong>Self-attention is a set operation.</strong> Without positional information the encoder cannot tell "dog bites man" from "man bites dog" — and we measure what that costs.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== 00 where we stopped -->
+<section id="stop">
+  <p class="eyebrow">Block 00 · where we stopped</p>
+  <h2>The data, again — and the baseline</h2>
+  <div class="prose">
+    <p>Quick recap. Multi30k: 29 000 image captions in German with their English translations, 1 000 for validation, 1 000 for test. The tokenizers are the two 8k BPE models from the last week.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Multi30k · week-2 tokenizers</span><span class="mono" id="data-split"></span></div>
+    <div class="panel-body" id="data-example"></div>
+  </div>
+  <div class="prose">
+    <p>Baseline: last week's model. The bidirectional LSTM encoder, a projection of its two final states down to one <math><mrow><mo>(</mo><msub><mi>h</mi><mn>0</mn></msub><mo>,</mo><msub><mi>c</mi><mn>0</mn></msub><mo>)</mo></mrow></math>, and an LSTM decoder that starts from there. The weights are pre-computed, cuz I don't know what to talk about while it's training (abt 30 mins, btw).</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Seq2SeqLSTM · test BLEU by source length (BPE tokens)</span><span class="mono" id="base-stats"></span></div>
+    <div class="panel-body"><div class="grid-2"><div id="base-len-chart"></div><div id="base-show"></div></div></div>
+    <div class="panel-note">The experiment shows that the translation loses the details first — the nouns survive, the adjectives and the actions go.</div>
+  </div>
+
+  <h3>📌 Bet</h3>
+  <div class="prose">
+    <p>The decoder currently gets 256 numbers for the whole sentence. Two ways to give it more: (a) make it 1 024 numbers; (b) keep the vector at 256 but let the decoder <em>re-read all the encoder states at every step</em>. Which one flattens the curve — and how many parameters does (b) add? Write down a number, and we check the real outcome.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · two questions</span><span class="btnrow"><span class="mono" id="stop-score"></span><button class="primary" id="btn-stop-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-stop-which"><span class="q">(1) Which one flattens the curve?</span></div>
+      <div class="bet" id="bet-stop-params"><span class="q">(2) How many parameters does (b) add to the 8.0M model?</span></div>
+      <div id="stop-out" hidden style="margin-top:14px"></div>
+    </div>
+    <div class="panel-note" id="stop-note" hidden>Attention with a 256-dimensional scoring space, the key projection and the attentional vector together add well under a million parameters to an 8M model — under ten percent, most of it in the wider decoder input. Whatever it does to the curve, it does not do it by being bigger. The curve itself is block 01.</div>
+  </div>
+</section>
+
+<!-- ======================================================= 01 attention in seq2seq -->
+<section id="seq2seq">
+  <p class="eyebrow">Block 01 · attention in seq2seq</p>
+  <h2>The recipe: score, normalise, aggregate</h2>
+  <div class="prose">
+    <p>Last week we threw all of the hidden states of encoder away except the last one. Attention (Bahdanau, Cho &amp; Bengio 2015) keeps them and lets the decoder consult them. At every decoding step <math><mi>t</mi></math>:</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>One decoder step with attention</span></div>
+    <div class="panel-body"><div id="fig-s2s-attn" class="fig"></div></div>
+    <div class="panel-note">The red dashed arrow is last week's entire connection between the halves; it is still there (it initialises the decoder), but it no longer has to carry the sentence. The green arrows are new, and they are recomputed at every step with different weights.</div>
+  </div>
+  <div class="two">
+    <div class="fstack panel" style="margin:0">
+      <div class="panel-body tight">
+        <div class="row"><span class="n">1</span><div><span class="fx" data-f="score"><math><mrow><msub><mi>e</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><mi mathvariant="normal">score</mi><mrow><mo>(</mo><msub><mi>s</mi><mi>t</mi></msub><mo>,</mo><msub><mi>h</mi><mi>i</mi></msub><mo>)</mo></mrow></mrow></math></span><div class="say"><strong>score</strong> every encoder state against the current decoder state.</div></div></div>
+        <div class="row"><span class="n">2</span><div><span class="fx" data-f="softmax"><math><mrow><msub><mi>α</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><msub><mi mathvariant="normal">softmax</mi><mi>i</mi></msub><mrow><mo>(</mo><msub><mi>e</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>)</mo></mrow></mrow></math></span><div class="say"><strong>normalise</strong> the scores into weights with a softmax over the source positions.</div></div></div>
+        <div class="row"><span class="n">3</span><div><span class="fx" data-f="sum"><math><mrow><msub><mi>c</mi><mi>t</mi></msub><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>α</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mspace width="0.2em"/><msub><mi>h</mi><mi>i</mi></msub></mrow></math></span><div class="say"><strong>aggregate</strong>: the context is the weighted sum of the encoder states.</div></div></div>
+        <div class="row"><span class="n">+</span><div><span class="fx" data-f="feed"><math><mrow><msub><mover><mi>h</mi><mo>~</mo></mover><mi>t</mi></msub><mo>=</mo><mi mathvariant="normal">tanh</mi><mrow><mo>(</mo><msub><mi>W</mi><mi>c</mi></msub><mrow><mo>[</mo><msub><mi>h</mi><mi>t</mi></msub><mo>;</mo><msub><mi>c</mi><mi>t</mi></msub><mo>]</mo></mrow><mo>)</mo></mrow></mrow></math></span><div class="say"><strong>input feeding</strong> (Luong et al. 2015): the attentional vector feeds the output layer and, at the next step, the decoder input.</div></div></div>
+      </div>
+    </div>
+    <div class="prose">
+      <p>The context <math><msub><mi>c</mi><mi>t</mi></msub></math> is a different vector at every step — from the point of how it is seen from the word being produced right now. The decoder gets it on top of its own state, and the output layer reads both. Three names that stick for the rest of the course: the decoder state is the <strong>query</strong>, the encoder states are the <strong>keys</strong> (what the score is computed against) and the <strong>values</strong> (what gets summed). Here keys and values are the same vectors yet.</p>
+      <p>One more detail: <strong>input feeding</strong>. The previous step's context is concatenated to the decoder's input at step <math><mi>t</mi></math>, so the decoder knows where it looked last time — without it, the model tends to translate the same source word twice or skip one.</p>
+    </div>
+  </div>
+
+  <h3>Implementation</h3>
+  <div class="prose">
+    <p>Attention (hehe) here!: the encoder states of a <em>padded</em> batch include states for <code>[PAD]</code> positions, and the softmax must never put weight on them. The mask sets their scores to a large negative number <em>before</em> the softmax. Large negative, not <math><mrow><mo>−</mo><mi>∞</mi></mrow></math>: if a row were ever fully masked, <math><mrow><mo>−</mo><mi>∞</mi></mrow></math> everywhere gives <math><mrow><mi mathvariant="normal">exp</mi><mo>(</mo><mo>−</mo><mi>∞</mi><mo>)</mo><mo>/</mo><mn>0</mn><mo>=</mo></mrow></math> NaN, and NaN in one weight is NaN in every parameter one backward pass later.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>class Attention · one formula, four score functions · hover a line</span><span class="mono">notebook 1.2</span></div>
+    <div class="panel-body">
+      <div class="two stacked">
+<pre class="code"><span class="ln"><span class="kw">class</span> Attention(nn.Module):</span>
+<span class="ln">    <span class="kw">def</span> __init__(self, q_dim, k_dim, kind="additive", attn_dim=None):</span>
+<span class="ln">        super().__init__()</span>
+<span class="ln">        self.kind = kind</span>
+<span class="ln">        attn_dim = attn_dim or q_dim</span>
+<span class="ln" data-f="add">        <span class="kw">if</span> kind == "additive":</span>
+<span class="ln" data-f="add">            self.W_q = nn.Linear(q_dim, attn_dim, bias=False)</span>
+<span class="ln" data-f="add">            self.W_k = nn.Linear(k_dim, attn_dim, bias=False)</span>
+<span class="ln" data-f="add">            self.v = nn.Linear(attn_dim, 1, bias=False)</span>
+<span class="ln" data-f="gen">        <span class="kw">elif</span> kind == "general":</span>
+<span class="ln" data-f="gen">            self.W = nn.Linear(k_dim, q_dim, bias=False)</span>
+<span class="ln" data-f="dot sdot">        <span class="kw">elif</span> kind <span class="kw">in</span> ("dot", "scaled_dot"):</span>
+<span class="ln" data-f="dot sdot">            <span class="kw">assert</span> q_dim == k_dim, "dot-product scores need queries and keys of one size"</span>
+<span class="ln">        <span class="kw">else</span>:</span>
+<span class="ln">            <span class="kw">raise</span> ValueError(kind)</span>
+<span class="ln"></span>
+<span class="ln" data-f="score">    <span class="kw">def</span> score(self, q, k):</span>
+<span class="ln" data-f="add">        <span class="kw">if</span> self.kind == "additive":</span>
+<span class="ln" data-f="add">            <span class="c"># (B, T, 1, A) + (B, 1, S, A) -> (B, T, S, A) -> (B, T, S)</span></span>
+<span class="ln" data-f="add">            <span class="kw">return</span> self.v(torch.tanh(self.W_q(q).unsqueeze(2) + self.W_k(k).unsqueeze(1))).squeeze(-1)</span>
+<span class="ln" data-f="gen">        <span class="kw">if</span> self.kind == "general":</span>
+<span class="ln" data-f="gen">            <span class="kw">return</span> q @ self.W(k).transpose(1, 2)</span>
+<span class="ln" data-f="dot">        s = q @ k.transpose(1, 2)                                  <span class="c"># one matmul for the whole batch</span></span>
+<span class="ln" data-f="sdot">        <span class="kw">return</span> s / math.sqrt(q.size(-1)) <span class="kw">if</span> self.kind == "scaled_dot" <span class="kw">else</span> s</span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> forward(self, q, k, v, mask=None):</span>
+<span class="ln" data-f="score">        s = self.score(q, k)</span>
+<span class="ln" data-f="mask">        <span class="kw">if</span> mask <span class="kw">is not</span> None:</span>
+<span class="ln" data-f="mask">            <span class="c"># a large negative number, not -inf: a fully masked row would give NaN</span></span>
+<span class="ln" data-f="mask">            s = s.masked_fill(~mask.unsqueeze(1), -1e9)</span>
+<span class="ln" data-f="softmax">        w = torch.softmax(s, dim=-1)</span>
+<span class="ln" data-f="sum">        <span class="kw">return</span> w @ v, w</span></pre>
+        <div class="fstack">
+          <div class="row"><span class="n">score</span><div><span class="fx" data-f="score"><math><mrow><msub><mi>e</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><mi mathvariant="normal">score</mi><mrow><mo>(</mo><msub><mi>s</mi><mi>t</mi></msub><mo>,</mo><msub><mi>h</mi><mi>i</mi></msub><mo>)</mo></mrow></mrow></math></span>
+            <div class="say">four ways to write it, one per branch:</div>
+            <div><span class="fx" data-f="add"><math><mrow><msup><mi>v</mi><mo>⊤</mo></msup><mi mathvariant="normal">tanh</mi><mrow><mo>(</mo><msub><mi>W</mi><mi>q</mi></msub><mi>q</mi><mo>+</mo><msub><mi>W</mi><mi>k</mi></msub><mi>k</mi><mo>)</mo></mrow></mrow></math></span> <span class="say">additive · Bahdanau 2015</span></div>
+            <div><span class="fx" data-f="dot"><math><mrow><msup><mi>q</mi><mo>⊤</mo></msup><mi>k</mi></mrow></math></span> <span class="say">dot · Luong 2015</span></div>
+            <div><span class="fx" data-f="gen"><math><mrow><msup><mi>q</mi><mo>⊤</mo></msup><mi>W</mi><mi>k</mi></mrow></math></span> <span class="say">general · Luong 2015</span></div>
+            <div><span class="fx" data-f="sdot"><math><mrow><msup><mi>q</mi><mo>⊤</mo></msup><mi>k</mi><mo>/</mo><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></mrow></math></span> <span class="say">scaled dot · Vaswani 2017</span></div></div></div>
+          <div class="row"><span class="n">mask</span><div><span class="fx" data-f="mask"><math><mrow><msub><mi>e</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>←</mo><mo>−</mo><msup><mn>10</mn><mn>9</mn></msup><mspace width="0.4em"/><mtext>where</mtext><mspace width="0.4em"/><msub><mi>x</mi><mi>i</mi></msub><mo>=</mo><mtext>[PAD]</mtext></mrow></math></span><div class="say">before the softmax, so the weight comes out exactly zero after it.</div></div></div>
+          <div class="row"><span class="n">softmax</span><div><span class="fx" data-f="softmax"><math><mrow><msub><mi>α</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><mfrac><msup><mi>e</mi><msub><mi>e</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub></msup><mrow><msub><mo>∑</mo><mi>j</mi></msub><msup><mi>e</mi><msub><mi>e</mi><mrow><mi>t</mi><mo>,</mo><mi>j</mi></mrow></msub></msup></mrow></mfrac></mrow></math></span><div class="say">over the source positions: <code>dim=-1</code> is the key axis.</div></div></div>
+          <div class="row"><span class="n">sum</span><div><span class="fx" data-f="sum"><math><mrow><msub><mi>c</mi><mi>t</mi></msub><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>α</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><msub><mi>v</mi><mi>i</mi></msub></mrow></math></span><div class="say">one matmul: <code>(B, T, S) @ (B, S, Dv)</code>. The weights are returned too — we will want to look at them.</div></div></div>
+        </div>
+      </div>
+      <details class="codenote"><summary><span class="k">the rest</span><span class="libs">class AttnSeq2Seq — the week-2 Seq2SeqLSTM plus attention: same bidirectional encoder, same decoder cell, but the decoder re-reads ALL encoder states at every step</span></summary>
+<pre class="code"><span class="ln"><span class="kw">class</span> AttnSeq2Seq(nn.Module):</span>
+<span class="ln">    <span class="c">"""keys = k_proj(encoder states) (2H -> H, shared by every score kind); values = encoder states (2H);</span></span>
+<span class="ln">    <span class="c">query = decoder hidden state h_t (H). h~_t = tanh(W_c [h_t; c_t]) feeds the output layer and,</span></span>
+<span class="ln">    <span class="c">at the next step, the decoder input (input feeding, Luong et al. 2015)."""</span></span>
+<span class="ln">    <span class="kw">def</span> __init__(self, src_vocab, trg_vocab, emb=256, hidden=256, dropout=0.2, score="additive"):</span>
+<span class="ln">        super().__init__()</span>
+<span class="ln">        self.hidden, self.score_kind = hidden, score</span>
+<span class="ln">        self.src_emb = nn.Embedding(src_vocab, emb, padding_idx=PAD)</span>
+<span class="ln">        self.trg_emb = nn.Embedding(trg_vocab, emb, padding_idx=PAD)</span>
+<span class="ln">        self.encoder = nn.LSTM(emb, hidden, batch_first=True, bidirectional=True)</span>
+<span class="ln">        self.h_proj = nn.Linear(2 * hidden, hidden)                <span class="c"># initial decoder state, as in week 2</span></span>
+<span class="ln">        self.c_proj = nn.Linear(2 * hidden, hidden)</span>
+<span class="ln">        self.k_proj = nn.Linear(2 * hidden, hidden)                <span class="c"># keys</span></span>
+<span class="ln">        self.attn = Attention(hidden, hidden, kind=score)</span>
+<span class="ln">        self.decoder = nn.LSTM(emb + hidden, hidden, batch_first=True)   <span class="c"># input: [y_{t-1}; h~_{t-1}]</span></span>
+<span class="ln">        self.comb = nn.Linear(hidden + 2 * hidden, hidden)         <span class="c"># [h_t; c_t] -> h~_t</span></span>
+<span class="ln">        self.out = nn.Linear(hidden, trg_vocab)</span>
+<span class="ln">        self.drop = nn.Dropout(dropout)</span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> encode(self, src, src_len):</span>
+<span class="ln">        e = self.drop(self.src_emb(src))</span>
+<span class="ln">        packed = pack_padded_sequence(e, src_len.cpu(), batch_first=True, enforce_sorted=False)</span>
+<span class="ln">        out, (h, c) = self.encoder(packed)</span>
+<span class="ln">        enc, _ = pad_packed_sequence(out, batch_first=True, total_length=src.size(1))   <span class="c"># (B, S, 2H)</span></span>
+<span class="ln">        h = torch.tanh(self.h_proj(torch.cat([h[0], h[1]], dim=-1))).unsqueeze(0)</span>
+<span class="ln">        c = torch.tanh(self.c_proj(torch.cat([c[0], c[1]], dim=-1))).unsqueeze(0)</span>
+<span class="ln">        mask = src != PAD</span>
+<span class="ln">        <span class="kw">return</span> enc, self.k_proj(enc), mask, (h, c)</span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> decode_step(self, y_prev, state, enc, keys, mask, feed):</span>
+<span class="ln">        e = self.drop(self.trg_emb(y_prev))                        <span class="c"># (B, 1, E)</span></span>
+<span class="ln">        o, state = self.decoder(torch.cat([e, feed], dim=-1), state)   <span class="c"># (B, 1, H)</span></span>
+<span class="ln">        ctx, w = self.attn(o, keys, enc, mask)                     <span class="c"># (B, 1, 2H), (B, 1, S)</span></span>
+<span class="ln">        feed = torch.tanh(self.comb(torch.cat([o, ctx], dim=-1)))  <span class="c"># attentional vector h~_t</span></span>
+<span class="ln">        <span class="kw">return</span> self.out(self.drop(feed)), state, feed, w</span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> forward(self, src, src_len, trg_in):</span>
+<span class="ln">        <span class="c"># teacher forcing, one step at a time (input feeding makes the steps sequential)</span></span>
+<span class="ln">        enc, keys, mask, state = self.encode(src, src_len)</span>
+<span class="ln">        feed = enc.new_zeros(src.size(0), 1, self.hidden)</span>
+<span class="ln">        logits, weights = [], []</span>
+<span class="ln">        <span class="kw">for</span> t <span class="kw">in</span> range(trg_in.size(1)):</span>
+<span class="ln">            lg, state, feed, w = self.decode_step(trg_in[:, t:t + 1], state, enc, keys, mask, feed)</span>
+<span class="ln">            logits.append(lg); weights.append(w)</span>
+<span class="ln">        <span class="kw">return</span> torch.cat(logits, dim=1), torch.cat(weights, dim=1)   <span class="c"># (B, T, V), (B, T, S)</span></span></pre>
+        <div class="why">Nothing changed in training from the last week: the same <code>train_seq2seq</code> loop, cross-entropy at every position except padding, gradient clipping at 1.0.</div>
+      </details>
+    </div>
+  </div>
+
+  <h3>Training, and what an epoch costs</h3>
+  <div class="panel">
+    <div class="panel-head"><span>One epoch, live in the notebook · additive attention · 5 000 pairs</span><span class="mono" id="live-attn-stats"></span></div>
+    <div class="panel-body"><div class="stat-row" id="live-attn-out"></div></div>
+    <div class="panel-note">Attention with a 256-dimensional scoring space, the key projection and the attentional vector together add well under a million parameters to an 8M model — under ten percent, most of it in the wider decoder input. Whatever it does to the curve, it does not do it by being bigger. Not efficient, next.</div>
+  </div>
+
+  <h3>The curve, with attention</h3>
+  <div class="panel">
+    <div class="panel-head"><span>Same data, same epochs, same size · precomputed, 6 epochs</span><span class="mono" id="attn-stats"></span></div>
+    <div class="panel-body"><div class="grid-2"><div id="attn-bleu-chart"></div><div id="attn-len-chart"></div></div></div>
+    <div class="panel-note" id="attn-note">Read the right-hand plot against the bet. The no-attention curve slopes down; the attention curve is higher <em>everywhere</em> — by more than twenty BLEU at every length. Long sentences are no longer squeezed through a fixed budget: every decoder step re-reads the source, so the twenty-fifth German token is as available as the first. This is Figure 2 of Bahdanau et al. (2015), on our data. One honest reading of the slope: <span id="attn-slope"></span></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The same three sentences, now with attention</span></div>
+    <div class="panel-body" id="attn-show"></div>
+  </div>
+
+  <h3>Alignment that nobody taught</h3>
+  <div class="prose">
+    <p>The weights <math><msub><mi>α</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub></math> are numbers we can look at: a row per English token, a column per German token, the weight the decoder put on each source position while producing each target token. The model was never shown which German word corresponds to which English word — only sentence pairs — so whatever structure appears in this matrix was learned as a <em>by-product</em> of translating.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>LSTM + additive attention · greedy translation of a test sentence</span><span class="btnrow"><select id="align-pick" style="width:auto"></select><button class="primary" id="btn-align-random">Random sentence</button></span></div>
+    <div class="panel-body">
+      <div class="footnote" id="align-sent" style="margin-bottom:10px"></div>
+      <div class="hm-wrap"><div><div class="hm-title">LSTM + additive attention</div><div class="hm" id="align-lstm"></div></div><div><div class="hm-title" id="align-tf-title">transformer, best cross-attention head (block 06)</div><div class="hm" id="align-tf"></div></div></div>
+    </div>
+    <div class="panel-note">Things to look for, and to check on your own sentences: <strong>a near-diagonal</strong> — German and English caption word order mostly agree, so most target tokens attend to the source token in the same place; the interesting cells are the ones <em>off</em> the diagonal. <strong>Word-order swaps</strong> — German puts the verb of a subordinate clause at the end (<em>…, der einen Hut <b>trägt</b></em> → <em>who <b>is wearing</b> a hat</em>): the English verb should attend far to the right of where the diagonal would put it; compound nouns go the other way, one German token feeds several English ones. <strong>Function words</strong> — articles and <code>[EOS]</code> often attend diffusely or to the end of the sentence. One sentence of caution: the map shows where the decoder <em>looked</em>, not <em>why</em> it chose the word. It is evidence of alignment, not an explanation of the translation. Read it as "there is some kind of relation, but idk what kind".
+      <div class="footnote" style="margin-top:8px">Question: what does it mean when a German word receives almost no attention from any target position? How would you measure how often that happens, and what would you expect it to correlate with? (Tu et al. 2016 call the fix <em>coverage</em>.)</div></div>
+  </div>
+</section>
+
+<!-- ======================================================== 02 the score function -->
+<section id="score">
+  <p class="eyebrow">Block 02 · axis 1 — the score function</p>
+  <h2>Four ways to score, and why √d<sub>k</sub> is a temperature</h2>
+  <div class="prose">
+    <p>There are several options of how to calculate the attention:</p>
+  </div>
+  <div class="panel">
+    <div class="panel-body tight scroll-x">
+      <table class="scores">
+        <thead><tr><th>kind</th><th>score(q, k)</th><th>parameters</th><th>cost</th><th>who</th></tr></thead>
+        <tbody>
+          <tr><td>additive (concat)</td><td><math><mrow><msup><mi>v</mi><mo>⊤</mo></msup><mi mathvariant="normal">tanh</mi><mrow><mo>(</mo><msub><mi>W</mi><mi>q</mi></msub><mi>q</mi><mo>+</mo><msub><mi>W</mi><mi>k</mi></msub><mi>k</mi><mo>)</mo></mrow></mrow></math></td><td><math><mrow><mn>2</mn><mi>d</mi><msub><mi>d</mi><mi>a</mi></msub><mo>+</mo><msub><mi>d</mi><mi>a</mi></msub></mrow></math></td><td>a tanh per (query, key) pair — no matmul</td><td>Bahdanau et al. 2015</td></tr>
+          <tr><td>dot</td><td><math><mrow><msup><mi>q</mi><mo>⊤</mo></msup><mi>k</mi></mrow></math></td><td>0</td><td>one matmul for the whole batch</td><td>Luong et al. 2015</td></tr>
+          <tr><td>general (bilinear)</td><td><math><mrow><msup><mi>q</mi><mo>⊤</mo></msup><mi>W</mi><mi>k</mi></mrow></math></td><td><math><msup><mi>d</mi><mn>2</mn></msup></math></td><td>one matmul, plus one</td><td>Luong et al. 2015</td></tr>
+          <tr><td>scaled dot</td><td><math><mrow><msup><mi>q</mi><mo>⊤</mo></msup><mi>k</mi><mo>/</mo><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></mrow></math></td><td>0</td><td>one matmul</td><td>Vaswani et al. 2017</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3>Why √d<sub>k</sub> is a temperature</h3>
+  <div class="prose">
+    <p>Four steps.</p>
+    <p><strong>1. By definition.</strong> The weights are <math><mrow><msub><mi mathvariant="normal">softmax</mi><mi>i</mi></msub><mo>(</mo><msup><mi>q</mi><mo>⊤</mo></msup><msub><mi>k</mi><mi>i</mi></msub><mo>/</mo><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt><mo>)</mo></mrow></math>. Last week's temperature softmax was <math><mrow><msub><mi mathvariant="normal">softmax</mi><mi>i</mi></msub><mo>(</mo><msub><mi>z</mi><mi>i</mi></msub><mo>/</mo><mi>T</mi><mo>)</mo></mrow></math>. Same formula, with <math><mrow><msub><mi>z</mi><mi>i</mi></msub><mo>=</mo><msup><mi>q</mi><mo>⊤</mo></msup><msub><mi>k</mi><mi>i</mi></msub></mrow></math> and <math><mrow><mi>T</mi><mo>=</mo><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></mrow></math>. Dividing the logits by a constant before the softmax <em>is</em> a temperature; the scale does nothing else.</p>
+    <p><strong>2. Why that constant.</strong> If the coordinates of <math><mi>q</mi></math> and <math><mi>k</mi></math> are independent with mean 0 and variance 1 — which they are at initialisation — then <math><mrow><msup><mi>q</mi><mo>⊤</mo></msup><mi>k</mi><mo>=</mo><msubsup><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>d</mi><mi>k</mi></msub></msubsup><msub><mi>q</mi><mi>j</mi></msub><msub><mi>k</mi><mi>j</mi></msub></mrow></math> is a sum of <math><msub><mi>d</mi><mi>k</mi></msub></math> independent terms of variance 1. Its variance is <math><msub><mi>d</mi><mi>k</mi></msub></math>; its standard deviation is <math><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></math>. At <math><mrow><msub><mi>d</mi><mi>k</mi></msub><mo>=</mo><mn>64</mn></mrow></math> the scores spread over roughly ±8; at 1 024, over ±32. Nothing about the <em>content</em> changed — longer vectors give bigger numbers. Dividing by <math><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></math> puts the standard deviation back to 1 whatever the dimension.</p>
+    <p><strong>3. What breaks without it.</strong> Softmax over logits that spread ±32: the largest is typically tens of units above the second, <math><msup><mi>e</mi><mn>30</mn></msup></math> against <math><msup><mi>e</mi><mn>0</mn></msup></math>, so the biggest key gets weight ≈ 1 and everything else ≈ 0. The derivative of the softmax is <math><mrow><msub><mi>p</mi><mi>i</mi></msub><mo>(</mo><msub><mi>δ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo>)</mo></mrow></math>, and with one <math><mrow><mi>p</mi><mo>=</mo><mn>1</mn></mrow></math> and the rest 0 every such product is zero — no gradient reaches the scores, and the model cannot learn to look elsewhere. The same flat region as a saturated sigmoid, for a different reason.</p>
+    <p><strong>4. The two limits are two degenerate attentions.</strong> <math><mrow><mi>T</mi><mo>→</mo><mn>0</mn></mrow></math>: softmax → argmax, the weighted sum picks one value — that is hard attention. <math><mrow><mi>T</mi><mo>→</mo><mi>∞</mi></mrow></math>: uniform, the mean of all values. <math><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></math> puts the model in the middle at the start.</p>
+  </div>
+<div class="formula"><span class="fn">The scale is a temperature · Var(q<sup>⊤</sup>k) = d<sub>k</sub> at initialisation</span><math display="block"><mrow><msub><mi>α</mi><mi>i</mi></msub><mo>=</mo><msub><mi mathvariant="normal">softmax</mi><mi>i</mi></msub><mrow><mo>(</mo><mfrac><msub><mi>z</mi><mi>i</mi></msub><mi>T</mi></mfrac><mo>)</mo></mrow><mo>,</mo><mspace width="0.6em"/><msub><mi>z</mi><mi>i</mi></msub><mo>=</mo><msup><mi>q</mi><mo>⊤</mo></msup><msub><mi>k</mi><mi>i</mi></msub><mo>,</mo><mspace width="0.6em"/><mi>T</mi><mo>=</mo><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt><mo>,</mo><mspace width="0.8em"/><mi mathvariant="normal">Var</mi><mrow><mo>(</mo><msup><mi>q</mi><mo>⊤</mo></msup><mi>k</mi><mo>)</mo></mrow><mo>=</mo><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>d</mi><mi>k</mi></msub></munderover><mi mathvariant="normal">Var</mi><mrow><mo>(</mo><msub><mi>q</mi><mi>j</mi></msub><msub><mi>k</mi><mi>j</mi></msub><mo>)</mo></mrow><mo>=</mo><msub><mi>d</mi><mi>k</mi></msub></mrow></math><math display="block"><mrow><mfrac><mrow><mo>∂</mo><msub><mi>p</mi><mi>i</mi></msub></mrow><mrow><mo>∂</mo><msub><mi>z</mi><mi>j</mi></msub></mrow></mfrac><mo>=</mo><msub><mi>p</mi><mi>i</mi></msub><mrow><mo>(</mo><msub><mi>δ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo>)</mo></mrow><mspace width="0.8em"/><mtext>— zero everywhere once one p is 1</mtext></mrow></math></div>
+  <div class="panel">
+    <div class="panel-head"><span>Random q and 30 random keys, in your browser · entropy of the weights and the gradient through the softmax</span><span class="btnrow"><span class="toggle" id="temp-scaled"><button class="sel" data-v="0">unscaled</button><button data-v="1">/ √d<sub>k</sub></button></span><button id="btn-temp-redraw">New draw</button></span></div>
+    <div class="panel-body">
+      <div class="sliders"><label class="field">d<sub>k</sub> <b id="temp-dk-v">64</b><input type="range" id="temp-dk" min="0" max="6" step="1" value="2"></label></div>
+      <div class="grid-2"><div><div class="hm-title">one draw: the 30 weights</div><div id="temp-bars"></div></div><div><div class="hm-title">median over 200 draws, this page vs the notebook</div><div id="temp-table" class="scroll-x"></div></div></div>
+    </div>
+    <div class="panel-note">Unscaled, the entropy collapses toward zero and the gradient with it, by orders of magnitude as <math><msub><mi>d</mi><mi>k</mi></msub></math> grows; scaled, both are independent of <math><msub><mi>d</mi><mi>k</mi></msub></math>. At <math><mrow><msub><mi>d</mi><mi>k</mi></msub><mo>=</mo><mn>16</mn></mrow></math> it barely matters — which is why the RNN-era attention models, with their small scoring spaces, got away without it. The transformer, with <math><msub><mi>d</mi><mi>k</mi></msub></math> in the hundreds, did not. One honest footnote: the scale fixes the temperature <em>at initialisation only</em>. The model can learn any other through the norms of <math><msub><mi>W</mi><mi>Q</mi></msub></math> and <math><msub><mi>W</mi><mi>K</mi></msub></math>, so the constant conditions training rather than constraining the model. Large models have since made that explicit — QK-norm (Dehghani et al. 2023; Gemma, OLMo) normalises <math><mi>q</mi></math> and <math><mi>k</mi></math> and learns the temperature as a scalar.</div>
+  </div>
+
+  <h3>📌 Bet · three score functions, same everything else</h3>
+  <div class="prose">
+    <p>Everything is pretrained (again): the same AttnSeq2Seq, the same 6 epochs, the same 29 000 pairs, only the <code>score=</code> argument differs. Run <code>precompute.py</code> if you want to retrain the models.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>additive vs general vs scaled_dot · test BLEU</span><span class="btnrow"><span class="mono" id="score-score"></span><button class="primary" id="btn-score-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-score-worst"><span class="q">(1) Which of the three lands lowest?</span></div>
+      <div class="bet" id="bet-score-gap"><span class="q">(2) Additive vs scaled dot — how far apart?</span></div>
+      <div id="score-out" hidden style="margin-top:14px"><div class="grid-2"><div class="scroll-x"><table id="score-table"></table></div><div id="score-chart"></div></div></div>
+    </div>
+    <div class="panel-note" id="score-note" hidden>Claim 2, checked: <strong>additive and scaled dot land within half a BLEU point of each other</strong>, with the same parameter budget to within a percent. The surprise is <em>general</em> — the bilinear score with a free 256×256 matrix — which trains slowly from the first epoch and ends seventeen points behind. Its <math><mrow><msup><mi>q</mi><mo>⊤</mo></msup><mi>W</mi><mi>k</mi></mrow></math> is an unscaled dot product in disguise, with the temperature left to the norm of <math><mi>W</mi></math>: the score function barely matters, the scale does.</div>
+  </div>
+</section>
+
+<!-- ======================================================== 03 masks -->
+<section id="masks">
+  <p class="eyebrow">Block 03 · axes 2 and 3 — what attends to what, and over which set</p>
+  <h2>Cross, self, causal</h2>
+  <div class="prose">
+    <p>Three cases of one formula:</p>
+    <p><strong>Cross-attention</strong> — queries from one sequence (en), keys and values from another (de). The decoder reading the encoder.<br>
+    <strong>Self-attention</strong> — <math><mi>Q</mi></math>, <math><mi>K</mi></math> and <math><mi>V</mi></math> all from the same sequence (for example, en): every position gathers a context from every other position. This is the one that replaces recurrence.<br>
+    <strong>Masked (causal) self-attention</strong> — self-attention where position <math><mi>t</mi></math> is forbidden to look at positions <math><mrow><mo>&gt;</mo><mi>t</mi></mrow></math>. Without the mask, position <math><mi>t</mi></math> would simply read the answer at <math><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></math> from the gold sequence, learn nothing, and have nothing to read at generation time.</p>
+    <p>Masks are just boolean matrices, and it is worth seeing them once as pictures. A padding mask says which <em>keys</em> are real tokens; a causal mask says which <em>keys</em> are in the past; a decoder's self-attention uses both.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Four masks · S = 8 · white = may attend, black = masked</span><span class="mono">rows: query position · columns: key position</span></div>
+    <div class="panel-body"><div class="grid-4" id="masks-out"></div></div>
+    <div class="panel-note">In the code, black cells get <math><mrow><mo>−</mo><msup><mn>10</mn><mn>9</mn></msup></mrow></math> added to their score before the softmax, so their weight is exactly zero after it.</div>
+  </div>
+</section>
+
+<!-- ======================================================== 04 the transformer -->
+<section id="tf">
+  <p class="eyebrow">Block 04 · the transformer, from scratch</p>
+  <h2>Nothing but attention, feed-forward layers and plumbing</h2>
+  <div class="prose">
+    <p>We now have every conceptual piece. Vaswani et al. (2017) asked: if attention is what fixed the encoder–decoder, and self-attention has a path length of one — why keep the LSTM at all? The answer was a model made of nothing but attention, feed-forward layers and the plumbing needed to make that trainable. We build it piece by piece. Every piece gets one sentence of "why it is there" and one check.</p>
+  </div>
+
+  <h3>4.1 Scaled dot-product attention — the function</h3>
+  <div class="prose">
+    <p>Queries, keys and values are batched tensors; the mask is a boolean tensor broadcastable to <code>(..., T, S)</code>; the output is the weighted sum and the weights themselves (we will want to look at them).</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>The arithmetic for one query · d<sub>k</sub> = 4, three keys · numbers drawn in your browser</span><span class="btnrow"><button id="btn-qkv-redraw">New vectors</button></span></div>
+    <div class="panel-body"><div id="fig-qkv" class="fig"></div></div>
+    <div class="panel-note">Step by step, after <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener">Alammar (2018)</a>: each input <math><msub><mi>x</mi><mi>i</mi></msub></math> is projected three times — a query, a key, a value. The query of position 1 is dotted with every key, divided by <math><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></math>, softmaxed, and the resulting weights mix the values into <math><msub><mi>z</mi><mn>1</mn></msub></math>. Rows of the matrix picture below are exactly this, done for every query at once.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Every query at once · softmax(QKᵀ / √d) · V, for T = S = 3 tokens, d = 4</span></div>
+    <div class="panel-body"><div id="fig-matrix" class="fig"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>def attention · the whole thing · hover a line, the term lights up</span><span class="ck" id="ck-sdpa"></span></div>
+    <div class="panel-body">
+      <div class="two stacked">
+<pre class="code"><span class="ln"><span class="kw">def</span> attention(q, k, v, mask=None, dropout=None):</span>
+<span class="ln">    <span class="c">"""Scaled dot-product attention (Vaswani et al. 2017).</span></span>
+<span class="ln">    <span class="c">q: (..., T, d_k)  k: (..., S, d_k)  v: (..., S, d_v)</span></span>
+<span class="ln">    <span class="c">mask: broadcastable to (..., T, S), True = may attend."""</span></span>
+<span class="ln" data-f="qk scale">    scores = q @ k.transpose(-2, -1) / math.sqrt(q.size(-1))</span>
+<span class="ln" data-f="mask">    <span class="kw">if</span> mask <span class="kw">is not</span> None:</span>
+<span class="ln" data-f="mask">        scores = scores.masked_fill(~mask, -1e9)</span>
+<span class="ln" data-f="softmax">    w = torch.softmax(scores, dim=-1)</span>
+<span class="ln">    <span class="kw">if</span> dropout <span class="kw">is not</span> None:</span>
+<span class="ln">        w = dropout(w)</span>
+<span class="ln" data-f="wv">    <span class="kw">return</span> w @ v, w</span></pre>
+        <div class="fstack">
+          <div class="row"><span class="n">all</span><div><math display="block"><mrow><mi mathvariant="normal">Attention</mi><mrow><mo>(</mo><mi>Q</mi><mo>,</mo><mi>K</mi><mo>,</mo><mi>V</mi><mo>)</mo></mrow><mo>=</mo><mrow class="fx" data-f="softmax"><mi mathvariant="normal">softmax</mi></mrow><mrow><mo>(</mo><mfrac><mrow class="fx" data-f="qk"><mi>Q</mi><msup><mi>K</mi><mo>⊤</mo></msup></mrow><mrow class="fx" data-f="scale"><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></mrow></mfrac><mo>)</mo></mrow><mrow class="fx" data-f="wv"><mi>V</mi></mrow></mrow></math></div></div>
+          <div class="row"><span class="n">line 5</span><div><span class="fx" data-f="qk"><math><mrow><msub><mi>e</mi><mrow><mi>t</mi><mi>i</mi></mrow></msub><mo>=</mo><msub><mi>q</mi><mi>t</mi></msub><mo>·</mo><msub><mi>k</mi><mi>i</mi></msub></mrow></math></span> <span class="fx" data-f="scale"><math><mrow><mo>/</mo><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></mrow></math></span><div class="say">every query against every key in one matmul: <code>(…, T, d_k) @ (…, d_k, S) → (…, T, S)</code>; then the temperature of block 02.</div></div></div>
+          <div class="row"><span class="n">lines 6–7</span><div><span class="fx" data-f="mask"><math><mrow><msub><mi>e</mi><mrow><mi>t</mi><mi>i</mi></mrow></msub><mo>←</mo><mo>−</mo><msup><mn>10</mn><mn>9</mn></msup><mspace width="0.4em"/><mtext>where</mtext><mspace width="0.4em"/><msub><mi>M</mi><mrow><mi>t</mi><mi>i</mi></mrow></msub><mo>=</mo><mn>0</mn></mrow></math></span><div class="say">padding, causal, or both — the mask is whatever boolean matrix block 03 drew.</div></div></div>
+          <div class="row"><span class="n">line 8</span><div><span class="fx" data-f="softmax"><math><mrow><msub><mi>α</mi><mrow><mi>t</mi><mi>i</mi></mrow></msub><mo>=</mo><msub><mi mathvariant="normal">softmax</mi><mi>i</mi></msub><mo>(</mo><msub><mi>e</mi><mrow><mi>t</mi><mo>·</mo></mrow></msub><mo>)</mo></mrow></math></span><div class="say">over the last axis, the keys: every row sums to one.</div></div></div>
+          <div class="row"><span class="n">line 11</span><div><span class="fx" data-f="wv"><math><mrow><msub><mi>z</mi><mi>t</mi></msub><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>α</mi><mrow><mi>t</mi><mi>i</mi></mrow></msub><msub><mi>v</mi><mi>i</mi></msub></mrow></math></span><div class="say">the weighted sum of values, again one matmul.</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-note" id="sdpa-note"></div>
+  </div>
+  <h3>4.2 Multi-head attention</h3>
+  <div class="prose">
+    <p>One softmax produces one weighted average per query — one "pattern" of where to look. But a token has several relationships worth looking up at once: the word it agrees with, the word it modifies, the previous token. So the transformer runs <math><mi>h</mi></math> attentions in parallel, each in its own <math><mrow><mi>d</mi><mo>/</mo><mi>h</mi></mrow></math>-dimensional subspace, and concatenates the results. The cost is the same as one attention of width <math><mi>d</mi></math> (the projections are just sliced), and each head is free to learn a different lookup.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>h = 8 heads → concat → W<sup>O</sup></span></div>
+    <div class="panel-body"><div id="fig-mha" class="fig"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>class MultiHeadAttention · h heads of size d/h, run as one batched matmul</span><span class="ck" id="ck-mha"></span></div>
+    <div class="panel-body">
+      <div class="two stacked">
+<pre class="code"><span class="ln"><span class="kw">class</span> MultiHeadAttention(nn.Module):</span>
+<span class="ln">    <span class="kw">def</span> __init__(self, d, h, dropout=0.1):</span>
+<span class="ln">        super().__init__()</span>
+<span class="ln" data-f="dk">        <span class="kw">assert</span> d % h == 0</span>
+<span class="ln" data-f="dk">        self.h, self.d_k = h, d // h</span>
+<span class="ln" data-f="proj wo">        self.W_q, self.W_k, self.W_v, self.W_o = (nn.Linear(d, d) <span class="kw">for</span> _ <span class="kw">in</span> range(4))</span>
+<span class="ln">        self.drop = nn.Dropout(dropout)</span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> forward(self, q_in, k_in, v_in, mask=None):</span>
+<span class="ln">        B, T, d = q_in.shape</span>
+<span class="ln">        S = k_in.size(1)</span>
+<span class="ln" data-f="proj">        q = self.W_q(q_in).view(B, T, self.h, self.d_k).transpose(1, 2)    <span class="c"># (B, h, T, d_k)</span></span>
+<span class="ln" data-f="proj">        k = self.W_k(k_in).view(B, S, self.h, self.d_k).transpose(1, 2)    <span class="c"># (B, h, S, d_k)</span></span>
+<span class="ln" data-f="proj">        v = self.W_v(v_in).view(B, S, self.h, self.d_k).transpose(1, 2)    <span class="c"># (B, h, S, d_k)</span></span>
+<span class="ln" data-f="head">        out, w = attention(q, k, v, mask, self.drop)                       <span class="c"># (B, h, T, d_k), (B, h, T, S)</span></span>
+<span class="ln" data-f="concat">        out = out.transpose(1, 2).reshape(B, T, d)                         <span class="c"># heads back side by side</span></span>
+<span class="ln" data-f="wo">        <span class="kw">return</span> self.W_o(out), w</span></pre>
+        <div class="fstack">
+          <div class="row"><span class="n">lines 4–5</span><div><span class="fx" data-f="dk"><math><mrow><msub><mi>d</mi><mi>k</mi></msub><mo>=</mo><mi>d</mi><mo>/</mo><mi>h</mi></mrow></math></span><div class="say">256 / 8 = 32 dimensions per head.</div></div></div>
+          <div class="row"><span class="n">lines 12–14</span><div><span class="fx" data-f="proj"><math><mrow><msub><mi>Q</mi><mi>i</mi></msub><mo>=</mo><mi>X</mi><msubsup><mi>W</mi><mi>i</mi><mi>Q</mi></msubsup><mo>,</mo><mspace width="0.3em"/><msub><mi>K</mi><mi>i</mi></msub><mo>=</mo><mi>X</mi><msubsup><mi>W</mi><mi>i</mi><mi>K</mi></msubsup><mo>,</mo><mspace width="0.3em"/><msub><mi>V</mi><mi>i</mi></msub><mo>=</mo><mi>X</mi><msubsup><mi>W</mi><mi>i</mi><mi>V</mi></msubsup></mrow></math></span><div class="say">one <code>d × d</code> matrix per projection, <em>viewed</em> as <math><mi>h</mi></math> slices of <code>d × d_k</code>: the paper's per-head matrices are columns of ours.</div></div></div>
+          <div class="row"><span class="n">line 15</span><div><span class="fx" data-f="head"><math><mrow><msub><mtext>head</mtext><mi>i</mi></msub><mo>=</mo><mi mathvariant="normal">Attention</mi><mrow><mo>(</mo><msub><mi>Q</mi><mi>i</mi></msub><mo>,</mo><msub><mi>K</mi><mi>i</mi></msub><mo>,</mo><msub><mi>V</mi><mi>i</mi></msub><mo>)</mo></mrow></mrow></math></span><div class="say">4.1, with the head axis riding along as a batch dimension.</div></div></div>
+          <div class="row"><span class="n">lines 16–17</span><div><span class="fx" data-f="concat"><math><mrow><mi mathvariant="normal">Concat</mi><mo>(</mo><msub><mtext>head</mtext><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mtext>head</mtext><mi>h</mi></msub><mo>)</mo></mrow></math></span> <span class="fx" data-f="wo"><math><mrow><msup><mi>W</mi><mi>O</mi></msup></mrow></math></span><div class="say">back to <math><mi>d</mi></math>, then one output projection that mixes the heads.</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-note" id="mha-note"></div>
+  </div>
+
+  <h3>4.3 Positions: attention is a set operation</h3>
+  <div class="prose">
+    <p>Here is the thing the formula does not have and an RNN has for free: <em>order</em>. Attention scores each key against the query by content alone; the sum over keys does not care where they were. Permute the input tokens and you permute the outputs the same way — nothing else changes. A self-attention encoder without positional information is a <strong>bag of words</strong>.</p>
+  </div>
+  <div class="prose">
+    <p>So order has to be <em>injected</em>, and the only place to inject it is the input: add to each token embedding a vector that depends on its position. Three ways to make that vector, and they are the three the field has used in order:</p>
+  </div>
+<div class="formula"><span class="fn">Sinusoidal positional encoding · Vaswani et al. 2017</span><math display="block"><mrow><mrow class="fx" data-f="sin"><msub><mi>PE</mi><mrow><mi>p</mi><mo>,</mo><mn>2</mn><mi>i</mi></mrow></msub><mo>=</mo><mi mathvariant="normal">sin</mi><mrow><mo>(</mo><mi>p</mi><mo>·</mo><msub><mi>ω</mi><mi>i</mi></msub><mo>)</mo></mrow></mrow><mo>,</mo><mspace width="0.8em"/><mrow class="fx" data-f="cos"><msub><mi>PE</mi><mrow><mi>p</mi><mo>,</mo><mn>2</mn><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><mi mathvariant="normal">cos</mi><mrow><mo>(</mo><mi>p</mi><mo>·</mo><msub><mi>ω</mi><mi>i</mi></msub><mo>)</mo></mrow></mrow><mo>,</mo><mspace width="0.8em"/><mrow class="fx" data-f="freq"><msub><mi>ω</mi><mi>i</mi></msub><mo>=</mo><mfrac><mn>1</mn><msup><mn>10000</mn><mrow><mn>2</mn><mi>i</mi><mo>/</mo><mi>d</mi></mrow></msup></mfrac><mo>=</mo><mi mathvariant="normal">exp</mi><mrow><mo>(</mo><mo>−</mo><mfrac><mrow><mn>2</mn><mi>i</mi><mo>·</mo><mi mathvariant="normal">ln</mi><mspace width="0.1em"/><mn>10000</mn></mrow><mi>d</mi></mfrac><mo>)</mo></mrow></mrow></mrow></math><math display="block"><mrow><mrow class="fx" data-f="add"><msub><mi>x</mi><mi>p</mi></msub><mo>=</mo><msqrt><mi>d</mi></msqrt><mspace width="0.15em"/><mi>E</mi><mo>[</mo><msub><mi>w</mi><mi>p</mi></msub><mo>]</mo><mo>+</mo><msub><mi>PE</mi><mi>p</mi></msub></mrow><mspace width="1.4em"/><mrow class="fx" data-f="rot"><msub><mi>PE</mi><mrow><mi>p</mi><mo>+</mo><mi>k</mi></mrow></msub><mo>=</mo><msub><mi>R</mi><mi>k</mi></msub><mspace width="0.15em"/><msub><mi>PE</mi><mi>p</mi></msub><mo>,</mo><mspace width="0.4em"/><msub><mi>R</mi><mi>k</mi></msub><mo>=</mo><mi mathvariant="normal">diag</mi><mrow><mo>(</mo><mrow><mo>(</mo><mtable><mtr><mtd><mi mathvariant="normal">cos</mi><mspace width="0.1em"/><mi>k</mi><msub><mi>ω</mi><mi>i</mi></msub></mtd><mtd><mo>−</mo><mi mathvariant="normal">sin</mi><mspace width="0.1em"/><mi>k</mi><msub><mi>ω</mi><mi>i</mi></msub></mtd></mtr><mtr><mtd><mi mathvariant="normal">sin</mi><mspace width="0.1em"/><mi>k</mi><msub><mi>ω</mi><mi>i</mi></msub></mtd><mtd><mi mathvariant="normal">cos</mi><mspace width="0.1em"/><mi>k</mi><msub><mi>ω</mi><mi>i</mi></msub></mtd></mtr></mtable><mo>)</mo></mrow><mo>)</mo></mrow></mrow></mrow></math></div>
+  <div class="panel">
+    <div class="panel-head"><span>class PositionalEncoding · 'sin' (Vaswani), 'learned' (BERT/GPT-2), 'none' (the ablation)</span><span class="ck" id="ck-pe"></span></div>
+    <div class="panel-body">
+      <div class="two stacked">
+<pre class="code"><span class="ln"><span class="kw">class</span> PositionalEncoding(nn.Module):</span>
+<span class="ln">    <span class="kw">def</span> __init__(self, d, max_len=64, kind="sin", dropout=0.1):</span>
+<span class="ln">        super().__init__()</span>
+<span class="ln">        self.kind = kind</span>
+<span class="ln">        self.drop = nn.Dropout(dropout)</span>
+<span class="ln">        <span class="kw">if</span> kind == "sin":</span>
+<span class="ln" data-f="pos">            pos = torch.arange(max_len).unsqueeze(1).float()</span>
+<span class="ln" data-f="freq">            freq = torch.exp(torch.arange(0, d, 2).float() * (-math.log(10000.0) / d))</span>
+<span class="ln">            pe = torch.zeros(max_len, d)</span>
+<span class="ln" data-f="sin">            pe[:, 0::2] = torch.sin(pos * freq)</span>
+<span class="ln" data-f="cos">            pe[:, 1::2] = torch.cos(pos * freq)</span>
+<span class="ln">            self.register_buffer("pe", pe)</span>
+<span class="ln" data-f="learned">        <span class="kw">elif</span> kind == "learned":</span>
+<span class="ln" data-f="learned">            self.pe = nn.Parameter(torch.randn(max_len, d) * 0.02)</span>
+<span class="ln">        <span class="kw">elif</span> kind != "none":</span>
+<span class="ln">            <span class="kw">raise</span> ValueError(kind)</span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> forward(self, x):</span>
+<span class="ln">        <span class="kw">if</span> self.kind != "none":</span>
+<span class="ln" data-f="add">            x = x + self.pe[: x.size(1)]</span>
+<span class="ln">        <span class="kw">return</span> self.drop(x)</span></pre>
+        <div class="fstack">
+          <div class="row"><span class="n">line 8</span><div><span class="fx" data-f="freq"><math><mrow><msub><mi>ω</mi><mi>i</mi></msub><mo>=</mo><msup><mn>10000</mn><mrow><mo>−</mo><mn>2</mn><mi>i</mi><mo>/</mo><mi>d</mi></mrow></msup></mrow></math></span><div class="say">written as <code>exp(2i · (−ln 10000 / d))</code>: the same number, computed without a large power. <math><mrow><mi>d</mi><mo>/</mo><mn>2</mn></mrow></math> frequencies, from 1 down to 1/10000.</div></div></div>
+          <div class="row"><span class="n">lines 10–11</span><div><span class="fx" data-f="sin"><math><mrow><mtext>even dims</mtext><mo>:</mo><mspace width="0.3em"/><mi mathvariant="normal">sin</mi><mo>(</mo><mi>p</mi><msub><mi>ω</mi><mi>i</mi></msub><mo>)</mo></mrow></math></span> <span class="fx" data-f="cos"><math><mrow><mtext>odd dims</mtext><mo>:</mo><mspace width="0.3em"/><mi mathvariant="normal">cos</mi><mo>(</mo><mi>p</mi><msub><mi>ω</mi><mi>i</mi></msub><mo>)</mo></mrow></math></span><div class="say">each pair of dimensions is a clock hand rotating at its own frequency: fast hands in the low dimensions resolve neighbouring positions, slow hands in the high ones resolve the coarse location.</div></div></div>
+          <div class="row"><span class="n">line 14</span><div><span class="fx" data-f="learned"><math><mrow><mi>PE</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><msub><mi>L</mi><mi>max</mi></msub><mo>×</mo><mi>d</mi></mrow></msup><mspace width="0.4em"/><mtext>free parameters</mtext></mrow></math></span><div class="say">a table of free parameters. Simpler, slightly better in-distribution, and it cannot say anything about position <math><mrow><msub><mi>L</mi><mi>max</mi></msub><mo>+</mo><mn>1</mn></mrow></math> — it has never seen it.</div></div></div>
+          <div class="row"><span class="n">line 20</span><div><span class="fx" data-f="add"><math><mrow><msub><mi>x</mi><mi>p</mi></msub><mo>←</mo><msub><mi>x</mi><mi>p</mi></msub><mo>+</mo><msub><mi>PE</mi><mi>p</mi></msub></mrow></math></span><div class="say">added, not concatenated, to the (√d-scaled) embedding of the token at position <math><mi>p</mi></math>.</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-note">The property that makes this more than a lookup table: for any offset <math><mi>k</mi></math>, <math><msub><mi>PE</mi><mrow><mi>p</mi><mo>+</mo><mi>k</mi></mrow></msub></math> is a <em>linear</em> function of <math><msub><mi>PE</mi><mi>p</mi></msub></math> (a rotation by <math><mi>k</mi></math> steps of every clock hand, independent of <math><mi>p</mi></math>), so a linear layer can learn "the token three positions back" without knowing <math><mi>p</mi></math>. <strong>Relative / rotary</strong> (Shaw et al. 2018; RoPE, Su et al. 2021; ALiBi, Press et al. 2021) put the position into the <em>score</em> rather than the input: <math><mrow><mi mathvariant="normal">score</mi><mo>(</mo><msub><mi>q</mi><mi>i</mi></msub><mo>,</mo><msub><mi>k</mi><mi>j</mi></msub><mo>)</mo></mrow></math> depends on <math><mrow><mi>i</mi><mo>−</mo><mi>j</mi></mrow></math>. RoPE does it by rotating <math><mi>q</mi></math> and <math><mi>k</mi></math> by angles proportional to their positions before the dot product, so the product depends only on the difference. This is what current LLMs use — we'll talk about it a few weeks later, promise.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Sinusoidal PE, d = 64, 60 positions · computed in your browser from the formula, checked against the notebook's buffer</span></div>
+    <div class="panel-body"><div class="grid-2"><div><div class="hm-title">fast clocks at the top, slow at the bottom</div><div id="pe-heat"></div></div><div><div class="hm-title">four dimensions as functions of position</div><div id="pe-lines"></div></div></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Which formula fills which cell · PE for d = 8, six positions · hover a cell</span></div>
+    <div class="panel-body"><div id="fig-pe" class="fig"></div></div>
+  </div>
+
+  <h3>4.4 The rest of the layer: residual, LayerNorm, FFN, dropout</h3>
+  <div class="prose">
+    <p>An encoder layer is attention plus three things that have nothing to do with attention and everything to do with making a deep stack trainable:</p>
+    <p><strong>Residual connections</strong> (He et al. 2016): <math><mrow><mi>x</mi><mo>+</mo><mi mathvariant="normal">Sublayer</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow></math>. Without them a 6-layer stack does not train. Think of it as of the facilitator for the concept "the word on step k is a combination of itself on step k−1 and a combination of the other words we paid attention on this step". <strong>LayerNorm</strong> (Ba et al. 2016), not BatchNorm: normalise each position's vector over its <math><mi>d</mi></math> features, so we can have a deep model. <strong>The feed-forward block</strong>: a two-layer MLP, <math><mrow><mi>d</mi><mo>→</mo><mn>4</mn><mi>d</mi><mo>→</mo><mi>d</mi></mrow></math>, applied to every position <em>independently</em>. Attention decides what to gather from other positions; the FFN decides what to do with it. <strong>Dropout</strong> on the attention weights, on each sublayer's output and on the embeddings.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Two encoder layers, one decoder layer, the output head · after Alammar (2018)</span></div>
+    <div class="panel-body"><div id="fig-layer" class="fig"></div></div>
+    <div class="panel-note">Self-attention is the one box that spans the tokens: it is where information crosses positions. Feed Forward is drawn once per token because it is applied to every position independently, with the same weights. The dashed lines are the residuals. One difference from the picture: Alammar draws Post-LN — Add &amp; Normalize <em>after</em> the sublayer; our code is Pre-LN, the norm sits <em>before</em> the sublayer and only the add follows. Same boxes, different order. The parameter count says where a layer spends its budget: <span id="layer-split"></span>.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>class EncoderLayer · Pre-LN: x + SelfAttn(LN(x)); x + FFN(LN(x))</span><span class="ck" id="ck-layer"></span></div>
+    <div class="panel-body">
+      <div class="two stacked">
+<pre class="code"><span class="ln"><span class="kw">class</span> FeedForward(nn.Module):</span>
+<span class="ln">    <span class="c">"""Position-wise MLP: the same two layers applied to every position independently."""</span></span>
+<span class="ln">    <span class="kw">def</span> __init__(self, d, ff, dropout=0.1):</span>
+<span class="ln">        super().__init__()</span>
+<span class="ln" data-f="ffn">        self.net = nn.Sequential(nn.Linear(d, ff), nn.ReLU(), nn.Dropout(dropout), nn.Linear(ff, d))</span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> forward(self, x):</span>
+<span class="ln" data-f="ffn">        <span class="kw">return</span> self.net(x)</span>
+<span class="ln"></span>
+<span class="ln"></span>
+<span class="ln"><span class="kw">class</span> EncoderLayer(nn.Module):</span>
+<span class="ln">    <span class="kw">def</span> __init__(self, d, h, ff, dropout=0.1):</span>
+<span class="ln">        super().__init__()</span>
+<span class="ln">        self.self_attn = MultiHeadAttention(d, h, dropout)</span>
+<span class="ln">        self.ffn = FeedForward(d, ff, dropout)</span>
+<span class="ln" data-f="ln">        self.ln1, self.ln2 = nn.LayerNorm(d), nn.LayerNorm(d)</span>
+<span class="ln">        self.drop = nn.Dropout(dropout)</span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> forward(self, x, mask):</span>
+<span class="ln" data-f="ln">        y = self.ln1(x)</span>
+<span class="ln" data-f="attn">        a, w = self.self_attn(y, y, y, mask)</span>
+<span class="ln" data-f="res">        x = x + self.drop(a)</span>
+<span class="ln" data-f="res ffn ln">        x = x + self.drop(self.ffn(self.ln2(x)))</span>
+<span class="ln">        <span class="kw">return</span> x, w</span></pre>
+        <div class="fstack">
+          <div class="row"><span class="n">lines 20–23</span><div><span class="fx" data-f="res"><math><mrow><mi>x</mi><mo>←</mo><mi>x</mi><mo>+</mo><mi mathvariant="normal">SelfAttn</mi><mo>(</mo><mi mathvariant="normal">LN</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>)</mo><mo>,</mo><mspace width="0.6em"/><mi>x</mi><mo>←</mo><mi>x</mi><mo>+</mo><mi mathvariant="normal">FFN</mi><mo>(</mo><mi mathvariant="normal">LN</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>)</mo></mrow></math></span><div class="say">the residual: every sublayer <em>adds</em> to one running vector per position. Pre-LN (Xiong et al. 2020): the norm sits inside the branch, so the residual path is untouched.</div></div></div>
+          <div class="row"><span class="n">line 16</span><div><span class="fx" data-f="ln"><math><mrow><mi mathvariant="normal">LN</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mi>γ</mi><mo>⊙</mo><mfrac><mrow><mi>x</mi><mo>−</mo><mi>μ</mi></mrow><msqrt><mrow><msup><mi>σ</mi><mn>2</mn></msup><mo>+</mo><mi>ε</mi></mrow></msqrt></mfrac><mo>+</mo><mi>β</mi></mrow></math></span><div class="say"><math><mi>μ</mi></math>, <math><mi>σ</mi></math> over the <math><mi>d</mi></math> features of one position — not over the batch.</div></div></div>
+          <div class="row"><span class="n">lines 5, 8</span><div><span class="fx" data-f="ffn"><math><mrow><mi mathvariant="normal">FFN</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><msub><mi>W</mi><mn>2</mn></msub><mspace width="0.1em"/><mi mathvariant="normal">ReLU</mi><mo>(</mo><msub><mi>W</mi><mn>1</mn></msub><mi>x</mi><mo>+</mo><msub><mi>b</mi><mn>1</mn></msub><mo>)</mo><mo>+</mo><msub><mi>b</mi><mn>2</mn></msub></mrow></math></span><div class="say"><math><mrow><mi>d</mi><mo>→</mo><mn>4</mn><mi>d</mi><mo>→</mo><mi>d</mi></mrow></math>, the same weights at every position.</div></div></div>
+          <div class="row"><span class="n">line 21</span><div><span class="fx" data-f="attn"><math><mrow><mi mathvariant="normal">MultiHead</mi><mo>(</mo><mi>y</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>y</mi><mo>)</mo></mrow></math></span><div class="say">self-attention: query, key and value all from the same normalised <math><mi>y</mi></math>.</div></div></div>
+        </div>
+      </div>
+      <details class="codenote"><summary><span class="k">the decoder layer</span><span class="libs">class DecoderLayer — causal self-attention, then cross-attention over the encoder memory, then FFN</span></summary>
+<pre class="code"><span class="ln"><span class="kw">class</span> DecoderLayer(nn.Module):</span>
+<span class="ln">    <span class="kw">def</span> __init__(self, d, h, ff, dropout=0.1):</span>
+<span class="ln">        super().__init__()</span>
+<span class="ln">        self.self_attn = MultiHeadAttention(d, h, dropout)</span>
+<span class="ln">        self.cross_attn = MultiHeadAttention(d, h, dropout)</span>
+<span class="ln">        self.ffn = FeedForward(d, ff, dropout)</span>
+<span class="ln">        self.ln1, self.ln2, self.ln3 = nn.LayerNorm(d), nn.LayerNorm(d), nn.LayerNorm(d)</span>
+<span class="ln">        self.drop = nn.Dropout(dropout)</span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> forward(self, x, memory, trg_mask, mem_mask):</span>
+<span class="ln">        y = self.ln1(x)</span>
+<span class="ln">        a, w_self = self.self_attn(y, y, y, trg_mask)              <span class="c"># causal AND padding</span></span>
+<span class="ln">        x = x + self.drop(a)</span>
+<span class="ln">        a, w_cross = self.cross_attn(self.ln2(x), memory, memory, mem_mask)   <span class="c"># queries: en; keys, values: de</span></span>
+<span class="ln">        x = x + self.drop(a)</span>
+<span class="ln">        x = x + self.drop(self.ffn(self.ln3(x)))</span>
+<span class="ln">        <span class="kw">return</span> x, w_self, w_cross</span></pre>
+      </details>
+    </div>
+    <div class="panel-note" id="layer-note"></div>
+  </div>
+
+  <h3>4.5 Assembly</h3>
+  <div class="prose">
+    <p>Embeddings scaled by <math><msqrt><mi>d</mi></msqrt></math> (so that they are not drowned by the positional encoding, whose entries are of order 1), positional encoding, <math><mi>N</mi></math> encoder layers, <math><mi>N</mi></math> decoder layers, a final LayerNorm on each side, and an output projection that shares its weights with the target embedding. The decoder's output at position <math><mi>t</mi></math> is the distribution over the token at <math><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></math>: the same next-token prediction as every model since week 2.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>class Transformer · encoder-decoder, Pre-LN, tied target embeddings</span><span class="ck" id="ck-tf"></span></div>
+    <div class="panel-body">
+      <div class="stat-row" id="tf-params"></div>
+      <details class="codenote"><summary><span class="k">full code</span><span class="libs">class Transformer — encode(), decode(), forward() in one pass, greedy() re-reading the growing prefix</span></summary>
+<pre class="code"><span class="ln"><span class="kw">class</span> Transformer(nn.Module):</span>
+<span class="ln">    <span class="c">"""pe: 'sin' | 'learned' | 'none'.  cross: 'full' — the decoder attends to every encoder state;</span></span>
+<span class="ln">    <span class="c">'pooled' — it sees one mean-pooled encoder vector: the week-2 bottleneck, rebuilt."""</span></span>
+<span class="ln">    <span class="kw">def</span> __init__(self, src_vocab, trg_vocab, d=256, h=8, ff=1024, layers=6, dropout=0.1,</span>
+<span class="ln">                 pe="sin", cross="full", max_len=64):</span>
+<span class="ln">        super().__init__()</span>
+<span class="ln">        self.d, self.cross = d, cross</span>
+<span class="ln">        self.src_emb = nn.Embedding(src_vocab, d, padding_idx=PAD)</span>
+<span class="ln">        self.trg_emb = nn.Embedding(trg_vocab, d, padding_idx=PAD)</span>
+<span class="ln">        self.pos = PositionalEncoding(d, max_len, pe, dropout)</span>
+<span class="ln">        self.enc_layers = nn.ModuleList(EncoderLayer(d, h, ff, dropout) <span class="kw">for</span> _ <span class="kw">in</span> range(layers))</span>
+<span class="ln">        self.dec_layers = nn.ModuleList(DecoderLayer(d, h, ff, dropout) <span class="kw">for</span> _ <span class="kw">in</span> range(layers))</span>
+<span class="ln">        self.ln_enc, self.ln_dec = nn.LayerNorm(d), nn.LayerNorm(d)</span>
+<span class="ln">        self.out = nn.Linear(d, trg_vocab, bias=False)</span>
+<span class="ln">        self.out.weight = self.trg_emb.weight                      <span class="c"># weight tying (Press &amp; Wolf 2017)</span></span>
+<span class="ln">        self.attn = {}</span>
+<span class="ln">        <span class="kw">for</span> p <span class="kw">in</span> self.parameters():</span>
+<span class="ln">            <span class="kw">if</span> p.dim() &gt; 1:</span>
+<span class="ln">                nn.init.xavier_uniform_(p)</span>
+<span class="ln"></span>
+<span class="ln">    @staticmethod</span>
+<span class="ln">    <span class="kw">def</span> causal_mask(T, device):</span>
+<span class="ln">        <span class="kw">return</span> torch.tril(torch.ones(T, T, dtype=torch.bool, device=device))     <span class="c"># (T, T)</span></span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> encode(self, src):</span>
+<span class="ln">        mask = (src != PAD)[:, None, None, :]                       <span class="c"># (B, 1, 1, S): keys that are real tokens</span></span>
+<span class="ln">        x = self.pos(self.src_emb(src) * math.sqrt(self.d))</span>
+<span class="ln">        ws = []</span>
+<span class="ln">        <span class="kw">for</span> layer <span class="kw">in</span> self.enc_layers:</span>
+<span class="ln">            x, w = layer(x, mask)</span>
+<span class="ln">            ws.append(w)</span>
+<span class="ln">        memory = self.ln_enc(x)</span>
+<span class="ln">        <span class="kw">if</span> self.cross == "pooled":                                  <span class="c"># the ablation: one vector, like week 2</span></span>
+<span class="ln">            m = mask[:, 0, 0, :, None].float()</span>
+<span class="ln">            memory = (memory * m).sum(1, keepdim=True) / m.sum(1, keepdim=True)   <span class="c"># (B, 1, d)</span></span>
+<span class="ln">            mask = torch.ones_like(mask[:, :, :, :1])</span>
+<span class="ln">        self.attn["enc"] = ws</span>
+<span class="ln">        <span class="kw">return</span> memory, mask</span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> decode(self, trg_in, memory, mem_mask):</span>
+<span class="ln">        T = trg_in.size(1)</span>
+<span class="ln">        trg_mask = self.causal_mask(T, trg_in.device)[None, None] &amp; (trg_in != PAD)[:, None, None, :]</span>
+<span class="ln">        x = self.pos(self.trg_emb(trg_in) * math.sqrt(self.d))</span>
+<span class="ln">        ws, wc = [], []</span>
+<span class="ln">        <span class="kw">for</span> layer <span class="kw">in</span> self.dec_layers:</span>
+<span class="ln">            x, w_self, w_cross = layer(x, memory, trg_mask, mem_mask)</span>
+<span class="ln">            ws.append(w_self); wc.append(w_cross)</span>
+<span class="ln">        self.attn["dec_self"], self.attn["dec_cross"] = ws, wc</span>
+<span class="ln">        <span class="kw">return</span> self.out(self.ln_dec(x))                             <span class="c"># (B, T, V)</span></span>
+<span class="ln"></span>
+<span class="ln">    <span class="kw">def</span> forward(self, src, src_len, trg_in):</span>
+<span class="ln">        <span class="c"># the whole target sequence in ONE forward pass: no loop over time (that is what the causal mask buys)</span></span>
+<span class="ln">        memory, mem_mask = self.encode(src)</span>
+<span class="ln">        <span class="kw">return</span> self.decode(trg_in, memory, mem_mask)</span>
+<span class="ln"></span>
+<span class="ln">    @torch.no_grad()</span>
+<span class="ln">    <span class="kw">def</span> greedy(self, src, src_len, max_len=40):</span>
+<span class="ln">        memory, mem_mask = self.encode(src)                         <span class="c"># the encoder runs once</span></span>
+<span class="ln">        ys = torch.full((src.size(0), 1), BOS, dtype=torch.long, device=src.device)</span>
+<span class="ln">        done = torch.zeros(src.size(0), dtype=torch.bool, device=src.device)</span>
+<span class="ln">        <span class="kw">for</span> _ <span class="kw">in</span> range(max_len):</span>
+<span class="ln">            logits = self.decode(ys, memory, mem_mask)              <span class="c"># the decoder re-reads the growing prefix</span></span>
+<span class="ln">            y = logits[:, -1].argmax(-1, keepdim=True).masked_fill(done.unsqueeze(1), PAD)</span>
+<span class="ln">            ys = torch.cat([ys, y], dim=1)</span>
+<span class="ln">            done |= y.squeeze(1) == EOS</span>
+<span class="ln">            <span class="kw">if</span> done.all():</span>
+<span class="ln">                <span class="kw">break</span></span>
+<span class="ln">        <span class="kw">return</span> ys[:, 1:]</span></pre>
+      </details>
+    </div>
+    <div class="panel-note">The embeddings are a quarter of the model: two vocabularies of 8 000 at <math><mrow><mi>d</mi><mo>=</mo><mn>256</mn></mrow></math>. That ratio flips in real models, where the layers dominate; at our size the vocabulary is expensive.</div>
+  </div>
+
+</section>
+
+<!-- ======================================================== 05 results -->
+<section id="results">
+  <p class="eyebrow">Block 05 · the results table</p>
+  <h2>Now the real ones</h2>
+  <div class="prose">
+    <p><code>precompute.py</code> trained 1, 3 and 6 layers — same width, same 15 epochs — and two ablations at 6 layers: the decoder attending to one mean-pooled encoder vector (the week-2 bottleneck, rebuilt inside a transformer) and the same model with no positional encoding. Read it as three separate experiments, because there are three parameters — and bet on each before the table opens.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>📌 Bet · three questions · test BLEU</span><span class="btnrow"><span class="mono" id="res-score"></span><button class="primary" id="btn-res-reveal">Reveal the table</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-res-depth"><span class="q">(1) Depth: 1 vs 3 vs 6 layers, 15 epochs on 29 000 pairs — the spread between best and worst is …</span></div>
+      <div class="bet" id="bet-res-noca"><span class="q">(2) No cross-attention (one mean-pooled vector, 6 layers of self-attention on each side) lands at …</span></div>
+      <div class="bet" id="bet-res-nope"><span class="q">(3) No positions (a bag of words on the encoder side) lands at …</span></div>
+      <div id="res-out" hidden style="margin-top:14px">
+        <div class="scroll-x results"><table id="res-table"></table></div>
+        <div class="grid-2" style="margin-top:18px"><div id="res-bleu-chart"></div><div id="res-len-chart"></div></div>
+      </div>
+    </div>
+    <div class="panel-note" id="res-note" hidden>
+      <strong>Depth.</strong> On one hand — the deeper, the bigger the model — the better, but for deeper models we also need more data, so something might go a little bit different than we expected: <span id="res-depth-say"></span>.
+      <strong>No cross-attention.</strong> <span id="res-noca-say"></span> This is the ablation that says where the transformer's gain comes from: not from self-attention as such — that model has all of it — but from the decoder's access to every source position.
+      <strong>No positions.</strong> Same model, no positional encoding: <span id="res-nope-say"></span> — a clear drop, but not to zero. The decoder still has its causal mask, which leaks order into the target side, and a bag of German words still says <em>what</em> the caption is about.
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The same three sentences · 6 layers, and 6 layers without positions</span></div>
+    <div class="panel-body" id="res-show"></div>
+  </div>
+
+  <h3>Browse the test set</h3>
+  <div class="prose">
+    <p>All 1 000 test sentences, translated greedily by three models, with the sentence-level BLEU of each. Filter by source length and read what each model gets right.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Multi30k test · LSTM · LSTM + additive attention · transformer, 6 layers</span><span class="btnrow"><span class="btnrow" id="tr-buckets"></span><button class="primary" id="btn-tr-random">Random sentence</button></span></div>
+    <div class="panel-body" id="tr-out"></div>
+  </div>
+</section>
+
+<!-- ======================================================== 06 inside -->
+<section id="inside">
+  <p class="eyebrow">Block 06 · looking inside our model</p>
+  <h2>48 cross-attention heads, and the alignment is in there somewhere</h2>
+  <div class="prose">
+    <p>Only our own model today; what the heads of a <em>pretrained</em> model do — and how much of that is real — is a topic for when we open one. But our 6-layer translator has 48 cross-attention heads and 48 self-attention heads on each side, and the block-01 alignment picture is in there somewhere.</p>
+    <p>For one test sentence: the decoder's cross-attention weights, one panel per (layer, head), rows are the produced English tokens, columns the German source. Click a panel to enlarge it.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>decoder cross-attention · 6 layers × 8 heads</span><span class="btnrow"><span class="toggle" id="grid-kind"><button class="sel" data-v="cross">cross</button><button data-v="enc">encoder self</button></span><select id="grid-pick" style="width:auto"></select></span></div>
+    <div class="panel-body">
+      <div class="footnote" id="grid-sent" style="margin-bottom:10px"></div>
+      <div class="grid-2" style="grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr)"><div class="headgrid" id="head-grid"></div><div><div class="hm-title" id="head-big-title"></div><div class="hm" id="head-big"></div></div></div>
+    </div>
+    <div class="panel-note">The LSTM had one attention map and it was an alignment. The transformer has 48, and the alignment is <em>distributed</em>: <span id="inside-say"></span> That is what multi-head buys — different heads do different lookups — and it is also why "the attention map" of a transformer is not one picture. The encoder self-attention panels are square: German tokens attending to German tokens. Common shapes in the first layers are <em>previous token</em>, <em>next token</em> and <em>self</em> — stripes just off the diagonal — because the cheapest useful thing a first layer can do is build bigrams. Deeper layers get harder to read, and here is the reason.</div>
+  </div>
+
+  <h3>How to read a stack: the residual stream</h3>
+  <div class="prose"><p>One step per layer, ignoring the FFN for a moment: the vector at position <math><mi>i</mi></math> after layer <math><mi>ℓ</mi></math> is the vector before it, plus what attention gathered from the other positions.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>Where each token's vector came from, layer by layer · encoder self-attention of our 6-layer model, head-averaged</span><select id="rs-pick" style="width:auto"></select></div>
+    <div class="panel-body"><div id="fig-residual" class="fig"></div></div>
+    <div class="panel-note">Each bar is one position's residual stream; its colours say which <em>original</em> tokens it is made of. Layer 0 is the embedding — the token itself. Every layer adds what attention gathered from the other positions, so the self share (outlined) shrinks and the mixture deepens: by the last layer "the vector at position 7" is a blend of the whole sentence, weighted the way this sentence's heads actually attended. The weights are measured; the one convention is that the residual and the attention branch are drawn with equal weight (the FFN and W<sub>V</sub> are left out, as in the prose).</div>
+  </div>
+  <div class="prose">
+    <p>Every layer <em>adds</em> to one running vector per position — the residual stream — and reads from it. Three consequences to say out loud:</p>
+    <p><strong>1. The next layer's query is built from what this layer gathered.</strong> <math><msubsup><mi>q</mi><mi>i</mi><mrow><mo>(</mo><mi>ℓ</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow></msubsup></math>, <math><msubsup><mi>k</mi><mi>i</mi><mrow><mo>(</mo><mi>ℓ</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow></msubsup></math> and <math><msubsup><mi>v</mi><mi>i</mi><mrow><mo>(</mo><mi>ℓ</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow></msubsup></math> are three projections of the <em>same</em> vector — the token itself (through the residual) plus whatever position <math><mi>i</mi></math> collected from its neighbours. So a second-layer head can ask a question whose <em>content</em> depends on the answer a first-layer head fetched. Two layers compose; that composition is where the interesting behaviour of real models lives (the "induction head" — a previous-token head feeding a copy head — is the textbook case, and it will come up when we look at pretrained models).</p>
+    <p><strong>2. Attention moves information between positions; the FFN processes it within a position.</strong> Two different jobs, two different sublayers, and the parameter count (block 04) says which one the model spends more on.</p>
+    <p><strong>3. After the first layer, key <math><mi>j</mi></math> is no longer "word <math><mi>j</mi></math>".</strong> It is "word <math><mi>j</mi></math> in context" — which is exactly why deep-layer maps stop looking like word-to-word alignments, and why reading them as such is a mistake.</p>
+    <p>Decoding here was greedy: the encoder runs once, the decoder re-reads its growing prefix. Beam search was last week's; its successors are a topic for the generation seminars.</p>
+  </div>
+</section>
+
+<!-- ======================================================== 07 other tasks -->
+<section id="tasks">
+  <p class="eyebrow">Block 07 · same class, other tasks</p>
+  <h2>Nothing in <span class="mono">Transformer</span> knows it is translating German</h2>
+  <div class="prose">
+    <p>It maps a sequence of ids to a sequence of ids; the tokenizers, the data and the metric decide what that means. To make the point with numbers rather than words, we train the <em>same class</em> on two other tasks — small enough to fit in the remaining minutes — and we look at what the attention learned in each. Both models are loaded into this page: type your own input.</p>
+  </div>
+
+  <h3>Date normalisation</h3>
+  <div class="prose">
+    <p><code>"the fifth of March, 2021"</code> → <code>2021-03-05</code>. A real class of problem (text normalisation in speech systems, parsing dates and addresses in forms) with a generator we can write in ten lines. Character-level tokens, eleven surface formats, one target format.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>📌 Bet · 1 layer, d = 64, 8 epochs on 18 000 pairs</span><span class="btnrow"><span class="mono" id="date-score"></span><button class="primary" id="btn-date-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="footnote" id="date-examples" style="margin-bottom:10px"></div>
+      <div class="bet" id="bet-date"><span class="q">What exact-match accuracy does it reach on 2 000 unseen dates?</span></div>
+      <div id="date-out" hidden style="margin-top:14px"></div>
+    </div>
+    <div class="panel-note" id="date-note" hidden>And would the attention LSTM from block 01 get there faster or slower? Same 64-wide budget; try it after class.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The date transformer, in your browser · type a date in any of the eleven formats — or in none of them</span><span class="ck" id="ck-date"></span></div>
+    <div class="panel-body">
+      <div class="io"><div><label class="field" for="date-in">input</label><input type="text" id="date-in" value="" maxlength="40"></div><div><label class="field">output</label><div class="out" id="date-res"></div></div></div>
+      <div class="small-note" id="date-time"></div>
+      <div class="grid-2" style="margin-top:14px"><div><div class="hm-title">cross-attention, last decoder layer, head-averaged</div><div class="hm" id="date-hm"></div></div><div><div class="hm-title">twelve fixed inputs · nine from the generator (truth known), three it never produced</div><div id="date-three" class="footnote"></div></div></div>
+    </div>
+    <div class="panel-note">The map is an <em>algorithm</em>: the year is copied from the end of the input to the front of the output (the block in the top-right), the month name is read while two digits are written, the day digits are copied straight. Try a format the generator never produced, or a day above 28 (the generator draws days 1–28) — the model has no idea what a date <em>is</em>, only what the eleven templates look like.</div>
+  </div>
+
+  <h3>Reversing a string — and breaking the model</h3>
+  <div class="prose">
+    <p>The smallest task with a non-trivial alignment: reverse a sequence of letters. The map should be the anti-diagonal. Then the experiment that matters: train on lengths 5–12, <strong>test on lengths the model has never seen</strong>, once with sinusoidal positions and once with learned ones.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>📌 Bet · 2 layers, d = 64, trained on lengths 5–12</span><span class="btnrow"><span class="mono" id="rev-score"></span><button class="primary" id="btn-rev-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-rev-13"><span class="q">(1) Exact match at length 13 — one past the training range — with sinusoidal positions:</span></div>
+      <div class="bet" id="bet-rev-which"><span class="q">(2) Which encoding degrades more gracefully past 12?</span></div>
+      <div id="rev-out" hidden style="margin-top:14px"><div id="rev-chart"></div></div>
+    </div>
+    <div class="panel-note" id="rev-note" hidden>Inside the training range both are near-perfect. One position past it, both fall off a cliff — <span id="rev-say"></span>. The learned table has <em>no row</em> it was ever trained on for positions 13–20: they were initialised and never updated, so the model has no idea where those tokens are. The sinusoid has a well-defined vector for every position, which buys it about one extra length and nothing more — the model learned to read "position <math><mrow><mi>S</mi><mo>−</mo><mi>t</mi></mrow></math>" only for the <math><mi>S</mi></math> it saw. Neither generalises; that is the honest state of the art, and it is why position encoding is still an active research topic (and we'll talk about RoPE later).</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The reverse transformer, in your browser · letters a–z · try 12 letters, then 13</span><span class="btnrow"><span class="toggle" id="rev-pe"><button class="sel" data-v="sin">sinusoidal</button><button data-v="learned">learned</button></span><span class="ck" id="ck-rev"></span></span></div>
+    <div class="panel-body">
+      <div class="io"><div><label class="field" for="rev-in">input</label><input type="text" id="rev-in" value="attention" maxlength="22"></div><div><label class="field">output</label><div class="out" id="rev-res"></div></div></div>
+      <div class="small-note" id="rev-time"></div>
+      <div style="margin-top:14px"><div class="hm-title">cross-attention, last decoder layer, head-averaged</div><div class="hm" id="rev-hm"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== 08 where this goes -->
+<section id="end">
+  <p class="eyebrow">Block 08 · where this goes</p>
+  <h2>Every row is one formula, used in a different place</h2>
+  <div class="prose"><p>Put the results table back up and read it as one story.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>The results table · test BLEU, by length, seconds per epoch</span></div>
+    <div class="panel-body scroll-x results"><table id="end-table"></table></div>
+    <div class="panel-note">
+      <strong>nowhere</strong> (row 0): one vector between the halves, and the translation loses the details of anything long;
+      <strong>between the decoder and the encoder</strong> (rows 1–3): access replaces the summary, the curve lifts by twenty points at every length, and the score function — the part with the most papers — barely moves the number, until its scale is wrong;
+      <strong>everywhere</strong> (the transformer rows): self-attention replaces recurrence, training becomes parallel, and the two ablations say where the gain comes from — cross-attention (remove it and the bottleneck is back) and positions (remove them and the encoder is a bag of words).
+    </div>
+  </div>
+  <div class="prose footnote">
+    <p><strong>Try it yourself</strong> (the notebook's homework cells, <code>RUN_HOMEWORK = True</code>): implement rotary position embeddings and add a third curve to the length-generalisation plot; train the attention LSTM with <code>score="dot"</code> at 256 and at 1 024 dimensions and record the entropy of the weights after 50 steps; count, for every test sentence, the German tokens that never receive a weight above 0.3, and plot that count against the sentence's BLEU.</p>
+  </div>
+
+  <h3>References</h3>
+  <div class="prose footnote">
+    <ul style="padding-left:1.2em; line-height:1.6">
+      <li>Bahdanau, Cho, Bengio (2015). <a href="https://arxiv.org/abs/1409.0473" target="_blank" rel="noopener"><em>Neural Machine Translation by Jointly Learning to Align and Translate.</em></a> ICLR.</li>
+      <li>Luong, Pham, Manning (2015). <a href="https://arxiv.org/abs/1508.04025" target="_blank" rel="noopener"><em>Effective Approaches to Attention-based Neural Machine Translation.</em></a> EMNLP.</li>
+      <li>Xu et al. (2015). <a href="https://arxiv.org/abs/1502.03044" target="_blank" rel="noopener"><em>Show, Attend and Tell.</em></a> ICML.</li>
+      <li>Graves, Wayne, Danihelka (2014). <a href="https://arxiv.org/abs/1410.5401" target="_blank" rel="noopener"><em>Neural Turing Machines.</em></a></li>
+      <li>Tu et al. (2016). <a href="https://arxiv.org/abs/1601.04811" target="_blank" rel="noopener"><em>Modeling Coverage for Neural Machine Translation.</em></a> ACL.</li>
+      <li>Vaswani et al. (2017). <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener"><em>Attention Is All You Need.</em></a> NeurIPS.</li>
+      <li>Shaw, Uszkoreit, Vaswani (2018). <a href="https://arxiv.org/abs/1803.02155" target="_blank" rel="noopener"><em>Self-Attention with Relative Position Representations.</em></a> NAACL.</li>
+      <li>Su et al. (2021). <a href="https://arxiv.org/abs/2104.09864" target="_blank" rel="noopener"><em>RoFormer: Enhanced Transformer with Rotary Position Embedding.</em></a></li>
+      <li>Press, Smith, Lewis (2021). <a href="https://arxiv.org/abs/2108.12409" target="_blank" rel="noopener"><em>Train Short, Test Long: Attention with Linear Biases.</em></a></li>
+      <li>Haviv et al. (2022). <a href="https://arxiv.org/abs/2203.16634" target="_blank" rel="noopener"><em>Transformer Language Models without Positional Encodings Still Learn Positional Information.</em></a> EMNLP Findings.</li>
+      <li>He et al. (2016). <a href="https://arxiv.org/abs/1512.03385" target="_blank" rel="noopener"><em>Deep Residual Learning for Image Recognition.</em></a> CVPR.</li>
+      <li>Ba, Kiros, Hinton (2016). <a href="https://arxiv.org/abs/1607.06450" target="_blank" rel="noopener"><em>Layer Normalization.</em></a></li>
+      <li>Xiong et al. (2020). <a href="https://arxiv.org/abs/2002.04745" target="_blank" rel="noopener"><em>On Layer Normalization in the Transformer Architecture.</em></a> ICML.</li>
+      <li>Szegedy et al. (2016). <a href="https://arxiv.org/abs/1512.00567" target="_blank" rel="noopener"><em>Rethinking the Inception Architecture for Computer Vision.</em></a> CVPR.</li>
+      <li>Press, Wolf (2017). <a href="https://arxiv.org/abs/1608.05859" target="_blank" rel="noopener"><em>Using the Output Embedding to Improve Language Models.</em></a> EACL.</li>
+      <li>Dehghani et al. (2023). <a href="https://arxiv.org/abs/2302.05442" target="_blank" rel="noopener"><em>Scaling Vision Transformers to 22 Billion Parameters.</em></a></li>
+      <li>Elhage et al. (2021). <a href="https://transformer-circuits.pub/2021/framework/index.html" target="_blank" rel="noopener"><em>A Mathematical Framework for Transformer Circuits.</em></a></li>
+      <li>Elliott et al. (2016). <a href="https://aclanthology.org/W16-3210/" target="_blank" rel="noopener"><em>Multi30K: Multilingual English-German Image Descriptions.</em></a></li>
+      <li>Post (2018). <a href="https://arxiv.org/abs/1804.08771" target="_blank" rel="noopener"><em>A Call for Clarity in Reporting BLEU Scores.</em></a> WMT.</li>
+      <li>Alammar, J. (2018). <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener"><em>The Illustrated Transformer.</em></a> Blog post. The schematics on this page are redrawn after it.</li>
+    </ul>
+  </div>
+</section>
+
+</div>
+</main>
+</div>
