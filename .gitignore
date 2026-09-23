@@ -221,3 +221,6 @@ week*/data/cache/
 
 # headless-Chrome check output (screenshots, throwaway profile)
 week*/demo/check_out/
+
+# week 4: smoke artifacts from `precompute.py --smoke` (a random tiny BERT; never commit)
+week*/artifacts_smoke/

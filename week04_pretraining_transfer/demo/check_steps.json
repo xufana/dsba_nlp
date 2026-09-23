@@ -1,0 +1,49 @@
+{
+ "steps": [
+  {
+   "name": "sections",
+   "expr": "return ['hero','stop','tok','bert','head','dial','tasks','end'].map(id=>id+':'+(document.getElementById(id)?document.getElementById(id).getBoundingClientRect().height|0:'MISSING')).join(' ')"
+  },
+  {
+   "name": "filled",
+   "expr": "return ['data-example','results-0','merges-bpe','merges-wp','enc-out','uni-chart','uni-segs','zoo','body-params','pos-sim','mlm','zs-out','probe-table','head-counts','head-untrained','ho-live','layer-chart','dial-table','dial-chart','dial-bill','ner-align','ner-out','ner-table','ner-preds','qa-windows','qa-out','qa-preds','results-1'].map(id=>{const n=document.getElementById(id);return id+':'+(n?n.innerHTML.length:'MISSING')}).join(' ')"
+  },
+  {
+   "name": "reveals",
+   "expr": "const ids=['btn-tok-reveal','btn-enc-reveal','btn-zs-reveal','btn-probe-reveal','btn-layer-reveal','btn-dial-reveal','btn-ner-reveal','btn-qa-reveal'];ids.forEach(i=>document.getElementById(i).click());return ids.map(i=>i+':'+document.getElementById(i).textContent).join(' ')+' | hidden left: '+document.querySelectorAll('[hidden]').length+' | veils: '+document.querySelectorAll('.veil').length"
+  },
+  {
+   "name": "nerf1",
+   "expr": "return 'ner-f1 span: '+[...document.querySelectorAll('[data-ner-f1]')].map(n=>n.textContent).join(',')+' | qa-note: '+document.getElementById('qa-note').textContent.slice(0,120)"
+  },
+  {
+   "name": "extra",
+   "expr": "return ['live-bpe','live-wp-longest','fig-bert','zs-pick','zs-pick-out','code-recipe','dial-knob-fig','fig-ner','code-ner','fig-qa','code-qa','ner-cellout','zs-cellout'].map(id=>{const n=document.getElementById(id);return id+':'+(n?n.innerHTML.length:'MISSING')}).join(' ')+' | acc '+document.getElementById('zs-pick-acc').textContent+' | tok '+document.getElementById('live-bpe').textContent+' / '+document.getElementById('live-wp-longest').textContent"
+  },
+  {
+   "name": "interact",
+   "expr": "document.querySelector('#fig-bert-btns [data-m=qa]').click(); document.querySelector('#dial-knob [data-k=everything]').click(); const i=document.getElementById('live-tok-word'); i.value='tokenization'; i.dispatchEvent(new Event('input')); const s=document.querySelector('#zs-pick select'); s.value='politics'; s.dispatchEvent(new Event('change',{bubbles:true})); return 'fig-bert:'+document.getElementById('fig-bert-note').textContent.slice(0,40)+' | knob:'+document.getElementById('dial-knob-stats').textContent.slice(0,40)+' | tok:'+document.getElementById('live-wp-longest').textContent+' | zs:'+document.getElementById('zs-pick-acc').textContent"
+  },
+  {
+   "name": "tokParity",
+   "expr": "const ck=D.tok.encodeCheck; const w=document.getElementById('live-tok-word'), n=document.getElementById('live-tok-n'); n.value=300; let bad=[]; for (const e of ck){ w.value=e.word; w.dispatchEvent(new Event('input')); const g=id=>[...document.querySelectorAll('#'+id+' .tok')].map(t=>t.textContent); const b=g('live-bpe'), r=g('live-wp-replay'), l=g('live-wp-longest'); if (b.join(' ')!==e.bpe.join(' ')) bad.push('bpe '+e.word+': '+b.join(' ')+' vs '+e.bpe.join(' ')); if (r.join(' ')!==e.replay.join(' ')) bad.push('replay '+e.word+': '+r.join(' ')+' vs '+e.replay.join(' ')); if (l.join(' ')!==e.longest.join(' ')) bad.push('longest '+e.word+': '+l.join(' ')+' vs '+e.longest.join(' ')); } return bad.length? bad.join(' || ') : 'all '+ck.length+' words match python'"
+  }
+ ],
+ "screens": [
+  {
+   "sel": "#fig-bert",
+   "file": "fig_bert.png",
+   "dy": -80
+  },
+  {
+   "sel": "#dial-knob",
+   "file": "dial_knob.png",
+   "dy": -80
+  },
+  {
+   "sel": "#live-tok-word",
+   "file": "live_tok.png",
+   "dy": -120
+  }
+ ]
+}

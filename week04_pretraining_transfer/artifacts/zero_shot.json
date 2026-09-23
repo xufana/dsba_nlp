@@ -1,0 +1,139 @@
+{
+ "sizes": "demo",
+ "prompt": "This news is about [MASK].",
+ "n": 7600,
+ "label_sets": {
+  "v1": {
+   "words": [
+    "world",
+    "sports",
+    "business",
+    "technology"
+   ],
+   "accuracy": 0.3011,
+   "per_class": {
+    "World": 0.0011,
+    "Sports": 0.0753,
+    "Business": 0.9921,
+    "Sci/Tech": 0.1358
+   }
+  },
+  "v2": {
+   "words": [
+    "politics",
+    "sports",
+    "business",
+    "technology"
+   ],
+   "accuracy": 0.4682,
+   "per_class": {
+    "World": 0.7495,
+    "Sports": 0.0668,
+    "Business": 0.93,
+    "Sci/Tech": 0.1263
+   }
+  }
+ },
+ "top_words_world": [
+  [
+   "us",
+   1808
+  ],
+  [
+   "me",
+   1634
+  ],
+  [
+   "america",
+   1593
+  ],
+  [
+   "him",
+   1582
+  ],
+  [
+   "you",
+   1544
+  ],
+  [
+   "china",
+   1437
+  ],
+  [
+   "iran",
+   1356
+  ],
+  [
+   "india",
+   1181
+  ],
+  [
+   "politics",
+   1123
+  ],
+  [
+   "israel",
+   920
+  ],
+  [
+   "russia",
+   896
+  ],
+  [
+   "money",
+   838
+  ],
+  [
+   "love",
+   816
+  ],
+  [
+   "terrorism",
+   784
+  ],
+  [
+   "australia",
+   745
+  ],
+  [
+   "her",
+   704
+  ],
+  [
+   "afghanistan",
+   695
+  ],
+  [
+   "religion",
+   691
+  ],
+  [
+   "iraq",
+   638
+  ],
+  [
+   "business",
+   560
+  ],
+  [
+   "time",
+   548
+  ],
+  [
+   "africa",
+   506
+  ],
+  [
+   "cancer",
+   480
+  ],
+  [
+   "democracy",
+   480
+  ],
+  [
+   "islam",
+   476
+  ]
+ ]
+}

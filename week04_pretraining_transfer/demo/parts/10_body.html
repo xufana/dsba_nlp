@@ -1,0 +1,351 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 4<br>Pretraining and Transfer</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div style="margin-top:10px">Every number on this page is read from the seminar notebook's artifacts (bert-base-uncased, fine-tuned on this laptop's MPS) — nothing is typed in. Live-cell rows vary run to run.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>solver = body × head × dial</h1>
+  <p class="lede">Last week we built a transformer from scratch and trained it on 29 000 German captions. It worked, it beat the LSTM, and it took 15 epochs on a GPU to translate captions — and nothing else. Every task we've touched in this course so far started from zero: zero weights, zero knowledge of English, one dataset.</p>
+  <div class="prose">
+    <p>This week we stop doing that. The body we built last week is the same body, but somebody (Google, 2018) already trained it on 3.3 billion words, and we are going to take those weights and <em>not</em> train them, or train them a little, and see how far that gets us. On three tasks, not one.</p>
+    <p>And here is the thing that I want you to walk out with: the part of the model that is actually <em>about the task</em> is tiny. Embarrassingly tiny. We'll count.</p>
+  </div>
+  <div class="formula"><span class="fn">The claim for today</span><math display="block"><mrow><mtext>solver</mtext><mo>=</mo><munder><mtext>pretrained body</mtext><mtext style="font-size:.8em">shared, 110M</mtext></munder><mo>×</mo><munder><mtext>head</mtext><mtext style="font-size:.8em">task, a few thousand</mtext></munder><mo>×</mo><munder><mtext>what you unfreeze</mtext><mtext style="font-size:.8em">a dial</mtext></munder></mrow></math></div>
+  <div class="prose keep">
+    <p><strong>One pretrained representation, and the task lives in the head</strong> — its <em>output shape</em>, the <em>point where it attaches</em>, and the <em>axis the softmax runs along</em>. That last one is the whole difference between NER and question answering, and it's one word in the code.</p>
+  </div>
+</section>
+
+<!-- ====================================================== 00 where we stopped -->
+<section id="stop">
+  <p class="eyebrow">Block 00 · where we stopped</p>
+  <h2>The data — AG News, again</h2>
+  <div class="prose">
+    <p>AG News is back: same 120 000 news texts, four classes, same test set, same TF-IDF + logistic regression at 0.92 accuracy from week 1. It's here for one reason — the results table. Every row of today's table is one representation of the same texts, and week 1's row 0 is the number to beat.</p>
+    <p>One change from week 1: the data comes from the Hugging Face hub through <code>datasets</code>, not from a CSV. Everything today — the model, the tokenizer, the data, the training loop, the metrics — is the <code>transformers</code> stack. Two datasets are new, because two of today's tasks are not classification of a whole text — CoNLL-2003 for named entity recognition and SQuAD v1.1 for extractive question answering. Each one is loaded where its task begins.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>AG News · from the hub</span><span class="mono" id="data-split"></span></div>
+    <div class="panel-body" id="data-example"></div>
+  </div>
+  <h3>The results table</h3>
+  <div class="prose"><p>AG News only, one row per way of turning the pretrained body into a classifier. We fill it during the seminar — for now only row 0 is there.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>Results · AG News test, 7 600 texts</span></div>
+    <div class="panel-body tight scroll-x"><table class="results" id="results-0"></table></div>
+  </div>
+</section>
+
+<!-- ============================================================ 01 tokenizers -->
+<section id="tok">
+  <p class="eyebrow">Block 01 · tokenizers</p>
+  <h2>One loop, three criteria</h2>
+  <div class="prose">
+    <p>In week 2 we trained BPE: count the most frequent adjacent pair, glue it, repeat. That's the tokenizer under GPT. It is <strong>not</strong> the tokenizer under BERT, and it is not the one under T5 or ALBERT either. There are three algorithms in use, and the good news is that two of them are the same loop. Everything in this block runs on a toy: 2 000 AG News texts.</p>
+    <p>Both trainers do the same thing at every step: over the corpus as it is currently split, pick the adjacent pair <math><mrow><mo>(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo>)</mo></mrow></math> with the highest score and glue it. Only the score differs:</p>
+  </div>
+  <div class="formula"><math display="block"><mrow><mtext>BPE:</mtext><mspace width="1em"/><mtext>score</mtext><mo>(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo>)</mo><mo>=</mo><mtext>freq</mtext><mo>(</mo><mi>a</mi><mi>b</mi><mo>)</mo><mspace width="3em"/><mtext>WordPiece:</mtext><mspace width="1em"/><mtext>score</mtext><mo>(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mtext>freq</mtext><mo>(</mo><mi>a</mi><mi>b</mi><mo>)</mo></mrow><mrow><mtext>freq</mtext><mo>(</mo><mi>a</mi><mo>)</mo><mtext>freq</mtext><mo>(</mo><mi>b</mi><mo>)</mo></mrow></mfrac></mrow></math></div>
+  <h3>📌 Bet</h3>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · same corpus, same number of merges</span><span class="btnrow"><button class="primary" id="btn-tok-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-tok-first"><span class="q">Now the score divides by how frequent the two parts are on their own. Will the first WordPiece merge still be <code>s</code> + <code>&lt;/w&gt;</code>?</span></div>
+      <div class="reveal-wrap" id="tok-wrap"><div class="veil">the first twelve merges of each trainer are behind this veil</div>
+        <div id="tok-out" hidden><div class="grid-2"><div><div class="figcap">BPE · score = freq(ab)</div><div id="merges-bpe" class="merge-list"></div></div><div><div class="figcap">WordPiece · score = freq(ab) / freq(a) freq(b)</div><div id="merges-wp" class="merge-list"></div></div></div></div>
+      </div>
+    </div>
+    <div class="panel-note" id="tok-note" hidden>It is not. <code>s&lt;/w&gt;</code> is the most <em>frequent</em> pair, but <code>s</code> and <code>&lt;/w&gt;</code> are each so common on their own that seeing them together is not surprising. WordPiece picks the pair that is frequent <em>relative to</em> what you'd expect from its parts — pointwise mutual information under a different name. The first merges are digit pairs out of years and prices. BPE maximises compression; WordPiece maximises likelihood.</div>
+  </div>
+
+  <h3>Applying a vocabulary: replaying merges vs longest match</h3>
+  <div class="prose">
+    <p>Training gives you a vocabulary. <strong>Encoding a new word with that vocabulary is a second algorithm</strong>, and BPE and WordPiece disagree on it too: BPE <em>replays the merges</em> in training order; WordPiece <em>ignores the merges</em> and takes the longest piece in the vocabulary that matches the start of the word, then the longest piece that matches the rest. Greedy longest-match-first. If no piece matches, the whole word is <code>[UNK]</code>.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · the WordPiece vocabulary, applied two ways to the test words</span><span class="btnrow"><button class="primary" id="btn-enc-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-enc"><span class="q">On what fraction of the test words do replay and longest-match disagree?</span></div>
+      <div id="enc-out" hidden></div>
+    </div>
+    <div class="panel-note" id="enc-note" hidden>A vocabulary is not a tokenizer. The same set of pieces, applied by two different rules, gives you two different sequences — and a model trained on one of them has never seen the other. This is the actual reason <code>tokenizers</code> saves the merge list <em>and</em> the algorithm type in the same json.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>Try it · the two trainers on the toy corpus, applied to your word</span><span class="mono" id="live-tok-stats"></span></div>
+    <div class="panel-body">
+      <div class="sliders"><label class="field"><span>word</span><input id="live-tok-word" type="text" value="unbelievable" style="width:180px"></label>
+        <label class="field"><span>merges used</span><b id="live-tok-k">300</b></label><input id="live-tok-n" type="range" min="0" max="300" value="300" style="width:100%"></div>
+      <div class="enc-row"><span class="k">BPE · replay</span><span class="pieces" id="live-bpe"></span></div>
+      <div class="enc-row"><span class="k">WordPiece · replay</span><span class="pieces" id="live-wp-replay"></span></div>
+      <div class="enc-row"><span class="k">WordPiece · longest match</span><span class="pieces" id="live-wp-longest"></span></div>
+    </div>
+    <div class="panel-note">Drag the merge count down to zero and every word is characters; up, and the pieces grow in training order. The third row applies the <em>same</em> WordPiece vocabulary by longest-match — watch for words where it differs from the replay, and for <code>[UNK]</code> when a character was never in the toy corpus.</div>
+  </div>
+  <h3>Unigram: top-down, and Viterbi</h3>
+  <div class="prose">
+    <p>The third algorithm (Kudo 2018) does not merge anything. It runs <em>backwards</em>: start with a huge vocabulary, give each piece a probability and treat a word as a sequence of independent pieces, estimate by EM, then throw away the pieces whose removal hurts the corpus likelihood the least. Encoding a word is then <strong>Viterbi</strong>: the most probable segmentation — not a greedy rule, and not a replay.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Unigram · pruning rounds, and what a word looks like to it</span></div>
+    <div class="panel-body"><div class="grid-2"><div id="uni-chart"></div><div id="uni-segs"></div></div></div>
+    <div class="panel-note">We remove a fifth of the vocabulary every round and the log-likelihood barely moves — it even goes <em>up</em>, because the E/M re-estimation after each round fits the corpus better than the crude seed did. And a word does not <em>have</em> one tokenization: the best segmentation holds most of the probability but not all of it. Kudo's subword regularization <strong>samples</strong> a segmentation during training — data augmentation that BPE cannot do, because BPE has no distribution to sample from.</div>
+  </div>
+
+  <h3>Who uses what</h3>
+  <div class="panel">
+    <div class="panel-body tight scroll-x"><table>
+      <thead><tr><th></th><th>training</th><th>encoding</th><th>word boundary</th><th>used by</th></tr></thead>
+      <tbody>
+      <tr><td><b>BPE</b></td><td>merge the most frequent pair</td><td>replay the merges</td><td class="mono">&lt;/w&gt; / Ġ (GPT-2: a space <em>before</em> the word, at the byte level)</td><td>GPT-1, GPT-2+, RoBERTa, LLaMA</td></tr>
+      <tr><td><b>WordPiece</b></td><td>merge the pair with the best likelihood gain</td><td>longest match first</td><td class="mono">## on continuations</td><td>BERT, DistilBERT, ELECTRA</td></tr>
+      <tr><td><b>Unigram</b></td><td>prune a large vocabulary by likelihood loss</td><td>Viterbi (or sampling)</td><td class="mono">▁ on word starts (SentencePiece)</td><td>ALBERT, XLNet, T5, mBART</td></tr>
+      </tbody></table></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The zoo · one sentence, three tokenizers</span></div>
+    <div class="panel-body" id="zoo"></div>
+    <div class="panel-note"><code>bert-base-uncased</code> lowercases and strips accents before it does anything else — a <em>normalizer</em>, which is why an uncased BERT can never tell <em>Apple</em> from <em>apple</em>. The Russian sentence under BERT and GPT-2 is a pile of fragments and single bytes: the vocabularies were trained on English. GPT-2 has no <code>[UNK]</code> at all — byte-level BPE starts from the 256 bytes, at the price of a word like <em>взлетели</em> costing a token per byte.</div>
+  </div>
+</section>
+
+<!-- ============================================================ 02 BERT -->
+<section id="bert">
+  <p class="eyebrow">Block 02 · BERT</p>
+  <h2>What the pretraining optimises</h2>
+  <div class="prose">
+    <p>BERT (Devlin et al. 2019) is the encoder half of last week's transformer — the stack of self-attention + FFN blocks, no decoder, no cross-attention — trained on 3.3 billion words of Wikipedia and books with a task that needs no labels. Let's count what's in it, block by block, the way we did with our own transformer.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>bert-base-uncased · where the parameters are</span><span class="mono" id="body-config"></span></div>
+    <div class="panel-body"><div class="grid-2"><div id="body-params"></div><div><div class="figcap">learned position table · cosine similarity, positions 0–127</div><div id="pos-sim"></div></div></div></div>
+    <div class="panel-note"><strong>A fifth of BERT is the embedding table</strong> — 30 522 WordPiece rows of 768 numbers — and every one of the twelve blocks is the same 7.1M we built last week. <strong>Positions are learned</strong>, not sinusoidal: a 512 × 768 table, which is why BERT has a hard limit of 512 tokens — there is no row 513. A bright diagonal band: neighbouring positions got similar vectors, far ones didn't, and nobody wrote that down anywhere.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>BERT, the picture · after Alammar (2018) · pretraining and the three heads</span><span class="btnrow knob" id="fig-bert-btns"><button data-m="pre" class="sel">pretraining</button><button data-m="cls">classification</button><button data-m="ner">NER</button><button data-m="qa">QA</button></span></div>
+    <div class="panel-body"><div id="fig-bert"></div></div>
+    <div class="panel-note" id="fig-bert-note"></div>
+  </div>
+  <h3>Masked language modelling: 15%, then 80/10/10</h3>
+  <div class="prose">
+    <p>The pretraining task: hide 15% of the tokens, predict them from the rest. Of the 15% chosen tokens, only <strong>80%</strong> are replaced by <code>[MASK]</code>; <strong>10%</strong> are replaced by a <em>random</em> token, and <strong>10%</strong> are left <em>unchanged</em>, and the model is asked to predict the original at all three kinds of position. Why? Because at fine-tuning time there is no <code>[MASK]</code>. The 10/10 forces it to <em>check</em> every token against its context.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The MLM head at one position · top-5</span></div>
+    <div class="panel-body" id="mlm"></div>
+    <div class="panel-note">At <code>[MASK]</code> the model does what it was trained for. At <code>banana</code> it doesn't just copy: part of the mass goes to the input token, part goes to <em>store</em> — the model is checking the token against the sentence and flagging that it doesn't fit. At <code>store</code> it copies with high confidence. Every unmasked token's vector carries "what I am" <em>and</em> "what would fit here". That second part is what makes the representation useful for everything below.</div>
+  </div>
+
+  <details class="variants"><summary>If there is time · what came after 15% / 80-10-10: ELECTRA, T5, RetroMAE</summary>
+    <div class="prose keep">
+      <p><strong>ELECTRA</strong> (Clark et al. 2020) — <em>replaced token detection</em>. A small generator MLM fills the masked positions with plausible tokens; the model you keep is a <em>discriminator</em> that reads the corrupted sentence and says, for <em>every</em> token, original or replaced. The loss covers 100% of the positions instead of 15%, which is the direct answer to "we only get gradients from 15% of the input" — same compute, better downstream numbers than BERT.</p>
+      <p><strong>T5</strong> (Raffel et al. 2020) — <em>span corruption</em>. Drop contiguous spans (15% of the tokens, mean span length 3), replace each span by one sentinel token <code>&lt;extra_id_0&gt;</code>, <code>&lt;extra_id_1&gt;</code>…, and have an encoder–decoder <em>generate</em> the dropped spans in order. The mask is a sequence-to-sequence target, so the same model does translation and summarisation with no head at all — "text-to-text".</p>
+      <p><strong>RetroMAE</strong> (Xiao et al. 2022) — masking for <em>retrieval</em>. The encoder sees the sentence with a moderate mask (~30%) and must pack it into one <code>[CLS]</code> vector; a one-layer decoder gets only that vector plus an aggressively masked copy (50–70%) and reconstructs the input. The <code>[CLS]</code> has to carry the whole sentence because nothing else survives — which is exactly the property 2.4 measured BERT's <code>[CLS]</code> <em>not</em> to have.</p>
+    </div>
+  </details>
+  <h3>📌 Bet · zero-shot classification through the mask</h3>
+  <div class="prose">
+    <p>Which means we can already classify news without training anything. Add <code>This news is about [MASK].</code> after a text as a second segment, read the distribution at the mask, and keep only the four words that name our classes. The model never saw AG News, never saw a label, was never told this is classification. This is <em>zero-shot</em>, and it is the direct ancestor of "prompting".</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · world / sports / business / technology</span><span class="btnrow"><button class="primary" id="btn-zs-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-zs"><span class="q">Accuracy on the 7 600 test texts? Week 1's TF-IDF is 0.92; random is 0.25.</span></div>
+      <div id="zs-out" hidden></div>
+    </div>
+    <div class="panel-note" id="zs-note" hidden>Not random, but not good either — and the per-class numbers say it's not <em>evenly</em> not good. Business swallows everything; World is a disaster. What does the model actually <em>want</em> to put in the mask for World news? It says <em>politics</em>. And <em>war</em>, and <em>iraq</em> — 2004, remember. "World" is the name a newsroom gave the section; the texts in it are about politics. Rename the class, keep everything else — one word in the prompt, seventeen points of accuracy. The prompt is a hyperparameter, and a fragile one. And zero-shot is still far under TF-IDF: the model knows more than a bag of words, but it has no way to <em>use</em> what it knows for our four classes. Time to attach something.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>Try it · pick the four label words · scored on all 7 600 test texts in your browser</span><span class="mono" id="zs-pick-acc"></span></div>
+    <div class="panel-body"><div class="zs-grid" id="zs-pick"></div><div id="zs-pick-out" style="margin-top:12px"></div></div>
+    <div class="panel-note">The mask distribution over 40 candidate words was computed once in the notebook; picking words here only re-reads four columns and takes an argmax per text. Try <em>war</em> for World, <em>stocks</em> for Business, <em>software</em> for Sci/Tech.</div>
+  </div>
+  <details class="variants"><summary>The notebook cell, as it printed</summary><pre class="code" id="zs-cellout" style="font-size:13px;white-space:pre-wrap"></pre></details>
+  <h3>📌 Bet · NSP, the pooler, and the <code>[CLS]</code> myth</h3>
+  <div class="prose">
+    <p>BERT's second pretraining task, <strong>next-sentence prediction</strong>: show two sentences and predict whether B followed A. The prediction is made from the <code>[CLS]</code> position — through the pooler, <math><mrow><mi>tanh</mi><mo>(</mo><mi>W</mi><msub><mi>h</mi><mtext>[CLS]</mtext></msub><mo>+</mo><mi>b</mi><mo>)</mo></mrow></math>, and one Linear on top. This is the <em>only</em> reason <code>[CLS]</code> has any meaning at all. Which brings us to a sentence that appears in roughly every BERT tutorial: <em>"<code>[CLS]</code> contains a representation of the whole text, so we can use it as a sentence embedding."</em> Let's test that. Three ways to turn the body's output into one vector per text, a logistic regression on top of each, no fine-tuning.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · pooler vs raw [CLS] vs mean of tokens · logreg on 10 000 texts</span><span class="btnrow"><button class="primary" id="btn-probe-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-probe"><span class="q">Rank the three. Which one wins?</span></div>
+      <div id="probe-out" hidden></div>
+    </div>
+    <div class="panel-note" id="probe-note" hidden><strong>You can't rank them.</strong> One point apart, on a test set where the standard error of an accuracy is about 0.004. <strong>All three lose to TF-IDF from week 1, by five points.</strong> A 110M-parameter model, pretrained on 3.3B words, frozen and probed, does not beat counting words with the right weights. Frozen features from a model that was never asked to separate topics are not topic features — this is the result that made Reimers &amp; Gurevych build Sentence-BERT in 2019. So: the body knows things, the mask proves it, the frozen vectors don't hand them over, and the number to beat is still 0.92. The smallest possible thing we could train is one Linear — a head.</div>
+  </div>
+</section>
+
+<!-- ============================================================ 03 head -->
+<section id="head">
+  <p class="eyebrow">Block 03 · the head</p>
+  <h2>Shape, attachment point, loss</h2>
+  <div class="prose">
+    <p>Whatever the task, the body does one thing: a batch of <math><mi>B</mi></math> texts, each <math><mi>L</mi></math> tokens long, goes in, and a tensor <math><mrow><mi>H</mi><mo>=</mo><mtext>body</mtext><mo>(</mo><mi>x</mi><mo>)</mo><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>B</mi><mo>×</mo><mi>L</mi><mo>×</mo><mi>d</mi></mrow></msup></mrow></math> comes out — one 768-vector per token. A <strong>head</strong> is whatever turns <math><mi>H</mi></math> into the answer, and for every task we'll meet it is <em>one Linear layer</em>. The tasks differ in three places only: <strong>which part of <math><mi>H</mi></math></strong> the Linear reads, <strong>what shape</strong> comes out, and <strong>along which axis the softmax runs</strong> inside the loss.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-body tight scroll-x"><table>
+      <thead><tr><th>task</th><th>reads from H</th><th>logits</th><th>softmax over</th><th>loss</th><th>ignored</th></tr></thead>
+      <tbody>
+      <tr><td><b>sequence classification</b> (AG News)</td><td class="mono">H[:, 0] — [B, d]</td><td class="mono">[B, C]</td><td>C classes</td><td>cross-entropy, once per text</td><td>padding</td></tr>
+      <tr><td><b>token classification</b> (NER)</td><td class="mono">every vector — [B, L, d]</td><td class="mono">[B, L, C]</td><td>C classes, <em>at each position</em></td><td>cross-entropy, once per token</td><td class="mono">-100: [CLS], [SEP], padding, continuations</td></tr>
+      <tr><td><b>span extraction</b> (QA)</td><td class="mono">every vector — [B, L, d]</td><td class="mono">[B, L, 2] → two [B, L]</td><td>L <strong>positions</strong></td><td>cross-entropy twice, "classes" = positions</td><td>question tokens, padding</td></tr>
+      </tbody></table></div>
+    <div class="panel-note">Look at rows 2 and 3. NER and QA both read <em>all</em> of <math><mi>H</mi></math> and both produce a <code>[B, L, something]</code> tensor. The difference is one word: NER normalises <strong>over classes</strong> at every position ("what is this token"), QA normalises <strong>over positions</strong> ("which token starts the answer").</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Counting the heads · against a body of <span id="body-n"></span> parameters</span></div>
+    <div class="panel-body"><div class="grid-2"><div id="head-counts"></div><div id="head-untrained"></div></div></div>
+    <div class="panel-note">Six thousand parameters for NER against a hundred and ten million in the body. If the body's vectors already contain "this token is the name of a person", a Linear is enough to read it out — and if they don't, no head will fix it. When you load <code>AutoModelForSequenceClassification</code>, the body weights come from the checkpoint and <strong>the head weights are random</strong> — the library prints <code>classifier.weight MISSING</code>. The "pretrained model" you download for a task is <em>this</em> — a pretrained body and a coin-flip head — until you train the head.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The recipe · <code>transformers</code>, one head class per task, one dial function, one Trainer</span></div>
+    <div class="panel-body"><pre class="code" id="code-recipe" style="font-size:13px;white-space:pre-wrap"></pre></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Live cell · head only, body frozen, one epoch</span><span class="mono" id="ho-live-stats"></span></div>
+    <div class="panel-body" id="ho-live"></div>
+    <div class="panel-note">Not far off the <em>pooler</em> + logreg row of 2.4 — and it <em>is</em> that row: the library's head reads the pooler output, the pooler is frozen with the body, and a Linear on a frozen vector trained with SGD is a logistic regression on that vector. Same thing, written in <code>torch</code>. That's the bottom setting of the dial. Now let's turn it.</div>
+  </div>
+</section>
+
+<!-- ============================================================ 04 dial -->
+<section id="dial">
+  <p class="eyebrow">Block 04 · transfer is a dial</p>
+  <h2>Head only, top blocks, everything</h2>
+  <div class="prose">
+    <p>First a question about the frozen body that we skipped: we took the <em>last</em> layer's vectors. BERT has thirteen (the embeddings, then twelve blocks). A logistic regression on the mean-pool of each — a <strong>linear probe</strong> — asks: <em>which layer knows the topic best?</em></p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · a linear probe per layer</span><span class="btnrow"><button class="primary" id="btn-layer-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-layer"><span class="q">Which layer wins — the last one? The middle? Draw the curve in your head.</span></div>
+      <div class="reveal-wrap"><div class="veil" id="layer-veil">accuracy by layer, 0 = embeddings … 12 = last block</div><div id="layer-chart" hidden></div></div>
+    </div>
+    <div class="panel-note" id="layer-note" hidden>Layer 0 is the embedding table — a bag of WordPiece vectors, averaged: week 1's "average the word vectors" row. One block of mixing buys two points, the second one more — and then the curve is flat. Layers 2 to 12 all sit inside the noise of a 7 600-text test set. No peak in the middle, no dip at the end. The last layer is a <em>convention</em>, not a measured choice: when you freeze a body you probe rather than assume.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>The dial · <code>set_trainable(model, k)</code></span></div>
+    <div class="panel-body"><div class="dial"><div><div class="knob" id="dial-knob"></div><div id="dial-knob-stats" style="margin-top:14px"></div></div><div id="dial-knob-fig"></div></div></div>
+    <div class="panel-note">Bottom to top: the embeddings, twelve blocks, the pooler, the head. Frozen parts are grey; what moves is coloured. The pooler sits above the last block, so it moves whenever any block does. Numbers are the measured runs of the bet below — after the reveal.</div>
+  </div>
+  <h3>📌 Bet · turn the dial</h3>
+  <div class="prose">
+    <p>Now let the body move — a little, then more. <code>set_trainable(body, k)</code> unfreezes the top <math><mi>k</mi></math> blocks and leaves the rest as it came. Four settings, same data, same epochs.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · four settings, <span id="dial-n"></span> texts, 2 epochs</span><span class="btnrow"><span class="mono" id="dial-score"></span><button class="primary" id="btn-dial-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-dial-pass"><span class="q">(1) The smallest setting that passes week 1's 0.92?</span></div>
+      <div class="bet" id="bet-dial-gap"><span class="q">(2) The gap between "top 6 blocks" and "everything"?</span></div>
+      <div id="dial-out" hidden>
+        <div class="scroll-x"><table id="dial-table"></table></div>
+        <div class="grid-2" style="margin-top:14px"><div><div class="figcap">test accuracy vs trainable parameters (log)</div><div id="dial-chart"></div></div><div><div class="figcap">the bill · seconds per epoch on this laptop</div><div id="dial-bill"></div></div></div>
+      </div>
+    </div>
+    <div class="panel-note" id="dial-note" hidden><strong>Head only</strong> is the 2.4 row again, and still under TF-IDF. The x-axis is logarithmic: the next point is <em>four thousand times</em> more parameters. <strong>Two blocks</strong> — 13% of the body — and we almost pass week 1's line. <strong>Six blocks, everything:</strong> a little more each, at the usual diminishing rate. Read the right plot as the bill. The forward pass through 110M parameters is paid whatever you freeze; what freezing saves is the <em>backward</em> pass and the optimizer state.</div>
+  </div>
+</section>
+
+<!-- ============================================================ 05 tasks -->
+<section id="tasks">
+  <p class="eyebrow">Block 05 · two more heads</p>
+  <h2>NER and QA</h2>
+  <div class="prose">
+    <p>The dial was measured on one task, with the head that reads one vector. Now the two tasks where the head reads all of <math><mi>H</mi></math> — and for each, the two ends of the dial: head only, and everything.</p>
+    <p><strong>CoNLL-2003</strong>: 14 000 Reuters sentences from 1996, every word tagged as a person, an organisation, a location, miscellaneous, or nothing. <code>B-</code> begins an entity, <code>I-</code> continues it, <code>O</code> is outside — <strong>BIO tagging</strong>, 9 labels. One label per word; BERT sees WordPieces. <code>word_ids()</code> says which word every token came from: the first token of a word carries the tag; the continuations get <code>-100</code>, and the cross-entropy skips them.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Token classification · the head reads every vector</span></div>
+    <div class="panel-body"><div class="two stacked"><div id="fig-ner"></div><pre class="code" id="code-ner" style="font-size:13px;white-space:pre-wrap"></pre></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>word → token → label</span></div>
+    <div class="panel-body" id="ner-align"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-body"><details class="variants"><summary>The notebook cell, as it printed</summary><pre class="code" id="ner-cellout" style="font-size:12.5px;white-space:pre-wrap"></pre></details></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · head only, <span id="ner-live-n"></span> sentences, one epoch, body frozen</span><span class="btnrow"><button class="primary" id="btn-ner-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-ner"><span class="q">Token accuracy will be above 90%. What's the entity-level F1, where an entity counts only if its type <em>and both boundaries</em> are right?</span></div>
+      <div id="ner-out" hidden></div>
+    </div>
+    <div class="panel-note" id="ner-note" hidden>That gap is the reason the field reports entity F1 and not token accuracy. Most words are <code>O</code>; a model that says <code>O</code> everywhere gets 83% token accuracy on CoNLL and finds nothing. Token accuracy is a metric for the head; entity F1 is a metric for the task.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The artifacts · head only, continuations labelled, everything</span><span class="mono" id="ner-art-n"></span></div>
+    <div class="panel-body"><div class="scroll-x"><table id="ner-table"></table></div><div id="ner-preds" style="margin-top:14px"></div></div>
+    <div class="panel-note"><strong>Head only gets you most of the way.</strong> The frozen body already separates names from non-names. <strong>Labelling the continuations costs F1</strong> with the same head, the same body, the same data — <code>B-PER B-PER B-PER</code> is three persons in a row to anything that reads BIO. <strong>Fine-tuning the body</strong> is worth the points that come from <code>ORG</code> and <code>MISC</code> — the types that depend on context. Below: the fine-tuned model on sentences it has never seen.</div>
+  </div>
+
+  <h3>Two pointers: extractive QA</h3>
+  <div class="prose">
+    <p><strong>SQuAD v1.1</strong>: 100 000 questions about Wikipedia paragraphs, where the answer is always a <em>span of the paragraph</em>. The label is a <em>character</em> offset. The question and the paragraph are two segments — <code>token_type_ids</code>, at last doing its job. And paragraphs are long: the paragraph is cut into <em>overlapping windows</em>, each window one training example, with the label pointing at the answer if it's inside and at <code>[CLS]</code> if it isn't.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Span extraction · two scores per token, softmax over positions</span></div>
+    <div class="panel-body"><div class="two stacked"><div id="fig-qa"></div><pre class="code" id="code-qa" style="font-size:13px;white-space:pre-wrap"></pre></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>One question, windows of <span id="qa-win-sel"></span> tokens</span><span class="btnrow" id="qa-win-btns"></span></div>
+    <div class="panel-body" id="qa-windows"></div>
+    <div class="panel-note">The label decodes back to the answer text in the window that contains it, and to nothing in the others. If that round trip fails on your own data, nothing downstream can work — check it before you train, always.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · the same head-only setup as NER · <span id="qa-live-n"></span> questions, one epoch</span><span class="btnrow"><button class="primary" id="btn-qa-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-qa"><span class="q">NER got most of the way on frozen features. Will QA? Token F1 on the dev questions:</span></div>
+      <div id="qa-out" hidden></div>
+    </div>
+    <div class="panel-note" id="qa-note" hidden>It will not. And this is the most useful negative result of the day: <strong>the same frozen body that hands NER <span data-ner-f1></span> F1 hands QA almost nothing.</strong> "Is this token a name" is a property of the token that the MLM objective happened to need; "does this token start the answer to <em>that</em> question" is a relation between two segments that nothing in pretraining asked for. The vectors don't contain it, and a Linear can only read what's there. So for QA the body has to move — the head is the same 1 538 numbers in both rows.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Fine-tuned everything · on paragraphs it has certainly never seen</span></div>
+    <div class="panel-body" id="qa-preds"></div>
+    <div class="panel-note">❓ The model <em>always</em> answers. Give it a question whose answer is not in the paragraph and it will still pick the best-scoring span. SQuAD 2.0 lets position 0 — <code>[CLS]</code> — win the two softmaxes. Why does that work with the head we have, without adding a single parameter?</div>
+  </div>
+</section>
+
+<!-- ============================================================ 06 end -->
+<section id="end">
+  <p class="eyebrow">Block 06 · where this goes</p>
+  <h2>The results table, read as one story</h2>
+  <div class="panel">
+    <div class="panel-head"><span>Results · AG News test, 7 600 texts</span></div>
+    <div class="panel-body tight scroll-x"><table class="results" id="results-1"></table></div>
+  </div>
+  <div class="prose keep">
+    <p>Every row is the same equation — a pretrained body × a head × what you let move — and the rows are ordered by the third factor:</p>
+    <ul>
+      <li><strong>nothing moves</strong> (zero-shot): the body knows things, we can reach them through the pretraining interface, and a word in the prompt is worth seventeen points. Under TF-IDF.</li>
+      <li><strong>a Linear moves</strong> (frozen features, head only): a logistic regression on whichever vector you choose. Still under TF-IDF. A frozen body that was never asked about topics does not hand over topic features.</li>
+      <li><strong>the top of the body moves</strong>: two blocks and we are a point from week 1; six and we're near the ceiling. The task-relevant adjustment lives near the top.</li>
+      <li><strong>everything moves</strong>: the best number, the biggest bill, and — at the wrong learning rate or the wrong seed — the only setting that can <em>destroy</em> the body.</li>
+    </ul>
+    <p>And across the three tasks, one Linear each: <code>[B, C]</code> from one vector, <code>[B, L, C]</code> softmaxed over classes, <code>[B, L, 2]</code> softmaxed over positions. Where the head attaches and which axis is normalised — that was the task. How much of the body has to move to feed it — that depended on whether pretraining had already built what the task needs (names: yes; the answer to a question: no).</p>
+  </div>
+</section>
+
+</div>
+</main>
+</div>

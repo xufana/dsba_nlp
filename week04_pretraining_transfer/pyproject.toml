@@ -1,0 +1,27 @@
+[project]
+name = "nlp-dsba-week04"
+version = "0.1.0"
+description = "Week 4 — pretraining and transfer: BERT and the shape of a head. Self-contained seminar environment (AG News comes from ../week01_text_representations)."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "matplotlib>=3.8",
+    "scikit-learn>=1.4",
+    "torch>=2.2",
+    "tokenizers>=0.20,<0.23.1",   # 0.23.1–0.23.2 drop the overflow windows past max_length (tokenizers #2091)
+    "transformers[torch]>=5.0",
+    "nbformat>=5.10",
+    "nbclient>=0.10",
+    "tqdm>=4.66",
+    "ipykernel>=6.29",
+    "jupyterlab>=4.2",
+    "datasets>=5.0.1",
+    "accelerate>=1.1.0",
+    "seqeval>=1.2.2",
+    "evaluate>=0.4.6",
+]
+
+[tool.uv]
+package = false
