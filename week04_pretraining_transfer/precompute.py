@@ -60,6 +60,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 
 import evaluate
 from datasets import Dataset, concatenate_datasets, load_dataset
@@ -72,6 +74,10 @@ from transformers import (AutoModel, AutoModelForMaskedLM, AutoModelForQuestionA
 warnings.filterwarnings("ignore")
 transformers.logging.set_verbosity_error()      # no load reports: the MLM head being dropped is expected
 
+def log(msg):
+    print(msg, flush=True)
+
+
 # --- notebook: setup ---
 SEED = 42
 
@@ -80,10 +86,6 @@ def seed_all(seed=SEED):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-
-
-def log(msg):
-    print(msg, flush=True)
 
 
 def n_params(module, trainable_only=False):
@@ -106,13 +108,14 @@ def check(label, ok):
 
 IGNORE = -100          # the label PyTorch's cross_entropy skips — used for padding, special tokens, word continuations
 CLASS_NAMES = ["World", "Sports", "Business", "Sci/Tech"]
-NER_TAGS = ["O", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "B-MISC", "I-MISC"]     # CoNLL-2003, BIO — 3.5
+NER_TAGS = ["O", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "B-MISC", "I-MISC"]     # CoNLL-2003, BIO — 5.1
 # --- end ---
 
 
 # --- notebook: body ---
-# PyTorch's fused attention kernel on Apple GPUs (MPS) cannot apply dropout, and BERT's attention has 10% of it
-# in training — so there every `from_pretrained` below asks for the plain ("eager") implementation; on CUDA the fused one stays.
+# PyTorch's fused attention kernel on Apple GPUs (MPS) cannot apply dropout once part of the body is frozen (torch 2.14),
+# and BERT's attention has 10% of it in training — so there every `from_pretrained` below asks for the plain ("eager")
+# implementation; on CUDA the fused one stays.
 ATTN = "eager" if torch.backends.mps.is_available() and not torch.cuda.is_available() else None
 
 
@@ -124,7 +127,7 @@ def set_trainable(model, top_blocks):
     for p in body.parameters():
         p.requires_grad = top_blocks == "all"
     if top_blocks != "all" and top_blocks > 0:
-        for block in body.encoder.layer[len(body.encoder.layer) - top_blocks:]:
+        for block in body.encoder.layer[-top_blocks:]:
             for p in block.parameters():
                 p.requires_grad = True
         if getattr(body, "pooler", None) is not None:
@@ -206,23 +209,32 @@ def train(model, train_ds, eval_ds, collator, compute_metrics=None, epochs=2, lr
     linearly over the first 10% of the steps and decayed linearly to zero after — BERT's fine-tuning
     recipe, spelled out as TrainingArguments. `compute_metrics` runs on the eval set after every epoch.
     Returns the trainer (for predictions) and the curves: train loss, seconds and every eval metric, by epoch."""
-    args = TrainingArguments(output_dir=TRAINER_DIR, per_device_train_batch_size=batch_size, per_device_eval_batch_size=64,
-                             num_train_epochs=epochs, learning_rate=lr, weight_decay=0.01, warmup_steps=0.1,   # < 1: a fraction of the steps
-                             lr_scheduler_type="linear", eval_strategy="epoch", logging_strategy="epoch", save_strategy="no",
-                             report_to=[], seed=seed, disable_tqdm=quiet)
+    args = TrainingArguments(
+        per_device_train_batch_size=batch_size, per_device_eval_batch_size=64, num_train_epochs=epochs,
+        learning_rate=lr, weight_decay=0.01, lr_scheduler_type="linear",
+        warmup_steps=0.1,                                                     # < 1: a fraction of the steps
+        eval_strategy="epoch", logging_strategy="epoch", save_strategy="no",
+        output_dir=TRAINER_DIR, report_to=[], seed=seed, disable_tqdm=quiet,
+    )
     timer = EpochTimer()
     trainer = Trainer(model=model, args=args, train_dataset=train_ds, eval_dataset=eval_ds, data_collator=collator,
                       compute_metrics=compute_metrics, callbacks=[timer])
     trainer.train()
     curves = {"epoch": [], "train_loss": [], "seconds": timer.seconds, "trainable_params": n_params(model, trainable_only=True)}
     for entry in trainer.state.log_history:                     # one training entry and one eval entry per epoch
-        if "loss" in entry:
+        if "loss" in entry:                                      # the training entry
             curves["epoch"].append(int(round(entry["epoch"])))
             curves["train_loss"].append(round(entry["loss"], 4))
-        for k, v in entry.items():
-            if k.startswith("eval_") and not k.endswith(("_runtime", "_per_second")):
-                curves.setdefault(k if k == "eval_loss" else k[len("eval_"):], []).append(v)
+        for key, value in entry.items():                         # the eval entry: eval_loss, eval_accuracy, eval_f1, ...
+            if key.startswith("eval_") and not key.endswith(("_runtime", "_per_second")):
+                name = key if key == "eval_loss" else key.removeprefix("eval_")
+                curves.setdefault(name, []).append(value)
     return trainer, curves
+
+
+def last_epoch(curves):
+    """The final value of every curve: what a live training run prints when it is done."""
+    return {k: v[-1] for k, v in curves.items() if isinstance(v, list) and v}
 
 
 def predict(model, ds, collator, compute_metrics=None):
@@ -235,7 +247,8 @@ def predict(model, ds, collator, compute_metrics=None):
 # --- notebook: agnews_features ---
 def encode_agnews(tokenizer, ds, max_len=128):
     """text -> input_ids / attention_mask, unpadded: the collator pads every batch to its own longest text."""
-    return ds.map(lambda batch: tokenizer(batch["text"], truncation=True, max_length=max_len), batched=True, remove_columns=["text"])
+    return ds.map(lambda batch: tokenizer(batch["text"], truncation=True, max_length=max_len),
+                  batched=True, remove_columns=["text"])
 
 
 def accuracy_metric(p):
@@ -265,8 +278,6 @@ def extract_features(body, ds, collator, device, batch_size=64):
 
 
 def logreg_accuracy(X_train, y_train, X_test, y_test):
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.preprocessing import StandardScaler
     scaler = StandardScaler().fit(X_train)
     clf = LogisticRegression(max_iter=2000).fit(scaler.transform(X_train), y_train)
     return round(float(clf.score(scaler.transform(X_test), y_test)), 4)
@@ -282,7 +293,8 @@ def mask_probabilities(mlm, tokenizer, texts, prompt, device, batch_size=64):
     mlm.to(device).eval()
     probs = []
     for i in range(0, len(texts), batch_size):
-        enc = tokenizer(texts[i:i + batch_size], [prompt] * len(texts[i:i + batch_size]), truncation="only_first",
+        chunk = texts[i:i + batch_size]
+        enc = tokenizer(chunk, [prompt] * len(chunk), truncation="only_first",
                         max_length=128, padding=True, return_tensors="pt").to(device)
         logits = mlm(**enc).logits                                             # [B, L, V]
         at_mask = (enc["input_ids"] == tokenizer.mask_token_id)                # exactly one True per row
@@ -388,26 +400,32 @@ def encode_qa(tokenizer, ds, max_len=384, stride=128):
 def best_span(start_scores, end_scores, offsets, max_answer_tokens=30):
     """The highest-scoring (start, end) pair with start <= end, both inside the context, and the
     answer no longer than `max_answer_tokens`. Returns the score and the character span."""
-    best, best_span_ = -1e9, None
+    best_score, best_chars = -1e9, None
     starts = np.argsort(start_scores)[::-1][:20]                 # only the 20 best starts and ends are worth checking
     ends = np.argsort(end_scores)[::-1][:20]
     for s in starts:
         for e in ends:
             if offsets[s] is None or offsets[e] is None or e < s or e - s + 1 > max_answer_tokens:
                 continue
-            if start_scores[s] + end_scores[e] > best:
-                best, best_span_ = start_scores[s] + end_scores[e], (offsets[s][0], offsets[e][1])
-    return best, best_span_
+            if start_scores[s] + end_scores[e] > best_score:
+                best_score, best_chars = start_scores[s] + end_scores[e], (offsets[s][0], offsets[e][1])
+    return best_score, best_chars
 
 
 def qa_answers(start_logits, end_logits, features, examples):
     """Model outputs on every window -> one text answer per example (the best window wins)."""
-    best = {}
-    for start_scores, end_scores, offsets, example_id in zip(start_logits, end_logits, features["offset_mapping"], features["example_id"]):
-        score, span = best_span(start_scores[:len(offsets)], end_scores[:len(offsets)], offsets)
+    best = {}                                                    # example id -> (score, character span) of its best window
+    for start_scores, end_scores, offsets, example_id in zip(start_logits, end_logits,
+                                                             features["offset_mapping"], features["example_id"]):
+        n = len(offsets)                                         # the logits are padded to the longest window
+        score, span = best_span(start_scores[:n], end_scores[:n], offsets)
         if span is not None and score > best.get(example_id, (-1e9, None))[0]:
             best[example_id] = (score, span)
-    return {i: ("" if i not in best else context[best[i][1][0]:best[i][1][1]]) for i, context in zip(examples["id"], examples["context"])}
+    answers = {}
+    for example_id, context in zip(examples["id"], examples["context"]):
+        _, span = best.get(example_id, (None, None))
+        answers[example_id] = "" if span is None else context[span[0]:span[1]]
+    return answers
 
 
 squad_metric = evaluate.load("squad")                                # the official SQuAD script: exact match and token F1,
@@ -421,7 +439,8 @@ def qa_metrics_for(features, examples):
     def metrics(p):
         start_logits, end_logits = p.predictions
         answers = qa_answers(start_logits, end_logits, features, examples)
-        r = squad_metric.compute(predictions=[{"id": i, "prediction_text": a} for i, a in answers.items()], references=references)
+        predictions = [{"id": i, "prediction_text": a} for i, a in answers.items()]
+        r = squad_metric.compute(predictions=predictions, references=references)
         return {"exact_match": round(r["exact_match"], 2), "f1": round(r["f1"], 2)}
     return metrics
 # --- end ---
@@ -619,7 +638,8 @@ QA_DEMO = {
                "and was launched together with the University of London in 2019. The NLP course runs in the autumn "
                "of the fourth year.",
     "questions": ["When was HSE founded?", "In what language is DSBA taught?", "Which university partners with DSBA?",
-                  "When does the NLP course run?"],
+                  "When does the NLP course run?",
+                  "Who is the rector of HSE?", "How many students does DSBA admit each year?"],   # not in the paragraph: the model answers anyway
 }
 
 
@@ -651,8 +671,19 @@ def step_qa(cfg, tokenizer, device):
             feats = encode_qa(tokenizer, demo)
             start_logits, end_logits = trainer.predict(feats).predictions
             answers = qa_answers(start_logits, end_logits, feats, demo)
+            # the two score rows of the first window of every example — the demo draws them over the tokens
+            first = {}
+            for i, example_id in enumerate(feats["example_id"]):
+                first.setdefault(example_id, i)
+            scores = {}
+            for e in demo:
+                i = first[e["id"]]
+                n = len(feats[i]["input_ids"])
+                scores[e["id"]] = {"tokens": tokenizer.convert_ids_to_tokens(feats[i]["input_ids"]), "offsets": feats[i]["offset_mapping"],
+                                   "start": [round(float(v), 2) for v in start_logits[i][:n]], "end": [round(float(v), 2) for v in end_logits[i][:n]],
+                                   "windows": sum(1 for x in feats["example_id"] if x == e["id"])}
             save_json(cfg, "qa_predictions.json", {"model": name, "examples": [
-                {"question": e["question"], "context": e["context"], "gold": e["answers"]["text"], "pred": answers[e["id"]]} for e in demo]})
+                {"question": e["question"], "context": e["context"], "gold": e["answers"]["text"], "pred": answers[e["id"]], "scores": scores[e["id"]]} for e in demo]})
         free(trainer, model)
     save_json(cfg, "qa_curves.json", out)
 

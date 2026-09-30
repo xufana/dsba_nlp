@@ -89,7 +89,8 @@ function makeBet(host, options, answer) {
 }
 function reveal(btnId, outIds, noteId, bets) {
   $("#" + btnId).addEventListener("click", e => { (bets || []).forEach(b => b.reveal()); outIds.forEach(id => { const n = $("#" + id); if (n) n.hidden = false; }); if (noteId) $("#" + noteId).hidden = false;
-    const veil = e.target.closest(".panel").querySelector(".veil"); if (veil) veil.remove(); e.target.disabled = true; e.target.textContent = "revealed"; });
+    const veil = e.target.closest(".panel").querySelector(".veil"); if (veil) veil.remove(); e.target.disabled = true; e.target.textContent = "revealed";
+    document.dispatchEvent(new CustomEvent("revealed", { detail: btnId })); });
 }
 function table(host, cols, rows) {
   host.innerHTML = `<thead><tr>${cols.map(c => `<th class="${c.num ? "num" : ""}">${c.h}</th>`).join("")}</tr></thead><tbody>` +
@@ -119,7 +120,7 @@ $("#data-split").textContent = `${num(DATA.nTrain)} train · ${num(DATA.nTest)} 
 $("#data-example").innerHTML = `<p style="margin:0 0 8px">${esc(DATA.example.text)}</p><span class="chip"><span class="dot c${DATA.example.label}"></span>label ${DATA.example.label} = ${esc(CLS[DATA.example.label])}</span>`;
 const RES_COLS = [{ h: "model", f: r => esc(r.model) }, { h: "trainable params", num: 1, f: r => esc(r["trainable params"]) }, { h: "test acc", num: 1, f: r => `<b>${fmt(r["test acc"], 4)}</b>` }, { h: "train s", num: 1, f: r => r["train s"] == null ? "—" : num(r["train s"]) }, { h: "note", mono: 1, f: r => `<span style="font-size:13.5px">${esc(r.note)}</span>` }];
 table($("#results-0"), RES_COLS, [Object.assign({ _hl: 1 }, RES[0])]);
-table($("#results-1"), RES_COLS, RES.map((r, i) => Object.assign({ _hl: i === 0 }, r)));
+
 
 /* ============================================================ 01 tokenizers */
 const TK = D.tok;
@@ -154,32 +155,22 @@ $("#body-params").insertAdjacentHTML("beforeend", `<div class="small-note" style
   ctx.putImageData(img, 0, 0); $("#pos-sim").appendChild(c);
   $("#pos-sim").insertAdjacentHTML("beforeend", `<div class="small-note">cosine from ${BODY.posSim.min.toFixed(2)} (light) to 1 (dark)</div>`);
 })();
-$("#mlm").innerHTML = `<div class="grid-2">` + D.mlm.guesses.map(g => `<div><div class="figcap">${esc(g.text).replace(esc(g.word), `<b>${esc(g.word)}</b>`)}</div><div id="mlm-${esc(g.word).replace(/\W/g, "")}"></div></div>`).join("") + `</div>`;
-D.mlm.guesses.forEach(g => probBars($("#mlm-" + g.word.replace(/\W/g, "")), g.top.map(([w, p]) => ({ label: w, p })), { max: 1 }));
 
 const ZS = D.zeroShot, ZA = ZS.artifact.label_sets;
-const betZs = makeBet("#bet-zs", ["about 0.30", "about 0.45", "about 0.60", "about 0.75"], [0.30, 0.45, 0.60, 0.75].map((v, i) => [Math.abs(v - ZA.v1.accuracy), i]).sort((a, b) => a[0] - b[0])[0][1]);
-$("#zs-out").innerHTML = `<div class="grid-2"><div><div class="figcap">v1 · ${ZA.v1.words.join(" / ")}</div><div class="stat-row">${stat(fmt(ZA.v1.accuracy, 3), "accuracy, " + num(ZS.n) + " texts")}</div><div id="zs-v1"></div></div>
-  <div><div class="figcap">what the mask wants for World news · top words</div><div id="zs-top"></div></div></div>
-  <div style="margin-top:14px"><div class="figcap">v2 · ${ZA.v2.words.join(" / ")} — one word changed</div><div class="stat-row">${stat(fmt(ZA.v2.accuracy, 3), "accuracy")}${stat("+" + (100 * (ZA.v2.accuracy - ZA.v1.accuracy)).toFixed(1), "points from one word")}</div><div id="zs-v2"></div></div>`;
-probBars($("#zs-v1"), CLS.map(c => ({ label: c, p: ZA.v1.per_class[c], text: fmt(ZA.v1.per_class[c], 3) })), { max: 1 });
-probBars($("#zs-v2"), CLS.map(c => ({ label: c, p: ZA.v2.per_class[c], text: fmt(ZA.v2.per_class[c], 3) })), { max: 1 });
+const betZs = makeBet("#bet-zs", ["about 0.30", "about 0.45", "about 0.60", "about 0.75"], null);   // the answer is scored from the picked words at reveal time (extra.js)
 probBars($("#zs-top"), ZS.topWorld.slice(0, 8).map(([w, n]) => ({ label: w, p: n / ZS.topWorld[0][1], text: num(n) })), { max: 1 });
-reveal("btn-zs-reveal", ["zs-out"], "zs-note", [betZs]);
+
 
 const FE = D.features;
 const betProbe = makeBet("#bet-probe", ["pooler", "[CLS]", "mean of tokens", "you can't rank them"], 3);
-$("#probe-out").innerHTML = `<div class="scroll-x"><table id="probe-table"></table></div><div class="small-note" style="margin-top:8px">live cell in the notebook, ${num(FE.live.n)} texts: pooler ${fmt(FE.live.summary.pooler, 3)}, [CLS] ${fmt(FE.live.summary.cls, 3)}, mean ${fmt(FE.live.summary.mean, 3)} · encoding ${num(FE.artifact.n_train)} texts took ${FE.artifact.encode_seconds}s</div>`;
-table($("#probe-table"), [{ h: "vector", f: r => r.k }, { h: "test acc", num: 1, f: r => `<b>${fmt(r.v, 4)}</b>` }, { h: "vs TF-IDF 0.9195", num: 1, f: r => (100 * (r.v - DATA.tfidf.accuracy)).toFixed(1) + " pts" }],
-  [["pooler (what NSP trained)", FE.artifact.summary.pooler], ["raw [CLS], last layer", FE.artifact.summary.cls], ["mean of all tokens, last layer", FE.artifact.summary.mean]].map(([k, v]) => ({ k, v })));
+$("#probe-out").innerHTML = `<div id="probe-fig"></div><div class="small-note" style="margin-top:8px">live cell in the notebook, ${num(FE.live.n)} texts: pooler ${fmt(FE.live.summary.pooler, 3)}, [CLS] ${fmt(FE.live.summary.cls, 3)}, mean ${fmt(FE.live.summary.mean, 3)} · encoding ${num(FE.artifact.n_train)} texts took ${FE.artifact.encode_seconds}s</div>`;
 reveal("btn-probe-reveal", ["probe-out"], "probe-note", [betProbe]);
 
 /* ============================================================ 03 head */
 const HD = D.heads;
 $("#body-n").textContent = num(HD.body);
 probBars($("#head-counts"), Object.entries(HD.counts).map(([k, v]) => ({ label: k, p: v / 7000, text: `${num(v)} · ${(100 * v / HD.body).toFixed(4)}%` })), { max: 1 });
-$("#head-counts").insertAdjacentHTML("beforeend", `<pre class="code" style="margin-top:12px;font-size:12.5px;white-space:pre-wrap;max-height:220px;overflow:auto">${esc(HD.librarySource)}</pre>`);
-$("#head-untrained").innerHTML = `<div class="figcap">an untrained head · ${num(HD.untrained.n)} test texts</div><div class="stat-row">${stat(fmt(HD.untrained.accuracy, 3), "accuracy")}${stat("0.25", "random")}</div><pre class="code" style="margin-top:12px;font-size:12.5px;white-space:pre-wrap">${esc(HD.loadReport.replace(/\x1b\[[0-9;]*m/g, ""))}</pre>`;
+$("#head-untrained").innerHTML = `<div class="figcap">an untrained head · ${num(HD.untrained.n)} test texts</div><div class="stat-row">${stat(fmt(HD.untrained.accuracy, 3), "accuracy")}${stat("0.25", "random")}</div><pre class="report" style="margin-top:12px">${esc(HD.loadReport.replace(/\x1b\[[0-9;]*m/g, "")).split("\n").filter(l => /MISSING|LOAD REPORT|Key|---/.test(l)).join("\n").replace(/MISSING/g, '<span class="miss">MISSING</span>')}\n<span class="unex">… 8 UNEXPECTED keys: the MLM and NSP heads of the checkpoint, dropped</span></pre>`;
 const HO = HD.headOnlyLive;
 $("#ho-live-stats").textContent = `${num(HO.n)} texts · lr ${HO.lr} · ${num(HO.trainable)} trainable`;
 $("#ho-live").innerHTML = `<div class="stat-row">${stat(fmt(HO.accuracy, 3), "test accuracy")}${stat(HO.seconds + "s", "one epoch")}${stat(fmt(FE.live.summary.pooler, 3), "pooler + logreg, same " + num(FE.live.n) + " texts")}</div>`;
@@ -201,15 +192,17 @@ const gap = finalAcc("everything") - finalAcc("top 6 blocks");
 const betGap = makeBet("#bet-dial-gap", ["under 0.5 points", "1–2 points", "3–5 points", "more than 5"], gap < 0.005 ? 0 : gap < 0.02 ? 1 : gap < 0.05 ? 2 : 3);
 table($("#dial-table"), [{ h: "setting", f: r => `<b>${esc(r.k)}</b>` }, { h: "trainable", num: 1, f: r => num(r.trainable_params) }, { h: "of the body", num: 1, f: r => pct(r.trainable_params / r.total_params, 1) }, { h: "lr", num: 1, f: r => r.lr }, { h: "epoch 1", num: 1, f: r => fmt(r.accuracy[0], 4) }, { h: "epoch 2", num: 1, f: r => `<b>${fmt(last(r.accuracy), 4)}</b>` }, { h: "s / epoch", num: 1, f: r => num(Math.round(last(r.seconds))) }],
   TRN.map(k => Object.assign({ k, _hl: finalAcc(k) >= DATA.tfidf.accuracy }, TR.runs[k])));
-REDRAW.push(() => lineChart($("#dial-chart"), { W: 520, H: 320, L: 70, fs: 13.5, xlog: 1, series: [{ x: TRN.map(k => TR.runs[k].trainable_params), y: TRN.map(finalAcc), color: css("--cls-1"), labels: TRN, tip: (x, y) => `${num(x)} params → ${fmt(y, 4)}` }], hlines: [{ y: DATA.tfidf.accuracy, label: "TF-IDF, week 1", color: css("--bad") }], xlabel: "trainable parameters", ylabel: "test accuracy", ymin: 0.82, ymax: 0.94 }));
+let DIAL_HL = null;
+function drawDialChart() {
+  const c = lineChart($("#dial-chart"), { W: 520, H: 320, L: 70, fs: 13.5, xlog: 1, series: [{ x: TRN.map(k => TR.runs[k].trainable_params), y: TRN.map(finalAcc), color: css("--cls-1"), labels: TRN, tip: (x, y) => `${num(x)} params → ${fmt(y, 4)}` }], hlines: [{ y: DATA.tfidf.accuracy, label: "TF-IDF, week 1", color: css("--bad") }], xlabel: "trainable parameters", ylabel: "test accuracy", ymin: 0.82, ymax: 0.94 });
+  if (DIAL_HL) { const r = TR.runs[DIAL_HL]; c.s.appendChild(el("circle", { cx: c.X(r.trainable_params), cy: c.Y(last(r.accuracy)), r: 9, fill: "none", stroke: css("--ink"), "stroke-width": 2 })); }
+}
+REDRAW.push(drawDialChart);
 probBars($("#dial-bill"), TRN.map(k => ({ label: k, p: last(TR.runs[k].seconds), text: Math.round(last(TR.runs[k].seconds)) + " s" })), { max: Math.max(...TRN.map(k => last(TR.runs[k].seconds))) });
-$("#dial-score");
 reveal("btn-dial-reveal", ["dial-out"], "dial-note", [betPass, betGap]);
 
 /* ============================================================ 05 tasks */
 const NER = D.ner, TAGS = DATA.nerTags;
-(function align() { const e = NER.example; $("#ner-align").innerHTML = `<div class="pieces" style="margin-bottom:8px"><span class="lab">words</span>${e.words.map((w, i) => tok(w, e.tags[i] ? "ent" : "")).join("")}</div>
-  <div class="pieces"><span class="lab">tokens · label</span>${e.tokens.map((t, i) => { const l = e.labels[i]; return `<span class="tok ${l === -100 ? "dim" : l ? "ans" : ""}" title="word ${e.wordIds[i]} · label ${l}">${esc(t)}<i style="font-style:normal;font-size:10.5px;margin-left:4px;opacity:.7">${l === -100 ? "−100" : esc(TAGS[l])}</i></span>`; }).join("")}</div>`; })();
 const NL = NER.live;
 $("#ner-live-n").textContent = num(NL.n);
 const ratio = NL.entity_f1 / NL.token_acc;
@@ -221,13 +214,6 @@ $("#ner-art-n").textContent = `${num(NA.n_train)} train · ${num(NA.n_test)} tes
 table($("#ner-table"), [{ h: "setting", f: r => `<b>${esc(r.k)}</b>` }, { h: "trainable", num: 1, f: r => num(r.trainable_params) }, { h: "epochs", num: 1, f: r => r.epoch.length }, { h: "token acc", num: 1, f: r => fmt(last(r.token_acc), 3) }, { h: "entity F1", num: 1, f: r => `<b>${fmt(last(r.entity_f1), 3)}</b>` }, { h: "PER", num: 1, f: r => fmt(last(r.f1_PER), 2) }, { h: "ORG", num: 1, f: r => fmt(last(r.f1_ORG), 2) }, { h: "LOC", num: 1, f: r => fmt(last(r.f1_LOC), 2) }, { h: "MISC", num: 1, f: r => fmt(last(r.f1_MISC), 2) }, { h: "s / epoch", num: 1, f: r => num(Math.round(last(r.seconds))) }],
   NAN.map(k => Object.assign({ k }, NA.runs[k])));
 $$("[data-ner-f1]").forEach(n => n.textContent = Math.round(100 * last(NA.runs["head only"].entity_f1)));
-(function preds() {
-  $("#ner-preds").innerHTML = `<div class="figcap">fine-tuned "everything" on unseen sentences · its predictions</div>` + NER.predictions.sentences.map(s => {
-    let out = "", i = 0; while (i < s.words.length) { const t = s.pred[i]; if (t === "O") { out += esc(s.words[i]) + " "; i++; continue; }
-      const type = t.slice(2); let j = i + 1; while (j < s.words.length && s.pred[j] === "I-" + type) j++; out += `<span class="ent ${type}">${esc(s.words.slice(i, j).join(" "))}<i>${type}</i></span> `; i = j; }
-    return `<p class="ent-line">${out}</p>`; }).join("");
-})();
-
 const QA = D.qa, WK = Object.keys(QA.windowsCheck);
 $("#qa-win-btns").innerHTML = WK.map(k => `<button data-w="${k}">${k}</button>`).join("");
 function showWindows(k) {
@@ -243,6 +229,7 @@ const QAA = QA.artifact, QAN = Object.keys(QAA.runs);
 $("#qa-out").innerHTML = `<div class="stat-row">${stat(QL.f1.toFixed(1), "token F1")}${stat(QL.exact_match.toFixed(1), "exact match")}${stat(QL.seconds + "s", num(QL.windows) + " windows, " + num(QL.trainable) + " params")}</div><div class="figcap" style="margin-top:14px">the artifacts · ${num(QAA.n_train)} questions (${num(QAA.n_train_windows)} windows), ${num(QAA.n_dev)} dev</div><div class="scroll-x"><table id="qa-table"></table></div>`;
 table($("#qa-table"), [{ h: "setting", f: r => `<b>${esc(r.k)}</b>` }, { h: "trainable", num: 1, f: r => num(r.trainable_params) }, { h: "epochs", num: 1, f: r => r.epoch.length }, { h: "lr", num: 1, f: r => r.lr }, { h: "exact match", num: 1, f: r => fmt(last(r.exact_match), 1) }, { h: "F1", num: 1, f: r => `<b>${fmt(last(r.f1), 1)}</b>` }, { h: "s / epoch", num: 1, f: r => num(Math.round(last(r.seconds))) }], QAN.map(k => Object.assign({ k }, QAA.runs[k])));
 reveal("btn-qa-reveal", ["qa-out"], "qa-note", [betQa]);
-$("#qa-preds").innerHTML = QA.predictions.examples.map((e, i) => `${i === 0 || e.context !== QA.predictions.examples[i - 1].context ? `<p class="ctx" style="margin:10px 0 6px;font-size:15.5px;color:var(--ink-2)">${esc(e.context)}</p>` : ""}<div class="qa-row"><span><span class="k">question</span>${esc(e.question)}</span><span><span class="k">predicted</span><b>${esc(e.pred)}</b></span><span><span class="k">gold</span>${e.gold && e.gold[0] ? esc(e.gold.join(" / ")) : "—"}</span></div>`).join("");
+const QA_NO_ANSWER = q => /rector|admit/.test(q);        // the two QA_DEMO questions whose answer is not in the paragraph
+$("#qa-preds").innerHTML = QA.predictions.examples.map((e, i) => `${i === 0 || e.context !== QA.predictions.examples[i - 1].context ? `<p class="ctx" style="margin:10px 0 6px;font-size:15.5px;color:var(--ink-2)">${esc(e.context)}</p>` : ""}<div class="qa-row"><span><span class="k">question</span>${esc(e.question)}</span><span><span class="k">predicted</span><b class="${QA_NO_ANSWER(e.question) ? "no" : ""}">${esc(e.pred)}</b></span><span><span class="k">gold</span>${e.gold && e.gold[0] ? esc(e.gold.join(" / ")) : QA_NO_ANSWER(e.question) ? '<span class="no">not in the paragraph</span>' : "—"}</span></div>`).join("");
 
 redrawAll();

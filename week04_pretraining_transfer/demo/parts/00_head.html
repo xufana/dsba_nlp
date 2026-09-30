@@ -525,4 +525,35 @@ details.variants[open] > summary::before { content: "−"; }
 .qa-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: block; }
 .qa-row:last-child { border-bottom: none; }
 .qa-row .ok { color: var(--good); } .qa-row .no { color: var(--bad); }
+
+/* ------------------------------------------------ week 4, second pass (2026-09-30) */
+/* a schematic with states: the buttons switch what the same picture highlights */
+.fig-states { display: flex; gap: 6px; flex-wrap: wrap; }
+.fig-states button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the variants footnote: three small pictures, each with its paragraph */
+.variant .fig svg { max-width: 560px; }
+/* clickable tokens (the MLM picker): the chosen one is outlined */
+.pieces .tok.pick { cursor: pointer; }
+.pieces .tok.pick:hover { border-color: var(--ink); }
+.pieces .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* the scoreboard in the rail: rows light up as reveals happen */
+.score { margin-top: 12px; border-top: 1px solid var(--rule); padding-top: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+.score .row { display: grid; grid-template-columns: 1fr 52px; gap: 6px; padding: 2px 0; line-height: 1.35; align-items: baseline; }
+.score .row.off { opacity: .38; }
+.score .row.on { color: var(--ink); }
+.score .row.line { color: var(--bad); border-bottom: 1px dashed var(--bad); margin-bottom: 3px; }
+.score .row .v { text-align: right; font-variant-numeric: tabular-nums; }
+.score .row.pass .v { color: var(--good); font-weight: 600; }
+.score .t { letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+/* the results table sorters */
+.sorters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.sorters button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* a bare figure caption line under a schematic */
+.figline { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin: 6px 0 0; line-height: 1.5; }
+/* two-column figure + code */
+.fig-code { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+/* the QA score rows: hover a token to read both scores */
+.qa-pick { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.qa-pick button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.qa-pick button.noans { border-style: dashed; }
 </style>

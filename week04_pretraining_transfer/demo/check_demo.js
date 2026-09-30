@@ -5,7 +5,9 @@
        node check_demo.js week04_demo.html check_steps.json
 
    Loads the page, then evaluates the steps in check_steps.json one at a time, each with its
-   own timeout, so a hang is attributed to a step. The steps compare the in-browser tokenizer
+   own timeout, so a hang is attributed to a step. The `figures` list renders the page's SVG
+   schematics to PNG (light theme, 2x) into ../figures/ — the notebook embeds those, so the
+   picture in the notebook and in the demo is one drawing. The steps compare the in-browser tokenizer
    and LSTM against the numbers export_demo_data.py wrote from PyTorch, click every reveal, and
    look for SVG labels that are clipped or overlap. (Chrome's --dump-dom is not usable here:
    it never returns on a page that runs a few seconds of synchronous JS during load.) */
@@ -69,6 +71,33 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       fs.writeFileSync(path.join(OUT, sc.file), Buffer.from(shot.result.data, "base64"));
       console.log("screenshot", sc.file);
     } catch (e) { console.log("screenshot failed", sc.file, e.message); }
+  }
+  // figures for the notebook: each SVG is serialised in its state and rendered alone, light theme, on a page of its own size
+  const figs = STEPS.figures || [];
+  const grabbed = [];
+  for (const fg of figs) {
+    try {
+      const r = await send("Runtime.evaluate", { expression: `(function(){ document.documentElement.setAttribute("data-theme", "light"); document.body.classList.remove("present"); ${fg.expr || ""}; const n = document.querySelector(${JSON.stringify(fg.sel)}); const d = n.closest("details"); if (d) d.open = true; redrawAll(); const sv = n.querySelector("svg") || n; const vb = sv.viewBox && sv.viewBox.baseVal; const b = n.getBoundingClientRect(); return JSON.stringify({ html: sv.outerHTML, w: vb && vb.width ? vb.width : b.width, h: vb && vb.height ? vb.height : b.height, style: document.querySelector("style").textContent, links: [...document.querySelectorAll("link")].map(l => l.outerHTML).join("") }); })()`, returnByValue: true }, 20000);
+      grabbed.push({ fg, ...JSON.parse(r.result.result.value) });
+    } catch (e) { console.log("figure grab failed", fg.file, e.message); }
+  }
+  const out = path.resolve(__dirname, STEPS.figuresDir || "../figures"); fs.mkdirSync(out, { recursive: true });
+  const tmp = path.join(OUT, "fig-pages"); fs.mkdirSync(tmp, { recursive: true });
+  for (const g of grabbed) {
+    try {
+      const pad = g.fg.pad == null ? 12 : g.fg.pad, W = Math.ceil(g.w) + 2 * pad, H = Math.ceil(g.h) + 2 * pad;
+      const html = `<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8">${g.links}<style>${g.style}</style><style>html,body{margin:0;background:var(--ground)}body{padding:${pad}px;width:${Math.ceil(g.w)}px}svg{display:block;width:${Math.ceil(g.w)}px;height:${Math.ceil(g.h)}px}</style></head><body>${g.html}</body></html>`;
+      const file = path.join(tmp, g.fg.file.replace(/\.png$/, ".html")); fs.writeFileSync(file, html);
+      events.length = 0;
+      await send("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: g.fg.scale || 2, mobile: false });
+      await send("Page.navigate", { url: "file://" + file });
+      for (let i = 0; i < 100; i++) { await sleep(100); if (events.some(e => e.method === "Page.loadEventFired")) break; }
+      await send("Runtime.evaluate", { expression: "document.fonts ? document.fonts.ready.then(() => 1) : 1", awaitPromise: true, returnByValue: true }, 15000);
+      await sleep(150);
+      const shot = await send("Page.captureScreenshot", { format: "png" }, 30000);
+      fs.writeFileSync(path.join(out, g.fg.file), Buffer.from(shot.result.data, "base64"));
+      console.log("figure", g.fg.file, `${W}x${H} @${g.fg.scale || 2}x`);
+    } catch (e) { console.log("figure failed", g.fg.file, e.message); }
   }
   ws.close(); chrome.kill("SIGKILL"); process.exit(0);
 })().catch(e => { console.log("fatal", e); chrome.kill("SIGKILL"); process.exit(1); });

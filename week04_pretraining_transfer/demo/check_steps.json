@@ -6,34 +6,97 @@
   },
   {
    "name": "filled",
-   "expr": "return ['data-example','results-0','merges-bpe','merges-wp','enc-out','uni-chart','uni-segs','zoo','body-params','pos-sim','mlm','zs-out','probe-table','head-counts','head-untrained','ho-live','layer-chart','dial-table','dial-chart','dial-bill','ner-align','ner-out','ner-table','ner-preds','qa-windows','qa-out','qa-preds','results-1'].map(id=>{const n=document.getElementById(id);return id+':'+(n?n.innerHTML.length:'MISSING')}).join(' ')"
+   "expr": "return ['data-example','results-0','merges-bpe','merges-wp','enc-out','uni-chart','uni-segs','zoo','fig-bert','body-params','mlm-toks','mlm-top','fig-electra','fig-t5','fig-retromae','zs-pick','zs-top','probe-fig','pos-sim','fig-heads','code-heads','code-lib','head-counts','head-untrained','code-recipe','ho-live','layer-chart','dial-knob-fig','code-dial','dial-table','dial-chart','dial-bill','fig-ner','fig-coll-ner','code-ner','ner-out','ner-table','ner-preds','fig-qa','qa-windows','fig-coll-qa','code-qa','qa-out','qa-preds','results-1','score'].map(id=>{const n=document.getElementById(id);return id+':'+(n?n.innerHTML.length:'MISSING')}).filter(x=>/MISSING|:0$/.test(x)).join(' ') || 'all filled'"
   },
   {
    "name": "reveals",
-   "expr": "const ids=['btn-tok-reveal','btn-enc-reveal','btn-zs-reveal','btn-probe-reveal','btn-layer-reveal','btn-dial-reveal','btn-ner-reveal','btn-qa-reveal'];ids.forEach(i=>document.getElementById(i).click());return ids.map(i=>i+':'+document.getElementById(i).textContent).join(' ')+' | hidden left: '+document.querySelectorAll('[hidden]').length+' | veils: '+document.querySelectorAll('.veil').length"
+   "expr": "const ids=['btn-tok-reveal','btn-enc-reveal','btn-zs-reveal','btn-probe-reveal','btn-layer-reveal','btn-dial-reveal','btn-ner-reveal','btn-qa-reveal'];ids.forEach(i=>document.getElementById(i).click());return ids.map(i=>i+':'+document.getElementById(i).textContent).join(' ')+' | hidden left: '+document.querySelectorAll('[hidden]').length+' | veils: '+document.querySelectorAll('.veil').length+' | score rows on: '+document.querySelectorAll('#score .row.on').length+'/'+document.querySelectorAll('#score .row').length"
+  },
+  {
+   "name": "zs",
+   "expr": "return 'acc: '+document.getElementById('zs-pick-acc').textContent+' | conf cells: '+document.querySelectorAll('#zs-conf td').length+' | bet verdict: '+document.querySelector('#bet-zs .verdict').textContent"
+  },
+  {
+   "name": "zsPick",
+   "expr": "const s=document.querySelector('#zs-pick select'); s.value='politics'; s.dispatchEvent(new Event('change',{bubbles:true})); return document.getElementById('zs-pick-acc').textContent+' | python v2 '+D.zeroShot.python.v2.accuracy+' | conf: '+document.querySelectorAll('#zs-conf td').length+' cells'"
   },
   {
    "name": "nerf1",
-   "expr": "return 'ner-f1 span: '+[...document.querySelectorAll('[data-ner-f1]')].map(n=>n.textContent).join(',')+' | qa-note: '+document.getElementById('qa-note').textContent.slice(0,120)"
-  },
-  {
-   "name": "extra",
-   "expr": "return ['live-bpe','live-wp-longest','fig-bert','zs-pick','zs-pick-out','code-recipe','dial-knob-fig','fig-ner','code-ner','fig-qa','code-qa','ner-cellout','zs-cellout'].map(id=>{const n=document.getElementById(id);return id+':'+(n?n.innerHTML.length:'MISSING')}).join(' ')+' | acc '+document.getElementById('zs-pick-acc').textContent+' | tok '+document.getElementById('live-bpe').textContent+' / '+document.getElementById('live-wp-longest').textContent"
+   "expr": "return 'ner-f1 span: '+[...document.querySelectorAll('[data-ner-f1]')].map(n=>n.textContent).join(',')+' | qa-note: '+document.getElementById('qa-note').textContent.slice(0,80)"
   },
   {
    "name": "interact",
-   "expr": "document.querySelector('#fig-bert-btns [data-m=qa]').click(); document.querySelector('#dial-knob [data-k=everything]').click(); const i=document.getElementById('live-tok-word'); i.value='tokenization'; i.dispatchEvent(new Event('input')); const s=document.querySelector('#zs-pick select'); s.value='politics'; s.dispatchEvent(new Event('change',{bubbles:true})); return 'fig-bert:'+document.getElementById('fig-bert-note').textContent.slice(0,40)+' | knob:'+document.getElementById('dial-knob-stats').textContent.slice(0,40)+' | tok:'+document.getElementById('live-wp-longest').textContent+' | zs:'+document.getElementById('zs-pick-acc').textContent"
+   "expr": "document.querySelector('#fig-bert-btns [data-m=mlm]').click(); const a=document.getElementById('fig-bert-note').textContent.slice(0,30); document.querySelector('#fig-bert-btns [data-m=nsp]').click(); document.querySelector('#fig-heads-btns [data-m=span]').click(); document.querySelector('#fig-ner-btns [data-m=label]').click(); document.querySelector('#dial-knob [data-k=everything]').click(); document.querySelectorAll('#mlm-toks .tok')[5].click(); return 'bert:'+a+' | heads:'+document.getElementById('fig-heads-note').textContent.slice(0,30)+' | ner:'+document.getElementById('fig-ner-note').textContent.slice(0,40)+' | knob:'+document.getElementById('dial-knob-stats').textContent.slice(0,120)+' | mlm:'+document.getElementById('mlm-say').textContent.slice(0,60)"
+  },
+  {
+   "name": "nerPreds",
+   "expr": "document.querySelector('#ner-preds-btns [data-m=predHeadOnly]')?.click(); return 'head-only ents: '+document.querySelectorAll('#ner-preds .ent').length+' wrong: '+document.querySelectorAll('#ner-preds .ent.wrong').length+' | btns hidden: '+document.getElementById('ner-preds-btns').hidden"
+  },
+  {
+   "name": "qaFig",
+   "expr": "const p=document.querySelectorAll('#qa-pick button'); if(p.length){p[p.length-1].click();} return 'qa buttons: '+p.length+' | note: '+document.getElementById('fig-qa-note').textContent.slice(0,160)"
+  },
+  {
+   "name": "sort",
+   "expr": "document.querySelector('#res-sort [data-s=s]').click(); const rows=[...document.querySelectorAll('#results-1 tbody tr')].map(r=>r.children[0].textContent.slice(0,22)); return rows.join(' > ')"
+  },
+  {
+   "name": "svgText",
+   "expr": "let bad=[]; for (const sv of document.querySelectorAll('svg')) { const r=sv.getBoundingClientRect(); if (r.width===0) continue; const vb=sv.viewBox.baseVal; const sc=r.width/vb.width; for (const t of sv.querySelectorAll('text')) { const b=t.getBBox(); const m=t.getCTM(); if (!m) continue; if (b.x < -2 || b.x+b.width > vb.width+2) bad.push((sv.parentElement.id||sv.parentElement.className)+':'+t.textContent.slice(0,25)); } } return bad.length? 'clipped: '+bad.slice(0,12).join(' | ') : 'no clipped svg text'"
   },
   {
    "name": "tokParity",
-   "expr": "const ck=D.tok.encodeCheck; const w=document.getElementById('live-tok-word'), n=document.getElementById('live-tok-n'); n.value=300; let bad=[]; for (const e of ck){ w.value=e.word; w.dispatchEvent(new Event('input')); const g=id=>[...document.querySelectorAll('#'+id+' .tok')].map(t=>t.textContent); const b=g('live-bpe'), r=g('live-wp-replay'), l=g('live-wp-longest'); if (b.join(' ')!==e.bpe.join(' ')) bad.push('bpe '+e.word+': '+b.join(' ')+' vs '+e.bpe.join(' ')); if (r.join(' ')!==e.replay.join(' ')) bad.push('replay '+e.word+': '+r.join(' ')+' vs '+e.replay.join(' ')); if (l.join(' ')!==e.longest.join(' ')) bad.push('longest '+e.word+': '+l.join(' ')+' vs '+e.longest.join(' ')); } return bad.length? bad.join(' || ') : 'all '+ck.length+' words match python'"
+   "expr": "const ck=D.tok.encodeCheck; const w=document.getElementById('live-tok-word'), n=document.getElementById('live-tok-n'); n.value=300; let bad=[]; for (const e of ck){ w.value=e.word; w.dispatchEvent(new Event('input')); const g=id=>[...document.querySelectorAll('#'+id+' .tok')].map(t=>t.textContent); const b=g('live-bpe'), r=g('live-wp-replay'), l=g('live-wp-longest'); if (b.join(' ')!==e.bpe.join(' ')) bad.push('bpe '+e.word); if (r.join(' ')!==e.replay.join(' ')) bad.push('replay '+e.word); if (l.join(' ')!==e.longest.join(' ')) bad.push('longest '+e.word); } return bad.length? bad.join(' || ') : 'all '+ck.length+' words match python'"
   }
  ],
  "screens": [
   {
+   "sel": "#bert",
+   "file": "02_bert.png",
+   "dy": -20
+  },
+  {
    "sel": "#fig-bert",
-   "file": "fig_bert.png",
+   "file": "fig_bert_mlm.png",
+   "dy": -60,
+   "expr": "document.querySelector('#fig-bert-btns [data-m=mlm]').click()"
+  },
+  {
+   "sel": "#mlm-toks",
+   "file": "mlm_pick.png",
    "dy": -80
+  },
+  {
+   "sel": "#fig-electra",
+   "file": "variants.png",
+   "dy": -40,
+   "expr": "document.querySelector('details.variants').open=true"
+  },
+  {
+   "sel": "#zs-pick",
+   "file": "zs_pick.png",
+   "dy": -80
+  },
+  {
+   "sel": "#probe-fig",
+   "file": "probe.png",
+   "dy": -120
+  },
+  {
+   "sel": "#head",
+   "file": "03_head.png",
+   "dy": -20
+  },
+  {
+   "sel": "#fig-heads",
+   "file": "fig_heads_span.png",
+   "dy": -60,
+   "expr": "document.querySelector('#fig-heads-btns [data-m=span]').click()"
+  },
+  {
+   "sel": "#code-heads",
+   "file": "code_heads.png",
+   "dy": -60
   },
   {
    "sel": "#dial-knob",
@@ -41,9 +104,109 @@
    "dy": -80
   },
   {
-   "sel": "#live-tok-word",
-   "file": "live_tok.png",
-   "dy": -120
+   "sel": "#fig-ner",
+   "file": "fig_ner.png",
+   "dy": -80,
+   "expr": "document.querySelector('#fig-ner-btns [data-m=ignore]').click()"
+  },
+  {
+   "sel": "#fig-coll-ner",
+   "file": "coll_ner.png",
+   "dy": -60
+  },
+  {
+   "sel": "#fig-qa",
+   "file": "fig_qa.png",
+   "dy": -60
+  },
+  {
+   "sel": "#fig-coll-qa",
+   "file": "coll_qa.png",
+   "dy": -60
+  },
+  {
+   "sel": "#ner-preds",
+   "file": "ner_preds.png",
+   "dy": -60
+  },
+  {
+   "sel": "#end",
+   "file": "06_end.png",
+   "dy": -20
+  },
+  {
+   "sel": "#hero",
+   "file": "00_hero.png",
+   "dy": -20
+  }
+ ],
+ "figuresDir": "../figures",
+ "figures": [
+  {
+   "sel": "#fig-bert",
+   "file": "bert_input.png",
+   "expr": "document.querySelector('#fig-bert-btns [data-m=in]').click()"
+  },
+  {
+   "sel": "#fig-bert",
+   "file": "bert_mlm.png",
+   "expr": "document.querySelector('#fig-bert-btns [data-m=mlm]').click()"
+  },
+  {
+   "sel": "#fig-bert",
+   "file": "bert_nsp.png",
+   "expr": "document.querySelector('#fig-bert-btns [data-m=nsp]').click()"
+  },
+  {
+   "sel": "#fig-electra",
+   "file": "electra.png",
+   "expr": "document.querySelector('details.variants').open=true"
+  },
+  {
+   "sel": "#fig-t5",
+   "file": "t5.png"
+  },
+  {
+   "sel": "#fig-retromae",
+   "file": "retromae.png"
+  },
+  {
+   "sel": "#fig-heads",
+   "file": "heads_seq.png",
+   "expr": "document.querySelector('#fig-heads-btns [data-m=seq]').click()"
+  },
+  {
+   "sel": "#fig-heads",
+   "file": "heads_token.png",
+   "expr": "document.querySelector('#fig-heads-btns [data-m=tok]').click()"
+  },
+  {
+   "sel": "#fig-heads",
+   "file": "heads_span.png",
+   "expr": "document.querySelector('#fig-heads-btns [data-m=span]').click()"
+  },
+  {
+   "sel": "#fig-ner",
+   "file": "ner_alignment.png",
+   "expr": "document.querySelector('#fig-ner-btns [data-m=ignore]').click()"
+  },
+  {
+   "sel": "#fig-ner",
+   "file": "ner_alignment_labelled.png",
+   "expr": "document.querySelector('#fig-ner-btns [data-m=label]').click()"
+  },
+  {
+   "sel": "#fig-coll-ner",
+   "file": "collator_ner.png"
+  },
+  {
+   "sel": "#fig-coll-qa",
+   "file": "collator_qa.png"
+  },
+  {
+   "sel": "#fig-qa",
+   "file": "qa_scores.png",
+   "expr": "const p=document.querySelectorAll('#qa-pick button'); if(p.length) p[0].click()"
   }
  ]
 }

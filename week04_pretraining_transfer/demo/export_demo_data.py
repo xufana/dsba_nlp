@@ -202,6 +202,16 @@ D["mlm"] = {"guesses": [], "cellOut": out_guess}
 for text, word in [("She went to the [MASK] to buy some milk.", "[MASK]"), ("She went to the banana to buy some milk.", "banana"), ("She went to the store to buy some milk.", "store")]:
     s = guesses_at(text, word)
     D["mlm"]["guesses"].append({"text": text, "word": word, "top": [[p.split()[0], float(p.split()[1])] for p in s.split(", ")]})
+MLM_TEXTS = ["She went to the [MASK] to buy some milk.", "She went to the banana to buy some milk.", "She went to the store to buy some milk.",
+             "The capital of France is [MASK].", "He signed for Manchester United in 2004 and scored twice."]
+D["mlm"]["positions"] = []
+with torch.no_grad():
+    for text in MLM_TEXTS:
+        enc = tokenizer(text, return_tensors="pt").to(device)
+        probs = mlm(**enc).logits[0].softmax(-1).cpu()                                 # [L, V]
+        top = probs.topk(5, dim=-1)
+        D["mlm"]["positions"].append({"text": text, "tokens": tokenizer.convert_ids_to_tokens(enc["input_ids"][0].tolist()),
+                                      "top": [[[tokenizer.convert_ids_to_tokens(i.item()), round(p.item(), 3)] for p, i in zip(top.values[j], top.indices[j])] for j in range(probs.shape[0])]})
 log("MLM guesses done")
 
 # --- zero-shot: the notebook's live cell (1 000 texts), then the whole test set over a list of candidate label words
@@ -299,6 +309,39 @@ log(f"NER live: {D['ner']['live']}")
 del g["ner_model"], g["ner_trainer"]
 D["ner"]["artifact"] = json.load(open(f"{g['ART_DIR']}/ner_curves.json"))
 D["ner"]["predictions"] = json.load(open(f"{g['ART_DIR']}/ner_predictions.json"))
+# the head-only model = frozen body + the Linear saved by precompute (ner_head.pt); its predictions on the same sentences
+DataCollatorForTokenClassification, Dataset = g["DataCollatorForTokenClassification"], g["Dataset"]
+ner_predictions = g["ner_predictions"]
+demo_words = [s["words"] for s in D["ner"]["predictions"]["sentences"]]
+demo_ds = Dataset.from_dict({"tokens": demo_words, "ner_tags": [[0] * len(w) for w in demo_words]})
+demo_feats = encode_ner(tokenizer, demo_ds)
+ner_head = torch.nn.Linear(D_MODEL, len(NER_TAGS))
+ner_head.load_state_dict({k.split(".")[-1]: v.float() for k, v in torch.load(f"{g['ART_DIR']}/ner_head.pt").items()})   # saved as linear.weight / linear.bias by the older TokenHead wrapper
+ner_collator = DataCollatorForTokenClassification(tokenizer)
+body.to(device).eval()
+with torch.no_grad():
+    batch = ner_collator([{k: v for k, v in row.items() if k != "word_ids"} for row in demo_feats])
+    batch = {k: v.to(device) for k, v in batch.items() if k != "labels"}
+    logits = ner_head.to(device)(body(**batch).last_hidden_state).cpu().numpy()          # [N, L, 9]
+for sent, pred in zip(D["ner"]["predictions"]["sentences"], ner_predictions(logits, demo_feats)):
+    sent["predHeadOnly"] = pred
+log("NER head-only predictions from ner_head.pt")
+# what the collator does to a batch: three sentences of different length, padded to the longest
+# three sentences of clearly different length, each with an entity, so the padding is visible and the tokens still readable
+def _pick(lo, hi, skip=()):
+    for i in range(400):
+        row = ner_train[i]
+        if i not in skip and any(row["ner_tags"]) and lo <= len(tokenizer(row["tokens"], is_split_into_words=True)["input_ids"]) <= hi:
+            return i
+    return 0
+COLL_IDS = [_pick(15, 18)]
+COLL_IDS.append(_pick(10, 13, COLL_IDS)); COLL_IDS.append(_pick(6, 9, COLL_IDS))
+coll_feats = encode_ner(tokenizer, ner_train.select(COLL_IDS))
+coll_batch = ner_collator([{k: v for k, v in row.items() if k != "word_ids"} for row in coll_feats])
+D["ner"]["collator"] = {"words": [ner_train[i]["tokens"] for i in COLL_IDS],
+                        "tokens": [tokenizer.convert_ids_to_tokens(r) for r in coll_batch["input_ids"].tolist()],
+                        "attention_mask": coll_batch["attention_mask"].tolist(), "labels": coll_batch["labels"].tolist(),
+                        "lengths": [len(r["input_ids"]) for r in coll_feats]}
 
 # ============================================================ 5.2 QA
 run_cell("rajpurkar/squad")
@@ -332,6 +375,18 @@ qa_live = g["qa_live"]
 D["qa"]["live"] = {"n": g["N_LIVE"], "nDev": g["N_LIVE_TEST"] // 2, "windows": len(g["live_qa_tr"]), **{k: v[-1] for k, v in qa_live.items() if isinstance(v, list) and v}, "trainable": qa_live["trainable_params"]}
 log(f"QA live: {D['qa']['live']}")
 D["qa"]["artifact"] = json.load(open(f"{g['ART_DIR']}/qa_curves.json"))
+DataCollatorWithPadding = g["DataCollatorWithPadding"]
+QA_CTX = "HSE was founded in 1992 in Moscow. Its DSBA programme partners with the University of London."
+QA_QS = ["When was HSE founded?", "Which university partners with DSBA?"]
+qa_small = Dataset.from_dict({"id": [f"c{i}" for i in range(2)], "title": ["", ""], "context": [QA_CTX] * 2, "question": QA_QS,
+                              "answers": [{"text": ["1992"], "answer_start": [QA_CTX.index("1992")]}, {"text": ["University of London"], "answer_start": [QA_CTX.index("University of London")]}]})
+qa_feats = encode_qa(tokenizer, qa_small, max_len=64, stride=16)
+qa_collator = DataCollatorWithPadding(tokenizer)
+qa_batch = qa_collator([{k: v for k, v in row.items() if k not in ("offset_mapping", "example_id")} for row in qa_feats])
+D["qa"]["collator"] = {"questions": QA_QS, "tokens": [tokenizer.convert_ids_to_tokens(r) for r in qa_batch["input_ids"].tolist()],
+                       "token_type_ids": qa_batch["token_type_ids"].tolist(), "attention_mask": qa_batch["attention_mask"].tolist(),
+                       "start_positions": qa_batch["start_positions"].tolist(), "end_positions": qa_batch["end_positions"].tolist(),
+                       "lengths": [len(r["input_ids"]) for r in qa_feats]}
 D["qa"]["predictions"] = json.load(open(f"{g['ART_DIR']}/qa_predictions.json"))
 
 # ============================================================ 6. the results table
