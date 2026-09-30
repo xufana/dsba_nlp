@@ -1,0 +1,94 @@
+{
+ "sizes": "demo",
+ "n": 7600,
+ "prompt": "<text> This news is about",
+ "results": {
+  "class names, sum": {
+   "words": [
+    " World",
+    " Sports",
+    " Business",
+    " Sci/Tech"
+   ],
+   "tokens_per_word": [
+    1,
+    1,
+    1,
+    3
+   ],
+   "accuracy": 0.3897,
+   "per_class": {
+    "World": 0.9742,
+    "Sports": 0.4211,
+    "Business": 0.1637,
+    "Sci/Tech": 0.0
+   }
+  },
+  "class names, per token": {
+   "words": [
+    " World",
+    " Sports",
+    " Business",
+    " Sci/Tech"
+   ],
+   "tokens_per_word": [
+    1,
+    1,
+    1,
+    3
+   ],
+   "accuracy": 0.3429,
+   "per_class": {
+    "World": 0.2868,
+    "Sports": 0.1011,
+    "Business": 0.0153,
+    "Sci/Tech": 0.9684
+   }
+  },
+  "one token each, sum": {
+   "words": [
+    " world",
+    " sports",
+    " business",
+    " technology"
+   ],
+   "tokens_per_word": [
+    1,
+    1,
+    1,
+    1
+   ],
+   "accuracy": 0.6059,
+   "per_class": {
+    "World": 0.7153,
+    "Sports": 0.3889,
+    "Business": 0.7637,
+    "Sci/Tech": 0.5558
+   }
+  },
+  "one token each, per token": {
+   "words": [
+    " world",
+    " sports",
+    " business",
+    " technology"
+   ],
+   "tokens_per_word": [
+    1,
+    1,
+    1,
+    1
+   ],
+   "accuracy": 0.6059,
+   "per_class": {
+    "World": 0.7153,
+    "Sports": 0.3889,
+    "Business": 0.7637,
+    "Sci/Tech": 0.5558
+   }
+  }
+ },
+ "device": "mps:0",
+ "ms_per_1000": 16047.1,
+ "passes_per_item": 4
+}

@@ -1,0 +1,3 @@
+artifacts_smoke/
+scripts/smoke_executed.ipynb
+__pycache__/

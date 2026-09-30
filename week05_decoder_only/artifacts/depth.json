@@ -1,0 +1,145 @@
+{
+ "sizes": "demo",
+ "n_texts": 1000,
+ "n_tokens": 50909,
+ "layers": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12
+ ],
+ "agreement": [
+  0.0001,
+  0.0605,
+  0.0627,
+  0.0725,
+  0.091,
+  0.1128,
+  0.1428,
+  0.1782,
+  0.2338,
+  0.3015,
+  0.398,
+  0.5616,
+  1.0
+ ],
+ "perplexity": [
+  5.052979284724289e+23,
+  73582.15,
+  33851.03,
+  19495.64,
+  13252.12,
+  8644.12,
+  6035.3,
+  3909.3,
+  2607.31,
+  1527.31,
+  844.0,
+  214.17,
+  64.21
+ ],
+ "top5_by_layer": {
+  "12": [
+   " T",
+   " N",
+   " D",
+   " O",
+   "."
+  ],
+  "11": [
+   "ause",
+   " T",
+   " O",
+   " N",
+   " L"
+  ],
+  "10": [
+   "ails",
+   "asty",
+   "ause",
+   "onsense",
+   "ATIONAL"
+  ],
+  "9": [
+   "onsense",
+   "asty",
+   "ails",
+   "anny",
+   "igh"
+  ],
+  "8": [
+   "asty",
+   "ails",
+   "anny",
+   "onsense",
+   "SS"
+  ],
+  "7": [
+   "asty",
+   "augh",
+   "anny",
+   "ails",
+   "SS"
+  ],
+  "6": [
+   "asty",
+   "augh",
+   "ih",
+   "SS",
+   "omin"
+  ],
+  "5": [
+   "asty",
+   "uke",
+   "SS",
+   "ester",
+   "ask"
+  ],
+  "4": [
+   "asty",
+   "SS",
+   "oun",
+   "ark",
+   "ester"
+  ],
+  "3": [
+   "oun",
+   "ark",
+   "ij",
+   "SC",
+   "aim"
+  ],
+  "2": [
+   "oun",
+   "ij",
+   "SC",
+   "aut",
+   "ark"
+  ],
+  "1": [
+   "ark",
+   "aut",
+   "oun",
+   "ij",
+   "N"
+  ],
+  "0": [
+   " N",
+   "theless",
+   " mathemat",
+   " challeng",
+   " Citiz"
+  ]
+ },
+ "probe_text": "Fears for T N pension after talks Unions representing workers at Turner Newall say they are 'disappointed' after talks with stricken parent firm Federal Mogul.",
+ "probe_position": 5
+}
