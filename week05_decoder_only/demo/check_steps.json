@@ -1,0 +1,103 @@
+{
+ "steps": [
+  {
+   "name": "sections",
+   "expr": "return ['hero','stop','decoder','positions','cost','prefix','reveal','end'].map(id=>id+':'+(document.getElementById(id)?document.getElementById(id).getBoundingClientRect().height|0:'MISSING')).join(' ')"
+  },
+  {
+   "name": "filled",
+   "expr": "return ['data-example','results-0','fig-bodies','fig-block','params-bars','lens-toks','lens-strip','rope-clocks','fig-kv','vb','vb-conf','card','wl-out','noise-out','ner-sent','ner-inline-out','lr','pl','typos-table','fig-order','results-1','costs-1','course','score'].map(id=>{const n=document.getElementById(id);return id+':'+(n?n.innerHTML.length:'MISSING')}).filter(x=>/MISSING|:0$/.test(x)).join(' ') || 'all filled'"
+  },
+  {
+   "name": "checks",
+   "expr": "return ['rope-ck','yarn-ck','vb-ck','est-ck','wl-ck','noise-ck','ner-ck'].map(id=>id+': '+document.getElementById(id).textContent).join(' | ')"
+  },
+  {
+   "name": "reveals",
+   "expr": "const ids=['btn-lens-reveal','btn-att-reveal','btn-rope-reveal','btn-kv-reveal','btn-zs-reveal','btn-punct-reveal','btn-typos-reveal','btn-ner-reveal','btn-qa-reveal','btn-lr-reveal'];ids.forEach(i=>document.getElementById(i).click());return ids.map(i=>i+':'+document.getElementById(i).textContent).join(' ')+' | hidden left: '+document.querySelectorAll('[hidden]').length+' | veils: '+document.querySelectorAll('.veil').length+' | cost rows: '+document.querySelectorAll('#costs-0 tbody tr').length+' | score on: '+document.querySelectorAll('#score .row.on').length+'/'+document.querySelectorAll('#score .row').length"
+  },
+  {
+   "name": "notes",
+   "expr": "return ['lens-note','att-note','rope-note','kv-note','zs-note','punct-note','typos-note','ner-note','qa-note'].map(id=>id+': '+document.getElementById(id).textContent.slice(0,90)).join(' || ')"
+  },
+  {
+   "name": "rope",
+   "expr": "const m=document.getElementById('rope-m'), s=document.getElementById('rope-s'); s.value=500; s.dispatchEvent(new Event('input')); const a=document.querySelector('#rope-rope .v').textContent; s.value=990; s.dispatchEvent(new Event('input')); return 'rope score at +500: '+a+' at +990: '+document.querySelector('#rope-rope .v').textContent+' | learned: '+document.querySelector('#rope-learned .v').textContent+' | err: '+document.getElementById('rope-err').textContent"
+  },
+  {
+   "name": "attention",
+   "expr": "const l=document.getElementById('att-layer'); l.value=12; l.dispatchEvent(new Event('input')); document.querySelector('#att-sink-tgl [data-m=off]').click(); return 'layer '+document.getElementById('att-layer-v').textContent+' head '+document.getElementById('att-head-v').textContent+' | chart svg: '+document.querySelectorAll('#att-chart svg').length"
+  },
+  {
+   "name": "verbalizer",
+   "expr": "const b=[...document.querySelectorAll('#vb button')].find(x=>x.textContent.startsWith('politics')&&x.dataset.c==='0'); b.click(); return document.getElementById('vb-acc').textContent.slice(0,80)+' | python politics: '+D.zeroShot.poolCheck.politics.accuracy"
+  },
+  {
+   "name": "lens",
+   "expr": "document.querySelectorAll('#lens-toks .tok')[8].click(); return document.getElementById('lens-pos-line').textContent+' | cols: '+document.querySelectorAll('#lens-strip .col').length+' gold hits: '+document.querySelectorAll('#lens-strip .g.gold').length"
+  },
+  {
+   "name": "kv",
+   "expr": "for(let i=0;i<6;i++) document.getElementById('kv-step').click(); const a=document.getElementById('kv-eval').textContent; document.querySelector('#fig-kv-btns [data-m=cache]').click(); return 'no cache evaluated: '+a+' | cache: '+document.getElementById('kv-eval').textContent+' needed '+document.getElementById('kv-need').textContent"
+  },
+  {
+   "name": "card",
+   "expr": "document.querySelector('#card [data-k=passes] [data-v=T_out]').click(); return document.getElementById('card-est').textContent.slice(0,120)"
+  },
+  {
+   "name": "label",
+   "expr": "document.getElementById('btn-pl-check').click(); return document.getElementById('pl-score').textContent"
+  },
+  {
+   "name": "ner-writer",
+   "expr": "const t=document.getElementById('ner-inline'); t.value='[ORG Mars] landed'; t.dispatchEvent(new Event('input')); return document.getElementById('ner-inline-out').textContent.slice(0,120)"
+  },
+  {
+   "name": "qa-demo",
+   "expr": "document.querySelector('#qa-order-tgl [data-m=\"question, context\"]').click(); document.getElementById('qa-demo-next').click(); return document.getElementById('qa-demo-i').textContent+' | '+document.getElementById('qa-demo').textContent.slice(0,80)"
+  },
+  {
+   "name": "svgText",
+   "expr": "let bad=[]; for (const sv of document.querySelectorAll('svg')) { const r=sv.getBoundingClientRect(); if (r.width===0) continue; const vb=sv.viewBox.baseVal; for (const t of sv.querySelectorAll('text')) { if (t.getAttribute('transform')) continue; const b=t.getBBox(); if (b.x < -2 || b.x+b.width > vb.width+2 || b.y < -2 || b.y + b.height > vb.height + 2) bad.push((sv.parentElement.id||sv.parentElement.className)+':'+t.textContent.slice(0,25)); } } return bad.length? 'clipped: '+bad.slice(0,12).join(' | ') : 'no clipped svg text'"
+  },
+  {
+   "name": "svgOverlap",
+   "expr": "let bad=[]; for (const sv of document.querySelectorAll('svg')) { if (sv.getBoundingClientRect().width===0) continue; const ts=[...sv.querySelectorAll('text')].filter(t=>!t.getAttribute('transform')).map(t=>({t:t.textContent,b:t.getBBox()})); for (let i=0;i<ts.length;i++) for (let j=i+1;j<ts.length;j++) { const a=ts[i].b,b=ts[j].b; if (a.width&&b.width&&a.x<b.x+b.width-2&&b.x<a.x+a.width-2&&a.y<b.y+b.height-2&&b.y<a.y+a.height-2) bad.push((sv.parentElement.id||'?')+': '+ts[i].t.slice(0,18)+' / '+ts[j].t.slice(0,18)); } } return bad.length? 'overlaps: '+bad.slice(0,14).join(' | ') : 'no overlapping svg text'"
+  }
+ ],
+ "screens": [
+  { "sel": "#hero", "file": "00_hero.png", "dy": -20 },
+  { "sel": "#stop", "file": "00_stop.png", "dy": -20 },
+  { "sel": "#fig-bodies", "file": "fig_bodies.png", "dy": -60 },
+  { "sel": "#fig-block", "file": "fig_block.png", "dy": -60, "expr": "document.querySelector('#fig-block-btns [data-m=gpt]').click()" },
+  { "sel": "#lens-strip", "file": "lens_strip.png", "dy": -160 },
+  { "sel": "#att-out", "file": "attention.png", "dy": -40 },
+  { "sel": "#positions", "file": "02_positions.png", "dy": -20 },
+  { "sel": "#rope-clocks", "file": "rope_dials.png", "dy": -260 },
+  { "sel": "#rope-chart", "file": "rope_chart.png", "dy": -40 },
+  { "sel": "#yarn-chart", "file": "yarn.png", "dy": -120 },
+  { "sel": "#fig-kv", "file": "kv.png", "dy": -100, "expr": "document.querySelector('#fig-kv-btns [data-m=nocache]').click(); for(let i=0;i<7;i++) document.getElementById('kv-step').click()" },
+  { "sel": "#kv-out", "file": "kv_numbers.png", "dy": -40 },
+  { "sel": "#vb", "file": "verbalizer.png", "dy": -60 },
+  { "sel": "#card", "file": "card.png", "dy": -120 },
+  { "sel": "#wl-out", "file": "word_label.png", "dy": -100 },
+  { "sel": "#ner-sent", "file": "ner_writer.png", "dy": -60 },
+  { "sel": "#lr", "file": "lightning.png", "dy": -60 },
+  { "sel": "#pl", "file": "label_yourself.png", "dy": -60 },
+  { "sel": "#punct-out", "file": "punct_reveal.png", "dy": -40 },
+  { "sel": "#typos-table", "file": "typos.png", "dy": -60 },
+  { "sel": "#ner-out", "file": "ner_reveal.png", "dy": -40 },
+  { "sel": "#fig-order", "file": "qa_order.png", "dy": -60 },
+  { "sel": "#qa-out", "file": "qa_reveal.png", "dy": -40 },
+  { "sel": "#end", "file": "06_end.png", "dy": -20 }
+ ],
+ "figures": [
+  { "sel": "#fig-bodies", "file": "three_bodies.png" },
+  { "sel": "#fig-block", "file": "gpt2_block_bert.png", "expr": "document.querySelector('#fig-block-btns [data-m=bert]').click()" },
+  { "sel": "#fig-block", "file": "gpt2_block_gpt.png", "expr": "document.querySelector('#fig-block-btns [data-m=gpt]').click()" },
+  { "sel": "#fig-kv", "file": "kv_cache_nocache.png", "expr": "document.getElementById('kv-reset').click(); for(let i=0;i<3;i++) document.getElementById('kv-step').click(); document.querySelector('#fig-kv-btns [data-m=nocache]').click()" },
+  { "sel": "#fig-kv", "file": "kv_cache_cache.png", "expr": "document.querySelector('#fig-kv-btns [data-m=cache]').click()" },
+  { "sel": "#fig-order", "file": "qa_order_cq.png", "expr": "document.querySelector('#fig-order-btns [data-m=cq]').click()" },
+  { "sel": "#fig-order", "file": "qa_order_qc.png", "expr": "document.querySelector('#fig-order-btns [data-m=qc]').click()" }
+ ]
+}

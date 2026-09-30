@@ -7,8 +7,8 @@ The rule is the same as in weeks 1–4:
     < 5 min in Colab  -> run live in the notebook
 
 The body is gpt2 (124M). Fine-tuned copies are ~500 MB each — over GitHub's file
-limit — so they are NOT committed: with --push they go to the Hugging Face hub under
-HUB_PREFIX, and the notebook reads them from there. What is committed: every number in
+limit — so they are NOT committed: --push sends them to the Hugging Face hub under
+HUB_PREFIX, but nothing in the notebook needs them. What is committed: every number in
 the two tables (quality and cost), every error breakdown, and the models' outputs on a
 fixed set of demo examples, so the class can read the outputs without the weights.
 `python precompute.py` recreates everything.
@@ -24,6 +24,8 @@ Run (an M-series Mac or a GPU):
     python precompute.py --push              also push the fine-tuned gpt2 copies to the hub (needs `hf auth login`)
     python precompute.py --only depth zero_shot
     python precompute.py --only punct typos ner qa
+    python precompute.py --only rope
+    python precompute.py --only demo
 
 Steps (and what they write):
     depth       depth.json               logit lens: agreement and perplexity by layer, top tokens by layer
@@ -32,6 +34,11 @@ Steps (and what they write):
     typos       typos.json               typos: BERT detection + dictionary vs gpt2 rewriting
     ner         ner.json                 CoNLL-2003 generated in two output formats (inline / list)
     qa          qa.json                  SQuAD generated, two prompt orders (context-question / question-context)
+    rope        rope.json                loss by position past the training window: gpt2 (learned table) vs
+                                         pythia-160m (RoPE), extrapolated and linearly interpolated
+    demo        lens.json, attention.json, zero_shot_pool.json   tensors the demo slices in the browser: the logit
+                                         lens at every position of one text, one prompt's attention, and the scorer
+                                         over a pool of candidate label words
 
 Every step records its own timing (ms per 1 000 items, batch 32) on the machine it ran on;
 the notebook reads `device` from the artifact and says so. Every step also prints its own
@@ -82,13 +89,34 @@ HUB_PREFIX = "xufana/dsba-week05-"
 N_DEMO = 20                                                   # examples whose outputs every artifact keeps verbatim
 N_TIMING = 200                                                # items behind every "ms / 1 000 items"
 
+# Padded-length caps, read off the token-length distributions rather than chosen. The collators pad to the longest
+# item in the batch, so a cap only bounds the *worst* batch — but that is the batch that decides whether the step
+# fits. Cut at p99.9: fewer than one item in a thousand loses a token.
+#
+#   task                        mean   p95   p99   p99.9   max    was    cap
+#   punct/typos, BERT pieces      46    68    96     157   245    256    192
+#   punct/typos, gpt2 pairs      100   160   235     367   613    384    320
+#   ner, gpt2 pairs               45   102   127     169   315    384    192
+#   qa, gpt2 pairs               184   326   436     536   750    768    576
+MAX_WORD_LEN = 192                                            # BERT token classification, words in
+MAX_PAIR_LEN = 320                                            # `stripped => original`, `noisy => clean`
+MAX_NER_LEN = 192
+MAX_QA_LEN = 576
+PAD_MULTIPLE = 16                                             # a handful of distinct shapes instead of one per batch
+
+# Batch sizes are half of what they were. Week 4 measured the trade on this same Mac: bert-base on 384-token SQuAD,
+# batch 16 -> 10.8 GB at 11.6 examples/s, batch 8 -> 6.5 GB at 11.3 — 40% of the memory for 3% of the throughput.
+BS_WORDS = 16                                                 # BERT token classification (was 32)
+BS_PAIRS = 8                                                  # gpt2 rewriting (was 16)
+BS_QA = 4                                                     # gpt2 on SQuAD prompts (was 8)
+
 SIZES = {
     "demo":  {"depth": 1000, "zero_shot": 7600, "punct_train": 20_000, "punct_test": 2000, "typos_train": 20_000, "typos_test": 2000,
-              "ner_train": 8000, "ner_test": 3453, "qa_train": 5000, "qa_dev": 2000, "epochs": 2},
+              "ner_train": 8000, "ner_test": 3453, "qa_train": 5000, "qa_dev": 2000, "rope_streams": 20, "rope_len": 3072, "epochs": 2},
     "full":  {"depth": 2000, "zero_shot": 7600, "punct_train": 120_000, "punct_test": 7600, "typos_train": 120_000, "typos_test": 7600,
-              "ner_train": 14_041, "ner_test": 3453, "qa_train": 30_000, "qa_dev": 2000, "epochs": 2},
+              "ner_train": 14_041, "ner_test": 3453, "qa_train": 30_000, "qa_dev": 2000, "rope_streams": 50, "rope_len": 3072, "epochs": 2},
     "smoke": {"depth": 40, "zero_shot": 60, "punct_train": 200, "punct_test": 60, "typos_train": 200, "typos_test": 60,
-              "ner_train": 120, "ner_test": 40, "qa_train": 120, "qa_dev": 40, "epochs": 1},
+              "ner_train": 120, "ner_test": 40, "qa_train": 120, "qa_dev": 40, "rope_streams": 2, "rope_len": 96, "epochs": 1},
 }
 
 
@@ -100,15 +128,6 @@ def seed_all(seed=SEED):
 
 def log(msg):
     print(msg, flush=True)
-
-
-def free(*objects):
-    """Drop the references and give the memory back — `del` alone leaves it in the allocator's cache."""
-    del objects
-    if torch.backends.mps.is_available():
-        torch.mps.empty_cache()
-    elif torch.cuda.is_available():
-        torch.cuda.empty_cache()
 
 
 
@@ -336,7 +355,7 @@ def squad_scores(pred, golds):
 
 
 # --- notebook: pairs ---
-def encode_pairs(tokenizer, prompts, targets, max_len=384):
+def encode_pairs(tokenizer, prompts, targets, max_len=MAX_PAIR_LEN):
     """`prompt target<eos>` as one sequence, the loss only on the target: prompt positions are IGNORE."""
     ids, labels = [], []
     for p, t in zip(prompts, targets):
@@ -353,12 +372,22 @@ PEAK = 0.0                  # the largest GPU reading any progress line has seen
 
 
 def gpu_gb():
-    """What the GPU driver holds right now, in GB. Apple's backend has no peak counter, so we sample and keep the max."""
+    """What the GPU holds *right now*, in GB — reserved, cache included, so it is comparable to the device's total.
+    Apple's backend has no peak counter, so PEAK is sampled here by whoever calls this."""
     global PEAK
     now = (torch.mps.driver_allocated_memory() / 1e9 if torch.backends.mps.is_available() else
-           torch.cuda.max_memory_allocated() / 1e9 if torch.cuda.is_available() else 0.0)
+           torch.cuda.memory_reserved() / 1e9 if torch.cuda.is_available() else 0.0)
     PEAK = max(PEAK, now)
     return now
+
+
+def free():
+    """Give the allocator's cache back. `del` the model first — this cannot reach the caller's names,
+    and an `empty_cache()` with the model still referenced frees nothing."""
+    if torch.backends.mps.is_available():
+        torch.mps.empty_cache()
+    elif torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
 
 def chunks(tag, n, size):
@@ -446,13 +475,18 @@ def train(model, train_ds, collator, epochs=2, lr=5e-5, batch_size=16, seed=SEED
     args = TrainingArguments(output_dir=TRAINER_DIR, per_device_train_batch_size=batch_size, num_train_epochs=epochs,
                              learning_rate=lr, weight_decay=0.01, warmup_steps=0.1, lr_scheduler_type="linear",
                              logging_strategy="no", save_strategy="no", report_to=[], seed=seed, disable_tqdm=quiet,
-                             dataloader_pin_memory=False)          # unsupported on MPS, and it warns once per Trainer
+                             dataloader_pin_memory=False,          # unsupported on MPS, and it warns once per Trainer
+                             train_sampling_strategy="group_by_length")   # batch width near the mean length, not the max
+                                                                   # (transformers 5.x: `group_by_length` is gone)
     timer = EpochTimer()
     trainer = Trainer(model=model, args=args, train_dataset=train_ds, data_collator=collator, callbacks=[timer])
     if quiet:
         trainer.remove_callback(transformers.PrinterCallback)
     trainer.train()
-    return timer.seconds
+    seconds = timer.seconds
+    del trainer                               # AdamW keeps two fp32 copies of every parameter
+    free()
+    return seconds
 # --- end ---
 
 
@@ -539,8 +573,9 @@ def ms_per_1000(fn, n_items):
 
 
 def encode_words(tokenizer, sentences, labels, label_ids):
-    """Token classification input: words in, one label on the first piece of each word, IGNORE on the rest."""
-    enc = tokenizer(sentences, is_split_into_words=True, truncation=True, max_length=256)
+    """Token classification input: words in, one label on the first piece of each word, IGNORE on the rest.
+    Words past MAX_WORD_LEN pieces are cut — under 0.1% of AG News sentences reach it."""
+    enc = tokenizer(sentences, is_split_into_words=True, truncation=True, max_length=MAX_WORD_LEN)
     out = []
     for i, labs in enumerate(labels):
         prev, row = None, []
@@ -557,7 +592,8 @@ def predict_words(model, tokenizer, sentences, id2label, batch_size=32):
     model.eval()
     out = []
     for i in chunks("predict_words", len(sentences), batch_size):
-        enc = tokenizer(sentences[i:i + batch_size], is_split_into_words=True, truncation=True, max_length=256, padding=True, return_tensors="pt")
+        enc = tokenizer(sentences[i:i + batch_size], is_split_into_words=True, truncation=True, max_length=MAX_WORD_LEN,
+                        padding=True, pad_to_multiple_of=PAD_MULTIPLE, return_tensors="pt")
         pred = model(**enc.to(model.device)).logits.argmax(-1).cpu()
         for k, sent in enumerate(sentences[i:i + batch_size]):
             prev, labs = None, []
@@ -567,6 +603,40 @@ def predict_words(model, tokenizer, sentences, id2label, batch_size=32):
                 prev = wid
             out.append(labs + [id2label[0]] * (len(sent) - len(labs)))          # words past max_length get the first label
     return out
+
+
+ROPE_MODEL = "EleutherAI/pythia-160m"                         # RoPE, 12 x 768 like gpt2, trained at 2 048 positions
+
+
+# --- notebook: rope ---
+def token_streams(tokenizer, texts, n, length):
+    """`n` streams of `length + 1` tokens: the texts concatenated, so every position up to `length` is a real one."""
+    ids, streams = [], []
+    for t in texts:
+        ids += tokenizer(" " + t).input_ids
+        while len(ids) >= length + 1 and len(streams) < n:
+            streams.append(torch.tensor(ids[:length + 1]))
+            ids = ids[length + 1:]
+        if len(streams) == n:
+            return streams
+    raise ValueError(f"only {len(streams)} streams of {length} tokens in {len(texts)} texts")
+
+
+@torch.no_grad()
+def nll_by_position(model, streams):
+    """Mean next-token loss at every target position 1..L, averaged over the streams — bucket it however you like."""
+    total = np.zeros(len(streams[0]) - 1)
+    for s in streams:
+        logits = model(s[None, :-1].to(model.device)).logits[0].float()
+        total += torch.nn.functional.cross_entropy(logits, s[1:].to(model.device), reduction="none").cpu().numpy()
+    return (total / len(streams)).round(4).tolist()
+
+
+def ppl_by_bucket(nll, bucket):
+    """Perplexity per bucket of positions: [1, bucket], [bucket + 1, 2 bucket], ..."""
+    nll = np.asarray(nll)
+    return {int(i * bucket + bucket): float(np.exp(nll[i * bucket:(i + 1) * bucket].mean())) for i in range(len(nll) // bucket)}
+# --- end ---
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -647,16 +717,19 @@ def step_punct(cfg, gpt, tok, agnews, out, bert_name, device, push):
     btok = AutoTokenizer.from_pretrained(bert_name)
     enc_model = AutoModelForTokenClassification.from_pretrained(bert_name, num_labels=len(PUNCT_LABELS), ignore_mismatched_sizes=True).to(device)
     train_ds = encode_words(btok, [t.split() for t in train_x], [[word_label(w) for w in t.split()] for t in train_texts], label_ids)
-    seconds = train(enc_model, train_ds, DataCollatorForTokenClassification(btok), epochs=cfg["epochs"], lr=5e-5, batch_size=32)
+    seconds = train(enc_model, train_ds, DataCollatorForTokenClassification(btok, pad_to_multiple_of=PAD_MULTIPLE),
+                    epochs=cfg["epochs"], lr=5e-5, batch_size=BS_WORDS)
     pred_labels = predict_words(enc_model, btok, [t.split() for t in test_x], PUNCT_LABELS)
     enc_preds = [" ".join(apply_label(w, l) for w, l in zip(x.split(), labs)) for x, labs in zip(test_x, pred_labels)]
     art["encoder"] = {**breakdown(word_scores(enc_preds, test_texts, key=strip_text)), "seconds": seconds, "params": n_params(enc_model),
                       "passes_per_item": 1, "ms_per_1000": ms_per_1000(lambda: predict_words(enc_model, btok, [t.split() for t in test_x[:N_TIMING]], PUNCT_LABELS), N_TIMING)}
-    free(enc_model)
+    del enc_model
+    free()
 
     # decoder: rewrite. `stripped => original`
     prompts = [x + " =>" for x in train_x]
-    seconds = train(gpt, encode_pairs(tok, prompts, train_texts), DataCollatorForSeq2Seq(tok), epochs=cfg["epochs"], lr=5e-5, batch_size=16)
+    seconds = train(gpt, encode_pairs(tok, prompts, train_texts), DataCollatorForSeq2Seq(tok, pad_to_multiple_of=PAD_MULTIPLE),
+                    epochs=cfg["epochs"], lr=5e-5, batch_size=BS_PAIRS)
     test_prompts = [x + " =>" for x in test_x]
     max_new = 8 if cfg["name"] == "smoke" else 160
     dec_preds = generate(gpt, tok, test_prompts, max_new_tokens=max_new)
@@ -690,7 +763,8 @@ def step_typos(cfg, gpt, tok, agnews, out, bert_name, device, push):
     btok = AutoTokenizer.from_pretrained(bert_name)
     enc_model = AutoModelForTokenClassification.from_pretrained(bert_name, num_labels=2, ignore_mismatched_sizes=True).to(device)
     train_ds = encode_words(btok, [n.split() for n, _, _ in train_noisy], [["wrong" if f else "ok" for f in flags] for _, _, flags in train_noisy], {"ok": 0, "wrong": 1})
-    seconds = train(enc_model, train_ds, DataCollatorForTokenClassification(btok), epochs=cfg["epochs"], lr=5e-5, batch_size=32)
+    seconds = train(enc_model, train_ds, DataCollatorForTokenClassification(btok, pad_to_multiple_of=PAD_MULTIPLE),
+                    epochs=cfg["epochs"], lr=5e-5, batch_size=BS_WORDS)
     vocab = Counter(w for t in train_texts for w in t.split())
     buckets = defaultdict(list)
     for w, _ in vocab.most_common(30_000):
@@ -703,10 +777,12 @@ def step_typos(cfg, gpt, tok, agnews, out, bert_name, device, push):
     art["encoder"] = {**by_op(enc_preds), "detection_precision": round(tp / max(sum(pred_flags), 1), 4), "detection_recall": round(tp / max(sum(gold_flags), 1), 4),
                       "seconds": seconds, "params": n_params(enc_model), "passes_per_item": 1,
                       "ms_per_1000": ms_per_1000(lambda: predict_words(enc_model, btok, [n.split() for n, _, _ in test_noisy[:N_TIMING]], ["ok", "wrong"]), N_TIMING)}
-    free(enc_model)
+    del enc_model
+    free()
 
     # decoder: rewrite. `noisy => clean`
-    seconds = train(gpt, encode_pairs(tok, [n + " =>" for n, _, _ in train_noisy], train_texts), DataCollatorForSeq2Seq(tok), epochs=cfg["epochs"], lr=5e-5, batch_size=16)
+    seconds = train(gpt, encode_pairs(tok, [n + " =>" for n, _, _ in train_noisy], train_texts),
+                    DataCollatorForSeq2Seq(tok, pad_to_multiple_of=PAD_MULTIPLE), epochs=cfg["epochs"], lr=5e-5, batch_size=BS_PAIRS)
     test_prompts = [n + " =>" for n, _, _ in test_noisy]
     max_new = 8 if cfg["name"] == "smoke" else 160
     dec_preds = generate(gpt, tok, test_prompts, max_new_tokens=max_new)
@@ -729,7 +805,8 @@ def step_ner(cfg, gpt_name, device, conll, out, push):
         gpt, tok = load_gpt(gpt_name, device)
         prompts = [" ".join(w) + " =>" for w in train_ds["tokens"]]
         targets = [encode(w, t) for w, t in zip(train_ds["tokens"], train_ds["tags"])]
-        seconds = train(gpt, encode_pairs(tok, prompts, targets), DataCollatorForSeq2Seq(tok), epochs=cfg["epochs"], lr=5e-5, batch_size=16)
+        seconds = train(gpt, encode_pairs(tok, prompts, targets, max_len=MAX_NER_LEN),
+                        DataCollatorForSeq2Seq(tok, pad_to_multiple_of=PAD_MULTIPLE), epochs=cfg["epochs"], lr=5e-5, batch_size=BS_PAIRS)
         test_prompts = [" ".join(w) + " =>" for w in test_ds["tokens"]]
         max_new = 8 if cfg["name"] == "smoke" else (120 if fmt == "inline" else 60)
         preds = generate(gpt, tok, test_prompts, max_new_tokens=max_new)
@@ -752,7 +829,8 @@ def step_ner(cfg, gpt_name, device, conll, out, push):
         if push:
             gpt.push_to_hub(HUB_PREFIX + "ner-" + fmt)
             tok.push_to_hub(HUB_PREFIX + "ner-" + fmt)
-        free(gpt)
+        del gpt, tok                          # the next format loads its own copy — two gpt2 + AdamW do not fit a T4
+        free()
     json.dump(art, open(f"{out}/ner.json", "w"), indent=1)
 
 
@@ -765,8 +843,9 @@ def step_qa(cfg, gpt_name, device, squad, out, push):
         gpt, tok = load_gpt(gpt_name, device)
         prompts = [prompt(c, q) for c, q in zip(train_ds["context"], train_ds["question"])]
         targets = [a["text"][0] for a in train_ds["answers"]]
-        max_len = 128 if cfg["name"] == "smoke" else 768
-        seconds = train(gpt, encode_pairs(tok, prompts, targets, max_len=max_len), DataCollatorForSeq2Seq(tok), epochs=cfg["epochs"], lr=5e-5, batch_size=8)
+        max_len = 128 if cfg["name"] == "smoke" else MAX_QA_LEN
+        seconds = train(gpt, encode_pairs(tok, prompts, targets, max_len=max_len),
+                        DataCollatorForSeq2Seq(tok, pad_to_multiple_of=PAD_MULTIPLE), epochs=cfg["epochs"], lr=5e-5, batch_size=BS_QA)
         dev_prompts = [prompt(c, q) for c, q in zip(dev_ds["context"], dev_ds["question"])]
         preds = generate(gpt, tok, dev_prompts, max_new_tokens=6 if cfg["name"] == "smoke" else 24, batch_size=16)
         scores = np.array([squad_scores(p, a["text"]) for p, a in zip(preds, dev_ds["answers"])])
@@ -779,13 +858,130 @@ def step_qa(cfg, gpt_name, device, squad, out, push):
         if push:
             gpt.push_to_hub(HUB_PREFIX + "qa-" + ("cq" if name.startswith("context") else "qc"))
             tok.push_to_hub(HUB_PREFIX + "qa-" + ("cq" if name.startswith("context") else "qc"))
-        free(gpt)
+        del gpt, tok                          # same here
+        free()
     json.dump(art, open(f"{out}/qa.json", "w"), indent=1)
 
 
 # ----------------------------------------------------------------------------------------------------
 
-STEPS = ["depth", "zero_shot", "punct", "typos", "ner", "qa"]
+def step_rope(cfg, gpt_name, device, agnews, out, smoke):
+    """Loss by position for a learned table (gpt2, 1 024 rows) and for RoPE (pythia-160m, trained at 2 048):
+    the RoPE model run past its window as trained (extrapolation) and with positions squeezed into the window
+    (linear interpolation, /u/kaiokendev 2023, Chen et al. 2023) — no fine-tuning either way."""
+    from transformers import GPTNeoXConfig, GPTNeoXForCausalLM
+    texts = [target_text(t) for t in agnews["test"]["text"]]
+    length = cfg["rope_len"]
+    art = {"sizes": cfg["name"], "n_streams": cfg["rope_streams"], "stream_len": length, "device": str(device), "models": {}}
+
+    gpt, tok = load_gpt(gpt_name, device)
+    window = gpt.config.n_positions
+    streams = token_streams(tok, texts, cfg["rope_streams"], min(length, window))
+    t = time.time()
+    nll = nll_by_position(gpt, streams)
+    try:                                                            # on CPU: MPS raises asynchronously, at the *next* op
+        gpt.cpu()(torch.zeros(1, window + 1, dtype=torch.long))
+        error = None
+    except Exception as e:                                          # the table has no row for position `window`
+        error = f"{type(e).__name__}: {str(e).splitlines()[0][:160]}"
+    art["models"]["gpt2, learned table"] = {"name": gpt_name, "positions": "learned", "window": window, "params": n_params(gpt),
+                                            "nll_by_position": nll, "error_past_window": error}
+    log(f"    gpt2: {len(streams)} streams x {min(length, window)} tokens, {time.time() - t:.0f}s;  past the window: {error}")
+    del gpt
+    free()
+
+    if smoke:
+        rtok = tok
+        rcfg = GPTNeoXConfig(vocab_size=len(tok), hidden_size=64, num_hidden_layers=2, num_attention_heads=2, intermediate_size=128,
+                             max_position_embeddings=length // 2, rope_parameters={"rope_type": "default", "rope_theta": 10000.0, "partial_rotary_factor": 0.25})
+        base = GPTNeoXForCausalLM(rcfg)
+    else:
+        rtok = AutoTokenizer.from_pretrained(ROPE_MODEL)
+        rcfg = GPTNeoXConfig.from_pretrained(ROPE_MODEL)
+        base = None
+    window = rcfg.max_position_embeddings
+    streams = token_streams(rtok, texts, cfg["rope_streams"], length)
+    factor = length / window
+    for label, rope in [("pythia-160m, RoPE, extrapolated", {"rope_type": "default"}),
+                        (f"pythia-160m, RoPE, interpolated x{factor:g}", {"rope_type": "linear", "factor": factor}),
+                        (f"pythia-160m, RoPE, YaRN x{factor:g}", {"rope_type": "yarn", "factor": factor, "original_max_position_embeddings": window})]:
+        t = time.time()
+        rcfg.rope_parameters = {k: v for k, v in rcfg.rope_parameters.items() if k in ("rope_theta", "partial_rotary_factor")} | rope
+        model = (GPTNeoXForCausalLM(rcfg) if smoke else GPTNeoXForCausalLM.from_pretrained(ROPE_MODEL, config=rcfg)).to(device).eval()
+        if smoke and base is not None:
+            model.load_state_dict(base.state_dict())
+        inv0 = model.gpt_neox.rotary_emb.inv_freq[0].item()
+        art["models"][label] = {"name": ROPE_MODEL, "positions": "RoPE", "window": window, "params": n_params(model),
+                                "rope": rcfg.rope_parameters, "inv_freq_0": inv0, "nll_by_position": nll_by_position(model, streams)}
+        log(f"    {label}: inv_freq[0] {inv0:.4f}, {time.time() - t:.0f}s, gpu {gpu_gb():.1f} GB")
+        del model
+        free()
+    json.dump(art, open(f"{out}/rope.json", "w"), indent=1)
+
+
+POOL_WORDS = [" World", " Sports", " Business", " Sci/Tech", " world", " sports", " business", " technology", " politics", " news",
+              " war", " government", " sport", " football", " games", " money", " economy", " markets", " finance", " companies",
+              " science", " computers", " tech", " software", " internet", " health", " entertainment", " people", " international",
+              " stocks", " baseball", " military"]
+
+
+def step_demo(cfg, gpt, tok, agnews, out):
+    """Three tensors for the demo page. lens: top-5 guesses at every layer for every position of one text.
+    attention: every layer and head for one prompt + 20 generated tokens, as uint8. pool: the scorer's summed
+    log-prob for every text x every candidate label word, so a verbalizer can be assembled in the browser."""
+    import base64
+    body = gpt.transformer if hasattr(gpt, "transformer") else gpt.model
+    n_layers = len(body.h)
+    texts = [target_text(t) for t in agnews["test"]["text"][:cfg["zero_shot"]]]
+
+    # --- logit lens, every position of the first text
+    enc = tok(texts[0], return_tensors="pt").to(gpt.device)
+    with torch.no_grad():
+        hs = gpt(**enc, output_hidden_states=True).hidden_states
+        layers = []
+        for k in range(n_layers + 1):
+            probs = gpt.lm_head(hs[k] if k == n_layers else body.ln_f(hs[k]))[0].softmax(-1)      # [T, V]
+            p, ix = probs.topk(5, -1)
+            layers.append([[(tok.decode(t), round(float(q), 4)) for t, q in zip(ix[i], p[i])] for i in range(ix.shape[0])])
+    ids = enc.input_ids[0].tolist()
+    json.dump({"sizes": cfg["name"], "text": texts[0], "tokens": [tok.decode(t) for t in ids], "n_layers": n_layers,
+               "top5": [[layers[k][i] for k in range(n_layers + 1)] for i in range(len(ids))]},        # [T, layers, 5]
+              open(f"{out}/lens.json", "w"), ensure_ascii=False)
+    log(f"    lens: {len(ids)} positions x {n_layers + 1} layers")
+
+    # --- attention on one prompt, as in the notebook's 1.3
+    prompt = " ".join(texts[1].split()[:20])
+    enc = tok(prompt, return_tensors="pt").to(gpt.device)
+    with torch.no_grad():
+        ids = gpt.generate(**enc, max_new_tokens=20, do_sample=False, pad_token_id=tok.eos_token_id)
+        att = torch.stack(gpt(ids, output_attentions=True).attentions)[:, 0]                       # [layers, heads, T, T]
+    P, T = enc.input_ids.shape[1], ids.shape[1]
+    u8 = (att.clamp(0, 1) * 255).round().to(torch.uint8).cpu().numpy()
+    json.dump({"sizes": cfg["name"], "prompt": prompt, "tokens": [tok.decode(t) for t in ids[0].tolist()], "n_prompt": P, "T": T,
+               "shape": list(u8.shape), "dtype": "uint8", "scale": 255,
+               "to_prompt": [round(float(a[:, P:, :P].sum(-1).mean()), 4) for a in att.cpu()],
+               "to_first": [round(float(a[:, P:, 0].mean()), 4) for a in att.cpu()],
+               "data": base64.b64encode(u8.tobytes()).decode()}, open(f"{out}/attention.json", "w"))
+    log(f"    attention: {u8.shape}, {u8.nbytes / 1e3:.0f} KB raw")
+
+    # --- the scorer over a pool of label words
+    prefixes = [t + " This news is about" for t in texts]
+    gold = agnews["test"]["label"][:len(texts)]
+    words = POOL_WORDS if cfg["name"] != "smoke" else POOL_WORDS[:6]
+    t = time.time()
+    s = score(gpt, tok, prefixes, words)                                                          # [N, W, 2]
+    sums = s[:, :, 0]
+    n_tok = [len(tok(w).input_ids) for w in words]
+    check = (sums[:, [words.index(w) for w in [" world", " sports", " business", " technology"]]].argmax(1) == np.array(gold)).mean() \
+        if all(w in words for w in [" world", " sports", " business", " technology"]) else None
+    json.dump({"sizes": cfg["name"], "n": len(texts), "prompt": "<text> This news is about", "words": words, "tokens_per_word": n_tok,
+               "gold": [int(g) for g in gold], "class_names": CLASS_NAMES, "sum_logprob": np.round(sums, 3).tolist(),
+               "check_one_token_each": None if check is None else round(float(check), 4), "device": str(gpt.device),
+               "seconds": round(time.time() - t, 1)}, open(f"{out}/zero_shot_pool.json", "w"))
+    log(f"    pool: {len(texts)} texts x {len(words)} words, {time.time() - t:.0f}s; one-token-each accuracy from the pool: {check}")
+
+
+STEPS = ["depth", "zero_shot", "punct", "typos", "ner", "qa", "rope", "demo"]
 
 
 def main():
@@ -794,14 +990,16 @@ def main():
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--push", action="store_true")
     ap.add_argument("--only", nargs="+", choices=STEPS, default=STEPS)
+    ap.add_argument("--cpu", action="store_true", help="ignore the GPU (when the machine is short of memory)")
     args = ap.parse_args()
     tier = "full" if args.full else "smoke" if args.smoke else "demo"
     cfg = {"name": tier, **SIZES[tier]}
     here = os.path.dirname(os.path.abspath(__file__))
     out = os.path.join(here, "artifacts_smoke" if args.smoke else "artifacts")
     os.makedirs(out, exist_ok=True)
-    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-    budget = torch.mps.recommended_max_memory() / 1e9 if device.type == "mps" else 0.0
+    device = torch.device("cpu" if args.cpu else "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    budget = (torch.mps.recommended_max_memory() / 1e9 if device.type == "mps" else
+              torch.cuda.get_device_properties(0).total_memory / 1e9 if device.type == "cuda" else 0.0)
     log(f"tier {tier}, device {device}, steps {args.only}" + (f", GPU budget {budget:.1f} GB" if budget else ""))
 
     agnews = load_agnews(args.smoke)
@@ -809,9 +1007,12 @@ def main():
     for step in args.only:
         t, _ = time.time(), globals().__setitem__("PEAK", 0.0)
         log(f"--- {step}  ({', '.join(f'{k} {v:,}' for k, v in SIZES[tier].items() if k.startswith(step[:4]) or k == 'epochs')})")
-        if step in ("depth", "zero_shot"):
+        if step in ("depth", "zero_shot", "demo"):
             gpt, tok = load_gpt(gpt_name, device)
-            {"depth": step_depth, "zero_shot": step_zero_shot}[step](cfg, gpt, tok, agnews, out)
+            if step == "demo":
+                gpt.config._attn_implementation = "eager"                     # attention weights are read
+                gpt, tok = AutoModelForCausalLM.from_pretrained(gpt_name, attn_implementation="eager").to(device), tok
+            {"depth": step_depth, "zero_shot": step_zero_shot, "demo": step_demo}[step](cfg, gpt, tok, agnews, out)
         elif step == "punct":
             gpt, tok = load_gpt(gpt_name, device)
             step_punct(cfg, gpt, tok, agnews, out, bert_name, device, args.push)
@@ -822,6 +1023,8 @@ def main():
             step_ner(cfg, gpt_name, device, load_conll(args.smoke), out, args.push)
         elif step == "qa":
             step_qa(cfg, gpt_name, device, load_squad(args.smoke, agnews), out, args.push)
+        elif step == "rope":
+            step_rope(cfg, gpt_name, device, agnews, out, args.smoke)
         gpu_gb()
         log(f"    {step}: {time.time() - t:.0f}s, GPU peak {PEAK:.1f} GB")
         free()

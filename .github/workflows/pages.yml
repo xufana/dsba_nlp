@@ -1,12 +1,14 @@
 name: pages
 
-# Publishes the built week demos (week*/demo/week*_demo.html) plus an index page.
+# Publishes the built week demos (week*/demo/week*_demo.html), the check-yourself
+# appendices (week*/demo/week*_check_yourself.html) and an index page.
 # The demos are committed already built; this only copies them.
 on:
   push:
     branches: [autumn-2026]
     paths:
       - "week*/demo/week*_demo.html"
+      - "week*/demo/week*_check_yourself.html"
       - "week*/README.md"
       - "scripts/build_site.py"
       - ".github/workflows/pages.yml"

@@ -2,7 +2,9 @@
 
     python scripts/build_site.py [out_dir] [branch]
 
-Every week*/demo/week*_demo.html is copied to <out>/weekNN/index.html; <out>/index.html
+Every week*/demo/week*_demo.html is copied to <out>/weekNN/index.html, and a
+week*/demo/week*_check_yourself.html appendix to <out>/weekNN/check-yourself/index.html
+(the two pages' relative links to each other are rewritten to match); <out>/index.html
 lists all week directories. Each card's topic and formula are read from the demo's own
 rail and h1, so the index cannot drift from the pages. A week without a built demo is
 listed with its notebook links only.
@@ -43,7 +45,8 @@ def collect(out, branch):
         num = week_dir.name[4:6]
         demo = next(iter(sorted((week_dir / "demo").glob("week*_demo.html"))), None)
         nb = week_dir / f"{week_dir.name}.ipynb"
-        card = {"num": num, "topic": None, "formula": None, "href": None,
+        check = next(iter(sorted((week_dir / "demo").glob("week*_check_yourself.html"))), None)
+        card = {"num": num, "topic": None, "formula": None, "href": None, "check": None,
                 "github": f"https://github.com/{REPO}/tree/{branch}/{week_dir.name}",
                 "colab": None}
         if nb.exists():
@@ -58,8 +61,16 @@ def collect(out, branch):
             card["formula"] = flatten(h1) if h1 else None
             dest = out / f"week{num}"
             dest.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(demo, dest / "index.html")
+            # the demo's rail links to the appendix by file name; on the site it is a directory
+            page = re.sub(r'href="week\d\d_check_yourself\.html"', 'href="check-yourself/"', page)
+            (dest / "index.html").write_text(page)
             card["href"] = f"week{num}/"
+        if check:
+            dest = out / f"week{num}" / "check-yourself"
+            dest.mkdir(parents=True, exist_ok=True)
+            page = re.sub(r'href="week\d\d_demo\.html"', 'href="../"', check.read_text())
+            (dest / "index.html").write_text(page)
+            card["check"] = f"week{num}/check-yourself/"
         card["topic"] = card["topic"] or readme_title(week_dir)
         weeks.append(card)
     return weeks
@@ -73,6 +84,8 @@ def render(weeks):
             links.append(f'<a class="go" href="{w["href"]}">Open the demo →</a>')
         else:
             links.append('<span class="soon">demo not built yet</span>')
+        if w["check"]:
+            links.append(f'<a href="{w["check"]}">Check yourself</a>')
         if w["colab"]:
             links.append(f'<a href="{w["colab"]}">Colab</a>')
         links.append(f'<a href="{w["github"]}">GitHub</a>')
@@ -197,7 +210,7 @@ def main():
     weeks = collect(out, branch)
     (out / "index.html").write_text(render(weeks))
     for w in weeks:
-        print(f"week {w['num']}: {w['href'] or '(no demo)'}  {w['topic']}")
+        print(f"week {w['num']}: {w['href'] or '(no demo)'}  {w['topic']}" + (f"  + {w['check']}" if w['check'] else ""))
 
 
 if __name__ == "__main__":

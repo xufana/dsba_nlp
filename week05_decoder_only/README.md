@@ -54,7 +54,10 @@ the same three sets as week 4.
 
 ### Positions
 
-* Su et al. (2021). [*RoFormer: Enhanced Transformer with Rotary Position Embedding.*](https://arxiv.org/abs/2104.09864) — *Try it yourself*.
+* Su et al. (2021). [*RoFormer: Enhanced Transformer with Rotary Position Embedding.*](https://arxiv.org/abs/2104.09864) — RoPE.
+* Chen et al. (2023). [*Extending Context Window of Large Language Models via Positional Interpolation.*](https://arxiv.org/abs/2306.15595) — interpolation instead of extrapolation.
+* Peng et al. (2023). [*YaRN: Efficient Context Window Extension of Large Language Models.*](https://arxiv.org/abs/2309.00071) — per-frequency scaling.
+* Biderman et al. (2023). [*Pythia: A Suite for Analyzing Large Language Models Across Training and Scaling.*](https://arxiv.org/abs/2304.01373) ICML. — the RoPE model of 1.4.
 
 ### Next week
 

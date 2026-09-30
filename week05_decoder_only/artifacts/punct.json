@@ -1,0 +1,293 @@
+{
+ "sizes": "demo",
+ "n_train": 20000,
+ "n_test": 2000,
+ "device": "cuda",
+ "labels": [
+  "lower|",
+  "lower|,",
+  "lower|.",
+  "lower|?",
+  "lower|!",
+  "lower|:",
+  "lower|;",
+  "lower|other",
+  "Cap|",
+  "Cap|,",
+  "Cap|.",
+  "Cap|?",
+  "Cap|!",
+  "Cap|:",
+  "Cap|;",
+  "Cap|other",
+  "CAPS|",
+  "CAPS|,",
+  "CAPS|.",
+  "CAPS|?",
+  "CAPS|!",
+  "CAPS|:",
+  "CAPS|;",
+  "CAPS|other",
+  "other|",
+  "other|,",
+  "other|.",
+  "other|?",
+  "other|!",
+  "other|:",
+  "other|;",
+  "other|other"
+ ],
+ "ceiling": {
+  "unexpressible": 0.0543,
+  "by_label": {
+   "lower|": 0.6415,
+   "Cap|": 0.2104,
+   "lower|other": 0.0282,
+   "CAPS|": 0.0238,
+   "lower|.": 0.0208,
+   "lower|,": 0.0194,
+   "Cap|.": 0.0113,
+   "Cap|,": 0.011,
+   "Cap|other": 0.009,
+   "CAPS|other": 0.0075,
+   "other|other": 0.0062,
+   "other|": 0.0029,
+   "CAPS|,": 0.0024,
+   "Cap|:": 0.0015,
+   "lower|;": 0.001,
+   "lower|:": 0.0009,
+   "CAPS|:": 0.0004,
+   "lower|?": 0.0003,
+   "other|,": 0.0003,
+   "Cap|?": 0.0003,
+   "Cap|;": 0.0003,
+   "CAPS|.": 0.0002,
+   "other|.": 0.0001,
+   "Cap|!": 0.0001,
+   "lower|!": 0.0001,
+   "other|:": 0.0,
+   "CAPS|?": 0.0,
+   "other|!": 0.0,
+   "other|?": 0.0,
+   "CAPS|;": 0.0
+  }
+ },
+ "encoder": {
+  "accuracy": 0.8911,
+  "changed": 0.0,
+  "n_words": 75692,
+  "by_case": {
+   "words": {
+    "CAPS": 2601,
+    "Cap": 18462,
+    "lower": 53905,
+    "other": 724
+   },
+   "accuracy": {
+    "CAPS": 0.6797,
+    "Cap": 0.8519,
+    "lower": 0.9266,
+    "other": 0.0
+   }
+  },
+  "by_punct": {
+   "words": {
+    "!": 14,
+    ",": 2505,
+    ".": 2457,
+    ":": 209,
+    ";": 98,
+    "?": 50,
+    "none": 66507,
+    "other": 3852
+   },
+   "accuracy": {
+    "!": 0.0,
+    ",": 0.6998,
+    ".": 0.9101,
+    ":": 0.3732,
+    ";": 0.5816,
+    "?": 0.22,
+    "none": 0.952,
+    "other": 0.0
+   }
+  },
+  "seconds": [
+   211.6,
+   431.2
+  ],
+  "params": 108916256,
+  "passes_per_item": 1,
+  "ms_per_1000": 6871.6
+ },
+ "decoder": {
+  "accuracy": 0.8991,
+  "changed": 0.0082,
+  "n_words": 75692,
+  "by_case": {
+   "words": {
+    "CAPS": 2601,
+    "Cap": 18462,
+    "lower": 53905,
+    "other": 724
+   },
+   "accuracy": {
+    "CAPS": 0.7539,
+    "Cap": 0.8092,
+    "lower": 0.9405,
+    "other": 0.6312
+   }
+  },
+  "by_punct": {
+   "words": {
+    "!": 14,
+    ",": 2505,
+    ".": 2457,
+    ":": 209,
+    ";": 98,
+    "?": 50,
+    "none": 66507,
+    "other": 3852
+   },
+   "accuracy": {
+    "!": 0.0,
+    ",": 0.5653,
+    ".": 0.8462,
+    ":": 0.2919,
+    ";": 0.602,
+    "?": 0.32,
+    "none": 0.9273,
+    "other": 0.715
+   }
+  },
+  "seconds": [
+   672.0,
+   1342.8
+  ],
+  "params": 124439808,
+  "passes_per_item": "T_out",
+  "ms_per_1000": 66260.8
+ },
+ "demo": [
+  {
+   "input": "fears for t n pension after talks unions representing workers at turner newall say they are 'disappointed' after talks with stricken parent firm federal mogul",
+   "gold": "Fears for T N pension after talks Unions representing workers at Turner Newall say they are 'disappointed' after talks with stricken parent firm Federal Mogul.",
+   "encoder": "Fears for T N pension after talks Unions representing workers at Turner Newall say they are 'disappointed' after talks with stricken parent firm Federal Mogul.",
+   "decoder": "Fears for T N Pension After talks with stricken parent firm Federal mogul"
+  },
+  {
+   "input": "the race is on second private team sets launch date for human spaceflight spacecom spacecom toronto canada a second team of rocketeers competing for the 10 million ansari x prize a contest for privately funded suborbital space flight has officially announced the first launch date for its manned rocket",
+   "gold": "The Race is On: Second Private Team Sets Launch Date for Human Spaceflight (SPACE.com) SPACE.com TORONTO, Canada A second team of rocketeers competing for the $10 million Ansari X Prize, a contest for privately funded suborbital space flight, has officially announced the first launch date for its manned rocket.",
+   "encoder": "The Race Is on Second, Private Team Sets Launch Date for Human Spaceflight spacecom spacecom TORONTO, Canada A second team of rocketeers competing for the 10 million Ansari X Prize, a contest for privately funded suborbital space flight, has officially announced the first launch date for its manned rocket.",
+   "decoder": "The Race Is on Second Private Team Sets Launch Date for Human Spaceflight (SPACE.com) SPACE.com TORONTO (Canada) A second team of rocketeers competing for the $10 million Ansari X Prize a contest for privately funded suborbital space flight has officially announced the first launch date for its manned rocket."
+  },
+  {
+   "input": "ky company wins grant to study peptides ap ap a company founded by a chemistry researcher at the university of louisville won a grant to develop a method of producing better peptides which are short chains of amino acids the building blocks of proteins",
+   "gold": "Ky. Company Wins Grant to Study Peptides (AP) AP A company founded by a chemistry researcher at the University of Louisville won a grant to develop a method of producing better peptides, which are short chains of amino acids, the building blocks of proteins.",
+   "encoder": "Ky. Company Wins Grant to Study Peptides AP AP A company founded by a chemistry researcher at the University of Louisville won a grant to develop a method of producing better peptides, which are short chains of amino acids, the building blocks of proteins.",
+   "decoder": "Yale Company Wins Grant to Study Peptides (AP) AP A company founded by a chemistry researcher at the University of Louisville won a grant to develop a method of producing better peptides, which are short chains of amino acids, the building blocks of proteins."
+  },
+  {
+   "input": "prediction unit helps forecast wildfires ap ap it's barely dawn when mike fitzpatrick starts his shift with a blur of colorful maps figures and endless charts but already he knows what the day will bring lightning will strike in places he expects winds will pick up moist places will dry and flames will roar",
+   "gold": "Prediction Unit Helps Forecast Wildfires (AP) AP It's barely dawn when Mike Fitzpatrick starts his shift with a blur of colorful maps, figures and endless charts, but already he knows what the day will bring. Lightning will strike in places he expects. Winds will pick up, moist places will dry and flames will roar.",
+   "encoder": "Prediction Unit Helps Forecast Wildfires AP AP It's barely dawn when Mike Fitzpatrick starts his shift with a blur of colorful maps, figures and endless charts. But already he knows what the day will bring. Lightning will strike in places he expects winds will pick up. Moist places will dry and flames will roar.",
+   "decoder": "Prediction Unit Helps Forecast Fires (AP) AP It's barely dawn when Mike Fitzpatrick starts his shift with a blur of colorful maps, figures and endless charts. But already he knows what the day will bring: lightning will strike in places he expects winds will pick up, moist places will dry and flames will roar."
+  },
+  {
+   "input": "calif aims to limit farmrelated smog ap ap southern california's smogfighting agency went after emissions of the bovine variety friday adopting the nation's first rules to reduce air pollution from dairy cow manure",
+   "gold": "Calif. Aims to Limit Farm-Related Smog (AP) AP Southern California's smog-fighting agency went after emissions of the bovine variety Friday, adopting the nation's first rules to reduce air pollution from dairy cow manure.",
+   "encoder": "Calif. Aims to Limit farmrelated Smog AP AP Southern California's smogfighting agency went after emissions of the bovine variety Friday, adopting the nation's first rules to reduce air pollution from dairy cow manure.",
+   "decoder": "California Aims to Limit Farm-Related Smog (AP) AP Southern California's smog-fighting agency went after emissions of the bovine variety Friday, adopting the nation's first rules to reduce air pollution from dairy cow manure."
+  },
+  {
+   "input": "open letter against british copyright indoctrination in schools the british department for education and skills dfes recently launched a music manifesto campaign with the ostensible intention of educating the next generation of british musicians unfortunately they also teamed up with the music industry emi and various artists to make this popular emi has apparently negotiated their end well so that children in our schools will now be indoctrinated about the illegality of downloading musicthe ignorance and audacity of this got to me a little so i wrote an open letter to the dfes about it unfortunately it's pedantic as i suppose you have to be when writing to goverment representatives but i hope you find it useful and perhaps feel inspired to do something similar if or when the same thing has happened in your area",
+   "gold": "Open Letter Against British Copyright Indoctrination in Schools The British Department for Education and Skills (DfES) recently launched a \"Music Manifesto\" campaign, with the ostensible intention of educating the next generation of British musicians. Unfortunately, they also teamed up with the music industry (EMI, and various artists) to make this popular. EMI has apparently negotiated their end well, so that children in our schools will now be indoctrinated about the illegality of downloading music.The ignorance and audacity of this got to me a little, so I wrote an open letter to the DfES about it. Unfortunately, it's pedantic, as I suppose you have to be when writing to goverment representatives. But I hope you find it useful, and perhaps feel inspired to do something similar, if or when the same thing has happened in your area.",
+   "encoder": "Open letter against British copyright indoctrination in schools The British Department for Education and Skills DFES recently launched a music manifesto campaign with the ostensible intention of educating the next generation of British musicians. Unfortunately, they also teamed up with the music industry EMI and various artists to make this popular. EMI has apparently negotiated their end well so that children in our schools will now be indoctrinated about the illegality of downloading musicthe. ignorance and audacity of this got to me a little, so I wrote an open letter to the DFES about it. Unfortunately, it's pedantic as I suppose you have to be when writing to goverment representatives. but I hope you find it useful and perhaps feel inspired to do something similar if or when the same thing has happened in your area.",
+   "decoder": "Open Letter Against British Copyright Enrichment In Schools The British Department for Education and Skills (DDS) recently launched a music manifesto campaign with the ostensible intention of educating the next generation of British musicians. Unfortunately, they also teamed up with the music industry, EMI and various artists to make this popular EMI has apparently negotiated their end well so that children in our schools will now be indoctrinated about the illegality of downloading musicthe ignorance and audacity of this. Got to me a little so I wrote an open letter to the DS about it. Unfortunately, it's pedantic as I suppose you have to be when writing to goverment representatives, but I hope you find it useful and perhaps feel inspired to do something similar if or when the same thing has happened in your area"
+  },
+  {
+   "input": "loosing the war on terrorism sven jaschan selfconfessed author of the netsky and sasser viruses is responsible for 70 percent of virus infections in 2004 according to a sixmonth virus roundup published wednesday by antivirus company sophos the 18yearold jaschan was taken into custody in germany in may by police who said he had admitted programming both the netsky and sasser worms something experts at microsoft confirmed a microsoft antivirus reward program led to the teenager's arrest during the five months preceding jaschan's capture there were at least 25 variants of netsky and one of the portscanning network worm sasser graham cluley senior technology consultant at sophos said it was staggeri",
+   "gold": "Loosing the War on Terrorism \"Sven Jaschan, self-confessed author of the Netsky and Sasser viruses, is responsible for 70 percent of virus infections in 2004, according to a six-month virus roundup published Wednesday by antivirus company Sophos.\" \"The 18-year-old Jaschan was taken into custody in Germany in May by police who said he had admitted programming both the Netsky and Sasser worms, something experts at Microsoft confirmed. (A Microsoft antivirus reward program led to the teenager's arrest.) During the five months preceding Jaschan's capture, there were at least 25 variants of Netsky and one of the port-scanning network worm Sasser.\" \"Graham Cluley, senior technology consultant at Sophos, said it was staggeri",
+   "encoder": "Loosing the War on Terrorism Sven Jaschan, selfconfessed author of the Netsky and Sasser viruses, is responsible for 70 percent of virus infections in 2004. According to a sixmonth virus roundup published Wednesday by antivirus company Sophos, The 18yearold Jaschan was taken into custody in Germany in May by police who said he had admitted programming both the Netsky and Sasser worms. Something experts at Microsoft confirmed. A Microsoft antivirus reward program led to the teenager's arrest. During the five months preceding Jaschan's capture. there were at least 25 variants of netsky and one of the portscanning network worm Sasser. Graham Cluley, senior technology consultant at Sophos said it was Staggeri.",
+   "decoder": "Loosing the war on terrorism Sven Jaschan self-confessed author of the Netsky and Sasser viruses is responsible for 70 percent of virus infections in 2004, according to a six-month virus roundup published Wednesday by antivirus company Sophos. The 18-year-old Jaschan was taken into custody in Germany in May by police who said he had admitted programming both the Netsky and Sasser worms, something experts at Microsoft confirmed a Microsoft anti-virus reward program led to the teenager's arrest during the five months preceding Jaschan's capture. There were at least 25 variants of Netsky and one of the port-scanning network worm Sasser Graham, Cluley senior technology consultant at Sophos said it was staggeri."
+  },
+  {
+   "input": "foafkey foaf pgp key distribution and bloom filters foafloaf and bloom filters have a lot of interesting properties for social network and whitelist distribution i think we can go one level higher though and include gpgopenpgp key fingerpring distribution in the foaf file for simple weboftrust based key distribution what if we used foaf and included the pgp key fingerprints for identities this could mean a lot you include the pgp key fingerprints within the foaf file of your direct friends and then include a bloom filter of the pgp key fingerprints of your entire whitelist the source foaf file would of course need to be encrypted your whitelist would be populated from the social network as your client discovered new identit",
+   "gold": "FOAFKey: FOAF, PGP, Key Distribution, and Bloom Filters FOAF/LOAF and bloom filters have a lot of interesting properties for social network and whitelist distribution. I think we can go one level higher though and include GPG/OpenPGP key fingerpring distribution in the FOAF file for simple web-of-trust based key distribution. What if we used FOAF and included the PGP key fingerprint(s) for identities? This could mean a lot. You include the PGP key fingerprints within the FOAF file of your direct friends and then include a bloom filter of the PGP key fingerprints of your entire whitelist (the source FOAF file would of course need to be encrypted Your whitelist would be populated from the social network as your client discovered new identit",
+   "encoder": "Foafkey: Foaf PGP Key Distribution and Bloom Filters foafloaf and Bloom Filters have a lot of interesting properties for social network and whitelist distribution. I think we can go one level higher though and include gpgopenpgp key fingerpring distribution in the foaf file for simple weboftrust based key distribution. What if we used foaf and included the PGP key fingerprints for identities? This could mean a lot. You include the PGP key fingerprints within the foaf file of your direct friends and then include a Bloom filter of the PGP key fingerprints of your entire whitelist. The source foaf file would of course need to be encrypted. Your whitelist would be populated from the social network as your client discovered new identit.",
+   "decoder": "Foafkey Foaf pgp key distribution and bloom filters Foafloaf and Bloom filters have a lot of interesting properties for social network and whitelist distribution. I think we can go one level higher, though, and include gpgopenpgp key fingerprint.pring distribution in the Foaf file for simple weboftrust based key distribution. What if we used Foaf and included the pgp key fingerprints for identities? This could mean a lot you include the pgp key fingerprints within the foaf file of your direct friends and then include a bloom filter of the pgp key fingerprints of your entire whitelist. The source foaf file would of course need to be encrypted, your whitelist would be populated from the social network as your client discovered new identit."
+  },
+  {
+   "input": "email scam targets police chief wiltshire police warns about phishing after its fraud squad chief was targeted",
+   "gold": "E-mail scam targets police chief Wiltshire Police warns about \"phishing\" after its fraud squad chief was targeted.",
+   "encoder": "email scam targets police chief Wiltshire Police warns about phishing after its fraud squad chief was targeted.",
+   "decoder": "Email scam targets police chief WILTSHIP, England Police warns about phishing after its fraud squad chief was targeted."
+  },
+  {
+   "input": "card fraud unit nets 36000 cards in its first two years the uk's dedicated card fraud unit has recovered 36000 stolen cards and 171 arrests and estimates it saved 65m",
+   "gold": "Card fraud unit nets 36,000 cards In its first two years, the UK's dedicated card fraud unit, has recovered 36,000 stolen cards and 171 arrests and estimates it saved 65m.",
+   "encoder": "Card fraud unit nets 36000 cards In its first two years, the uk's dedicated card fraud unit has recovered 36000 stolen cards and 171 arrests and estimates it saved 65m.",
+   "decoder": "Card fraud unit nets 36,000 cards in its first two years The UK's dedicated card fraud unit has recovered 36,000 stolen cards and 171 arrests and estimates it saved 65m."
+  },
+  {
+   "input": "group to propose new highspeed wireless format los angeles reuters a group of technology companies including texas instruments inc lttxnngt stmicroelectronics ltstmpagt and broadcom corp ltbrcmogt on thursday said they will propose a new wireless networking standard up to 10 times the speed of the current generation",
+   "gold": "Group to Propose New High-Speed Wireless Format LOS ANGELES (Reuters) A group of technology companies including Texas Instruments Inc. &lt;TXN.N&gt;, STMicroelectronics &lt;STM.PA&gt; and Broadcom Corp. &lt;BRCM.O&gt;, on Thursday said they will propose a new wireless networking standard up to 10 times the speed of the current generation.",
+   "encoder": "Group to Propose New highspeed Wireless Format LOS ANGELES Reuters A group of technology companies, including Texas Instruments Inc. lttxnngt stmicroelectronics ltstmpagt and Broadcom Corp. ltbrcmogt on Thursday said they will propose a new wireless networking standard up to 10 times the speed of the current generation.",
+   "decoder": "Group to Proposal New High-Speed Wireless Format LOS ANGELES (Reuters) A group of technology companies including Texas Instruments Inc. &lt;Xn;GN.NX, &lt;/p&gt; and Broadcom Corp. &lt;brcmogt on Thursday said they will propose a new wireless networking standard up to 10 times the speed of the current generation."
+  },
+  {
+   "input": "apple launches graphics software video bundle los angeles reuters apple computer incltaaplogt on tuesday began shipping a new program designed to let users create realtime motion graphics and unveiled a discount videoediting software bundle featuring its flagship final cut pro software",
+   "gold": "Apple Launches Graphics Software, Video Bundle LOS ANGELES (Reuters) Apple Computer Inc.&lt;AAPL.O&gt; on Tuesday began shipping a new program designed to let users create real-time motion graphics and unveiled a discount video-editing software bundle featuring its flagship Final Cut Pro software.",
+   "encoder": "Apple Launches Graphics Software Video Bundle LOS ANGELES Reuters Apple Computer incltaaplogt on Tuesday began shipping a new program designed to let users create realtime motion graphics and unveiled a discount videoediting software bundle featuring its flagship Final Cut Pro software.",
+   "decoder": "Apple Launches Graphics Software Video Bundle LOS ANGELES (Reuters) Apple Computer (Eagle)Plogt on Tuesday began shipping a new program designed to let users create real-time motion graphics and unveiled a discount video-editing software bundle featuring its flagship final cut Pro software."
+  },
+  {
+   "input": "dutch retailer beats apple to local download market amsterdam reuters free record shop a dutch music retail chain beat apple computer inc to market on tuesday with the launch of a new download service in europe's latest battleground for digital song services",
+   "gold": "Dutch Retailer Beats Apple to Local Download Market AMSTERDAM (Reuters) Free Record Shop, a Dutch music retail chain, beat Apple Computer Inc. to market on Tuesday with the launch of a new download service in Europe's latest battleground for digital song services.",
+   "encoder": "Dutch Retailer Beats Apple to Local Download Market AMSTERDAM Reuters Free record Shop, a Dutch music retail chain, beat Apple Computer Inc. to market on Tuesday with the launch of a new download service in Europe's latest battleground for digital song services.",
+   "decoder": "Dutch Retailer Beats Apple to Local Download Market AMSTERDAM (Reuters) Free record shop A Dutch music retail chain beat Apple Computer Inc. to market on Tuesday with the launch of a new download service in Europe's latest battleground for digital song services."
+  },
+  {
+   "input": "super ant colony hits australia a giant 100km colony of ants which has been discovered in melbourne australia could threaten local insect species",
+   "gold": "Super ant colony hits Australia A giant 100km colony of ants which has been discovered in Melbourne, Australia, could threaten local insect species.",
+   "encoder": "Super ant colony hits Australia A giant 100km colony of ants which has been discovered in Melbourne, Australia, could threaten local insect species.",
+   "decoder": "Super Ant Colony Hits Australia A giant 100km colony of ants, which has been discovered in Melbourne, Australia, could threaten local insect species."
+  },
+  {
+   "input": "socialites unite dolphin groups dolphin groups or pods rely on socialites to keep them from collapsing scientists claim",
+   "gold": "Socialites unite dolphin groups Dolphin groups, or \"pods\", rely on socialites to keep them from collapsing, scientists claim.",
+   "encoder": "Socialites unite dolphin groups Dolphin groups or pods rely on socialites to keep them from collapsing, scientists claim.",
+   "decoder": "Socialites unite dolphin groups, dolphin groups Or pods rely on socialites to keep them from collapsing, scientists claim."
+  },
+  {
+   "input": "teenage t rex's monster growth tyrannosaurus rex achieved its massive size due to an enormous growth spurt during its adolescent years",
+   "gold": "Teenage T. rex's monster growth Tyrannosaurus rex achieved its massive size due to an enormous growth spurt during its adolescent years.",
+   "encoder": "Teenage T Rex's monster growth Tyrannosaurus Rex achieved its massive size due to an enormous growth spurt during its adolescent years.",
+   "decoder": "Teenage T rex's Monster Growth Tyrannosaurus rex achieved its massive size due to an enormous growth spurt during its adolescent years."
+  },
+  {
+   "input": "scientists discover ganymede has a lumpy interior jet propulsion lab scientists have discovered irregular lumps beneath the icy surface of jupiter's largest moon ganymede these irregular masses may be rock formations supported by ganymede's icy shell for billions of years",
+   "gold": "Scientists Discover Ganymede has a Lumpy Interior Jet Propulsion Lab Scientists have discovered irregular lumps beneath the icy surface of Jupiter's largest moon, Ganymede. These irregular masses may be rock formations, supported by Ganymede's icy shell for billions of years...",
+   "encoder": "Scientists Discover Ganymede Has a Lumpy Interior Jet Propulsion Lab Scientists have discovered irregular lumps beneath the icy surface of Jupiter's largest moon, Ganymede. These irregular masses may be rock formations supported by Ganymede's icy shell for billions of years.",
+   "decoder": "Scientists Discover Galileo Has a Lumpsy Interior Jet Propulsion Lab Scientists have discovered irregular lumps beneath the icy surface of Jupiter's largest moon, Galileo, these irregular masses may be rock formations supported by Galileo's icy shell for billions of years."
+  },
+  {
+   "input": "mars rovers relay images through mars express european space agency esas mars express has relayed pictures from one of nasa's mars rovers for the first time as part of a set of interplanetary networking demonstrations the demonstrations pave the way for future mars missions to draw on joint interplanetary networking capabilities",
+   "gold": "Mars Rovers Relay Images Through Mars Express European Space Agency ESAs Mars Express has relayed pictures from one of NASA's Mars rovers for the first time, as part of a set of interplanetary networking demonstrations. The demonstrations pave the way for future Mars missions to draw on joint interplanetary networking capabilities...",
+   "encoder": "Mars Rovers Relay Images through Mars Express European Space Agency ESAS Mars Express has relayed pictures from one of nasa's Mars rovers for the first time as part of a set of interplanetary networking demonstrations. The demonstrations pave the way for future Mars missions to draw on joint interplanetary networking capabilities.",
+   "decoder": "Mars Rover Relays Images Through Mars Express European Space Agency (ESAS) Mars Express has relayed pictures from one of NASA's Mars rovers for the first time as part of a set of interplanetary networking demonstrations. The demonstrations pave the way for future Mars missions to draw on joint interplanetary networking capabilities."
+  },
+  {
+   "input": "rocking the cradle of life when did life begin one evidential clue stems from the fossil records in western australia although whether these layered sediments are biological or chemical has spawned a spirited debate oxford researcher nicola mcloughlin describes some of the issues in contention",
+   "gold": "Rocking the Cradle of Life When did life begin? One evidential clue stems from the fossil records in Western Australia, although whether these layered sediments are biological or chemical has spawned a spirited debate. Oxford researcher, Nicola McLoughlin, describes some of the issues in contention.",
+   "encoder": "Rocking the Cradle of Life When did Life begin? One evidential clue stems from the fossil records in Western Australia, although whether these layered sediments are biological or chemical has spawned a spirited debate, Oxford researcher Nicola mcloughlin describes some of the issues in contention.",
+   "decoder": "Rolling the cradle of life When did life begin? One evidential clue stems from the fossil records in western Australia, although whether these layered sediments are biological or chemical has spawned a spirited debate. Oxford researcher Nicholas McLoughlin describes some of the issues in contention."
+  },
+  {
+   "input": "storage servers bruise hp earnings update earnings per share rise compared with a year ago but company misses analysts' expectations by a long shot",
+   "gold": "Storage, servers bruise HP earnings update Earnings per share rise compared with a year ago, but company misses analysts' expectations by a long shot.",
+   "encoder": "Storage servers bruise HP earnings Update Earnings per share rise compared with a year ago, but company misses analysts' expectations by a long shot.",
+   "decoder": "Storage servers bruise HP earnings update Earnings per share rise compared with a year ago, but company misses analysts' expectations by a long shot."
+  }
+ ]
+}

@@ -1,0 +1,407 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 5<br>The Decoder, Alone</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div class="score" id="score"></div>
+    <div style="margin-top:10px"><a href="week05_check_yourself.html" title="Questions on seminars 3–5, answers under a toggle">Check yourself →</a></div>
+    <div style="margin-top:10px">Every number on this page is read from the seminar notebook's artifacts (gpt2, fine-tuned on a Colab T4; the live cells on an M4) — nothing is typed in. Live-cell rows vary run to run.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>solver = prefix × decoder × vocabulary head</h1>
+  <p class="lede">Last week the body was an encoder somebody had pretrained for us, and the task lived in the head: its output shape, the point where it attaches, the axis the softmax runs along. One Linear per task, and the rest was a dial.</p>
+  <div class="prose">
+    <p>Here is what changes. The head is the vocabulary, and the vocabulary is not ours to reshape — so the head never changes again. It is the same for classification, for NER, for question answering, for translation, for chat. If the task cannot live in the head, it has to live somewhere else, and the only other place is <em>the input</em>. That is the whole idea behind "prompting", two years before anyone called it that.</p>
+    <p>And it has a price. An encoder answers in one forward pass. A decoder answers one token at a time — one pass per token — and we are going to count those passes all day.</p>
+  </div>
+  <div class="formula"><span class="fn">The claim for today</span><math display="block"><mrow><mtext>solver</mtext><mo>=</mo><munder><mtext>prefix</mtext><mtext style="font-size:.8em">the task, as text</mtext></munder><mo>×</mo><munder><mtext>pretrained decoder</mtext><mtext style="font-size:.8em">124M, causal</mtext></munder><mo>×</mo><munder><mtext>vocabulary head</mtext><mtext style="font-size:.8em">the same for every task</mtext></munder></mrow></math></div>
+  <div class="prose keep">
+    <p><strong>Two questions to keep in front of you</strong>, answered at the end in two lines each: <em>why not an encoder for everything?</em> — <em>why not a decoder for everything?</em></p>
+  </div>
+</section>
+
+<!-- ====================================================== 00 where we stopped -->
+<section id="stop">
+  <p class="eyebrow">Block 00 · where we stopped</p>
+  <h2>Two tables</h2>
+  <div class="prose">
+    <p>Same 120 000 texts, same four classes, same test set, same TF-IDF at 0.92 from week 1. Two functions we use all day: <code>target_text</code> drops the tokens that are punctuation and nothing else — that is the text we will ask models to restore in block 05 — and <code>strip_text</code> is what a speech recogniser hands you: lower case, no punctuation. Apostrophes stay, because they are pronounced.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>AG News · test text 0, two ways</span><span class="mono" id="data-split"></span></div>
+    <div class="panel-body" id="data-example"></div>
+  </div>
+  <div class="prose">
+    <p>Last week had one table: AG News accuracy, one row per way of using the body. It is back, with its three rows from weeks 1 and 4. Today has a second table, and it is the one this seminar is about: <strong>what an answer costs</strong>. Four numbers per row — forward passes per item, tokens read, tokens written, and milliseconds per 1 000 items on the machine that measured it. Every reveal in block 05 writes one row into each table, and at the end we read the two side by side.</p>
+  </div>
+  <div class="grid-2">
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>Quality · AG News test</span></div>
+      <div class="panel-body tight scroll-x"><table class="results" id="results-0"></table></div>
+    </div>
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>Cost · per item</span><span class="mono" id="costs-0-n">no rows yet</span></div>
+      <div class="panel-body tight scroll-x"><table class="costs" id="costs-0"></table></div>
+    </div>
+  </div>
+  <h3>Three bodies, one picture</h3>
+  <div class="prose"><p>Week 3 built the middle one — encoder and decoder, joined by cross-attention. Week 4 took the left one, threw the decoder away, and put a head on top. Today is the right one: the decoder from week 3 with the cross-attention removed, and <em>no head to put anything on</em>.</p></div>
+  <div class="panel"><div class="panel-head"><span>Schematic · what each body reads, what comes out, where the task lives</span></div><div class="panel-body"><div class="fig" id="fig-bodies"></div></div></div>
+</section>
+
+<!-- ============================================================ 01 the decoder -->
+<section id="decoder">
+  <p class="eyebrow">Block 01 · the decoder, alone</p>
+  <h2>What physically comes out</h2>
+  <div class="prose">
+    <p>What GPT-2 is: the decoder block from week 3 without the cross-attention — masked self-attention and a feed-forward — stacked twelve times, one vector per position flowing up through the stack. That is the whole body; the picture is complete.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Schematic · the same stack, two readers</span><span class="fig-states" id="fig-block-btns"><button data-m="bert" class="sel">BERT</button><button data-m="gpt">GPT-2</button></span></div>
+    <div class="panel-body"><div class="fig" id="fig-block"></div><div class="panel-note" id="fig-block-note" style="border-top:none;padding:10px 0 0;background:none"></div></div>
+  </div>
+  <div class="prose">
+    <p>The encoder returns 768 numbers per token, and 768 numbers are not an answer — last week's whole point was that the answer is whatever Linear we bolt on. The decoder returns 50 257 numbers per token, and those <em>are</em> an answer: a probability for every token in the vocabulary. The head is already there. It is the input embedding matrix, transposed — the weight tying from week 3 — and it accounts for close to 40M of the 124M parameters.</p>
+    <p><strong>The task cannot go into the head, because the head is the vocabulary, and the vocabulary is not ours to change.</strong></p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>gpt2 · 124M, where they sit</span><span class="mono" id="ppl-line"></span></div>
+    <div class="panel-body"><div id="params-bars"></div></div>
+  </div>
+
+  <h3>Why twelve layers — the logit lens</h3>
+  <div class="prose">
+    <p>Week 4 asked <em>which layer knows the topic best</em> with a probe per layer. The decoder comes with a reader for its own residual stream — the head. Take the vector after block <math><mi>k</mi></math>, pass it through the final LayerNorm and the vocabulary head as if the model ended there, and read what it would have predicted. This is the <em>logit lens</em> (nostalgebraist, 2020).</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · at which layer does the top-1 guess agree with the final answer on half the positions?</span><span class="btnrow"><button class="primary" id="btn-lens-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-lens"><span class="q">Click the layer. Then the curve.</span></div>
+      <div class="reveal-wrap"><div class="veil">the agreement and perplexity curves are behind this veil</div>
+        <div id="lens-out" hidden><div class="grid-2"><div id="lens-agree"></div><div id="lens-ppl"></div></div><div class="small-note" id="lens-stats"></div></div></div>
+    </div>
+    <div class="panel-note" id="lens-note" hidden></div>
+  </div>
+  <div class="prose"><p>The curve is about positions on average. The strip below is one text, every position: click a token and read what every layer would have said next. Green is the gold next token; the outlined guess is the one the final layer settles on.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>Logit lens · one text, every position, every layer</span><span class="mono" id="lens-pos-line"></span></div>
+    <div class="panel-body"><div class="tokrow" id="lens-toks"></div><div class="lens" id="lens-strip"></div></div>
+    <div class="panel-note">Read a column top to bottom, then left to right: the early layers copy the word they are standing on, the late layers turn it into a continuation — plausible, not necessarily the gold one. Committing is not the same as being right.</div>
+  </div>
+
+  <h3>Where the source went</h3>
+  <div class="prose">
+    <p>In week 3 the decoder read the source sentence through cross-attention: its queries against the <em>encoder's</em> keys and values. That layer is gone. What is left is causal self-attention: every position attends to everything on its left — and "on its left" includes the prompt.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · a 20-word prompt (32 tokens), 20 generated tokens</span><span class="btnrow"><button class="primary" id="btn-att-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-att-share"><span class="q">Of the attention the generated tokens pay, what share lands on the prompt in the last layers?</span></div>
+      <div class="bet" id="bet-att-sink"><span class="q">And of <em>that</em>, how much is the very first token alone?</span></div>
+      <div class="reveal-wrap"><div class="veil">the attention tensor — 12 layers × 12 heads × 52 × 52 — is behind this veil</div>
+        <div id="att-out" hidden>
+          <div class="att">
+            <div>
+              <div class="sliders"><div><label class="field">layer <b id="att-layer-v">6</b></label><input type="range" id="att-layer" min="1" max="12" value="6"></div><div><label class="field">head <b id="att-head-v">mean</b></label><input type="range" id="att-head" min="0" max="12" value="0"></div><div><label class="field">&nbsp;</label><span class="toggle" id="att-sink-tgl"><button data-m="on" class="sel">with token 0</button><button data-m="off">hide token 0</button></span></div></div>
+              <div class="hm-box"><canvas id="att-canvas"></canvas></div><div class="ax"><span>keys: prompt │ generated →</span><span id="att-cell"></span></div>
+            </div>
+            <div><div class="figcap">share of the generated tokens' attention, by layer</div><div id="att-chart"></div></div>
+          </div>
+        </div></div>
+    </div>
+    <div class="panel-note" id="att-note" hidden></div>
+  </div>
+  <div class="prose">
+    <p>Cross-attention did not disappear — it became self-attention on the prefix. The source is just the first thing in the sequence, and the block reads it with the same weights it reads its own output with. That is the trade: one attention instead of two, one weight matrix instead of two, and one sequence for everything.</p>
+    <p>It is also a constraint, and it will come back in block 05: <strong>the prefix is read causally</strong>. A token of the prompt does not see what stands after it. If you put a document first and a question second, the document was encoded <em>without knowing the question</em>. Hold that thought — we will measure it.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 02 positions -->
+<section id="positions">
+  <p class="eyebrow">Block 02 · positions</p>
+  <h2>The table, or the rotation</h2>
+  <div class="prose">
+    <p>Attention has no order of its own; something has to tell it which token is where. GPT-2 does it with a table <code>wpe</code>: one row per position, 1 024 rows, added to the token embedding <em>once</em>, at the input. Row 1 025 does not exist. That is the constraint behind every context-window number you have seen since — GPT-2 1 024, GPT-3 2 048, Llama 2 4 096, then 8k, 128k, a million: a table cannot grow after training, so almost every model after 2021 stopped using one.</p>
+    <p>What replaced it is a <strong>rotation</strong> (RoPE, Su et al. 2021), and it lives in every layer rather than at the input. Split a query of dimension <math><mi>d</mi></math> into <math><mrow><mi>d</mi><mo>/</mo><mn>2</mn></mrow></math> pairs of coordinates, and turn pair <math><mi>i</mi></math> at position <math><mi>m</mi></math> by the angle <math><mrow><mi>m</mi><msub><mi>θ</mi><mi>i</mi></msub></mrow></math>, one frequency per pair.</p>
+  </div>
+  <div class="formula"><math display="block"><mrow><msub><mi>θ</mi><mi>i</mi></msub><mo>=</mo><msup><mn>10000</mn><mrow><mo>−</mo><mn>2</mn><mi>i</mi><mo>/</mo><mi>d</mi></mrow></msup><mo>,</mo><mspace width="1.4em"/><msub><mover><mi>q</mi><mo>~</mo></mover><mi>m</mi></msub><mo>=</mo><mi>R</mi><mo>(</mo><mi>m</mi><mo>)</mo><mi>q</mi><mo>,</mo><mspace width="1em"/><msub><mover><mi>k</mi><mo>~</mo></mover><mi>n</mi></msub><mo>=</mo><mi>R</mi><mo>(</mo><mi>n</mi><mo>)</mo><mi>k</mi><mo>,</mo><mspace width="1.4em"/><msub><mover><mi>q</mi><mo>~</mo></mover><mi>m</mi></msub><mo>·</mo><msub><mover><mi>k</mi><mo>~</mo></mover><mi>n</mi></msub><mo>=</mo><msup><mi>q</mi><mo>⊤</mo></msup><mi>R</mi><mo>(</mo><mi>n</mi><mo>−</mo><mi>m</mi><mo>)</mo><mi>k</mi></mrow></math></div>
+  <div class="prose"><p>A rotation by <math><mi>m</mi></math> against a rotation by <math><mi>n</mi></math> is a rotation by <math><mrow><mi>n</mi><mo>−</mo><mi>m</mi></mrow></math>, so the score can only depend on the <em>offset</em>. No parameter learns positions; the positions are in the arithmetic. Move the sliders: the table's score jumps, the rotation's does not.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>One query, one key · <code>rotate</code> from the notebook, running here</span><span class="ck" id="rope-ck"></span></div>
+    <div class="panel-body">
+      <div class="dials">
+        <div><label class="field">query position m <b id="rope-m-v">10</b></label><input type="range" id="rope-m" min="0" max="1023" value="10"></div>
+        <div><label class="field">key position n <b id="rope-n-v">3</b></label><input type="range" id="rope-n" min="0" max="1023" value="3"></div>
+        <div><label class="field">move both by <b id="rope-s-v">0</b></label><input type="range" id="rope-s" min="0" max="990" value="0"></div>
+      </div>
+      <div class="rope-out"><div class="box" id="rope-learned"><span class="k">learned table · (q + wpe[m]) · (k + wpe[n])</span><div class="v">—</div></div><div class="box" id="rope-rope"><span class="k">RoPE · R(m) q · R(n) k</span><div class="v">—</div></div></div>
+      <div class="figcap" style="margin-top:14px">the 32 pairs of one head, each turning at its own rate as the position moves</div>
+      <div class="clocks" id="rope-clocks"></div>
+    </div>
+    <div class="panel-note">Pair 0 turns a full circle every 6 positions and resolves <em>adjacent</em> tokens; pair 31 turns once every 47 000 and resolves <em>near versus far</em>. Same ladder of frequencies as week 3's sinusoids, applied to <math><mi>q</mi></math> and <math><mi>k</mi></math> inside every attention instead of added to <math><mi>x</mi></math> once.</div>
+  </div>
+
+  <h3>Past the window: extrapolate, or interpolate</h3>
+  <div class="prose">
+    <p>A table stops at its last row. A rotation is defined at every position: you can <em>ask</em> for position 3 000. But past the training window the slow pairs sit at angles no training example ever reached. Two ways to go past the window, neither with training: <strong>extrapolate</strong> — run as is; <strong>interpolate</strong> (Chen et al. 2023) — divide every angle by a factor, so 3 072 positions fit into the 2 048 the model knows.</p>
+    <p>Two models of the same size, 12 × 768: <code>gpt2</code>, a table of 1 024, and <code>pythia-160m</code>, RoPE trained at 2 048. News texts concatenated into streams of 3 072 tokens, next-token loss at every position.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · loss by position</span><span class="btnrow"><button class="primary" id="btn-rope-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-rope-gpt"><span class="q">GPT-2 at position 1 025?</span></div>
+      <div class="bet" id="bet-rope-ext"><span class="q">Pythia past 2 048, run as is?</span></div>
+      <div class="bet" id="bet-rope-int"><span class="q">Positions squeezed by 1.5 — <em>inside</em> the window, compared with running as is?</span></div>
+      <div class="reveal-wrap"><div class="veil">four curves are behind this veil</div>
+        <div id="rope-out" hidden>
+          <div class="sliders" style="max-width:360px"><div><label class="field">bucket <b id="rope-b-v">128</b> positions</label><input type="range" id="rope-b" min="32" max="512" step="32" value="128"></div></div>
+          <div id="rope-chart"></div>
+          <pre class="report" id="rope-err" style="margin-top:10px"></pre>
+          <div class="scroll-x" style="margin-top:10px"><table id="rope-table"></table></div>
+        </div></div>
+    </div>
+    <div class="panel-note" id="rope-note" hidden></div>
+  </div>
+
+  <h3>YaRN: squeeze only what runs out of angles</h3>
+  <div class="prose">
+    <p>Count, for every pair, how many turns it completes inside the training window: <math><mrow><msub><mi>r</mi><mi>i</mi></msub><mo>=</mo><mi>L</mi><mo>/</mo><msub><mi>λ</mi><mi>i</mi></msub></mrow></math>. A pair with many turns has met every angle it can produce — squeezing it only blurs the neighbours it was resolving. A pair with less than one turn is the one that runs into unseen angles past <math><mi>L</mi></math>. Between the two, a ramp; and a temperature on the logits, folded into the cos and sin tables.</p>
+  </div>
+  <div class="formula"><math display="block"><mrow><msub><mi>γ</mi><mi>i</mi></msub><mo>=</mo><mtext>clip</mtext><mo>(</mo><mfrac><mrow><msub><mi>r</mi><mi>i</mi></msub><mo>−</mo><mi>α</mi></mrow><mrow><mi>β</mi><mo>−</mo><mi>α</mi></mrow></mfrac><mo>,</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>)</mo><mo>,</mo><mspace width="1.2em"/><msubsup><mi>θ</mi><mi>i</mi><mo>′</mo></msubsup><mo>=</mo><msub><mi>θ</mi><mi>i</mi></msub><mrow><mo>(</mo><mfrac><mrow><mn>1</mn><mo>−</mo><msub><mi>γ</mi><mi>i</mi></msub></mrow><mi>s</mi></mfrac><mo>+</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>)</mo></mrow><mo>,</mo><mspace width="1.2em"/><msqrt><mrow><mn>1</mn><mo>/</mo><mi>t</mi></mrow></msqrt><mo>=</mo><mn>0.1</mn><mo>&#8290;</mo><mi>ln</mi><mo>&#8289;</mo><mi>s</mi><mo>+</mo><mn>1</mn></mrow></math></div>
+  <div class="panel">
+    <div class="panel-head"><span>YaRN · what gets squeezed, per pair</span><span class="ck" id="yarn-ck"></span></div>
+    <div class="panel-body">
+      <div class="sliders" style="max-width:560px"><div><label class="field">stretch s <b id="yarn-s-v">1.5</b></label><input type="range" id="yarn-s" min="1" max="16" step="0.5" value="1.5"></div><div><label class="field">α <b id="yarn-a-v">1</b></label><input type="range" id="yarn-a" min="0.5" max="4" step="0.5" value="1"></div><div><label class="field">β <b id="yarn-b-v">32</b></label><input type="range" id="yarn-b" min="4" max="64" step="4" value="32"></div></div>
+      <div class="grid-2"><div id="yarn-chart"></div><div><div class="stat-row" id="yarn-stats"></div><div class="small-note" style="margin-top:10px">linear interpolation is the special case γ ≡ 0: every pair divided by s. The temperature multiplies the attention logits by 1/t.</div></div></div>
+    </div>
+    <div class="panel-note" id="yarn-note"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 03 one pass or T -->
+<section id="cost">
+  <p class="eyebrow">Block 03 · one pass, or T</p>
+  <h2>What is wasted, and the cache</h2>
+  <div class="prose">
+    <p>One forward pass over 64 tokens returns 64 distributions, and 64 training signals. Generating 64 tokens is 64 forward passes, because token <math><mi>t</mi></math> has to exist before token <math><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></math> can be predicted. This is <code>Transformer.greedy</code> from week 3, as we wrote it: the decoder re-reads the growing prefix at every step.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Schematic · one step of greedy decoding, with and without the cache</span><span class="fig-states" id="fig-kv-btns"><button data-m="nocache" class="sel">no cache</button><button data-m="cache">KV cache</button></span></div>
+    <div class="panel-body">
+      <div class="stepper"><button id="kv-step">next token</button><button id="kv-reset">reset</button><span class="cnt">step <b id="kv-t">0</b> · positions evaluated so far: <b id="kv-eval">0</b> · needed: <b id="kv-need">0</b></span></div>
+      <div class="fig" id="fig-kv"></div>
+    </div>
+    <div class="panel-note">At step <math><mi>t</mi></math> the only new thing is the token we just appended. Every other position's keys and values in every layer were computed at step <math><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></math> and have not changed — the causal mask guarantees they cannot. So keep them: the model stores <math><mi>K</mi></math> and <math><mi>V</mi></math> per layer, and every new token adds one row to each. Nothing about the maths changes; we stop repeating it.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · measured on an M4, the notebook's live cells</span><span class="btnrow"><button class="primary" id="btn-kv-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-kv-one"><span class="q">One pass over a 53-token prompt against generating 64 tokens after it — how many times slower?</span></div>
+      <div class="bet" id="bet-kv-ratio"><span class="q"><code>use_cache=False</code> against <code>True</code> at 896 new tokens — the ratio? By token-passes it should be about 500.</span></div>
+      <div class="reveal-wrap"><div class="veil">the timings are behind this veil</div>
+        <div id="kv-out" hidden><div class="stat-row" id="kv-stats"></div><div class="grid-2" style="margin-top:14px"><div class="scroll-x"><table id="kv-table"></table></div><div id="kv-chart"></div></div></div></div>
+    </div>
+    <div class="panel-note" id="kv-note" hidden></div>
+  </div>
+  <h3>The accounting we will use today</h3>
+  <div class="prose">
+    <p>Three numbers per item, and they are all you need to fill a card in block 04: <strong>passes per item</strong> — an encoder with a head: 1; a decoder as a scorer: one per candidate; a decoder as a generator: one per output token. <strong>Tokens read</strong> — the input, once; a scorer reads it once per candidate; a generator also reads back what it wrote, one token per step. <strong>Tokens written</strong> — 0 for a head, <math><msub><mi>T</mi><mi>out</mi></msub></math> for a generator. The cost table's fourth column — milliseconds per 1 000 items — is measured, not derived.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 04 design first -->
+<section id="prefix">
+  <p class="eyebrow">Block 04 · design first</p>
+  <h2>Classify 7 600 texts with no labels at all</h2>
+  <div class="prose">
+    <p>Volume: the test set. Labels: none — we are not allowed to train. Baseline to beat: TF-IDF at 0.92 (which <em>was</em> allowed to train), and week 4's zero-shot through <code>[MASK]</code> at 0.47. First instinct: write <code>This news is about</code> after the text, let GPT-2 generate, read the word. That is the generator — one pass per output token, then a parser for whatever it wrote. Look again: we do not need the model to <em>say</em> anything. We need to know which of four continuations it finds most likely. That is the scorer: four forward passes, zero generated tokens, and the answer is always one of the four.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · the scorer with the class names as written</span><span class="btnrow"><button class="primary" id="btn-zs-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-zs"><span class="q">Accuracy on 7 600 texts? Random is 0.25.</span></div>
+      <div class="reveal-wrap"><div class="veil">the artifact is behind this veil</div>
+        <div id="zs-out" hidden><div class="stat-row" id="zs-stats"></div><div class="scroll-x" style="margin-top:12px"><table id="zs-table"></table></div></div></div>
+    </div>
+    <div class="panel-note" id="zs-note" hidden></div>
+  </div>
+  <div class="prose">
+    <p>Now build the verbalizer yourself. Every candidate word below was scored against every one of the 7 600 texts by the notebook's <code>score</code>; the argmax runs here. Pick one or more words per class, switch between the summed and the per-token score, and watch what a three-token word does.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Verbalizer builder · <span id="vb-n"></span> texts, argmax in the browser</span><span class="btnrow"><span class="toggle" id="vb-how"><button data-m="sum" class="sel">summed</button><button data-m="per">per token</button></span><span class="ck" id="vb-ck"></span></span></div>
+    <div class="panel-body"><div class="vb" id="vb"></div><div class="vb-acc" id="vb-acc"></div><div class="scroll-x" style="margin-top:10px"><table class="conf" id="vb-conf"></table></div></div>
+    <div class="panel-note">Below TF-IDF, and that is the right answer, not a disappointing one. The scorer guarantees the <em>form</em> of the answer — always one of four — and nothing about its <em>content</em>: a 124M model that has never seen a label does not know what we mean by <em>Business</em>. The follow-up: <em>ten million texts a day</em>. Use these answers as labels, train week 4's Linear on them, and serve one pass of an encoder. The decoder's job was to <em>make the labels</em>, not to serve.</div>
+  </div>
+
+  <h3>The card</h3>
+  <div class="prose">
+    <p>Three tasks, one card each. Then we run them both ways — a body with a head, and a decoder with the task in the prefix — and the two tables say who was right. Every line on the card is a word we already own. Fill it here; <code>estimate</code> from the notebook puts a number on "passes per day" before anything is trained. The <strong>follow-up</strong> line is what an interview actually sounds like: <em>and if there are no labels? and if the categories change every week? and at ten times the volume?</em></p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Design · fill the card</span><span class="ck" id="est-ck"></span></div>
+    <div class="panel-body">
+      <div class="card-tabs" id="card-tabs"><button data-c="punct" class="sel">3.1 punctuation and case</button><button data-c="typos">3.2 typos in queries</button><button data-c="ner">3.3 entities</button></div>
+      <div class="prose" id="card-task" style="margin-bottom:10px"></div>
+      <div class="card" id="card"></div>
+      <div class="est" id="card-est"></div>
+    </div>
+    <div class="panel-note" id="card-note"></div>
+  </div>
+
+  <h3>Look at twenty examples first</h3>
+  <div class="prose"><p>Before you choose a body for 3.1, type any sentence: the label set of the encoder way — four cases times eight punctuations, 32 labels — is applied to every word by <code>word_label</code>, running here. Words it cannot express are marked.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>3.1 · which words can 32 labels express?</span><span class="ck" id="wl-ck"></span></div>
+    <div class="panel-body"><input type="text" id="wl-in" value="Fears for T N pension after talks: Wal-Mart, U.S. and iPhone sales fell 3.5% (Reuters)."><div class="wl" id="wl-out"></div><div class="small-note" id="wl-line"></div></div>
+  </div>
+  <div class="prose"><p>For 3.2 the noise is synthetic, six kinds of it, and the kinds are the whole point. Corrupt a query yourself: pick the operation and the position.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>3.2 · six kinds of noise, <code>add_noise</code> running here</span><span class="ck" id="noise-ck"></span></div>
+    <div class="panel-body">
+      <div class="io"><div><label class="field">query</label><input type="text" id="noise-in" value="cheap flights to moscow tomorrow"></div><div class="btnrow" id="noise-ops"></div></div>
+      <div class="sliders" style="max-width:420px"><div><label class="field">word <b id="noise-w-v">1</b></label><input type="range" id="noise-w" min="0" max="4" value="1"></div><div><label class="field">position in the word <b id="noise-k-v">2</b></label><input type="range" id="noise-k" min="1" max="6" value="2"></div></div>
+      <div class="io"><div class="out" id="noise-out"></div></div><div class="small-note" id="noise-line"></div>
+    </div>
+    <div class="panel-note">Four of the six keep the word count — a letter substituted, dropped, inserted, two letters swapped. Two do not: a word split in two, two words merged. Hold that for block 05.</div>
+  </div>
+  <div class="prose"><p>For 3.3 the decoder has to <em>write</em> the entities, and there are two natural formats. Write one yourself for the sentence below; the notebook's parser turns it back into BIO tags and counts what it could not match.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>3.3 · two output formats, parsed back · <code>parse_inline</code> / <code>parse_list</code> running here</span><span class="ck" id="ner-ck"></span></div>
+    <div class="panel-body ner-write">
+      <div class="ent-line" id="ner-sent"></div>
+      <div class="grid-2"><div><label class="field">inline · <code>[LOC Germany] 's representative …</code></label><textarea id="ner-inline"></textarea><div class="ner-parse" id="ner-inline-out"></div></div><div><label class="field">list · <code>Germany: LOC; European Union: ORG</code></label><textarea id="ner-list"></textarea><div class="ner-parse" id="ner-list-out"></div></div></div>
+    </div>
+    <div class="panel-note">An entity whose words are <em>not in the sentence</em> — rewritten, invented — has nowhere to go: it is <strong>unmatched</strong>. The head cannot make this mistake, because a tag has to sit on a word.</div>
+  </div>
+
+  <h3>Lightning round: which week?</h3>
+  <div class="prose"><p>Six systems, one minute each. Not "encoder or decoder" — <em>which week of this course solves it</em>, with which body, at how many passes per item.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>Six systems · pick the week</span><span class="btnrow"><span class="ck" id="lr-score"></span><button class="primary" id="btn-lr-reveal">Reveal</button></span></div>
+    <div class="panel-body" id="lr"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 05 the reveal -->
+<section id="reveal">
+  <p class="eyebrow">Block 05 · the reveal</p>
+  <h2>Punctuation and case, two ways</h2>
+  <div class="prose">
+    <p><strong>The encoder way.</strong> Token classification, one label per word: what to do with the case — <code>lower</code>, <code>Cap</code>, <code>CAPS</code> — and what to put after the word — nothing, a comma, a period, <code>? ! : ;</code>. Four cases times eight punctuations is 32 labels, and that is the encoder's <em>entire</em> vocabulary of answers. Some words are not expressible: <code>U.S.</code>, <code>iPhone</code>, <code>Wal-Mart</code>, <code>3.5</code>. They all get <code>other</code> — and <code>other</code> means <em>the head will get this word wrong whatever it learns</em>. That is the <strong>ceiling</strong> of the formulation, measured before training anything.</p>
+    <p><strong>The decoder way.</strong> No labels at all: <code>stripped =&gt; original</code>, and the model writes the original. Nothing is unexpressible. The cost is one pass per output token — and a new failure mode the encoder cannot have: the model may change a word it was only supposed to capitalise. We measure that as <strong>changed</strong>.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Label it yourself · test text <span id="pl-i">0</span>, 32 labels per word</span><span class="btnrow"><button id="pl-prev">‹</button><button id="pl-next">›</button><span class="ck" id="pl-score"></span><button class="primary" id="btn-pl-check">Check</button></span></div>
+    <div class="panel-body"><div class="words-pick" id="pl"></div></div>
+    <div class="panel-note" id="pl-note">Dotted words are the ones the label set cannot express: whatever you pick, the rebuilt word is wrong. After the check, the encoder's own answer is shown under each word.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · 20 000 training texts, 2 000 test texts, 75 692 words</span><span class="btnrow"><button class="primary" id="btn-punct-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-punct-all"><span class="q">Word accuracy overall — who is ahead?</span></div>
+      <div class="bet" id="bet-punct-cap"><span class="q">On the words the labels <em>can</em> express — capitalised words, commas, periods — who is ahead?</span></div>
+      <div class="bet" id="bet-punct-chg"><span class="q">The decoder's <code>changed</code>: words that came back with different letters?</span></div>
+      <div class="reveal-wrap"><div class="veil">the breakdown is behind this veil</div>
+        <div id="punct-out" hidden><div class="stat-row" id="punct-stats"></div><div class="grid-2" style="margin-top:14px"><div><div class="figcap">by the gold word's case</div><div id="punct-case"></div></div><div><div class="figcap">by the gold word's punctuation</div><div id="punct-punct"></div></div></div><div class="legend"><span><span class="sw" style="background:var(--cls-0)"></span>encoder, 32-label head</span><span><span class="sw" style="background:var(--cls-1)"></span>decoder, stripped ⇒ original</span></div>
+          <div class="figcap" style="margin-top:14px">what <code>changed</code> does not count: the first demo text, decoder against gold</div><div class="diffline" id="punct-drop"></div></div></div>
+    </div>
+    <div class="panel-note" id="punct-note" hidden></div>
+  </div>
+  <div class="prose">
+    <p>The second follow-up decides which bill you can afford. <em>Words arrive one at a time, from a live stream</em>: the encoder reads bidirectionally, so it must wait for the phrase to end before it can label the first word — its latency is the length of the utterance. A causal model labels as the words come, with what it has; and when the next word arrives, the last comma may have to move. Same task, and the product flips the answer.</p>
+  </div>
+
+  <h3>Typos: detect, or rewrite</h3>
+  <div class="prose">
+    <p><strong>The encoder way</strong>, honestly stated. An encoder can <em>point</em>: one label per word, <code>ok</code> / <code>wrong</code>. It cannot write the right word, because the right word is not one of two labels. So the encoder detects, and something else corrects: the nearest dictionary word by edit distance, week 1's tools. Two stages, one pass. <strong>The decoder way.</strong> <code>noisy =&gt; clean</code>. Nothing about word counts.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · per kind of noise: is the encoder pipeline at zero <em>by construction</em>?</span><span class="btnrow"><button class="primary" id="btn-typos-reveal">Reveal</button></span></div>
+    <div class="panel-body"><div class="scroll-x"><table class="rowbet" id="typos-table"></table></div><div class="reveal-wrap" style="margin-top:12px"><div class="veil">the accuracies are behind this veil</div><div id="typos-out" hidden><div class="stat-row" id="typos-stats"></div><div class="figcap" style="margin-top:14px">four demo queries, both ways</div><div id="typos-demo"></div></div></div></div>
+    <div class="panel-note" id="typos-note" hidden></div>
+  </div>
+
+  <h3>NER: the same CoNLL, generated</h3>
+  <div class="prose">
+    <p>Week 4's head: <code>[B, L, 9]</code>, one BIO tag per word, and everything the model can say is a tag on a word that exists. The decoder has to <em>write</em> the entities — inline, a copy of the sentence with brackets, or a list of the entities only. Both outputs are parsed back to tags and scored with the same entity F1 as week 4.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · 8 000 training sentences, 3 453 test</span><span class="btnrow"><button class="primary" id="btn-ner-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-ner-f1"><span class="q">Entity F1 of the two formats against week 4's fine-tuned BERT?</span></div>
+      <div class="bet" id="bet-ner-fmt"><span class="q">Inline against list?</span></div>
+      <div class="bet" id="bet-ner-unm"><span class="q">Share of predicted entities that are not in the text — unmatched?</span></div>
+      <div class="reveal-wrap"><div class="veil">the table is behind this veil</div>
+        <div id="ner-out" hidden><div class="scroll-x"><table id="ner-table"></table></div><div class="btnrow" style="margin-top:14px" id="ner-demo-btns"><span class="toggle"><button data-m="inline" class="sel">inline</button><button data-m="list">list</button></span><button id="ner-demo-prev">‹</button><button id="ner-demo-next">›</button><span class="mono" id="ner-demo-i"></span></div><div id="ner-demo" style="margin-top:10px"></div></div></div>
+    </div>
+    <div class="panel-note" id="ner-note" hidden></div>
+  </div>
+
+  <h3>QA: answer, or point</h3>
+  <div class="prose">
+    <p>Week 4's answer was two pointers: <code>[B, L, 2]</code>, and the answer is a substring <em>by construction</em>. The generator writes an answer. Usually it copies; nothing forces it to. And the bet from block 01 comes due here: the paragraph is read causally. Put it before the question and it was encoded without knowing what to look for; put it after and every token of it can see the question. Two fine-tunes, identical except for the order of two strings in the prompt.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Schematic · who sees whom, in the two orders</span><span class="fig-states" id="fig-order-btns"><button data-m="cq" class="sel">context, question</button><button data-m="qc">question, context</button></span></div>
+    <div class="panel-body"><div class="fig" id="fig-order"></div><div class="panel-note" id="fig-order-note" style="border-top:none;padding:10px 0 0;background:none"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · 5 000 training questions, 2 000 dev</span><span class="btnrow"><button class="primary" id="btn-qa-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-qa-em"><span class="q">Exact match against week 4's BERT?</span></div>
+      <div class="bet" id="bet-qa-order"><span class="q">Which order wins?</span></div>
+      <div class="bet" id="bet-qa-sub"><span class="q">Share of answers that are not a substring of the paragraph?</span></div>
+      <div class="reveal-wrap"><div class="veil">the table is behind this veil</div>
+        <div id="qa-out" hidden><div class="scroll-x"><table id="qa-table"></table></div><div class="btnrow" style="margin-top:14px"><span class="toggle" id="qa-order-tgl"><button data-m="context, question" class="sel">context, question</button><button data-m="question, context">question, context</button></span><button id="qa-demo-prev">‹</button><button id="qa-demo-next">›</button><span class="mono" id="qa-demo-i"></span></div><div id="qa-demo" style="margin-top:10px"></div></div></div>
+    </div>
+    <div class="panel-note" id="qa-note" hidden></div>
+  </div>
+</section>
+
+<!-- ============================================================ 06 both tables -->
+<section id="end">
+  <p class="eyebrow">Block 06 · where this goes</p>
+  <h2>Both tables</h2>
+  <div class="prose" id="end-prose"></div>
+  <div class="panel">
+    <div class="panel-head"><span>Quality · AG News and the three tasks</span></div>
+    <div class="panel-body tight scroll-x"><table class="results" id="results-1"></table></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Cost · per item</span></div>
+    <div class="panel-body tight scroll-x"><table class="costs" id="costs-1"></table></div>
+  </div>
+  <div class="prose">
+    <p><strong>Why not an encoder for everything?</strong> Because a head has to enumerate its answers. When the set of answers is open — variable length, insertions, nesting, a type that did not exist last month — the task has nowhere to live but the prefix, and the prefix needs a decoder.</p>
+    <p><strong>Why not a decoder for everything?</strong> Because a token costs a pass, and the output is guaranteed to be nothing in particular — not a label, not a copy, not a substring, not a schema; because its probabilities are scores rather than calibrated confidences; and because it reads its input causally — though the QA row shows that last argument predicting the wrong sign. Every one of those has a row in the cost table.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The course so far, in one table</span></div>
+    <div class="panel-body tight scroll-x"><table class="course" id="course"></table></div>
+  </div>
+  <div class="prose">
+    <p><strong>Five things that transfer to every model this course will touch.</strong> The head is the vocabulary, so the task is the prefix. One pass or <math><mi>T</mi></math> — count before you choose. An encoder's ceiling is its label set — measure it before training. A generator's failure mode is doing more than it was asked — measure fidelity, not just accuracy. Look at twenty examples before choosing a body.</p>
+    <p><strong>Next week:</strong> the same decoder, cheaper. The KV cache with numbers — memory per token, prefill against decode, why a GPU runs out of memory before it runs out of arithmetic; speculative decoding; and constrained generation — the mask on the vocabulary that makes a generator emit only what a schema allows, the generator's version of what the scorer did today.</p>
+  </div>
+</section>
+
+</div>
+</main>
+</div>

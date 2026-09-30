@@ -1,0 +1,52 @@
+{
+ "steps": [
+  {
+   "name": "count",
+   "expr": "return 'details: '+document.querySelectorAll('details.qa').length+' | masks: '+document.querySelectorAll('[data-mask] svg').length+'/'+document.querySelectorAll('[data-mask]').length+' | figs: '+['fig-kv','fig-windows','fig-stream'].map(i=>i+':'+(document.getElementById(i).querySelector('svg')?'ok':'EMPTY')).join(',')+' | count text: '+document.getElementById('cy-count').textContent"
+  },
+  {
+   "name": "open-all",
+   "expr": "document.getElementById('btn-open-all').click(); return document.getElementById('cy-count').textContent+' | open: '+document.querySelectorAll('details.qa[open]').length"
+  },
+  {
+   "name": "svg-text",
+   "expr": "const bad=[]; document.querySelectorAll('.fig svg').forEach((s,si)=>{const sb=s.getBoundingClientRect(); const ts=[...s.querySelectorAll('text')].filter(t=>!t.getAttribute('transform')); ts.forEach((t,i)=>{const b=t.getBoundingClientRect(); if(b.left<sb.left-1||b.right>sb.right+1||b.top<sb.top-1||b.bottom>sb.bottom+1) bad.push('clip svg'+si+': '+t.textContent.slice(0,30)); for(let j=i+1;j<ts.length;j++){const c=ts[j].getBoundingClientRect(); if(b.left<c.right-1&&c.left<b.right-1&&b.top<c.bottom-1&&c.top<b.bottom-1) bad.push('overlap svg'+si+': '+t.textContent.slice(0,20)+' / '+ts[j].textContent.slice(0,20));}});}); return bad.length? bad.join(' || ') : 'svg text clean ('+document.querySelectorAll('.fig svg text').length+' labels)'"
+  },
+  {
+   "name": "heights",
+   "expr": "return [...document.querySelectorAll('details.qa')].map((d,i)=>(i+1)+':'+(d.getBoundingClientRect().height|0)).join(' ')"
+  }
+ ],
+ "screens": [
+  {
+   "sel": "details.qa:nth-of-type(1)",
+   "file": "cy_q01.png",
+   "dy": -12,
+   "expr": "document.documentElement.setAttribute('data-theme','light')"
+  },
+  {
+   "sel": "details.qa:nth-of-type(13)",
+   "file": "cy_q13.png",
+   "dy": -12,
+   "expr": "document.documentElement.setAttribute('data-theme','light')"
+  },
+  {
+   "sel": "details.qa:nth-of-type(19)",
+   "file": "cy_q19.png",
+   "dy": -12,
+   "expr": "document.documentElement.setAttribute('data-theme','light')"
+  },
+  {
+   "sel": "details.qa:nth-of-type(23)",
+   "file": "cy_q23.png",
+   "dy": -12,
+   "expr": "document.documentElement.setAttribute('data-theme','light')"
+  },
+  {
+   "sel": "details.qa:nth-of-type(27)",
+   "file": "cy_q27.png",
+   "dy": -12,
+   "expr": "document.documentElement.setAttribute('data-theme','light')"
+  }
+ ]
+}

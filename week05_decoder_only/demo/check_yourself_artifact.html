@@ -1,0 +1,1190 @@
+<title>Check Yourself</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --ground:        #f7f6f2;
+  --panel:         #fdfdfc;
+  --panel-sunk:    #f1efe9;
+  --ink:           #14161a;
+  --ink-2:         #55595f;
+  --ink-3:         #8b8e92;
+  --rule:          #dcdad3;
+  --rule-strong:   #bab7ad;
+  --cls-0: #2a78d6; --cls-1: #eb6834; --cls-2: #1baf7a; --cls-3: #4a3aa7;
+  --good:  #0ca30c; --bad: #d03b3b;
+  --seq-1: #5598e7; --seq-2: #3987e5; --seq-3: #2a78d6; --seq-4: #256abf; --seq-5: #104281;
+  --shadow: 0 1px 2px rgba(20,22,26,.05), 0 8px 24px -16px rgba(20,22,26,.28);
+
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground:      #131413;
+    --panel:       #1b1c1b;
+    --panel-sunk:  #232422;
+    --ink:         #f0efe9;
+    --ink-2:       #a8a79f;
+    --ink-3:       #7b7a73;
+    --rule:        #31322e;
+    --rule-strong: #4c4d47;
+    --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+    --good: #0ca30c; --bad: #d03b3b;
+    --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground:      #131413;
+  --panel:       #1b1c1b;
+  --panel-sunk:  #232422;
+  --ink:         #f0efe9;
+  --ink-2:       #a8a79f;
+  --ink-3:       #7b7a73;
+  --rule:        #31322e;
+  --rule-strong: #4c4d47;
+  --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+  --good: #0ca30c; --bad: #d03b3b;
+  --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 20.1px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+
+/* ---------------------------------------------------------------- shell */
+.shell { display: grid; grid-template-columns: 278px minmax(0, 1fr); gap: 0; }
+.rail {
+  position: sticky; top: 0; align-self: start; height: 100vh;
+  border-right: 1px solid var(--rule);
+  padding: 26px 18px 18px 26px;
+  display: flex; flex-direction: column; gap: 18px;
+  overflow-y: auto;
+}
+.rail-mark {
+  font-family: var(--mono); font-size: 14px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.rail-eq { font-family: var(--display); font-size: 17.7px; font-weight: 700; line-height: 1.3; }
+.rail nav { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
+.rail nav a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: baseline;
+  padding: 4px 6px 4px 0; text-decoration: none; color: var(--ink-2);
+  font-family: var(--display); font-size: 16.4px; line-height: 1.32;
+  border-radius: 3px;
+}
+.rail nav a span:first-child {
+  font-family: var(--mono); font-size: 13.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.rail nav a:hover { color: var(--ink); background: var(--panel-sunk); }
+.rail nav a.on { color: var(--ink); font-weight: 700; }
+.rail nav a.on span:first-child { color: var(--ink); }
+.rail-foot { margin-top: auto; font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.6; }
+.rail-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+main { padding: 0 0 140px; min-width: 0; }
+.wrap { max-width: 1160px; padding: 0 48px; margin: 0 auto; }
+section { padding: 64px 0 8px; scroll-margin-top: 20px; }
+.prose { max-width: none; }
+.prose p { margin: 0 0 1.05em; }
+.prose p + p { margin-top: -.15em; }
+
+/* --------------------------------------------------------------- type */
+h1 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(41px, 6.04vw, 72.9px); line-height: .98; letter-spacing: -.025em;
+  margin: 0 0 22px; text-wrap: balance;
+}
+h2 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(27.5px, 3.19vw, 37.8px); line-height: 1.08; letter-spacing: -.018em;
+  margin: 0 0 14px; text-wrap: balance;
+}
+h3 {
+  font-family: var(--display); font-weight: 700; font-size: 20.6px;
+  letter-spacing: -.008em; margin: 34px 0 10px;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 14px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px;
+}
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.lede { font-size: 23.5px; line-height: 1.52; color: var(--ink-2); max-width: none; }
+.prose strong { font-weight: 600; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.prose code { background: var(--panel-sunk); padding: .1em .34em; border-radius: 3px; }
+a { color: inherit; text-underline-offset: 2px; text-decoration-color: var(--rule-strong); }
+
+/* -------------------------------------------------------------- panels */
+.panel {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 4px; box-shadow: var(--shadow);
+  margin: 22px 0 26px; overflow: hidden;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 11px 16px; border-bottom: 1px solid var(--rule);
+  background: var(--panel-sunk);
+  font-family: var(--mono); font-size: 14px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-2); flex-wrap: wrap;
+}
+.panel-body { padding: 18px 16px; }
+.panel-body.tight { padding: 12px 16px; }
+.panel-note {
+  padding: 12px 16px; border-top: 1px solid var(--rule); background: var(--panel-sunk);
+  font-size: 17.7px; color: var(--ink-2); line-height: 1.55;
+}
+.scroll-x { overflow-x: auto; }
+
+/* ------------------------------------------------------------- controls */
+button, .btn {
+  font-family: var(--display); font-size: 16.4px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px;
+  padding: 6px 12px; cursor: pointer; line-height: 1.35;
+  transition: background .12s ease, border-color .12s ease;
+}
+button:hover { background: var(--panel-sunk); border-color: var(--ink-3); }
+button[disabled] { opacity: .42; cursor: not-allowed; }
+button.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+button.primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
+button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.btnrow { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+input[type="text"], textarea, select {
+  font-family: var(--mono); font-size: 16.4px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px; padding: 8px 10px;
+  width: 100%;
+}
+input[type="range"] { accent-color: var(--ink); width: 100%; }
+label.field { display: block; font-family: var(--mono); font-size: 14px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+
+/* ---------------------------------------------------------------- data */
+table { border-collapse: collapse; width: 100%; font-size: 16.4px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--mono); font-size: 15.4px; }
+th.data-th { text-transform: none; letter-spacing: 0; font-size: 14.5px; color: var(--ink-2); }
+tr:last-child td { border-bottom: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 14.5px; letter-spacing: .02em;
+  padding: 2px 8px; border-radius: 2px; border: 1px solid var(--rule-strong);
+  white-space: nowrap;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.c0 { background: var(--cls-0); } .c1 { background: var(--cls-1); }
+.c2 { background: var(--cls-2); } .c3 { background: var(--cls-3); }
+.t0 { color: var(--cls-0); } .t1 { color: var(--cls-1); }
+.t2 { color: var(--cls-2); } .t3 { color: var(--cls-3); }
+
+.stat-row { display: flex; gap: 34px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .v { font-family: var(--display); font-weight: 700; font-size: 32.5px;
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); }
+
+.reveal-wrap { position: relative; }
+.veil {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 26px 16px; background: var(--panel-sunk);
+  border: 1px dashed var(--rule-strong); border-radius: 3px;
+  font-family: var(--mono); font-size: 15.4px; color: var(--ink-2);
+  text-align: center; flex-wrap: wrap;
+}
+[hidden] { display: none !important; }
+
+.tok {
+  display: inline-block; font-family: var(--mono); font-size: 15.4px;
+  padding: 1px 6px; margin: 2px 3px 2px 0; border-radius: 2px;
+  background: var(--panel-sunk); border: 1px solid var(--rule);
+}
+.tok.diff { border-color: var(--ink-3); background: var(--panel); font-weight: 500; }
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+
+svg { display: block; max-width: 100%; }
+svg text { font-family: var(--mono); fill: var(--ink-2); }
+.axis line, .axis path { stroke: var(--rule); }
+.gridline { stroke: var(--rule); stroke-dasharray: 2 3; }
+
+.tooltip {
+  position: fixed; pointer-events: none; z-index: 50; opacity: 0;
+  background: var(--panel); border: 1px solid var(--rule-strong);
+  border-radius: 3px; box-shadow: var(--shadow); padding: 7px 10px;
+  font-family: var(--mono); font-size: 14.5px; line-height: 1.5; color: var(--ink);
+  transition: opacity .1s ease; max-width: 280px;
+}
+
+.footnote { font-size: 17.2px; color: var(--ink-2); max-width: none; }
+
+/* library pointers: a quiet line of names, with the actual call one click away */
+.codenote { margin: 16px 0 0; border-top: 1px solid var(--rule); padding-top: 9px; }
+.codenote > summary {
+  cursor: pointer; list-style: none; display: flex; gap: 9px;
+  align-items: baseline; flex-wrap: wrap; padding: 2px 0;
+}
+.codenote > summary::-webkit-details-marker { display: none; }
+.codenote > summary::before {
+  content: "+"; font-family: var(--mono); font-size: 15px; color: var(--ink-3);
+  width: 9px; flex: none;
+}
+.codenote[open] > summary::before { content: "−"; }
+.codenote > summary:hover .libs, .codenote[open] > summary .libs { color: var(--ink); }
+.codenote .k {
+  font-family: var(--mono); font-size: 13px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3); flex: none;
+}
+.codenote .libs {
+  font-family: var(--mono); font-size: 15px; line-height: 1.55; color: var(--ink-2);
+  transition: color .12s ease;
+}
+.codenote pre {
+  margin: 11px 0 0; padding: 13px 15px; background: var(--panel-sunk);
+  border-radius: 3px; font-family: var(--mono); font-size: 15.4px; line-height: 1.8;
+  white-space: pre-wrap; word-break: break-word; color: var(--ink);
+}
+.codenote .why { font-size: 16.4px; color: var(--ink-2); line-height: 1.55; margin-top: 10px; }
+.codenote .why code { font-family: var(--mono); font-size: 15.4px; }
+.kbd {
+  font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; color: var(--ink-2);
+}
+
+/* ------------------------------------------------------- week 2 additions */
+.michael { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); }
+.michael figcaption { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-top: 8px; line-height: 1.5; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+
+/* a bet: pick one option, then reveal */
+.bet { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 12px; }
+.bet .q { font-family: var(--body); font-size: 17.5px; font-weight: 600; color: var(--ink); flex-basis: 100%; line-height: 1.4; }
+.bet button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.bet button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.bet button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.bet .verdict { font-family: var(--mono); font-size: 15px; margin-left: 6px; }
+.bet .verdict.ok { color: var(--good); } .bet .verdict.no { color: var(--bad); }
+
+/* generated text */
+.gen { font-size: 19.5px; line-height: 1.75; margin: 0 0 12px; }
+.gen .t { padding: 1px 1px; border-radius: 2px; white-space: pre-wrap; }
+.gen .copied { background: color-mix(in srgb, var(--cls-1) 22%, transparent); border-bottom: 2px solid var(--cls-1); }
+.gen .dead { color: var(--bad); font-family: var(--mono); }
+.gen .prompt { color: var(--ink-3); }
+.gen-list { display: flex; flex-direction: column; gap: 10px; }
+.gen-list .gen { padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; margin: 0; }
+
+.merge-row { display: grid; grid-template-columns: 54px 1fr 110px; gap: 10px; font-family: var(--mono); font-size: 15px; padding: 3px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.merge-row .n { color: var(--ink-3); } .merge-row .c { text-align: right; color: var(--ink-2); }
+.merge-row .p { display: flex; gap: 6px; align-items: center; }
+.merge-row .p .tok { margin: 0; }
+.merge-row .tok.new { border-color: var(--ink); font-weight: 600; }
+.eow { color: var(--cls-1); }
+
+.pbar { display: grid; grid-template-columns: 150px 1fr 64px; gap: 10px; align-items: center; font-family: var(--mono); font-size: 14.5px; padding: 2px 0; }
+.pbar .lab { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pbar .bar { height: 14px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pbar .bar i { display: block; height: 100%; background: var(--cls-0); }
+.pbar.cut .bar i { background: var(--rule-strong); } .pbar.cut .lab { color: var(--ink-3); }
+.pbar .v { color: var(--ink-2); }
+
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 18px; margin: 12px 0; }
+.sliders label.field { display: flex; justify-content: space-between; }
+.sliders label.field b { color: var(--ink); font-weight: 500; }
+.sliders .off { opacity: .4; }
+
+.tr-row { display: grid; grid-template-columns: 64px 1fr; gap: 8px 14px; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 18.5px; line-height: 1.5; }
+.tr-row .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.tr-row .bleu { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-left: 8px; }
+.tr-row:last-child { border-bottom: none; }
+.nowrap { white-space: nowrap; }
+.busy { opacity: .55; pointer-events: none; }
+
+/* formulas: native MathML, kept outside .prose so they survive presentation mode */
+math { font-family: "STIX Two Math", "Latin Modern Math", "Cambria Math", "Times New Roman", serif; }
+.prose math { font-size: 1.05em; }
+.formula {
+  margin: 12px 0 22px; padding: 14px 20px 12px; background: var(--panel-sunk);
+  border-left: 3px solid var(--rule-strong); border-radius: 3px; overflow-x: auto;
+}
+.formula .fn {
+  display: block; font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px;
+}
+.formula math { font-size: 1.25em; margin: 6px 0; }
+.formula math + math { margin-top: 10px; }
+.formula mtext { font-family: var(--body); font-size: .82em; color: var(--ink-2); }
+body.present .formula { margin-top: 10px; }
+
+/* the one-screen recipe */
+.recipe { padding: 4px 16px 6px; }
+.recipe .step { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--rule); }
+.recipe .step:first-child { border-top: none; }
+.recipe .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.recipe .k b { display: block; font-family: var(--display); font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1; margin-bottom: 4px; }
+.recipe pre { margin: 0; font-family: var(--mono); font-size: 14.5px; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--ink); }
+.recipe .c { color: var(--ink-3); }
+
+/* --------------------------------------------------- presentation mode */
+body.present .prose:not(.keep) { display: none; }
+body.present .footnote { display: none; }
+body.present section { min-height: 100vh; padding-top: 40px; }
+body.present .panel { margin-top: 14px; }
+body.present .lede { display: none; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; border-right: none;
+    border-bottom: 1px solid var(--rule); padding: 18px 20px; }
+  .rail nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .wrap { padding: 0 20px; }
+  body { font-size: 18.6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+/* ------------------------------------------------------- week 3 additions */
+/* code next to the formula it implements: hover a line, the term lights up (and back) */
+.two { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .two { grid-template-columns: 1fr; } }
+/* wide code: the formulas go below it, as a row of cards */
+.two.stacked { grid-template-columns: 1fr; }
+.two.stacked .fstack { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 6px 22px; }
+.two.stacked .fstack .row { border-top: none; border-left: 2px solid var(--rule); padding: 4px 0 4px 12px; grid-template-columns: 1fr; gap: 2px; }
+.two.stacked .fstack .row .n { white-space: nowrap; }
+.hm svg rect.flat { stroke: none; }
+#masks-out > div { display: flex; flex-direction: column; justify-content: flex-end; }
+#masks-out .hm-title { min-height: 2.8em; }
+.temp-table td:first-child { white-space: nowrap; }
+pre.code { margin: 0; padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; white-space: normal; overflow-x: auto; color: var(--ink); counter-reset: ln; }
+pre.code .ln { display: block; white-space: pre; min-height: 1.5em; padding: 0 8px 0 40px; margin: 0 -8px; position: relative; border-radius: 2px; transition: background .12s ease; }
+pre.code .ln::before { counter-increment: ln; content: counter(ln); position: absolute; left: 8px; width: 24px; text-align: right; color: var(--ink-3); font-size: 12.5px; top: 1px; }
+pre.code .ln[data-f] { cursor: default; }
+pre.code .ln.hi, .fstack .fx.hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .c { color: var(--ink-3); }
+pre.code .kw { color: var(--cls-3); }
+.fstack .fx { padding: 2px 6px; border-radius: 3px; transition: background .12s ease; }
+.fstack .fx[data-f] { cursor: default; }
+.fstack .fx.dim { opacity: .35; }
+.fstack .row { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--rule); }
+.fstack .row:first-child { border-top: none; }
+.fstack .row .n { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .08em; }
+.fstack .row .say { font-size: 16.4px; color: var(--ink-2); line-height: 1.5; margin-top: 2px; }
+.fstack math { font-size: 1.1em; }
+.fstack .row > div { min-width: 0; overflow-x: auto; }
+.two:not(.stacked) .fstack math { font-size: 1em; }
+.two:not(.stacked) .fstack math[display="block"] { display: inline-block; margin: 2px 0; }
+.fstack .fx.hi math { color: var(--ink); }
+
+/* a redrawn schematic and its credit line */
+.fig { margin: 8px 0 0; }
+.figcap { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.5; margin: 8px 0 2px; }
+.figcap a { color: var(--ink-2); }
+
+/* attention heatmaps */
+.hm-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.hm-title { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.hm svg rect.cell { stroke: var(--panel); stroke-width: .6; }
+.hm svg rect.cell:hover { stroke: var(--ink); stroke-width: 1.5; }
+.headgrid { display: grid; grid-template-columns: 40px repeat(8, minmax(0, 1fr)); gap: 4px; align-items: center; }
+.headgrid .lab { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); text-align: center; }
+.headgrid svg { cursor: pointer; border: 1px solid var(--rule); border-radius: 2px; background: var(--panel); }
+.headgrid svg.on { outline: 2px solid var(--cls-1); }
+
+/* the score table */
+.scores td math { font-size: 1.1em; }
+.scores td:first-child { font-weight: 600; font-family: var(--display); }
+
+/* live text-in → text-out panels */
+.io { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.io .out { font-family: var(--mono); font-size: 22px; letter-spacing: .04em; padding: 8px 12px; background: var(--panel-sunk); border-radius: 3px; min-height: 46px; }
+.io .out.ok { border-left: 3px solid var(--good); } .io .out.no { border-left: 3px solid var(--bad); }
+.small-note { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); margin-top: 6px; }
+.toggle { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 3px; overflow: hidden; }
+.toggle button { border: none; border-radius: 0; }
+.toggle button.sel { background: var(--ink); color: var(--ground); }
+.ck { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.ck b { color: var(--good); font-weight: 500; } .ck b.no { color: var(--bad); }
+.results th.data-th, .results td { font-size: 15.4px; }
+.results tr.hl td { background: color-mix(in srgb, var(--cls-0) 10%, transparent); }
+
+/* ------------------------------------------------------- week 4 additions */
+/* token strips: WordPiece pieces, with the continuation marker and special tokens coloured */
+.pieces { display: flex; flex-wrap: wrap; gap: 4px 3px; align-items: center; line-height: 1.3; }
+.pieces .tok { margin: 0; }
+.pieces .tok.cont { border-color: color-mix(in srgb, var(--cls-1) 60%, var(--rule)); background: color-mix(in srgb, var(--cls-1) 10%, var(--panel)); }
+.pieces .tok.sp { border-color: var(--ink-3); color: var(--ink-2); font-weight: 600; }
+.pieces .tok.unk { border-color: var(--bad); color: var(--bad); font-weight: 600; }
+.pieces .tok.eow { color: var(--cls-1); }
+.pieces .tok.seg1 { background: color-mix(in srgb, var(--cls-2) 12%, var(--panel)); }
+.pieces .tok.mk { background: color-mix(in srgb, var(--cls-3) 22%, var(--panel)); border-color: var(--cls-3); }
+.pieces .tok.rnd { background: color-mix(in srgb, var(--cls-1) 22%, var(--panel)); border-color: var(--cls-1); }
+.pieces .tok.keep { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.pieces .tok.ans { background: color-mix(in srgb, var(--good) 22%, var(--panel)); border-color: var(--good); font-weight: 600; }
+.pieces .tok.ent { font-weight: 600; }
+.pieces .tok.dim { opacity: .45; }
+.pieces .tok.word { border-style: dashed; }
+.pieces .gap { flex-basis: 100%; height: 0; }
+.pieces .lab { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin-right: 6px; letter-spacing: .06em; text-transform: uppercase; }
+/* the merge stepper */
+.merge-row.wp { grid-template-columns: 54px 1fr 190px; }
+.merge-row .c small { color: var(--ink-3); }
+.merge-list { max-height: 330px; overflow-y: auto; }
+.merge-row.now { background: color-mix(in srgb, var(--cls-1) 12%, transparent); }
+/* the two encoders side by side */
+.enc-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.enc-row .k { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.enc-row:last-child { border-bottom: none; }
+.enc-row.diff .k { color: var(--cls-1); }
+/* segmentation lattice rows */
+.seg-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.seg-row .p { font-family: var(--mono); font-size: 14.5px; text-align: right; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.seg-row.best .p { color: var(--ink); font-weight: 600; }
+.seg-row:last-child { border-bottom: none; }
+/* a small legend line */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin: 8px 0 0; align-items: center; }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; border: 1px solid var(--rule-strong); }
+/* zero-shot label pickers */
+.zs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 14px; }
+.zs-grid label.field b { color: var(--ink); }
+.zs-grid select { width: 100%; }
+.conf { border-collapse: collapse; font-family: var(--mono); font-size: 14px; }
+.conf td, .conf th { padding: 4px 9px; text-align: right; border-bottom: none; }
+.conf th { font-size: 12.5px; }
+.conf td.hit { background: color-mix(in srgb, var(--good) 18%, transparent); }
+.conf td.miss { color: var(--ink-3); }
+/* the head figure toggle and the task tables */
+.task-table td:first-child { font-weight: 600; font-family: var(--display); white-space: nowrap; }
+.task-table td { vertical-align: top; font-size: 15.4px; }
+.task-table code { white-space: nowrap; }
+/* a load report */
+pre.report { margin: 0; font-family: var(--mono); font-size: 13.5px; line-height: 1.55; white-space: pre; overflow-x: auto; color: var(--ink-2); padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; }
+pre.report .miss { color: var(--bad); font-weight: 600; } pre.report .unex { color: var(--ink-3); }
+/* the dial */
+.dial { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .dial { grid-template-columns: 1fr; } }
+.dial .knob { display: flex; gap: 6px; flex-wrap: wrap; }
+.dial .knob button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the MLM variants, under a toggle */
+details.variants { margin: 12px 0 0; }
+details.variants > summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 18px; padding: 8px 0; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+details.variants > summary::-webkit-details-marker { display: none; }
+details.variants > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.variants[open] > summary::before { content: "−"; }
+.variant { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: center; padding: 14px 0; border-top: 1px solid var(--rule); }
+@media (max-width: 1000px) { .variant { grid-template-columns: 1fr; } }
+.variant .say { font-size: 17px; line-height: 1.55; color: var(--ink-2); }
+.variant .say b { color: var(--ink); }
+/* NER entity chips */
+.ent-line { font-size: 18.5px; line-height: 2.1; margin: 0 0 8px; }
+.ent { padding: 2px 6px; border-radius: 3px; border-bottom: 2px solid; white-space: nowrap; }
+.ent i { font-family: var(--mono); font-style: normal; font-size: 11.5px; letter-spacing: .06em; margin-left: 5px; opacity: .8; }
+.ent.PER { background: color-mix(in srgb, var(--cls-0) 16%, transparent); border-color: var(--cls-0); }
+.ent.ORG { background: color-mix(in srgb, var(--cls-1) 16%, transparent); border-color: var(--cls-1); }
+.ent.LOC { background: color-mix(in srgb, var(--cls-2) 16%, transparent); border-color: var(--cls-2); }
+.ent.MISC { background: color-mix(in srgb, var(--cls-3) 16%, transparent); border-color: var(--cls-3); }
+.ent.wrong { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* alignment table */
+.align { font-family: var(--mono); font-size: 14.5px; border-collapse: collapse; }
+.align td, .align th { padding: 3px 10px; }
+.align td.ign { color: var(--ink-3); }
+.align tr.cont td:first-child { color: var(--cls-1); }
+/* QA */
+.ctx { font-size: 18px; line-height: 1.7; }
+.ctx mark { background: color-mix(in srgb, var(--good) 28%, transparent); color: inherit; padding: 1px 2px; border-radius: 2px; }
+.ctx mark.gold { background: none; box-shadow: inset 0 -2px 0 var(--cls-0); }
+.ctx .q { color: var(--ink-3); }
+.window { border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; margin: 8px 0; }
+.window .wh { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+.window .wh b { color: var(--ink); font-weight: 500; }
+.qa-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px 14px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; align-items: baseline; }
+.qa-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: block; }
+.qa-row:last-child { border-bottom: none; }
+.qa-row .ok { color: var(--good); } .qa-row .no { color: var(--bad); }
+
+/* ------------------------------------------------ week 4, second pass (2026-09-30) */
+/* a schematic with states: the buttons switch what the same picture highlights */
+.fig-states { display: flex; gap: 6px; flex-wrap: wrap; }
+.fig-states button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the variants footnote: three small pictures, each with its paragraph */
+.variant .fig svg { max-width: 560px; }
+/* clickable tokens (the MLM picker): the chosen one is outlined */
+.pieces .tok.pick { cursor: pointer; }
+.pieces .tok.pick:hover { border-color: var(--ink); }
+.pieces .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* the scoreboard in the rail: rows light up as reveals happen */
+.score { margin-top: 12px; border-top: 1px solid var(--rule); padding-top: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+.score .row { display: grid; grid-template-columns: 1fr 52px; gap: 6px; padding: 2px 0; line-height: 1.35; align-items: baseline; }
+.score .row.off { opacity: .38; }
+.score .row.on { color: var(--ink); }
+.score .row.line { color: var(--bad); border-bottom: 1px dashed var(--bad); margin-bottom: 3px; }
+.score .row .v { text-align: right; font-variant-numeric: tabular-nums; }
+.score .row.pass .v { color: var(--good); font-weight: 600; }
+.score .t { letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+/* the results table sorters */
+.sorters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.sorters button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* a bare figure caption line under a schematic */
+.figline { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin: 6px 0 0; line-height: 1.5; }
+/* two-column figure + code */
+.fig-code { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+/* the QA score rows: hover a token to read both scores */
+.qa-pick { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.qa-pick button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.qa-pick button.noans { border-style: dashed; }
+
+/* ------------------------------------------------------- week 5 additions */
+/* the two tables, growing: a row that has just been written */
+.results tr.new td, .costs tr.new td { animation: rowin .9s ease; }
+@keyframes rowin { from { background: color-mix(in srgb, var(--cls-1) 30%, transparent); } to { background: transparent; } }
+.costs td, .costs th { font-size: 14.5px; }
+.costs td.mono { font-size: 13.5px; }
+/* the logit-lens strip: one column per layer, five guesses each */
+.lens { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); gap: 4px; overflow-x: auto; }
+.lens .col { display: flex; flex-direction: column; gap: 2px; }
+.lens .col .h { font-family: var(--mono); font-size: 12px; color: var(--ink-3); text-align: center; letter-spacing: .06em; padding-bottom: 3px; border-bottom: 1px solid var(--rule); margin-bottom: 2px; }
+.lens .g { font-family: var(--mono); font-size: 13px; padding: 1px 5px; border-radius: 2px; white-space: pre; overflow: hidden; text-overflow: ellipsis; background: var(--panel-sunk); }
+.lens .g.gold { background: color-mix(in srgb, var(--good) 28%, transparent); font-weight: 600; }
+.lens .g.same { box-shadow: inset 0 0 0 1px var(--cls-1); }
+.lens .g i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+.tokrow { display: flex; flex-wrap: wrap; gap: 3px; margin: 8px 0; }
+.tokrow .tok { cursor: pointer; margin: 0; }
+.tokrow .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* attention: the heatmap and its controls */
+.att { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .att { grid-template-columns: 1fr; } }
+.att canvas { width: 100%; image-rendering: pixelated; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+.att .hm-box { position: relative; }
+.att .ax { font-family: var(--mono); font-size: 12px; color: var(--ink-3); display: flex; justify-content: space-between; }
+/* RoPE dials */
+.dials { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin: 8px 0 14px; }
+.clocks svg { max-width: 760px; }
+.rope-out { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rope-out .box { padding: 12px 14px; background: var(--panel-sunk); border-radius: 3px; }
+.rope-out .box .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.rope-out .box .v { font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; transition: color .15s; }
+.rope-out .box.moved .v { color: var(--bad); } .rope-out .box.still .v { color: var(--good); }
+/* the KV stepper */
+.stepper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.stepper .cnt { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.stepper .cnt b { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* the verbalizer builder */
+.vb { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; }
+@media (max-width: 900px) { .vb { grid-template-columns: repeat(2, 1fr); } }
+.vb .cls { border-top: 3px solid; padding-top: 6px; }
+.vb .cls.c0 { border-color: var(--cls-0); background: none; } .vb .cls.c1 { border-color: var(--cls-1); background: none; }
+.vb .cls.c2 { border-color: var(--cls-2); background: none; } .vb .cls.c3 { border-color: var(--cls-3); background: none; }
+.vb .cls .h { font-family: var(--display); font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.vb .words { display: flex; flex-wrap: wrap; gap: 4px; }
+.vb .words button { font-family: var(--mono); font-size: 13px; padding: 2px 7px; }
+.vb .words button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.vb .words button i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 3px; }
+.vb .words button.on i { color: var(--ground); opacity: .7; }
+.vb-acc { display: flex; gap: 30px; align-items: baseline; flex-wrap: wrap; margin-top: 12px; }
+/* the design card as a form */
+.card { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px 16px; align-items: center; }
+.card .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.card select, .card input { width: auto; min-width: 200px; }
+.card .row-btns button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.card-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.card-tabs button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.est { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+.est .stat .v { font-size: 26px; }
+/* label-it-yourself over words */
+.words-pick { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: flex-end; }
+.words-pick .w { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.words-pick .w .s { font-family: var(--mono); font-size: 14px; }
+.words-pick .w select { font-size: 12.5px; padding: 2px 4px; width: auto; }
+.words-pick .w.hit select { border-color: var(--good); } .words-pick .w.miss select { border-color: var(--bad); }
+.words-pick .w .g { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+.words-pick .w.unx .s { text-decoration: underline dotted var(--bad); }
+/* unexpressible words in a typed sentence */
+.wl { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.wl .tok.unx { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+.wl .tok i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+/* per-row bets over a table */
+table.rowbet td.b { white-space: nowrap; }
+table.rowbet td.b button { font-size: 13px; padding: 2px 8px; }
+table.rowbet td.b button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.rowbet td.b button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.rowbet td.b button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.rowbet td.zero { color: var(--bad); font-weight: 600; }
+/* horizontal bar pairs for the breakdowns */
+.pair { display: grid; grid-template-columns: 90px 1fr 1fr 150px; gap: 8px; align-items: center; font-family: var(--mono); font-size: 13.5px; padding: 2px 0; }
+.pair .lab { text-align: right; color: var(--ink-2); }
+.pair .bar { height: 12px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pair .bar i { display: block; height: 100%; }
+.pair .bar.e i { background: var(--cls-0); } .pair .bar.d i { background: var(--cls-1); }
+.pair .n { color: var(--ink-3); }
+.pair.hl .lab { color: var(--bad); font-weight: 600; }
+/* generated text against gold: dropped words */
+.diffline { font-size: 17px; line-height: 1.8; }
+.diffline .drop { color: var(--bad); text-decoration: line-through; }
+.diffline .chg { background: color-mix(in srgb, var(--cls-1) 24%, transparent); border-radius: 2px; }
+/* NER writer */
+.ner-write textarea { min-height: 64px; }
+.ner-parse { margin-top: 8px; }
+.ent.inv { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* QA */
+.ctx mark.pred { background: color-mix(in srgb, var(--good) 28%, transparent); }
+.ctx .nosub { color: var(--bad); font-weight: 600; }
+.order-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; }
+.order-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.order-row:last-child { border-bottom: none; }
+/* lightning round */
+.lr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.lr:last-child { border-bottom: none; }
+.lr .pick { display: flex; gap: 4px; flex-wrap: wrap; }
+.lr .pick button { font-family: var(--mono); font-size: 13px; padding: 2px 8px; }
+.lr .pick button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.lr .pick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.lr .pick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.lr .ans { grid-column: 1 / -1; font-size: 16px; color: var(--ink-2); line-height: 1.5; }
+/* the course table */
+.course td:first-child { font-family: var(--mono); }
+.course tr.now td { background: color-mix(in srgb, var(--cls-1) 10%, transparent); font-weight: 600; }
+.big-num { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: -.03em; line-height: 1; }
+</style>
+
+<style>
+/* check-yourself page: one question per <details>, the answer under the toggle */
+.qa { border-top: 1px solid var(--rule); padding: 0; margin: 0; }
+.qa:last-of-type { border-bottom: 1px solid var(--rule); }
+.qa > summary {
+  list-style: none; cursor: pointer; display: grid; grid-template-columns: 44px 1fr 28px;
+  gap: 12px; align-items: baseline; padding: 15px 4px 15px 0;
+  font-family: var(--display); font-size: 21.5px; font-weight: 600; line-height: 1.32; color: var(--ink);
+}
+.qa > summary::-webkit-details-marker { display: none; }
+.qa > summary .n { font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.qa > summary .m { font-family: var(--mono); font-size: 18px; color: var(--ink-3); text-align: right; }
+.qa[open] > summary .m::before { content: "−"; }
+.qa:not([open]) > summary .m::before { content: "+"; }
+.qa > summary:hover { background: var(--panel-sunk); }
+.qa > summary code { font-size: .82em; font-weight: 500; background: var(--panel-sunk); padding: .05em .3em; border-radius: 3px; }
+.qa .a { padding: 2px 0 22px 56px; font-size: 19px; line-height: 1.65; color: var(--ink); }
+.qa .a p { margin: 0 0 .8em; }
+.qa .a p:last-child { margin-bottom: 0; }
+.qa .a code { background: var(--panel-sunk); padding: .08em .32em; border-radius: 3px; font-size: .86em; }
+.qa .a .miss { display: block; margin-top: .55em; color: var(--ink-2); font-size: 17.2px; line-height: 1.55; }
+.qa .a .miss b { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--ink-3); margin-right: 8px; }
+.qa .fig { margin: 12px 0 14px; padding: 12px 14px 8px; background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; }
+.qa .fig svg { width: 100%; max-width: 640px; height: auto; display: block; }
+.qa .fig .figcap { margin-top: 6px; }
+.masks { display: grid; grid-template-columns: repeat(auto-fit, 250px); gap: 22px 34px; }
+.masks svg { max-width: 250px; }
+.masks .mt { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.toks { display: flex; flex-wrap: wrap; align-items: center; gap: 0; margin: 4px 0 6px; }
+.toks .tok { margin: 2px 4px 2px 0; }
+.toks .tok.pad { color: var(--ink-3); border-style: dashed; background: transparent; }
+.toks .tok.last { border-color: var(--cls-1); box-shadow: inset 0 0 0 1px var(--cls-1); }
+.toks .lab { font-family: var(--mono); font-size: 13px; color: var(--ink-3); width: 128px; flex: none; letter-spacing: .06em; text-transform: uppercase; }
+.toks .arrow { font-family: var(--mono); font-size: 14px; color: var(--cls-1); margin-left: 8px; }
+.toks .tok.dim { color: var(--ink-3); }
+.toks .tok.ign { color: var(--ink-3); border-style: dashed; background: transparent; }
+table.pieces td, table.pieces th { padding: 5px 12px; }
+table.pieces td.mono { font-size: 15.5px; }
+.rail .cy-count { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); margin-top: 8px; }
+.rail a.back { display: inline-block; margin-top: 8px; font-family: var(--display); font-size: 16px; color: var(--ink-2); }
+.intro { margin-bottom: 26px; }
+@media (max-width: 760px) {
+  .qa > summary { grid-template-columns: 34px 1fr 22px; font-size: 19px; }
+  .qa .a { padding-left: 0; }
+}
+</style>
+
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 5<br>Check yourself</div>
+  </div>
+  <div class="rail-btns">
+    <button id="btn-open-all" title="Open every answer">Open all</button>
+    <button id="btn-close-all" title="Close every answer">Close all</button>
+    <button id="btn-theme" title="Light / dark">Theme</button>
+  </div>
+  <div class="cy-count" id="cy-count"></div>
+  <div class="rail-foot">
+    <a class="back" href="week05_demo.html">← back to the seminar</a>
+    <div style="margin-top:10px">Questions from seminars 3–5, in no particular order — the order would be a hint. Answer first, then open.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<section id="hero" style="padding-top:56px">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>Check yourself</h1>
+  <p class="lede">Attention, the encoder, the decoder — and the parts of the code that nobody puts in the paper: padding, masks, collators, the cache. Every question has an answer that fits in a few sentences. If yours doesn't, that is the thing to reread.</p>
+</section>
+
+<section id="qs" style="padding-top:8px">
+
+<!-- 1 -->
+<details class="qa"><summary><span class="n">01</span><span>Take a decoder block and remove cross-attention. What is the one remaining difference from an encoder block?</span><span class="m"></span></summary>
+<div class="a">
+<p>The mask. Same embeddings, same self-attention, same FFN, same residuals and LayerNorms; the encoder lets every position read every other, the decoder blanks out everything to the right of the query. That is the whole of "encoder vs decoder" at the level of the block.</p>
+<div class="fig"><div class="masks"><div><div class="mt">encoder · all-to-all</div><div data-mask="full"></div></div><div><div class="mt">decoder · causal</div><div data-mask="causal"></div></div></div><div class="figcap">Rows are queries, columns are keys. Filled cells are the pairs the softmax is allowed to see.</div></div>
+<span class="miss"><b>if the answer is</b>"BERT classifies, GPT generates" — that is what they are used for, not what they are. The uses follow from the mask, not the other way round.</span>
+</div></details>
+
+<!-- 2 -->
+<details class="qa"><summary><span class="n">02</span><span>Why does the KV cache exist at all? What guarantees that the keys and values of earlier positions do not change when a new token is appended?</span><span class="m"></span></summary>
+<div class="a">
+<p>The causal mask. Position <code>i</code> only ever attends to positions <code>≤ i</code>, so nothing appended on its right can reach it in any layer; its hidden state, and therefore its <code>K</code> and <code>V</code> in every layer, are identical at step <code>t</code> and step <code>t+1</code>. Recomputing them is pure waste, so the model stores them and adds one row per new token.</p>
+<p>The same argument says why an encoder <em>cannot</em> have such a cache: appending a token changes every position's state, because every position reads it.</p>
+</div></details>
+
+<!-- 3 -->
+<details class="qa"><summary><span class="n">03</span><span>A batch holds sentences of different lengths. What does padding physically do, and why is the <code>[PAD]</code> token by itself not enough?</span><span class="m"></span></summary>
+<div class="a">
+<p>Padding makes the batch a rectangle: every sequence is extended to the same length so it can be one tensor. On its own that is only a shape fix — the model still sees <code>[PAD]</code> as a token: other positions attend to it, its vector enters a mean pool, its position gets a label and a loss.</p>
+<p>The <code>attention_mask</code> is the second half: it sets the padded keys to −∞ before the softmax, so no real token can read them. Then, separately, the loss must be told to skip those positions (<code>−100</code> in the labels) and any pooling must divide by the real length, not the padded one.</p>
+<span class="miss"><b>watch for</b>"the tokenizer handles it" — the tokenizer returns the mask; whether it is passed to the model and the pooling is your code.</span>
+</div></details>
+
+<!-- 4 -->
+<details class="qa"><summary><span class="n">04</span><span>Attention mask and causal mask — the same thing? How do the two combine inside a decoder?</span><span class="m"></span></summary>
+<div class="a">
+<p>Two different masks with two different jobs. The causal mask is the same for every sequence: a lower triangle that hides the future. The attention (padding) mask comes with the batch: it hides the positions that are not real tokens. In a decoder they are combined with a logical AND — a key is visible only if it is in the past <em>and</em> real.</p>
+<div class="fig"><div class="masks"><div><div class="mt">causal</div><div data-mask="causal"></div></div><div><div class="mt">∧ padding (last 2 are pad)</div><div data-mask="causal-pad"></div></div></div><div class="figcap">Hatched: padded keys. Padded <em>queries</em> still produce a row — those rows are garbage, and the loss must ignore them.</div></div>
+</div></details>
+
+<!-- 5 -->
+<details class="qa"><summary><span class="n">05</span><span>Pad on the left or on the right? For BERT and for GPT the answer is different. Why?</span><span class="m"></span></summary>
+<div class="a">
+<p>For an encoder with a padding mask it does not matter: every real token sees every other real token either way, and pooling is over the mask. For generation it matters, because the next token is read from the <em>last position</em> of the batch tensor — <code>logits[:, -1]</code>. Right-pad, and that position is a <code>[PAD]</code> for every sequence shorter than the longest; the model predicts what follows a pad. Left-pad, and the last position is the last real token of every sequence.</p>
+<div class="fig">
+<div class="toks"><span class="lab">right pad</span><span class="tok">The</span><span class="tok">cat</span><span class="tok">sat</span><span class="tok pad">PAD</span><span class="tok pad last">PAD</span><span class="arrow">← logits[:, −1] reads a pad</span></div>
+<div class="toks"><span class="lab">left pad</span><span class="tok pad">PAD</span><span class="tok pad">PAD</span><span class="tok">The</span><span class="tok">cat</span><span class="tok last">sat</span><span class="arrow">← the real last token</span></div>
+<div class="figcap">Batched generation needs left padding; HF warns about it exactly because the default for most tokenizers is right.</div></div>
+</div></details>
+
+<!-- 6 -->
+<details class="qa"><summary><span class="n">06</span><span>What does a transformer layer spend its parameters on — attention or the FFN? And what does each of the two sublayers do?</span><span class="m"></span></summary>
+<div class="a">
+<p>The FFN, by about two to one: attention has four <code>d×d</code> matrices (<code>Q, K, V, O</code>), the FFN has <code>d×4d</code> and <code>4d×d</code>, so 4<code>d²</code> against 8<code>d²</code>. They do different jobs. Attention is the only sublayer that moves information <em>between</em> positions; the FFN is applied to each position independently and processes what attention gathered. Most of what looks like stored knowledge — "Paris is the capital of" → "France" — is recoverable from FFN weights, which is why the FFN is where model editing and most of the parameter count live.</p>
+<span class="miss"><b>watch for</b>attributing everything to attention. Attention is the routing; the FFN is most of the compute.</span>
+</div></details>
+
+<!-- 7 -->
+<details class="qa"><summary><span class="n">07</span><span>Why are padded label positions set to <code>−100</code> and not to <code>0</code>?</span><span class="m"></span></summary>
+<div class="a">
+<p>Because <code>0</code> is a real class. In token classification it is usually <code>O</code>; in language modelling it is a real vocabulary id. The loss would learn to predict that class on every pad and the metric would count them as correct. <code>−100</code> is PyTorch's default <code>ignore_index</code> in <code>CrossEntropyLoss</code>: those positions contribute neither to the loss nor to its normalisation. The whole HF ecosystem uses the same number for exactly that reason, so the collators, the models and the metrics agree without configuration.</p>
+</div></details>
+
+<!-- 8 -->
+<details class="qa"><summary><span class="n">08</span><span>Why can BERT not generate text, even though it predicts a word at every <code>[MASK]</code>?</span><span class="m"></span></summary>
+<div class="a">
+<p>Because what it models is <code>p(x_i | everything else)</code>, with the right context given. Generation needs <code>p(x_t | x_&lt;t)</code> — a distribution over the next token when the future is <em>not</em> known — and the chain of those is a factorisation of the joint <code>p(x)</code>. Bidirectional conditionals do not chain into a joint; you can iteratively mask and fill, but the result is not a sample from any consistent distribution, and the model was never trained on inputs that are half missing.</p>
+<span class="miss"><b>watch for</b>"it just wasn't trained for that". The obstacle is the conditioning, not the data.</span>
+</div></details>
+
+<!-- 9 -->
+<details class="qa"><summary><span class="n">09</span><span>The one-token shift for a causal LM — who does it: the collator, the model, or you?</span><span class="m"></span></summary>
+<div class="a">
+<p>In <code>transformers</code>, the model. <code>GPT2LMHeadModel</code> (and every other <code>*ForCausalLM</code>) takes <code>labels</code> equal to <code>input_ids</code> and shifts internally: logits at position <code>t</code> are scored against the label at <code>t+1</code>. <code>DataCollatorForLanguageModeling(mlm=False)</code> therefore only copies <code>input_ids</code> into <code>labels</code> and replaces pads with <code>−100</code>. Shift once more yourself, and the model is trained to predict the token <em>after</em> the next one.</p>
+<div class="fig">
+<div class="toks"><span class="lab">input_ids</span><span class="tok">The</span><span class="tok">cat</span><span class="tok">sat</span><span class="tok">on</span><span class="tok">the</span><span class="tok">mat</span></div>
+<div class="toks"><span class="lab">labels</span><span class="tok">The</span><span class="tok">cat</span><span class="tok">sat</span><span class="tok">on</span><span class="tok">the</span><span class="tok">mat</span><span class="arrow">= input_ids, unshifted</span></div>
+<div class="toks"><span class="lab">scored as</span><span class="tok dim">cat</span><span class="tok dim">sat</span><span class="tok dim">on</span><span class="tok dim">the</span><span class="tok dim">mat</span><span class="tok ign">–</span><span class="arrow">the model shifts inside <code>forward</code></span></div>
+<div class="figcap">The last position has no target; the first target has no prediction. Both fall out of the internal shift.</div></div>
+</div></details>
+
+<!-- 10 -->
+<details class="qa"><summary><span class="n">10</span><span>Why does dividing the scores by <code>√d_k</code> matter — does the model break without it, or just train a little worse?</span><span class="m"></span></summary>
+<div class="a">
+<p>It can break. If the entries of <code>q</code> and <code>k</code> are of unit variance, their dot product has variance <code>d_k</code>; at <code>d_k = 64</code> the scores are spread eight times wider than the vectors. A softmax over scores in the tens is nearly one-hot, and the gradient of a saturated softmax is nearly zero — the attention weights stop learning. Dividing by <code>√d_k</code> puts the scores back at unit variance, so the softmax starts out soft. It is a temperature, chosen so that the initial temperature is 1.</p>
+<span class="miss"><b>watch for</b>"for normalisation" with nothing after it. Normalise <em>what</em>, and what goes wrong otherwise.</span>
+</div></details>
+
+<!-- 11 -->
+<details class="qa"><summary><span class="n">11</span><span>What does a collator do that <code>Dataset.__getitem__</code> does not — and why can padding not be done inside the dataset?</span><span class="m"></span></summary>
+<div class="a">
+<p>The dataset returns one example and knows nothing about the others. Padding is a property of the <em>batch</em>: the width is the longest sequence in it. The collator is the function that receives the list of examples and turns it into one set of tensors — pads to the batch maximum, builds the attention mask, pads the labels with <code>−100</code>, and for MLM does the masking. Padding inside the dataset means padding every example to the global maximum, which for AG News is several times the mean length — most of the arithmetic would be spent on pads.</p>
+</div></details>
+
+<!-- 12 -->
+<details class="qa"><summary><span class="n">12</span><span>The word <em>Zwingmann</em> becomes three WordPiece tokens. Which of them carries the NER tag, and how do you get back to words at inference time?</span><span class="m"></span></summary>
+<div class="a">
+<p>The first piece carries the word's tag; the continuations get <code>−100</code> and are skipped by the loss. At inference you read the prediction at the first piece of every word and ignore the rest; <code>tokenizer.word_ids()</code> gives the word index of every piece, in both directions. Copying the tag to every piece looks harmless and is not: to anything that reads BIO, <code>B-PER B-PER B-PER</code> is three persons in a row.</p>
+<div class="fig"><table class="pieces"><thead><tr><th>word</th><th>pieces</th><th>labels</th></tr></thead><tbody>
+<tr><td class="mono">Zwingmann</td><td class="mono">Z ##wing ##mann</td><td class="mono">B-PER &nbsp;−100 &nbsp;−100</td></tr>
+<tr><td class="mono">said</td><td class="mono">said</td><td class="mono">O</td></tr>
+<tr><td class="mono">[SEP]</td><td class="mono">[SEP]</td><td class="mono">−100</td></tr>
+</tbody></table></div>
+</div></details>
+
+<!-- 13 -->
+<details class="qa"><summary><span class="n">13</span><span>What is stored in the KV cache, what is not, and why?</span><span class="m"></span></summary>
+<div class="a">
+<p>Per layer, the key and value vectors of every past position: two tensors of shape <code>[layers, heads, T, d_head]</code>. Not the queries — a query is needed only once, at the position that asks, and never again. Not the hidden states either: the next layer's input at past positions is not needed, because past positions are never recomputed; only their <code>K</code> and <code>V</code> are read.</p>
+<p>The size is what makes it matter: for a 7B model at 4 096 tokens the cache is in the gigabytes, and a GPU serving many requests runs out of memory for caches long before it runs out of arithmetic.</p>
+<div class="fig"><div id="fig-kv"></div><div class="figcap">Step <em>t</em>: the new token computes its own Q, K, V; its K and V are appended; its Q reads all K and V rows in this layer. Rows 1…t−1 are read, never recomputed.</div></div>
+</div></details>
+
+<!-- 14 -->
+<details class="qa"><summary><span class="n">14</span><span>Remove the positional embeddings from an encoder. What differs between its output on "dog bites man" and on "man bites dog"?</span><span class="m"></span></summary>
+<div class="a">
+<p>Nothing except the order of the rows. Self-attention is a function of the <em>set</em> of input vectors: permute the inputs and the outputs are permuted the same way, with the same values. Without positions the encoder is a bag of words with context mixing, and no amount of training gives it word order, because word order is not in its input. That is the only reason positional information has to be added at all.</p>
+<span class="miss"><b>watch for</b>"it will pick up the order from context". There is no context that carries order.</span>
+</div></details>
+
+<!-- 15 -->
+<details class="qa"><summary><span class="n">15</span><span>GPT-2 has no pad token. You set <code>pad_token = eos_token</code>. Where does that bite?</span><span class="m"></span></summary>
+<div class="a">
+<p>Two places. In training, the collator replaces every <code>pad_token_id</code> in the labels with <code>−100</code> — including the real end-of-text token, so the model is never taught to stop; a common reason for fine-tunes that generate until <code>max_new_tokens</code>. Fix: mask the pads through the attention mask, not through the token id, or add a real pad token and resize the embeddings. At inference, with <code>generate</code>, the same token in the mask is fine as long as the attention mask is passed — the model never reads the pads.</p>
+</div></details>
+
+<!-- 16 -->
+<details class="qa"><summary><span class="n">16</span><span>Left padding and positions: what happens to <code>position_ids</code> if nobody shifts them?</span><span class="m"></span></summary>
+<div class="a">
+<p>The first real token gets position 5 instead of 0 (with five pads), and the whole sequence is offset. With learned absolute positions the model sees a sentence starting mid-way through its position table; the damage is small for short offsets and grows with them. <code>generate</code> handles it: it builds <code>position_ids</code> as the cumulative sum of the attention mask minus one, so pads do not count. A hand-written forward pass does not, unless you pass <code>position_ids</code> yourself. Models with rotary positions have the same issue: the rotation angle is the position, and it must skip the pads.</p>
+</div></details>
+
+<!-- 17 -->
+<details class="qa"><summary><span class="n">17</span><span>Why is the first generated token slow and every following one fast? What are the two phases called, and what does each one hit?</span><span class="m"></span></summary>
+<div class="a">
+<p><strong>Prefill</strong> runs the whole prompt in one pass: <code>T</code> positions through every layer, one large matrix multiply per weight — the GPU is doing arithmetic, and the phase is compute-bound. <strong>Decode</strong> runs one position per step: every weight matrix is read from memory to multiply one vector, so each step is limited by how fast the weights (and the cache) can be streamed, not by FLOPs — memory-bandwidth-bound. That is why batching many requests together in decode is nearly free in time and why "tokens per second" for a single stream is a bandwidth number.</p>
+</div></details>
+
+<!-- 18 -->
+<details class="qa"><summary><span class="n">18</span><span>Three collators — <code>ForLanguageModeling</code>, <code>ForSeq2Seq</code>, <code>ForTokenClassification</code>. What does each one do to the labels?</span><span class="m"></span></summary>
+<div class="a">
+<p><code>DataCollatorForLanguageModeling</code> builds the labels itself: with <code>mlm=True</code> it picks the 15 % positions, applies 80/10/10, and sets every <em>other</em> label to <code>−100</code>; with <code>mlm=False</code> it copies <code>input_ids</code> and masks the pads. <code>DataCollatorForSeq2Seq</code> receives labels (the target ids) and pads them with <code>−100</code> to the batch width — and, given the model, builds <code>decoder_input_ids</code> by shifting them right with the start token. <code>DataCollatorForTokenClassification</code> receives one label per token and pads that list with <code>−100</code>. Three behaviours, one shared convention: pads in the labels are <code>−100</code>, pads in the inputs are the pad id.</p>
+</div></details>
+
+<!-- 19 -->
+<details class="qa"><summary><span class="n">19</span><span>Truncating to 512 tokens is acceptable for classification and not for extractive QA. Why, and what do you do instead?</span><span class="m"></span></summary>
+<div class="a">
+<p>For classification the label is a property of the whole text and the first 512 tokens usually carry it. For QA the label is a <em>position</em>; cut the paragraph and the answer may be in the part you threw away — the label is then unrepresentable, not just harder. The standard fix is a sliding window: the paragraph is split into overlapping chunks (<code>stride</code>), each paired with the full question, the answer is labelled in the chunk that contains it and as "no answer" in the others, and at prediction time the best span across all chunks wins. In the tokenizer that is <code>return_overflowing_tokens=True</code> plus <code>offset_mapping</code> to map spans back to characters.</p>
+<div class="fig"><div id="fig-windows"></div><div class="figcap">One long context, windows of a fixed width with a stride. The answer is inside window 2 only; windows 1 and 3 are trained to say "no answer" (pointing at <code>[CLS]</code>).</div></div>
+</div></details>
+
+<!-- 20 -->
+<details class="qa"><summary><span class="n">20</span><span>Why can a decoder-only model classify, while an encoder-only model cannot write an answer? What exactly is asymmetric?</span><span class="m"></span></summary>
+<div class="a">
+<p>Any task can be phrased as "continue this text" — a label is a word, an answer is a string — so a decoder with a vocabulary head covers every task by putting the task in the prefix. Not every task can be phrased as "put a label on a position": a head has to enumerate its answers, and an answer that is longer than the input, or nests, or is a string that is not in the text, has no slot to go in. The asymmetry is the output space: the vocabulary head is universal, a classification head is not. The price of universality is one forward pass per output token, and no guarantee about the output's shape.</p>
+</div></details>
+
+<!-- 21 -->
+<details class="qa"><summary><span class="n">21</span><span>Why group examples by length before batching? What is the price?</span><span class="m"></span></summary>
+<div class="a">
+<p>With random batches the width is the longest example in the batch, and for skewed length distributions that is far above the mean — most positions are pads, and attention is quadratic in the width. Sorting into buckets of similar length (<code>group_by_length</code> in the <code>Trainer</code>) makes each batch nearly pad-free, typically a 2–3× speed-up on text with varied lengths. The price is that batches are no longer i.i.d. samples: a batch of short texts and a batch of long ones may differ systematically, which slightly increases gradient noise. Shuffling the buckets, not the examples, is the usual compromise.</p>
+</div></details>
+
+<!-- 22 -->
+<details class="qa"><summary><span class="n">22</span><span>Is key <em>j</em> in the second layer still "word <em>j</em>"?</span><span class="m"></span></summary>
+<div class="a">
+<p>No. After one layer, position <em>j</em>'s vector is the token plus whatever the first layer's heads gathered from its neighbours; its second-layer key is a projection of that mixed vector. So a second-layer head attending to position <em>j</em> is attending to "word <em>j</em> in context", and reading a deep attention map as word-to-word alignment is a mistake. Layer-one maps are often legible (previous token, next token, self); deeper ones are not, and it is not because they are noisy.</p>
+</div></details>
+
+<!-- 23 -->
+<details class="qa"><summary><span class="n">23</span><span>Does a transformer layer replace the representation or add to it? What follows for how you read the layers?</span><span class="m"></span></summary>
+<div class="a">
+<p>It adds. Every sublayer's output is <code>x + f(x)</code>; the vector at a position is a running sum, the <em>residual stream</em>, that each layer reads from and writes to. Consequences: the same vector space runs through the whole depth, so the final LayerNorm and unembedding can be applied after any layer and read as "what the model would have predicted here" (the logit lens); early exit is possible because the stream is already a valid state; and layers can be removed or skipped with graceful rather than catastrophic degradation. In an architecture without residuals none of that holds — each layer's output is a new space.</p>
+<div class="fig"><div id="fig-stream"></div><div class="figcap">One position. Each block reads the stream, writes an increment back; the head at the top reads the sum. Reading after block 6 is the same operation applied early.</div></div>
+</div></details>
+
+<!-- 24 -->
+<details class="qa"><summary><span class="n">24</span><span>Eight heads of 64 or one head of 512: which has more parameters?</span><span class="m"></span></summary>
+<div class="a">
+<p>The same. <code>W_Q</code>, <code>W_K</code>, <code>W_V</code> are <code>d×d</code> in both cases; multi-head just reshapes the projected <code>d</code> dimensions into <code>h</code> slices of <code>d/h</code> and runs the softmax separately in each slice. Heads cost no parameters; what they buy is <code>h</code> independent attention patterns per layer instead of one — eight places to look at once, at the same price.</p>
+</div></details>
+
+<!-- 25 -->
+<details class="qa"><summary><span class="n">25</span><span>Why is a causal mask needed in training, when at generation time there is nothing to the right of the query anyway?</span><span class="m"></span></summary>
+<div class="a">
+<p>Because training does not generate. The whole target is given at once, and one forward pass produces <code>T</code> predictions from <code>T</code> positions — that is what makes transformer training parallel. Without the mask, position <em>t</em> would read position <em>t+1</em>, which is the answer it is supposed to predict; the loss would drop to zero and the model would learn to copy from one step ahead. The mask makes the parallel pass equivalent to <code>T</code> sequential ones. At generation the mask is still applied, and it is a no-op.</p>
+</div></details>
+
+<!-- 26 -->
+<details class="qa"><summary><span class="n">26</span><span>In an SFT batch, is the loss computed on the prompt or only on the answer? How is that implemented?</span><span class="m"></span></summary>
+<div class="a">
+<p>It is a choice, and most instruction tuning computes it only on the answer: the prompt's positions in <code>labels</code> are set to <code>−100</code>, so the model is not trained to reproduce the instruction, only to continue it. Training on the prompt too is plain language modelling on the concatenation; it is not wrong, it just spends gradient on text the model will always be given. The collator that does this needs to know where the answer starts — a template boundary or the tokenised prompt length — which is the fragile part of every SFT pipeline.</p>
+</div></details>
+
+<!-- 27 -->
+<details class="qa"><summary><span class="n">27</span><span>Packing: several documents concatenated into one 2 048-token sequence. What must the mask do for that to be honest — and what do pipelines do in practice?</span><span class="m"></span></summary>
+<div class="a">
+<p>Honest packing needs a block-diagonal causal mask: a token may see earlier tokens of its own document and nothing from the documents packed before it. Otherwise document 2 conditions on document 1, which is noise at best and, with <code>EOS</code> between them, teaches the model that unrelated text follows the end of a document. Many pipelines skip the block structure and accept the leakage — it costs little quality at scale. The correct version passes <code>position_ids</code> that restart at every document, which the FlashAttention variable-length kernels use to build the block mask without materialising it.</p>
+<div class="fig"><div class="masks"><div><div class="mt">plain causal · leaks</div><div data-mask="causal-3"></div></div><div><div class="mt">block-diagonal · honest</div><div data-mask="packed"></div></div></div><div class="figcap">Three documents of 3, 2 and 3 tokens. Left: document 2 reads document 1. Right: each document sees only itself.</div></div>
+</div></details>
+
+<!-- 28 -->
+<details class="qa"><summary><span class="n">28</span><span>What does temperature physically change? What happens at <code>T → 0</code> and <code>T → ∞</code>?</span><span class="m"></span></summary>
+<div class="a">
+<p>It divides the logits before the softmax: <code>softmax(z / T)</code>. Below 1 the gaps between logits widen and the distribution sharpens; at <code>T → 0</code> it becomes the argmax, i.e. greedy decoding. Above 1 the gaps shrink; at <code>T → ∞</code> every token is equally likely. It does not add knowledge or "creativity" — it reshapes the same ranking. Top-<em>k</em> and top-<em>p</em> are the other family: they truncate the tail instead of rescaling it, which is why they are usually combined with a temperature rather than replaced by one.</p>
+</div></details>
+
+<!-- 29 -->
+<details class="qa"><summary><span class="n">29</span><span>Same text, two tokenizers, two perplexities. Can you compare them?</span><span class="m"></span></summary>
+<div class="a">
+<p>Not as they are. Perplexity is per <em>token</em>, and the two models tokenised the text into different numbers of tokens; a coarser tokenizer takes fewer, larger steps and gets more per-step surprise for the same total. Convert both to a unit that does not depend on the tokenizer: total negative log-likelihood of the text divided by its characters (bits per character) or by its words. Then they are comparable — they are both the probability the model assigns to the same string.</p>
+</div></details>
+
+<!-- 30 -->
+<details class="qa"><summary><span class="n">30</span><span>Why does a transformer parallelise in training while an RNN does not — and why does that advantage disappear at generation?</span><span class="m"></span></summary>
+<div class="a">
+<p>An RNN's state at step <em>t</em> is a function of the state at <em>t−1</em>: the steps are sequential by definition. A transformer has no state between positions; with the whole sequence given, all positions are computed in one matrix multiply and the causal mask enforces the dependency order after the fact. At generation the sequence is not given — token <em>t+1</em> cannot be computed until token <em>t</em> has been sampled — so the model runs one position per step, exactly like an RNN, and with a quadratically growing context to read.</p>
+</div></details>
+
+<!-- 31 -->
+<details class="qa"><summary><span class="n">31</span><span>Why keep an encoder-decoder at all, if a decoder-only model reads the source through the same causal self-attention?</span><span class="m"></span></summary>
+<div class="a">
+<p>Three things differ. The encoder reads the source <em>bidirectionally</em>: every source token's representation sees the whole source; in a decoder-only model the source is read left to right, so the first source tokens are encoded without knowing what comes later. The encoder runs <em>once</em>, and its output is reused at every decoding step through cross-attention; a decoder-only model keeps the source in the same stream as the output. And the parameters are separated: the encoder can be trained and sized for reading, the decoder for writing. The cost is a second stack and a second attention type, which is why the decoder-only design won where the prefix is short relative to the pretraining corpus and simplicity matters.</p>
+<div class="fig"><div class="masks"><div><div class="mt">encoder–decoder · 4 source + 4 target</div><div data-mask="encdec"></div></div><div><div class="mt">decoder-only · same 8 tokens</div><div data-mask="causal-8"></div></div></div><div class="figcap">Left: the source block is all-to-all, the target block is causal, and the cross block lets every target read every source position. Right: one triangle — source token 1 never sees source token 4.</div></div>
+</div></details>
+
+<!-- 32 -->
+<details class="qa"><summary><span class="n">32</span><span>Greedy, beam search, sampling — when is beam search <em>worse</em> than sampling?</span><span class="m"></span></summary>
+<div class="a">
+<p>In open-ended generation. Beam search looks for the most probable sequence, and for text with many acceptable continuations the most probable one is generic, short and repetitive — the model assigns high probability to loops because each repeated token is individually likely. For tasks with one right answer — translation, summarisation, extractive QA — the search helps, because the target is narrow and beam finds it more often than greedy. The rule of thumb: beam when there is a correct output, sampling (with top-<em>p</em>) when there is a distribution of good ones.</p>
+</div></details>
+
+<!-- 33 -->
+<details class="qa"><summary><span class="n">33</span><span>What is teacher forcing, and what does it cost at inference?</span><span class="m"></span></summary>
+<div class="a">
+<p>In training the decoder's input at every step is the <em>gold</em> previous token, not its own prediction — that is what allows the whole target in one pass. At inference the input is its own previous output, and the first mistake feeds the next step: the model is in a state it never saw in training, and errors compound along the sequence. That gap is called exposure bias. Scheduled sampling, sequence-level losses and RL fine-tuning are the attempts to close it; in practice large pretrained models are robust enough that most pipelines ignore it.</p>
+</div></details>
+
+<!-- 34 -->
+<details class="qa"><summary><span class="n">34</span><span>Freeze the body and train only the head, or train everything: when does the frozen body win?</span><span class="m"></span></summary>
+<div class="a">
+<p>When the data is small, the task is close to what the pretraining already encodes, and the budget is tight. A frozen body cannot overfit the representation to a few hundred examples, trains in minutes, and can be shared by many heads. Full fine-tuning wins as soon as the task needs features the pretraining did not build — a new domain, token-level structure the body was not trained for — and there is enough data to move 110M parameters without memorising it. In between sits every partial option: top-<em>k</em> blocks, LoRA, adapters — each is a point on the same dial with a different memory bill.</p>
+</div></details>
+
+<!-- 35 -->
+<details class="qa"><summary><span class="n">35</span><span>Why does a transformer need learning-rate warmup and logistic regression does not?</span><span class="m"></span></summary>
+<div class="a">
+<p>Two compounding reasons. Adam's second-moment estimate is built from a handful of steps at the start, so the early effective step sizes are large and noisy; and in a transformer a large step through the attention logits or through a Post-LN stack changes the scale of everything downstream — with Post-LN the model can diverge in the first hundred updates. Logistic regression is convex, has one layer and no softmax over scores to saturate; a big first step is just a big first step. Pre-LN architectures survive without warmup but still train better with a short one.</p>
+</div></details>
+
+<!-- 36 -->
+<details class="qa"><summary><span class="n">36</span><span>Pre-LN and Post-LN: where does the LayerNorm sit in each, and why is almost every modern model Pre-LN?</span><span class="m"></span></summary>
+<div class="a">
+<p>Post-LN, the 2017 layout: <code>x = LN(x + f(x))</code> — the norm is applied to the sum. Pre-LN: <code>x = x + f(LN(x))</code> — the norm is applied to the input of the sublayer, and the residual path is left untouched. With Pre-LN the residual stream is an unnormalised sum all the way up, gradients reach the bottom layers through the identity path, and deep stacks train without a carefully tuned warmup. Post-LN can end slightly better when it does train, which is why it survived in BERT, but it is fragile at depth. The one thing Pre-LN adds is a final LayerNorm before the head, since the stream itself is never normalised.</p>
+</div></details>
+
+<!-- 37 -->
+<details class="qa"><summary><span class="n">37</span><span>Dropout during fine-tuning — on or off? And during generation?</span><span class="m"></span></summary>
+<div class="a">
+<p>On during fine-tuning (the pretrained config keeps it, typically 0.1), off during evaluation and generation. The switch is <code>model.eval()</code>, and it changes more than gradients: dropout stops sampling masks, and the same input gives the same output. Forgetting it is the classic bug behind "the model gives different answers to the same prompt at temperature 0" and "validation numbers are lower than expected". <code>Trainer</code> and <code>generate</code> call it for you; a hand-written loop must.</p>
+</div></details>
+
+<!-- 38 -->
+<details class="qa"><summary><span class="n">38</span><span>Gradient accumulation: batch 8 with 4 accumulation steps equals batch 32? Where does the equality break?</span><span class="m"></span></summary>
+<div class="a">
+<p>Almost. The gradients add, so the update is the same — provided each micro-batch loss is scaled by ¼ (or the accumulated gradient divided by 4). It breaks where the loss depends on batch composition: BatchNorm statistics (transformers have none), dynamic padding (each micro-batch pads to its own longest), and — the one that bit real pipelines — token-weighted losses: a mean over tokens per micro-batch, then averaged, is not the mean over all tokens when the micro-batches hold different token counts. Long sequences get under-weighted. The fix is to normalise by the total token count of the whole accumulated batch.</p>
+</div></details>
+
+<!-- 39 -->
+<details class="qa"><summary><span class="n">39</span><span>Why does a model that never saw an end-of-sequence token in training never stop generating?</span><span class="m"></span></summary>
+<div class="a">
+<p>Because stopping is a prediction like any other: the model emits <code>EOS</code> when <code>EOS</code> is the most likely (or sampled) next token, and a token that never appeared in the training targets has a learned logit that is arbitrarily low. The generation loop then runs to <code>max_new_tokens</code> and the output trails into whatever the model thinks follows. It usually comes from stripping <code>EOS</code> in preprocessing or from the collator masking it as a pad — see the pad-equals-EOS question.</p>
+</div></details>
+
+<!-- 40 -->
+<details class="qa"><summary><span class="n">40</span><span>Zero-shot classification with a decoder: the label <em>Sci/Tech</em> is three tokens, <em>World</em> is one. What decides the argmax?</span><span class="m"></span></summary>
+<div class="a">
+<p>Tokenisation, not the text. The score of a label is the sum of its tokens' log-probabilities, and a sum of three negative numbers is smaller than a sum of one almost regardless of content — the multi-token label loses by construction. Two cheap fixes: divide by the token count (a per-token score), or pick label words that are one token each. The second is what a <em>verbalizer</em> is: the mapping from a class to the word the model will actually be scored on, chosen so that the words are comparable.</p>
+</div></details>
+
+<!-- 41 -->
+<details class="qa"><summary><span class="n">41</span><span>What are <code>token_type_ids</code>, and why does GPT-2 not have them?</span><span class="m"></span></summary>
+<div class="a">
+<p>A third embedding in BERT, added to the token and position embeddings: 0 for segment A, 1 for segment B. It exists because next-sentence prediction needed the model to know where the boundary is, and a learned segment embedding was the simplest way to mark it. A decoder-only model marks boundaries in the text itself — a separator, a template, a newline — because the prefix is the only interface it has; there is nothing that a separate embedding could add that a token cannot. Most encoders after BERT (RoBERTa) dropped it as well, together with NSP.</p>
+</div></details>
+
+<!-- 42 -->
+<details class="qa"><summary><span class="n">42</span><span>Extractive QA with a span head versus a generated answer: what does the head guarantee that the generator does not?</span><span class="m"></span></summary>
+<div class="a">
+<p>That the answer is a substring of the paragraph. The head scores two positions and the prediction is a span between them; it cannot say a word that is not there. A generator usually copies and nothing forces it to — it can paraphrase, complete, or invent. Whether that is a feature or a failure depends on the product: a guaranteed substring is what you want when the answer is evidence, a free answer is what you want when the answer is a synthesis. What to measure on the generator side is the share of answers that are not substrings — fidelity, before exact match.</p>
+</div></details>
+
+<!-- 43 -->
+<details class="qa"><summary><span class="n">43</span><span>Entities that nest — <em>Bank of America</em>, where <em>America</em> is also a location. Encoder or decoder, and why?</span><span class="m"></span></summary>
+<div class="a">
+<p>A BIO head cannot express it: one tag per word, and <em>America</em> is either inside the organisation or a location, not both. Ways out on the encoder side are a span classifier over all <code>O(L²)</code> spans, or a separate head per type — both are more machinery than one tag per token. A generator writes the structure directly: <code>[ORG Bank of [LOC America]]</code>, nesting for free. That is the pattern to look for when choosing: if the output space has structure that a label per position cannot carry, the task has moved to the prefix.</p>
+</div></details>
+
+<!-- 44 -->
+<details class="qa"><summary><span class="n">44</span><span>Your fine-tuned classifier reports 0.95 on validation. What is the first question to ask before believing it?</span><span class="m"></span></summary>
+<div class="a">
+<p>What the baseline gets. A TF-IDF + logistic regression on the same split is minutes of work and on news-topic classification lands at 0.92; if the transformer is at 0.95, the transformer bought three points, not ninety-five. Then the two hygiene checks: is the class balance such that the majority class alone scores high, and are there near-duplicates between train and validation (news wires, product reviews and scraped corpora all have them). Only after those is 0.95 a number about the model.</p>
+</div></details>
+
+<!-- 45 -->
+<details class="qa"><summary><span class="n">45</span><span>One formula for three weeks. In seq2seq cross-attention, in BERT, and in GPT — what is the query, and what are the keys?</span><span class="m"></span></summary>
+<div class="a">
+<p>Cross-attention: the query is a decoder position (the target so far), the keys and values are the encoder's outputs — every source position. BERT: the query is a token, the keys are all tokens of the input, both sides, itself included. GPT: the query is a token, the keys are the tokens on its left, itself included — the prompt as well as the text it has generated. Same softmax-weighted sum of values; the three models differ only in <em>which set</em> the keys come from, and that set is what the mask encodes.</p>
+</div></details>
+
+<!-- 46 -->
+<details class="qa"><summary><span class="n">46</span><span>Lightning round. Encoder or decoder, and what you give up: (a) sentiment of a million reviews a day, latency matters; (b) spelling correction where words may split or merge; (c) NER with a new entity type every month; (d) an answer that must be a substring; (e) classes that change every week; (f) reranking documents for search.</span><span class="m"></span></summary>
+<div class="a">
+<p><strong>(a)</strong> Encoder with a classification head: one pass per review, calibrated probabilities. You give up nothing the task needs. <strong>(b)</strong> Decoder: a label per input word cannot say "these two are one" — the encoder is at zero on split and merge by construction. You give up one pass per word and the guarantee that correct words stay untouched. <strong>(c)</strong> Decoder with the types in the prompt, or an encoder retrained monthly — the head is a matrix with a fixed number of rows. <strong>(d)</strong> Encoder span head: the substring guarantee is the point. <strong>(e)</strong> Decoder or zero-shot through the vocabulary: no head to retrain. <strong>(f)</strong> Encoder cross-encoder (query and document in one input, one score): a pass per pair, but the pass is cheap and the score is a number, not a token.</p>
+<p>The correct letter matters less than the named price. "Decoder, because LLM" with no cost attached is the answer to watch for.</p>
+</div></details>
+
+</section>
+
+</div>
+</main>
+</div>
+
+<script>
+(function () {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; };
+
+  /* --- mask grids: rows are queries, columns are keys ------------------------------------ */
+  function maskGrid(host, n, allow, opts = {}) {
+    const c = 24, pad = 20, w = pad + n * c + 4, h = pad + n * c + 4;
+    const svg = el("svg", { viewBox: `0 0 ${w} ${h}`, "aria-label": opts.label || "attention mask" });
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const st = allow(i, j);                             // "on" | "off" | "pad"
+      const r = el("rect", { x: pad + j * c + 1, y: pad + i * c + 1, width: c - 2, height: c - 2, rx: 2 }, svg);
+      if (st === "on") r.setAttribute("fill", opts.color ? opts.color(i, j) : "var(--cls-0)");
+      else if (st === "pad") { r.setAttribute("fill", "url(#hatch)"); r.setAttribute("stroke", "var(--rule-strong)"); r.setAttribute("stroke-width", ".6"); }
+      else { r.setAttribute("fill", "var(--panel-sunk)"); r.setAttribute("stroke", "var(--rule)"); r.setAttribute("stroke-width", ".6"); }
+    }
+    for (let i = 0; i < n; i++) {
+      const lab = opts.labels ? opts.labels[i] : String(i + 1);
+      const t = el("text", { x: pad + i * c + c / 2, y: 13, "text-anchor": "middle", "font-size": "10" }, svg); t.textContent = lab;
+      const u = el("text", { x: 13, y: pad + i * c + c / 2 + 3.5, "text-anchor": "middle", "font-size": "10" }, svg); u.textContent = lab;
+    }
+    host.innerHTML = ""; host.appendChild(svg);
+  }
+  // one hatch pattern for the whole page
+  (function () { const svg = el("svg", { width: 0, height: 0, style: "position:absolute" }, document.body); const d = el("defs", {}, svg); const p = el("pattern", { id: "hatch", width: 5, height: 5, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, d); el("line", { x1: 0, y1: 0, x2: 0, y2: 5, stroke: "var(--rule-strong)", "stroke-width": 1.4 }, p); })();
+
+  const MASKS = {
+    "full":       h => maskGrid(h, 6, (i, j) => "on"),
+    "causal":     h => maskGrid(h, 6, (i, j) => j <= i ? "on" : "off"),
+    "causal-pad": h => maskGrid(h, 6, (i, j) => j >= 4 ? "pad" : (j <= i ? "on" : "off")),
+    "causal-3":   h => maskGrid(h, 8, (i, j) => j <= i ? "on" : "off", { labels: ["a1", "a2", "a3", "b1", "b2", "c1", "c2", "c3"], color: (i, j) => docOf(j) === docOf(i) ? "var(--cls-0)" : "var(--cls-1)" }),
+    "packed":     h => maskGrid(h, 8, (i, j) => (j <= i && docOf(i) === docOf(j)) ? "on" : "off", { labels: ["a1", "a2", "a3", "b1", "b2", "c1", "c2", "c3"] }),
+    "encdec":     h => maskGrid(h, 8, (i, j) => (i < 4 ? (j < 4 ? "on" : "off") : (j < 4 ? "on" : (j <= i ? "on" : "off"))), { labels: ["s1", "s2", "s3", "s4", "t1", "t2", "t3", "t4"], color: (i, j) => i < 4 ? "var(--cls-2)" : (j < 4 ? "var(--cls-1)" : "var(--cls-0)") }),
+    "causal-8":   h => maskGrid(h, 8, (i, j) => j <= i ? "on" : "off", { labels: ["s1", "s2", "s3", "s4", "t1", "t2", "t3", "t4"] }),
+  };
+  function docOf(k) { return k < 3 ? 0 : k < 5 ? 1 : 2; }
+  $$("[data-mask]").forEach(h => MASKS[h.dataset.mask](h));
+
+  /* --- KV cache: one layer at step t ---------------------------------------------------- */
+  (function () {
+    const host = $("#fig-kv"); if (!host) return;
+    const W = 600, H = 214, svg = el("svg", { viewBox: `0 0 ${W} ${H}` }, host);
+    const rows = 6, rh = 20, x0 = 150, y0 = 34;
+    const col = (x, label, fill) => {
+      const t = el("text", { x: x + 30, y: y0 - 10, "text-anchor": "middle", "font-size": "12", "font-weight": "600" }, svg); t.textContent = label;
+      for (let r = 0; r < rows; r++) {
+        const last = r === rows - 1;
+        el("rect", { x, y: y0 + r * rh, width: 60, height: rh - 3, rx: 2, fill: last ? fill : "var(--panel-sunk)", stroke: last ? fill : "var(--rule-strong)", "stroke-width": last ? 1.4 : .7 }, svg);
+      }
+    };
+    for (let r = 0; r < rows; r++) { const t = el("text", { x: x0 - 12, y: y0 + r * rh + 13, "text-anchor": "end", "font-size": "11" }, svg); t.textContent = r === rows - 1 ? "t (new)" : r === rows - 2 ? "t−1" : r === 0 ? "1" : r === 1 ? "2" : "…"; }
+    col(x0, "K", "var(--cls-0)"); col(x0 + 80, "V", "var(--cls-0)");
+    // the cache bracket
+    el("path", { d: `M ${x0 - 4} ${y0 - 2} h -6 v ${(rows - 1) * rh - 5} h 6`, fill: "none", stroke: "var(--ink-3)", "stroke-width": 1 }, svg);
+    const cl = el("text", { x: 20, y: y0 + ((rows - 1) * rh) / 2, "font-size": "11", fill: "var(--ink-2)" }, svg); cl.textContent = "cached:";
+    const cl2 = el("text", { x: 20, y: y0 + ((rows - 1) * rh) / 2 + 14, "font-size": "11", fill: "var(--ink-2)" }, svg); cl2.textContent = "read, not";
+    const cl3 = el("text", { x: 20, y: y0 + ((rows - 1) * rh) / 2 + 28, "font-size": "11", fill: "var(--ink-2)" }, svg); cl3.textContent = "recomputed";
+    // Q: only the current position
+    const qx = x0 + 200, qy = y0 + (rows - 1) * rh;
+    el("rect", { x: qx, y: qy, width: 60, height: rh - 3, rx: 2, fill: "var(--cls-1)", stroke: "var(--cls-1)" }, svg);
+    const qt = el("text", { x: qx + 30, y: y0 - 10, "text-anchor": "middle", "font-size": "12", "font-weight": "600" }, svg); qt.textContent = "Q";
+    const qn = el("text", { x: qx + 30, y: y0 + 40, "text-anchor": "middle", "font-size": "11", fill: "var(--ink-3)" }, svg); qn.textContent = "no rows";
+    const qn2 = el("text", { x: qx + 30, y: y0 + 54, "text-anchor": "middle", "font-size": "11", fill: "var(--ink-3)" }, svg); qn2.textContent = "kept";
+    // arrow: q_t reads all K rows
+    el("path", { d: `M ${qx - 4} ${qy + 8} C ${qx - 40} ${qy + 8}, ${x0 + 150} ${y0 + 40}, ${x0 + 144} ${y0 + 40}`, fill: "none", stroke: "var(--cls-1)", "stroke-width": 1.4, "marker-end": "url(#arr)" }, svg);
+    const d = el("defs", {}, svg); const m = el("marker", { id: "arr", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" }, d); el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--cls-1)" }, m);
+    const at = el("text", { x: qx + 30, y: qy + 34, "text-anchor": "middle", "font-size": "11", fill: "var(--cls-1)" }, svg); at.textContent = "q_t · every K row,";
+    const at2 = el("text", { x: qx + 30, y: qy + 48, "text-anchor": "middle", "font-size": "11", fill: "var(--cls-1)" }, svg); at2.textContent = "then Σ over V";
+    const ft = el("text", { x: 20, y: H - 8, "font-size": "11", fill: "var(--ink-3)" }, svg); ft.textContent = "one layer shown; the cache holds this for every layer and head";
+  })();
+
+  /* --- sliding windows for QA -------------------------------------------------------------- */
+  (function () {
+    const host = $("#fig-windows"); if (!host) return;
+    const W = 640, H = 150, svg = el("svg", { viewBox: `0 0 ${W} ${H}` }, host);
+    const x0 = 30, L = 590, y = 30;
+    el("rect", { x: x0, y, width: L, height: 18, rx: 2, fill: "var(--panel-sunk)", stroke: "var(--rule-strong)", "stroke-width": .8 }, svg);
+    const ct = el("text", { x: x0, y: y - 8, "font-size": "11" }, svg); ct.textContent = "context, 900 tokens";
+    // answer
+    el("rect", { x: x0 + 250, y: y + 2, width: 40, height: 14, rx: 1, fill: "var(--cls-1)" }, svg);
+    const at = el("text", { x: x0 + 270, y: y - 8, "text-anchor": "middle", "font-size": "11", fill: "var(--cls-1)" }, svg); at.textContent = "answer";
+    const win = 250, stride = 170, ys = [62, 88, 114];
+    for (let k = 0; k < 3; k++) {
+      const xs = x0 + k * stride, has = (250 >= k * stride && 290 <= k * stride + win);
+      el("rect", { x: xs, y: ys[k], width: win, height: 16, rx: 2, fill: has ? "color-mix(in srgb, var(--cls-0) 30%, transparent)" : "transparent", stroke: has ? "var(--cls-0)" : "var(--rule-strong)", "stroke-width": 1 }, svg);
+      const t = el("text", { x: xs + 6, y: ys[k] + 12, "font-size": "10.5", fill: has ? "var(--ink)" : "var(--ink-3)" }, svg);
+      t.textContent = `window ${k + 1} · ` + (has ? "start, end labelled" : "labelled as no answer");
+    }
+    const st = el("text", { x: x0, y: H - 6, "font-size": "11", fill: "var(--ink-3)" }, svg); st.textContent = "width 384 minus the question, stride 128: windows overlap, so no answer is cut in two";
+  })();
+
+  /* --- residual stream ------------------------------------------------------------------ */
+  (function () {
+    const host = $("#fig-stream"); if (!host) return;
+    const W = 620, H = 210, svg = el("svg", { viewBox: `0 0 ${W} ${H}` }, host);
+    const sx = 150, top = 26, bot = H - 24;
+    el("line", { x1: sx, y1: bot, x2: sx, y2: top, stroke: "var(--ink)", "stroke-width": 3 }, svg);
+    const names = ["embedding", "block 1", "block 2", "…", "block 12", "LN + head"];
+    const ys = [bot, bot - 32, bot - 64, bot - 96, bot - 128, top + 4];
+    names.forEach((n, i) => {
+      const y = ys[i];
+      if (i === 0) { el("circle", { cx: sx, cy: y, r: 4, fill: "var(--ink)" }, svg); const t = el("text", { x: sx - 12, y: y + 4, "text-anchor": "end", "font-size": "11" }, svg); t.textContent = "x = " + n; return; }
+      if (i === names.length - 1) { const t = el("text", { x: sx + 14, y: y + 4, "font-size": "11" }, svg); t.textContent = n + " reads the sum"; el("path", { d: `M ${sx} ${y + 14} l -4 8 h 8 z`, fill: "var(--ink)" }, svg); return; }
+      if (n === "…") { const t = el("text", { x: sx - 12, y: y + 4, "text-anchor": "end", "font-size": "11", fill: "var(--ink-3)" }, svg); t.textContent = "…"; return; }
+      // read → f → add
+      el("path", { d: `M ${sx} ${y + 10} C ${sx + 40} ${y + 10}, ${sx + 40} ${y + 10}, ${sx + 70} ${y + 10}`, fill: "none", stroke: "var(--ink-3)", "stroke-width": 1.2 }, svg);
+      el("rect", { x: sx + 70, y: y - 2, width: 118, height: 24, rx: 3, fill: "var(--panel-sunk)", stroke: "var(--rule-strong)" }, svg);
+      const t = el("text", { x: sx + 129, y: y + 14, "text-anchor": "middle", "font-size": "11" }, svg); t.textContent = n + ": f(LN(x))";
+      el("path", { d: `M ${sx + 188} ${y + 10} C ${sx + 220} ${y + 10}, ${sx + 40} ${y - 14}, ${sx + 4} ${y - 14}`, fill: "none", stroke: "var(--cls-0)", "stroke-width": 1.4, "marker-end": "url(#arr2)" }, svg);
+      el("circle", { cx: sx, cy: y - 14, r: 5, fill: "var(--panel)", stroke: "var(--ink)", "stroke-width": 1.4 }, svg);
+      const pl = el("text", { x: sx, y: y - 10.5, "text-anchor": "middle", "font-size": "9", fill: "var(--ink)" }, svg); pl.textContent = "+";
+      const at = el("text", { x: sx - 12, y: y - 10, "text-anchor": "end", "font-size": "11" }, svg); at.textContent = "x += Δ" + (n.split(" ")[1] || "");
+    });
+    const d = el("defs", {}, svg); const m = el("marker", { id: "arr2", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto" }, d); el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--cls-0)" }, m);
+    const lt = el("text", { x: sx + 220, y: bot - 40, "font-size": "11", fill: "var(--ink-2)" }, svg); lt.textContent = "the stream never enters a block:";
+    const lt2 = el("text", { x: sx + 220, y: bot - 26, "font-size": "11", fill: "var(--ink-2)" }, svg); lt2.textContent = "read, then add an increment.";
+  })();
+
+  /* --- toggles ---------------------------------------------------------------------------- */
+  const qs = $$("details.qa");
+  const count = () => { const o = qs.filter(d => d.open).length; $("#cy-count").textContent = `${qs.length} questions · ${o} opened`; };
+  qs.forEach(d => d.addEventListener("toggle", count)); count();
+  $("#btn-open-all").addEventListener("click", () => { qs.forEach(d => d.open = true); count(); });
+  $("#btn-close-all").addEventListener("click", () => { qs.forEach(d => d.open = false); count(); });
+  $("#btn-theme").addEventListener("click", () => { const cur = document.documentElement.getAttribute("data-theme"); const dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; document.documentElement.setAttribute("data-theme", dark ? "light" : "dark"); });
+})();
+</script>

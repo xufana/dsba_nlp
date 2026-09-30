@@ -88,7 +88,7 @@
    }
   }
  },
- "device": "mps:0",
- "ms_per_1000": 16047.1,
+ "device": "cuda:0",
+ "ms_per_1000": 14902.1,
  "passes_per_item": 4
 }
