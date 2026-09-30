@@ -224,3 +224,6 @@ week*/demo/check_out/
 
 # week 4: smoke artifacts from `precompute.py --smoke` (a random tiny BERT; never commit)
 week*/artifacts_smoke/
+
+# GitHub Pages build output (scripts/build_site.py)
+/_site/
