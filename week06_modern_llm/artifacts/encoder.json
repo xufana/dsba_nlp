@@ -1,0 +1,28 @@
+{
+ "sizes": "demo",
+ "model": "answerdotai/ModernBERT-base",
+ "params": 149607940,
+ "n_train": 6000,
+ "n_test": 7600,
+ "epochs": 2,
+ "lr": 2e-05,
+ "max_len": 128,
+ "accuracy": [
+  0.9076,
+  0.9129
+ ],
+ "seconds": 463.1,
+ "device": "cuda",
+ "ms_per_1000": 10770.6,
+ "config": {
+  "vocab_size": 50368,
+  "hidden_size": 768,
+  "intermediate_size": 1152,
+  "num_hidden_layers": 22,
+  "num_attention_heads": 12,
+  "hidden_activation": "gelu",
+  "max_position_embeddings": 8192,
+  "local_attention": 128,
+  "global_attn_every_n_layers": 3
+ }
+}

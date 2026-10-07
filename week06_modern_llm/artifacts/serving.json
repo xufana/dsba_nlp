@@ -1,0 +1,194 @@
+{
+ "sizes": "demo",
+ "device": "cuda",
+ "torch": "2.14.1+cu130",
+ "launch": {
+  "n": 4096,
+  "returned, ms": 0.178,
+  "existed, ms": 22.128
+ },
+ "transfer": [
+  {
+   "floats": 1000,
+   "MB": 0.004,
+   "CPU -> GPU, ms": 0.03,
+   "GPU -> CPU, ms": 0.037,
+   "x * 2 on CPU, ms": 0.034,
+   "x * 2 on GPU, ms": 0.055
+  },
+  {
+   "floats": 100000,
+   "MB": 0.4,
+   "CPU -> GPU, ms": 0.157,
+   "GPU -> CPU, ms": 0.166,
+   "x * 2 on CPU, ms": 0.049,
+   "x * 2 on GPU, ms": 0.026
+  },
+  {
+   "floats": 10000000,
+   "MB": 40.0,
+   "CPU -> GPU, ms": 8.731,
+   "GPU -> CPU, ms": 9.02,
+   "x * 2 on CPU, ms": 6.72,
+   "x * 2 on GPU, ms": 0.369
+  }
+ ],
+ "matmul": [
+  {
+   "n": 16,
+   "x @ x on CPU, ms": 0.019,
+   "on GPU, ms": 0.033,
+   "on GPU, there and back, ms": 0.105
+  },
+  {
+   "n": 64,
+   "x @ x on CPU, ms": 0.024,
+   "on GPU, ms": 0.044,
+   "on GPU, there and back, ms": 0.128
+  },
+  {
+   "n": 256,
+   "x @ x on CPU, ms": 0.369,
+   "on GPU, ms": 0.044,
+   "on GPU, there and back, ms": 0.389
+  },
+  {
+   "n": 1024,
+   "x @ x on CPU, ms": 18.45,
+   "on GPU, ms": 0.374,
+   "on GPU, there and back, ms": 3.431
+  },
+  {
+   "n": 2048,
+   "x @ x on CPU, ms": 152.767,
+   "on GPU, ms": 6.109,
+   "on GPU, there and back, ms": 17.425
+  }
+ ],
+ "models": {
+  "gpt2": {
+   "by_length": [
+    {
+     "prompt tokens": 16,
+     "prefill, ms": 12.6,
+     "prefill, tokens/s": 1270,
+     "decode, ms/token": 13.02,
+     "decode, tokens/s": 76.8,
+     "cache shape, one layer": [
+      1,
+      12,
+      16,
+      64
+     ],
+     "cache, KB": 1152.0
+    },
+    {
+     "prompt tokens": 64,
+     "prefill, ms": 16.75,
+     "prefill, tokens/s": 3821,
+     "decode, ms/token": 12.79,
+     "decode, tokens/s": 78.2,
+     "cache shape, one layer": [
+      1,
+      12,
+      64,
+      64
+     ],
+     "cache, KB": 4608.0
+    },
+    {
+     "prompt tokens": 256,
+     "prefill, ms": 21.83,
+     "prefill, tokens/s": 11727,
+     "decode, ms/token": 8.71,
+     "decode, tokens/s": 114.9,
+     "cache shape, one layer": [
+      1,
+      12,
+      256,
+      64
+     ],
+     "cache, KB": 18432.0
+    },
+    {
+     "prompt tokens": 960,
+     "prefill, ms": 93.31,
+     "prefill, tokens/s": 10288,
+     "decode, ms/token": 7.73,
+     "decode, tokens/s": 129.4,
+     "cache shape, one layer": [
+      1,
+      12,
+      960,
+      64
+     ],
+     "cache, KB": 69120.0
+    }
+   ],
+   "64 tokens, argmax on the GPU, ms": 610.6,
+   "64 tokens, argmax on the CPU, ms": 734.4
+  },
+  "SmolLM2-135M": {
+   "by_length": [
+    {
+     "prompt tokens": 16,
+     "prefill, ms": 57.99,
+     "prefill, tokens/s": 276,
+     "decode, ms/token": 32.95,
+     "decode, tokens/s": 30.4,
+     "cache shape, one layer": [
+      1,
+      3,
+      16,
+      64
+     ],
+     "cache, KB": 720.0
+    },
+    {
+     "prompt tokens": 64,
+     "prefill, ms": 37.71,
+     "prefill, tokens/s": 1697,
+     "decode, ms/token": 34.84,
+     "decode, tokens/s": 28.7,
+     "cache shape, one layer": [
+      1,
+      3,
+      64,
+      64
+     ],
+     "cache, KB": 2880.0
+    },
+    {
+     "prompt tokens": 256,
+     "prefill, ms": 38.84,
+     "prefill, tokens/s": 6591,
+     "decode, ms/token": 43.34,
+     "decode, tokens/s": 23.1,
+     "cache shape, one layer": [
+      1,
+      3,
+      256,
+      64
+     ],
+     "cache, KB": 11520.0
+    },
+    {
+     "prompt tokens": 960,
+     "prefill, ms": 107.66,
+     "prefill, tokens/s": 8917,
+     "decode, ms/token": 31.95,
+     "decode, tokens/s": 31.3,
+     "cache shape, one layer": [
+      1,
+      3,
+      960,
+      64
+     ],
+     "cache, KB": 43200.0
+    }
+   ],
+   "64 tokens, argmax on the GPU, ms": 2462.3,
+   "64 tokens, argmax on the CPU, ms": 2458.6
+  }
+ }
+}

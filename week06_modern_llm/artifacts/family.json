@@ -1,0 +1,95 @@
+{
+ "sizes": "demo",
+ "n_bpb": 1000,
+ "n_zero_shot": 2000,
+ "device": "cuda",
+ "prompt": "<text> This news is about",
+ "words": [
+  " world",
+  " sports",
+  " business",
+  " technology"
+ ],
+ "models": {
+  "gpt2": {
+   "params": 124439808,
+   "bits_per_byte": 1.2815,
+   "bytes_per_token": 4.58,
+   "tokens_per_word": [
+    1,
+    1,
+    1,
+    1
+   ],
+   "zero_shot": {
+    "accuracy": 0.5985,
+    "per_class": {
+     "World": 0.7045,
+     "Sports": 0.365,
+     "Business": 0.7728,
+     "Sci/Tech": 0.5798
+    }
+   }
+  },
+  "SmolLM2-135M": {
+   "params": 134515008,
+   "bits_per_byte": 1.2839,
+   "bytes_per_token": 4.275,
+   "tokens_per_word": [
+    1,
+    1,
+    1,
+    1
+   ],
+   "zero_shot": {
+    "accuracy": 0.6635,
+    "per_class": {
+     "World": 0.773,
+     "Sports": 0.6179,
+     "Business": 0.6682,
+     "Sci/Tech": 0.5973
+    }
+   }
+  },
+  "SmolLM2-360M": {
+   "params": 361821120,
+   "bits_per_byte": 1.1437,
+   "bytes_per_token": 4.275,
+   "tokens_per_word": [
+    1,
+    1,
+    1,
+    1
+   ],
+   "zero_shot": {
+    "accuracy": 0.6865,
+    "per_class": {
+     "World": 0.82,
+     "Sports": 0.5551,
+     "Business": 0.7283,
+     "Sci/Tech": 0.6518
+    }
+   }
+  },
+  "SmolLM2-1.7B": {
+   "params": 1711376384,
+   "bits_per_byte": 1.0548,
+   "bytes_per_token": 4.275,
+   "tokens_per_word": [
+    1,
+    1,
+    1,
+    1
+   ],
+   "zero_shot": {
+    "accuracy": 0.7475,
+    "per_class": {
+     "World": 0.6928,
+     "Sports": 0.9049,
+     "Business": 0.7795,
+     "Sci/Tech": 0.6128
+    }
+   }
+  }
+ }
+}

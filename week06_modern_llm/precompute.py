@@ -8,7 +8,7 @@ The rule is the same as in weeks 1–5:
 
 Nothing is trained this week except one encoder in `encoder`. Every other step is a
 forward pass over checkpoints somebody else trained: a family of sizes (Pythia), a
-family of years (gpt2 against SmolLM2), and one instruct model.
+family of years (gpt2 against SmolLM2).
 
 Data comes from the hub through `datasets` (cached under ~/.cache/huggingface):
     fancyzhx/ag_news                       AG News — the same 120 000 / 7 600 split as weeks 1, 4 and 5
@@ -18,7 +18,7 @@ Run (an M-series Mac or a GPU):
     python precompute.py --full              all eight Pythia sizes, the whole test set: needs a 24 GB GPU
     python precompute.py --only scaling
     python precompute.py --only family serving
-    python precompute.py --only instruct speculative encoder
+    python precompute.py --only encoder
 
 Steps (and what they write):
     scaling      scaling.json            bits per byte on AG News for every Pythia size (the N axis) and for
@@ -28,9 +28,6 @@ Steps (and what they write):
     serving      serving.json            on this machine: prefill against decode by prompt length, the KV cache in
                                          bytes (measured and by formula), a GPU call's launch against its result, CPU <-> GPU
                                          transfer, the n × n crossover and the round-trip decoding loop — the notebook measures the same live and shows both
-    instruct     instruct.json           SmolLM2-1.7B-Instruct restoring punctuation and case by instruction alone,
-                                         scored like week 5's fine-tuned gpt2
-    speculative  speculative.json        the 1.7B generating alone and with the 135M drafting for it
     encoder      encoder.json            ModernBERT-base fine-tuned on AG News with week 4's recipe
 
 Every step records the device it ran on; the notebook reads it from the artifact and says so.
@@ -51,8 +48,6 @@ import re
 import random
 import tempfile
 import time
-from collections import Counter
-from difflib import SequenceMatcher
 
 import numpy as np
 import pandas as pd
@@ -75,24 +70,20 @@ N_DEMO = 20                                                   # examples whose o
 MODEL_OLD = "gpt2"
 MODEL_NEW = "HuggingFaceTB/SmolLM2-135M"
 FAMILY = [MODEL_OLD, MODEL_NEW, "HuggingFaceTB/SmolLM2-360M", "HuggingFaceTB/SmolLM2-1.7B"]
-MODEL_CHAT = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
-MODEL_DRAFT = "HuggingFaceTB/SmolLM2-135M-Instruct"
 ENCODER_NEW = "answerdotai/ModernBERT-base"
 
 PYTHIA = ["70m", "160m", "410m", "1b", "1.4b", "2.8b", "6.9b", "12b"]         # EleutherAI/pythia-<size>: one corpus, one data order
 PYTHIA_STEPS = [1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000, 143000]  # branches `step<k>` of every Pythia repo
 PYTHIA_TOKENS_PER_STEP = 1024 * 2048                                          # 2 097 152 tokens per step; 143 000 steps = 299.9B (Biderman et al. 2023)
-HALF_PRECISION = {"2.8b", "6.9b", "12b", "HuggingFaceTB/SmolLM2-1.7B", MODEL_CHAT}    # loaded in fp16: 2 bytes per parameter instead of 4
-
-SYSTEM_PROMPT = "You restore punctuation and capitalisation. Return the same words in the same order, and nothing else."
+HALF_PRECISION = {"2.8b", "6.9b", "12b", "HuggingFaceTB/SmolLM2-1.7B"}    # loaded in fp16: 2 bytes per parameter instead of 4
 
 SIZES = {
-    "demo":  {"scaling_texts": 1000, "scaling_sizes": 6, "family_texts": 1000, "zero_shot": 2000, "instruct_test": 500,
-              "speculative_prompts": 20, "encoder_train": 6000, "encoder_test": 7600, "epochs": 2, "lengths": [16, 64, 256, 960]},
-    "full":  {"scaling_texts": 2000, "scaling_sizes": 8, "family_texts": 7600, "zero_shot": 7600, "instruct_test": 2000,
-              "speculative_prompts": 50, "encoder_train": 6000, "encoder_test": 7600, "epochs": 2, "lengths": [16, 64, 256, 960]},
-    "smoke": {"scaling_texts": 24, "scaling_sizes": 3, "family_texts": 24, "zero_shot": 24, "instruct_test": 8,
-              "speculative_prompts": 2, "encoder_train": 64, "encoder_test": 32, "epochs": 1, "lengths": [8, 16, 32, 64]},
+    "demo":  {"scaling_texts": 1000, "scaling_sizes": 6, "family_texts": 1000, "zero_shot": 2000,
+              "encoder_train": 6000, "encoder_test": 7600, "epochs": 2, "lengths": [16, 64, 256, 960]},
+    "full":  {"scaling_texts": 2000, "scaling_sizes": 8, "family_texts": 7600, "zero_shot": 7600,
+              "encoder_train": 6000, "encoder_test": 7600, "epochs": 2, "lengths": [16, 64, 256, 960]},
+    "smoke": {"scaling_texts": 24, "scaling_sizes": 3, "family_texts": 24, "zero_shot": 24,
+              "encoder_train": 64, "encoder_test": 32, "epochs": 1, "lengths": [8, 16, 32, 64]},
 }
 
 
@@ -349,18 +340,6 @@ def chunks(tag, n, size):
 
 
 @torch.no_grad()
-def generate(model, tokenizer, prompts, max_new_tokens, batch_size=32, **kwargs):
-    """Greedy, batched, left-padded. Returns the text after the prompt, up to <eos>."""
-    model.eval()
-    outs = []
-    for i in chunks("generate", len(prompts), batch_size):
-        enc = tokenizer(prompts[i:i + batch_size], return_tensors="pt", padding=True, padding_side="left").to(model.device)
-        ids = model.generate(**enc, max_new_tokens=max_new_tokens, do_sample=False, pad_token_id=tokenizer.pad_token_id, **kwargs)
-        outs += tokenizer.batch_decode(ids[:, enc.input_ids.shape[1]:], skip_special_tokens=True)
-    return [o.strip() for o in outs]
-
-
-@torch.no_grad()
 def score(model, tokenizer, prefixes, continuations, batch_size=64):
     """Week 5's scorer, unchanged: log P(continuation | prefix) for every prefix × continuation, as an array
     [n_prefixes, n_continuations, 2] — the sum over the continuation's tokens and the mean per token.
@@ -389,63 +368,6 @@ def score(model, tokenizer, prefixes, continuations, batch_size=64):
             j += len(b)
     return out.reshape(len(prefixes), len(continuations), 2)
 # --- end ---
-
-
-# --- notebook: chat ---
-def chat_prompt(tokenizer, text):
-    """The task as an instruction: a system turn, a user turn, and the header of the assistant's turn left open."""
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": text}]
-    return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-# --- end ---
-
-
-# Week 5's word-level scoring of a rewrite, copied so the two weeks' numbers are the same metric.
-CASES = ["lower", "Cap", "CAPS", "other"]
-PUNCTS = ["", ",", ".", "?", "!", ":", ";", "other"]
-
-
-def word_label(word):
-    tail = re.search(r"[^A-Za-z0-9']*$", word).group()
-    inner = word[:len(word) - len(tail)]
-    punct = tail if tail in PUNCTS else "other"
-    if re.sub(r"[^A-Za-z0-9']", "", inner) != inner:
-        punct = "other"
-    letters = re.sub(r"[^A-Za-z]", "", inner)
-    if letters == letters.lower():
-        case = "lower"
-    elif letters == letters.upper() and len(letters) > 1:
-        case = "CAPS"
-    elif letters == letters[:1].upper() + letters[1:].lower():
-        case = "Cap"
-    else:
-        case = "other"
-    return f"{case}|{punct}"
-
-
-def align_words(pred, gold, key=lambda w: w):
-    p, g = pred.split(), gold.split()
-    paired = [None] * len(g)
-    for tag, i1, i2, j1, j2 in SequenceMatcher(None, [key(w) for w in p], [key(w) for w in g], autojunk=False).get_opcodes():
-        if tag == "equal" or (tag == "replace" and i2 - i1 == j2 - j1):
-            paired[j1:j2] = p[i1:i2]
-    return paired
-
-
-def word_scores(preds, golds, key=lambda w: w):
-    rows = []
-    for pred, gold in zip(preds, golds):
-        for pw, gw in zip(align_words(pred, gold, key), gold.split()):
-            rows.append({"gold": gw, "pred": pw, "label": word_label(gw), "correct": pw == gw,
-                         "changed": pw is not None and key(pw) != key(gw), "dropped": pw is None})
-    return pd.DataFrame(rows)
-
-
-def breakdown(df):
-    df = df.assign(case=df.label.str.split("|").str[0], punct=df.label.str.split("|").str[1].replace("", "none"))
-    return {"accuracy": round(df.correct.mean(), 4), "changed": round(df.changed.mean(), 4), "dropped": round(df.dropped.mean(), 4),
-            "n_words": len(df),
-            "by_case": {"words": df.groupby("case").size().to_dict(), "accuracy": df.groupby("case").correct.mean().round(4).to_dict()},
-            "by_punct": {"words": df.groupby("punct").size().to_dict(), "accuracy": df.groupby("punct").correct.mean().round(4).to_dict()}}
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -486,7 +408,6 @@ def smoke_models(out_dir, agnews):
 
     configs = {MODEL_OLD: GPT2Config(vocab_size=V, n_positions=512, n_embd=48, n_layer=2, n_head=4, bos_token_id=0, eos_token_id=0),
                MODEL_NEW: llama(48, 3, 6, 2), FAMILY[2]: llama(72, 3, 6, 2), FAMILY[3]: llama(96, 3, 6, 2),
-               MODEL_CHAT: llama(96, 3, 6, 2), MODEL_DRAFT: llama(48, 2, 6, 2),
                "EleutherAI/pythia-70m": neox(32), "EleutherAI/pythia-160m": neox(48), "EleutherAI/pythia-410m": neox(64)}
     local = {}
     for name, config in configs.items():
@@ -640,60 +561,6 @@ def step_serving(cfg, device, agnews, out, local):
     json.dump(art, open(f"{out}/serving.json", "w"), indent=1)
 
 
-def step_instruct(cfg, device, agnews, out, local):
-    """Week 5 §4.1 without the fine-tune: the task stated as an instruction to a model nobody trained for it."""
-    test_texts = [target_text(t) for t in agnews["test"]["text"][:cfg["instruct_test"]]]
-    test_x = [strip_text(t) for t in test_texts]
-    model, tok = load_lm(MODEL_CHAT, device, local)
-    prompts = [chat_prompt(tok, x) for x in test_x]
-    max_new = 8 if cfg["name"] == "smoke" else 160
-    t = time.time()
-    preds = generate(model, tok, prompts, max_new_tokens=max_new, batch_size=16)
-    seconds = time.time() - t
-    art = {"sizes": cfg["name"], "model": MODEL_CHAT, "params": n_params(model), "n_test": len(test_texts), "device": str(device),
-           "system": SYSTEM_PROMPT, "prompt": prompts[0], "ms_per_1000": round(seconds / len(prompts) * 1e6, 1),
-           **breakdown(word_scores(preds, test_texts, key=strip_text)),
-           "demo": [{"input": test_x[i], "gold": test_texts[i], "pred": preds[i]} for i in range(min(N_DEMO, len(preds)))]}
-    log(f"    word accuracy {art['accuracy']:.3f}, changed {art['changed']:.3f}, dropped {art['dropped']:.3f}, {seconds:.0f}s")
-    json.dump(art, open(f"{out}/instruct.json", "w"), indent=1)
-
-
-def step_speculative(cfg, device, agnews, out, local):
-    """The big model alone, and the big model checking a small model's drafts. Greedy both ways, so the text is the same."""
-    model, tok = load_lm(MODEL_CHAT, device, local)
-    draft, _ = load_lm(MODEL_DRAFT, device, local)
-    texts = [strip_text(target_text(t)) for t in agnews["test"]["text"][:cfg["speculative_prompts"]]]
-    max_new = 8 if cfg["name"] == "smoke" else 160
-    rows = []
-    with torch.no_grad():                                         # warm-up: the first assisted call pays for set-up, not for decoding
-        model.generate(**tok(chat_prompt(tok, texts[0]), return_tensors="pt").to(device), max_new_tokens=4, do_sample=False,
-                       pad_token_id=tok.pad_token_id, assistant_model=draft)
-    for x in texts:
-        enc = tok(chat_prompt(tok, x), return_tensors="pt").to(device)
-        with torch.no_grad():
-            sync(device); t = time.perf_counter()
-            alone = model.generate(**enc, max_new_tokens=max_new, do_sample=False, pad_token_id=tok.pad_token_id)
-            sync(device); t_alone = time.perf_counter() - t
-            t = time.perf_counter()
-            assisted = model.generate(**enc, max_new_tokens=max_new, do_sample=False, pad_token_id=tok.pad_token_id, assistant_model=draft)
-            sync(device); t_assisted = time.perf_counter() - t
-            P = enc.input_ids.shape[1]
-            agree = (draft(alone).logits[:, P - 1:-1].argmax(-1) == alone[:, P:]).float().mean().item()   # the draft, shown the target's text
-        n = alone.shape[1] - P
-        rows.append({"new tokens": n, "alone, s": round(t_alone, 3), "with a draft, s": round(t_assisted, 3), "draft agrees": round(agree, 3),
-                     "same text": bool(alone.shape == assisted.shape and (alone == assisted).all())})
-    df = pd.DataFrame(rows)
-    art = {"sizes": cfg["name"], "target": MODEL_CHAT, "draft": MODEL_DRAFT, "params_target": n_params(model), "params_draft": n_params(draft),
-           "device": str(device), "n_prompts": len(rows), "new_tokens": int(df["new tokens"].sum()),
-           "alone_tokens_per_s": round(df["new tokens"].sum() / df["alone, s"].sum(), 1),
-           "draft_tokens_per_s": round(df["new tokens"].sum() / df["with a draft, s"].sum(), 1),
-           "same_text_share": round(float(df["same text"].mean()), 3),
-           "draft_agreement": round(float((df["draft agrees"] * df["new tokens"]).sum() / df["new tokens"].sum()), 3), "rows": rows}
-    log(f"    alone {art['alone_tokens_per_s']} tokens/s, with a draft {art['draft_tokens_per_s']} tokens/s, "
-        f"draft agrees on {art['draft_agreement']:.0%} of tokens, same text on {art['same_text_share']:.0%}")
-    json.dump(art, open(f"{out}/speculative.json", "w"), indent=1)
-
-
 def step_encoder(cfg, device, agnews, out, local):
     """Week 4's `everything` fine-tune, the body swapped for a 2024 encoder: 6 000 texts, two epochs, lr 2e-5, 128 tokens."""
     seed_all()
@@ -727,8 +594,7 @@ def step_encoder(cfg, device, agnews, out, local):
     json.dump(art, open(f"{out}/encoder.json", "w"), indent=1)
 
 
-STEPS = {"scaling": step_scaling, "family": step_family, "serving": step_serving, "instruct": step_instruct,
-         "speculative": step_speculative, "encoder": step_encoder}
+STEPS = {"scaling": step_scaling, "family": step_family, "serving": step_serving, "encoder": step_encoder}
 
 
 def main():

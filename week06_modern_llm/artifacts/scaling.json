@@ -1,0 +1,93 @@
+{
+ "sizes": "demo",
+ "n_texts": 1000,
+ "device": "cuda",
+ "family": "EleutherAI/pythia",
+ "corpus": "the Pile",
+ "tokens_per_step": 2097152,
+ "by_size": [
+  {
+   "name": "pythia-70m",
+   "params": 70426624,
+   "params_non_embedding": 18915328,
+   "bits_per_byte": 1.5422
+  },
+  {
+   "name": "pythia-160m",
+   "params": 162322944,
+   "params_non_embedding": 85056000,
+   "bits_per_byte": 1.3521
+  },
+  {
+   "name": "pythia-410m",
+   "params": 405334016,
+   "params_non_embedding": 302311424,
+   "bits_per_byte": 1.1689
+  },
+  {
+   "name": "pythia-1b",
+   "params": 1011781632,
+   "params_non_embedding": 805736448,
+   "bits_per_byte": 1.102
+  },
+  {
+   "name": "pythia-1.4b",
+   "params": 1414647808,
+   "params_non_embedding": 1208602624,
+   "bits_per_byte": 1.0567
+  },
+  {
+   "name": "pythia-2.8b",
+   "params": 2775208960,
+   "params_non_embedding": 2517652480,
+   "bits_per_byte": 1.0083
+  }
+ ],
+ "by_step": [
+  {
+   "step": 1000,
+   "tokens_seen": 2097152000,
+   "bits_per_byte": 1.8119
+  },
+  {
+   "step": 2000,
+   "tokens_seen": 4194304000,
+   "bits_per_byte": 1.6008
+  },
+  {
+   "step": 4000,
+   "tokens_seen": 8388608000,
+   "bits_per_byte": 1.49
+  },
+  {
+   "step": 8000,
+   "tokens_seen": 16777216000,
+   "bits_per_byte": 1.4341
+  },
+  {
+   "step": 16000,
+   "tokens_seen": 33554432000,
+   "bits_per_byte": 1.3961
+  },
+  {
+   "step": 32000,
+   "tokens_seen": 67108864000,
+   "bits_per_byte": 1.3699
+  },
+  {
+   "step": 64000,
+   "tokens_seen": 134217728000,
+   "bits_per_byte": 1.3472
+  },
+  {
+   "step": 128000,
+   "tokens_seen": 268435456000,
+   "bits_per_byte": 1.344
+  },
+  {
+   "step": 143000,
+   "tokens_seen": 299892736000,
+   "bits_per_byte": 1.3521
+  }
+ ]
+}
