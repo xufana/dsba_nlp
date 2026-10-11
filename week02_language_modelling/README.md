@@ -19,13 +19,11 @@ browser, and the notebook's LSTM (`artifacts/lm_lstm.pt`, quantised) loaded
 into the page so the decoding rules — temperature, top-k, top-p, min-p,
 repetition penalty — sample from the real model right there.
 
-The page is generated, not hand-edited: `demo/export_demo_data.py` reruns the
-notebook's code on the notebook's split and writes `demo/demo_data.json`;
-`demo/build_demo.py` assembles it with `demo/parts/*` into the HTML.
-`demo/check_demo.js` opens the built page in headless Chrome over the
-DevTools protocol and checks that the in-browser tokenizer and LSTM reproduce
-the Python numbers. Formulas are native MathML — no external library, so the
-page renders offline.
+The page is generated, not hand-edited: `export_demo_data.py` reruns the
+notebook's code on the notebook's split and writes `artifacts/demo_data.json`;
+`../scripts/build_demo.py` assembles it with `demo/*` into the HTML, and
+`../scripts/check_demo.js` opens the built page in headless Chrome over the
+DevTools protocol and compares the in-browser model to the PyTorch numbers.
 
 ## Data
 

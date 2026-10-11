@@ -30,7 +30,7 @@ Steps (and what they write):
 
 --smoke runs every step on a toy configuration in a couple of minutes on a 2-core
 CPU, so the notebook can be executed end-to-end before the real run. Smoke
-artifacts are written to --out (default artifacts_smoke/ in smoke mode); never
+artifacts are written to --out (default /tmp/dsba_nlp/week03/artifacts_smoke/ in smoke mode); never
 commit them.
 
 Weights are saved in fp16 (half the size on GitHub); the notebook's load_weights()
@@ -744,7 +744,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--data-dir", default=f"{W2}/data", help="Multi30k files (week 2)")
     ap.add_argument("--w2-art", default=f"{W2}/artifacts", help="week-2 tokenizers")
-    ap.add_argument("--out", default=None, help="artifacts/ (artifacts_smoke/ with --smoke)")
+    ap.add_argument("--out", default=None, help="artifacts/ (/tmp/dsba_nlp/week03/artifacts_smoke/ with --smoke)")
     ap.add_argument("--only", nargs="*", default=["attn_lstm", "transformer", "ablations", "g2p"])
     ap.add_argument("--attn-epochs", type=int, default=6)
     ap.add_argument("--tf-epochs", type=int, default=15)
@@ -753,7 +753,7 @@ if __name__ == "__main__":
     ap.add_argument("--smoke", action="store_true", help="toy configuration, minutes on a laptop CPU")
     args = ap.parse_args()
 
-    out = args.out or ("artifacts_smoke" if args.smoke else "artifacts")
+    out = args.out or ("/tmp/dsba_nlp/week03/artifacts_smoke" if args.smoke else "artifacts")
     os.makedirs(out, exist_ok=True)
     device = torch.device(args.device) if args.device else pick_device()
     log(f"device: {device}  out: {out}  smoke: {args.smoke}")

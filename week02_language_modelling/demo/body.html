@@ -1,0 +1,726 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 2<br>Language Modelling and Text Generation</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div style="margin-top:10px">Every number on this page comes from the seminar notebook, or is computed in your browser right now — including the LSTM, which is loaded into this page and generates here.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>generator =<br>P(next token | prefix)<br>× decoding rule</h1>
+  <p class="lede">{{inline:lede}}</p>
+  <div class="michael">
+    <figure style="margin:0">
+      <img id="michael-img" alt="Michael Scott: Sometimes I'll start a sentence and I don't even know where it's going. I just hope I find it along the way.">
+      <figcaption>{{inline:hero-cap1}}</figcaption>
+    </figure>
+    <div class="prose keep">
+      {{text:hero-p1}}
+    </div>
+  </div>
+  <div class="prose">
+    {{text:hero-p2}}
+  </div>
+<div class="formula"><span class="fn">The chain rule · Shannon 1948</span><math display="block"><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mi>T</mi></msub><mo>)</mo></mrow><mo>=</mo><munderover><mo>∏</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow></mrow></mrow></math></div>
+</section>
+
+<!-- ============================================================ 00 data -->
+<section id="data">
+  <p class="eyebrow">Block 00 · the data</p>
+  <h2>124 000 jokes, and why counting words will not be enough</h2>
+  <div class="prose">
+    {{text:data-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Corpus · split with seed 42</span><span class="mono" id="data-split"></span></div>
+    <div class="panel-body">
+      <div class="stat-row" id="data-stats" style="margin-bottom:18px"></div>
+      <div class="grid-2">
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Characters per joke</div>
+          <div id="len-chart"></div>
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Three jokes from the training set</div>
+          <div class="gen-list" id="data-examples"></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-note">{{inline:data-note1}}</div>
+  </div>
+
+  <h3>Zipf, and the bill for working with words</h3>
+  <div class="prose">
+    {{text:data-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Word frequencies · training set</span><span class="btnrow"><button class="primary" id="btn-zipf-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="grid-2" style="align-items:start">
+        <div>
+          <label class="field" for="bet-hapax">Share of the vocabulary seen exactly once: <b id="bet-hapax-v">20</b>%</label>
+          <input type="range" id="bet-hapax" min="1" max="90" value="20">
+          <div id="zipf-stats" hidden style="margin-top:18px"></div>
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Frequency against rank, both axes log</div>
+          <div id="zipf-chart"></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-note" id="zipf-note" hidden>{{inline:zipf-note}}</div>
+  </div>
+</section>
+
+<!-- ============================================================= 01 bpe -->
+<section id="bpe">
+  <p class="eyebrow">Block 01 · tokenization, for real this time</p>
+  <h2>BPE in twenty lines, running in your browser</h2>
+  <div class="prose">
+    {{text:bpe-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>bpe_train · 3 000 jokes · 300 merges · in this page</span>
+      <span class="btnrow">
+        <span class="mono" id="bpe-progress">0 merges</span>
+        <button class="primary" id="btn-bpe-train">Train</button>
+        <button id="btn-bpe-step">One merge</button>
+        <button id="btn-bpe-reset">Reset</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div class="bet" id="bet-merge"><span class="q">{{inline:bet-merge}}</span></div>
+      <div id="bpe-merges"></div>
+      <div id="bpe-encode" hidden style="margin-top:18px">
+        <label class="field" for="bpe-word">Encode a word with the merges you just trained, in training order</label>
+        <input type="text" id="bpe-word" value="мужиками" spellcheck="false">
+        <div id="bpe-word-out" style="margin-top:8px"></div>
+        <div class="btnrow" id="bpe-word-presets" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="panel-note" id="bpe-note" hidden>{{inline:bpe-note}}</div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">collections.Counter · bpe_train · bpe_encode · tokenizers.trainers.BpeTrainer</span></summary>
+      <pre>word_freq = Counter(tuple(w) + ("&lt;/w&gt;",) for text in texts for w in tokenize_words(text))
+for i in range(num_merges):
+    pairs = Counter()
+    for word, freq in word_freq.items():
+        for a, b in zip(word, word[1:]):
+            pairs[(a, b)] += freq
+    best = max(pairs, key=pairs.get)           # the most frequent adjacent pair
+    word_freq = merge_everywhere(word_freq, best)
+    merges.append(best)                        # the order IS the model</pre>
+      <div class="why">{{inline:bpe-why1}}</div>
+    </details>
+  </div>
+
+  <h3>The same thing, from a library — with 8 000 tokens</h3>
+  <div class="prose">
+    {{text:bpe-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>BPE · 8 000 tokens · trained on 117 098 jokes</span><span class="mono" id="tok-stats"></span></div>
+    <div class="panel-body">
+      <input type="text" id="tok-input" spellcheck="false">
+      <div id="tok-out" style="margin-top:10px"></div>
+      <div class="btnrow" id="tok-presets" style="margin-top:10px"></div>
+    </div>
+    <div class="panel-note">{{inline:bpe-note1}}</div>
+  </div>
+
+  <h3>Vocabulary size is a dial, not a fact</h3>
+  <div class="prose">
+    {{text:bpe-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Seven tokenizers · 2 000 test jokes</span><span class="btnrow"><button class="primary" id="btn-dial-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-dial"><span class="q">{{inline:bet-dial}}</span></div>
+      <div class="grid-2" id="dial-out" hidden>
+        <div><div id="dial-chart"></div></div>
+        <div class="scroll-x"><table id="dial-table"></table></div>
+      </div>
+    </div>
+    <div class="panel-note" id="dial-note" hidden></div>
+  </div>
+</section>
+
+<!-- =========================================================== 02 ngram -->
+<section id="ngram">
+  <p class="eyebrow">Block 02 · counting</p>
+  <h2>The n-gram language model, and its first text</h2>
+  <div class="prose">
+    {{text:ngram-p1}}
+  </div>
+<div class="formula"><span class="fn">The Markov assumption · only the last n−1 tokens matter</span><math display="block"><mrow><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow></mrow><mo>≈</mo><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow></mrow></math></div><div class="formula"><span class="fn">Maximum likelihood · the ratio of counts</span><math display="block"><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><mtext>prefix</mtext><mo>)</mo></mrow><mo>=</mo><mfrac><mrow><mi mathvariant="normal">Count</mi><mrow><mo>(</mo><mtext>prefix</mtext><mo>,</mo><msub><mi>w</mi><mi>t</mi></msub><mo>)</mo></mrow></mrow><mrow><munder><mo>∑</mo><mrow><mi>w</mi><mo>∈</mo><mi>V</mi></mrow></munder><mi mathvariant="normal">Count</mi><mrow><mo>(</mo><mtext>prefix</mtext><mo>,</mo><mi>w</mi><mo>)</mo></mrow></mrow></mfrac></mrow></math></div>  <div class="prose">
+  {{text:ngram-p2}}
+</div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>NGramLM · words · 8 000 jokes · counted in this page</span>
+      <span class="btnrow">
+        <span class="mono" id="ng-status">not counted yet</span>
+        <button class="primary" id="btn-ng-gen">Generate</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div class="sliders" style="grid-template-columns:2fr 1fr 1fr">
+        <div><label class="field" for="ng-prefix">prefix (optional)</label><input type="text" id="ng-prefix" value="" placeholder="штирлиц" spellcheck="false"></div>
+        <div><label class="field" for="ng-n">n <b id="ng-n-v">3</b></label><input type="range" id="ng-n" min="1" max="5" value="3"></div>
+        <div><label class="field" for="ng-seed">seed <b id="ng-seed-v">0</b></label><input type="range" id="ng-seed" min="0" max="30" value="0"></div>
+      </div>
+      <div class="gen-list" id="ng-out"></div>
+      <div class="footnote" id="ng-copied" style="margin-top:10px"></div>
+    </div>
+    <div class="panel-note">{{inline:ngram-note1}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The notebook's run · 40 000 jokes · 30 samples per n</span><span class="mono" id="ng-nb-stats"></span></div>
+    <div class="panel-body">
+      <div class="grid-2">
+        <div><div class="eyebrow" style="margin-bottom:6px">3-gram · seeds 0–2</div><div class="gen-list" id="ng-nb-3"></div></div>
+        <div><div class="eyebrow" style="margin-bottom:6px">5-gram · seeds 0–2</div><div class="gen-list" id="ng-nb-5"></div></div>
+      </div>
+      <div class="stat-row" id="ng-nb-copied" style="margin-top:18px"></div>
+    </div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">count_ngrams · NGramLM.next_distribution · np.random.RandomState · nltk.lm · kenlm</span></summary>
+      <pre>counts = defaultdict(Counter)                      # prefix tuple -> Counter of what followed
+for tokens in corpus_tokens:
+    padded = ["[BOS]"] * (n - 1) + tokens + ["[EOS]"]
+    for i in range(n - 1, len(padded)):
+        counts[tuple(padded[i - n + 1:i])][padded[i]] += 1
+
+dist = lm.next_distribution(prefix, n)             # {token: count / total}
+nxt = rng.choice(list(dist), p=list(dist.values()))  # sample, feed back, repeat until [EOS]</pre>
+      <div class="why">{{inline:ngram-why1}}</div>
+    </details>
+  </div>
+</section>
+
+<!-- ========================================================== 03 smooth -->
+<section id="smooth">
+  <p class="eyebrow">Block 03 · perplexity and smoothing</p>
+  <h2>A number for the model — and the number that lies</h2>
+  <div class="prose">
+    {{text:smooth-p1}}
+  </div>
+<div class="formula"><span class="fn">Perplexity · exp of the cross-entropy per token</span><math display="block"><mrow><mi mathvariant="normal">PPL</mi><mrow><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>…</mo><msub><mi>w</mi><mi>T</mi></msub><mo>)</mo></mrow><mo>=</mo><msup><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mi>T</mi></msub><mo>)</mo></mrow></mrow><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mi>T</mi></mrow></msup><mo>=</mo><mi mathvariant="normal">exp</mi><mrow><mo>(</mo><mo>−</mo><mfrac><mn>1</mn><mi>T</mi></mfrac><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><mi mathvariant="normal">log</mi><mspace width="0.5em"/><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>)</mo></mrow></mrow><mo>)</mo></mrow></mrow></math></div>  <div class="prose">
+  {{text:smooth-p2}}
+</div>
+  <div class="panel">
+    <div class="panel-head"><span>evaluate_ngram · trigram · no smoothing · 5 000 test jokes</span><span class="btnrow"><button class="primary" id="btn-ppl-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div style="max-width:320px"><label class="field" for="bet-ppl">Your perplexity</label><input type="text" id="bet-ppl" placeholder="e.g. 250" inputmode="decimal"></div>
+      <div id="ppl-out" hidden style="margin-top:18px"></div>
+    </div>
+    <div class="panel-note" id="ppl-note" hidden>{{inline:ppl-note}}</div>
+  </div>
+  <div class="panel" id="sparsity-panel" hidden>
+    <div class="panel-head"><span>Share of test n-grams never seen in training · 117 098 training jokes</span><span class="mono">words vs BPE 8k</span></div>
+    <div class="panel-body"><div id="sparsity-chart"></div></div>
+    <div class="panel-note">{{inline:smooth-note1}}</div>
+  </div>
+
+  <h3>Smoothing: stop assigning zero</h3>
+  <div class="prose">
+    {{text:smooth-p3}}
+  </div>
+<div class="formula"><span class="fn">Add-δ (Laplace) smoothing · every continuation seen δ extra times</span><math display="block"><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><mtext>prefix</mtext><mo>)</mo></mrow><mo>=</mo><mfrac><mrow><mi mathvariant="normal">Count</mi><mrow><mo>(</mo><mtext>prefix</mtext><mo>,</mo><msub><mi>w</mi><mi>t</mi></msub><mo>)</mo></mrow><mo>+</mo><mi>δ</mi></mrow><mrow><munder><mo>∑</mo><mrow><mi>w</mi><mo>∈</mo><mi>V</mi></mrow></munder><mi mathvariant="normal">Count</mi><mrow><mo>(</mo><mtext>prefix</mtext><mo>,</mo><mi>w</mi><mo>)</mo></mrow><mo>+</mo><mi>δ</mi><mo>|</mo><mi>V</mi><mo>|</mo></mrow></mfrac></mrow></math></div><div class="formula"><span class="fn">Interpolation · Jelinek–Mercer 1980</span><math display="block"><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>2</mn></mrow></msub><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow><mo>=</mo><msub><mi>λ</mi><mn>3</mn></msub><msub><mi>P</mi><mn>3</mn></msub><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>2</mn></mrow></msub><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow><mo>+</mo><msub><mi>λ</mi><mn>2</mn></msub><msub><mi>P</mi><mn>2</mn></msub><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow><mo>+</mo><msub><mi>λ</mi><mn>1</mn></msub><msub><mi>P</mi><mn>1</mn></msub><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>)</mo></mrow><mo>,</mo><mspace width="0.5em"/><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>λ</mi><mi>i</mi></msub><mo>=</mo><mn>1</mn></mrow></math></div>  <div class="prose">
+  {{text:smooth-p4}}
+</div>
+  <div class="panel">
+    <div class="panel-head"><span>Eight configurations · words · 40 000 jokes counted · 5 000 test jokes</span><span class="btnrow"><span class="mono" id="smooth-score"></span><button class="primary" id="btn-smooth-reveal" disabled>Reveal the table</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-sm-n"><span class="q">{{inline:bet-sm-n}}</span></div>
+      <div class="bet" id="bet-sm-delta"><span class="q">{{inline:bet-sm-delta}}</span></div>
+      <div class="bet" id="bet-sm-interp"><span class="q">{{inline:bet-sm-interp}}</span></div>
+      <div id="smooth-out" hidden style="margin-top:14px"></div>
+    </div>
+    <div class="panel-note" id="smooth-note" hidden>{{inline:smooth-note}}</div>
+  </div>
+
+  <h3>The number that lies</h3>
+  <div class="prose">
+    {{text:smooth-p5}}
+  </div>
+<div class="formula"><span class="fn">Training loss · cross-entropy, i.e. log perplexity — and its tokenizer-free cousin</span><math display="block"><mrow><mi>ℒ</mi><mo>=</mo><mo>−</mo><mfrac><mn>1</mn><mi>T</mi></mfrac><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><mi mathvariant="normal">log</mi><mspace width="0.5em"/><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>)</mo></mrow></mrow><mo>=</mo><mi mathvariant="normal">log</mi><mspace width="0.5em"/><mi mathvariant="normal">PPL</mi></mrow></math><math display="block"><mrow><mtext>bits/char</mtext><mo>=</mo><mo>−</mo><mfrac><mn>1</mn><msub><mi>N</mi><mtext>chars</mtext></msub></mfrac><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><msub><mi mathvariant="normal">log</mi><mn>2</mn></msub><mspace width="0.5em"/><mrow><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>)</mo></mrow></mrow></mrow></math></div>  <div class="panel">
+    <div class="panel-head"><span>Interpolated n-grams · words against BPE 8k · same 40 000 jokes, same test set</span><span class="mono">test_ppl vs bits/char</span></div>
+    <div class="panel-body"><div class="grid-2" id="lies-out"></div></div>
+    <div class="panel-note">{{inline:smooth-note2}}</div>
+  </div>
+</section>
+
+<!-- ============================================================= 04 rnn -->
+<section id="rnn">
+  <p class="eyebrow">Block 04 · learning</p>
+  <h2>Recurrent language models</h2>
+  <div class="prose">
+    {{text:rnn-p1}}
+  </div>
+<div class="formula"><span class="fn">The recurrent language model · Elman 1990, Mikolov 2010</span><math display="block"><mrow><msub><mi>h</mi><mi>t</mi></msub><mo>=</mo><mi>f</mi><mrow><mo>(</mo><msub><mi>h</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>x</mi><mi>t</mi></msub><mo>)</mo></mrow><mo>,</mo><mspace width="0.5em"/><mi>P</mi><mrow><mo>(</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>|</mo><msub><mi>w</mi><mrow><mo>≤</mo><mi>t</mi></mrow></msub><mo>)</mo></mrow><mo>=</mo><mi mathvariant="normal">softmax</mi><mrow><mo>(</mo><mi>W</mi><msub><mi>h</mi><mi>t</mi></msub><mo>)</mo></mrow></mrow></math><math display="block"><mrow><mtext>plain RNN:</mtext><mspace width="0.5em"/><msub><mi>h</mi><mi>t</mi></msub><mo>=</mo><mi mathvariant="normal">tanh</mi><mrow><mo>(</mo><mi>W</mi><msub><mi>x</mi><mi>t</mi></msub><mo>+</mo><mi>U</mi><msub><mi>h</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow></mrow></math></div>  <div class="panel">
+    <div class="panel-head"><span>A recurrent language model, unrolled over one joke · training against inference</span><span class="mono">same weights, same joke, two different loops</span></div>
+    <div class="panel-body">
+      <div class="eyebrow" style="margin-bottom:4px">Training · teacher forcing · the output is compared with the next gold token, never fed back</div>
+      <div id="unroll-train"></div>
+      <div class="eyebrow" style="margin:18px 0 4px">Inference · autoregressive · the model has to <em>produce</em> the joke</div>
+      <div id="unroll-infer"></div>
+      <div class="scroll-x" style="margin-top:18px"><table id="unroll-table">
+        <thead><tr><th></th><th>training</th><th>inference</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">input at step t</td><td>the <strong>gold</strong> token w<sub>t</sub>, whatever the model predicted a step earlier — the prediction is scored by the loss and then dropped</td><td>the model's <strong>own</strong> previous output ŵ<sub>t</sub>, fed back in</td></tr>
+          <tr><td class="mono">what comes out</td><td>a distribution at every position, compared with the target w<sub>t+1</sub></td><td>a distribution at the last position only — the decoding rule picks one token from it</td></tr>
+          <tr><td class="mono">the loss</td><td>cross-entropy averaged over all positions = log perplexity; padding excluded</td><td>none — there is no gold text to compare with</td></tr>
+          <tr><td class="mono">how it runs</td><td>all T positions in <strong>one</strong> forward pass, in parallel: the inputs are known in advance</td><td><strong>one token at a time</strong>, T sequential steps, the state h<sub>t</sub> carried across them</td></tr>
+          <tr><td class="mono">when it stops</td><td>at the end of the joke — <span class="mono">[EOS]</span> is just the last target</td><td>when it samples <span class="mono">[EOS]</span> itself, or hits the length limit</td></tr>
+          <tr><td class="mono">what the prefix looks like</td><td>always correct</td><td>may already contain the model's own mistakes, which it never saw in training — <strong>exposure bias</strong> (block 07)</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="panel-note">{{inline:rnn-note1}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The data pipeline · one batch, third joke, first twelve positions</span><span class="mono" id="pipe-shape"></span></div>
+    <div class="panel-body scroll-x"><table id="pipe-table"></table></div>
+  </div>
+
+  <h3>A live LSTM against the trigram</h3>
+  <div class="prose">
+    {{text:rnn-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>LSTM · 8 000 jokes × 2 epochs · emb 256, hidden 256</span><span class="btnrow"><button class="primary" id="btn-live-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-live"><span class="q">{{inline:bet-live}}</span></div>
+      <div id="live-out" hidden></div>
+    </div>
+    <div class="panel-note" id="live-note" hidden>{{inline:live-note}}</div>
+  </div>
+
+  <h3>The whole recipe on one screen</h3>
+  <div class="prose">
+    {{text:rnn-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>data → batches → model → training → perplexity · 45 lines</span><span class="mono" id="recipe-stats"></span></div>
+    <div class="panel-body recipe">
+      <div class="step"><div class="k"><b>1</b>data</div><pre><span class="c"># 1. data: [BOS] tokens [EOS] per joke; a batch is padded,</span>
+<span class="c">#    and the target is the input shifted by one</span>
+seqs = [torch.tensor([BOS] + e.ids + [EOS]) for e in tok.encode_batch(train[:2_000])]
+
+def batches(seqs, batch_size=64):
+    for i in range(0, len(seqs), batch_size):
+        chunk = seqs[i:i + batch_size]
+        x = pad_sequence([s[:-1] for s in chunk], batch_first=True, padding_value=PAD)
+        y = pad_sequence([s[1:] for s in chunk], batch_first=True, padding_value=PAD)
+        yield x.to(device), y.to(device)
+</pre></div>
+      <div class="step"><div class="k"><b>2</b>model</div><pre><span class="c"># 2. model: embedding → LSTM → linear over the vocabulary; state carries h and c between calls</span>
+class LM(nn.Module):
+    def __init__(self, vocab_size, d=256):
+        super().__init__()
+        self.emb = nn.Embedding(vocab_size, d, padding_idx=PAD)
+        self.rnn = nn.LSTM(d, d, batch_first=True)
+        self.out = nn.Linear(d, vocab_size)
+
+    def forward(self, x, state=None):
+        h, state = self.rnn(self.emb(x), state)
+        return self.out(h), state
+</pre></div>
+      <div class="step"><div class="k"><b>3</b>training</div><pre><span class="c"># 3. training: cross-entropy at every position except padding, clip the gradient, step</span>
+model = LM(V).to(device)
+opt = torch.optim.AdamW(model.parameters(), lr=2e-3)
+for x, y in batches(seqs):
+    logits, _ = model(x)<span class="c">                                             # (B, T, V)</span>
+    loss = nn.functional.cross_entropy(logits.reshape(-1, V), y.reshape(-1), ignore_index=PAD)
+    opt.zero_grad(); loss.backward()
+    nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    opt.step()
+</pre></div>
+      <div class="step"><div class="k"><b>4</b>the number</div><pre><span class="c"># 4. the number: exp of the mean per-token loss on held-out jokes is the perplexity</span>
+with torch.no_grad():
+    nll, n = 0.0, 0
+    for x, y in batches(test_seqs[:1_000]):
+        logits, _ = model(x)
+        nll += nn.functional.cross_entropy(logits.reshape(-1, V), y.reshape(-1),
+                                           ignore_index=PAD, reduction=&quot;sum&quot;).item()
+        n += (y != PAD).sum().item()
+print(f&quot;one epoch on 2 000 jokes: test perplexity {math.exp(nll / n):.1f}&quot;)</pre></div>
+    </div>
+    <div class="panel-note">{{inline:rnn-note2}}</div>
+  </div>
+
+  <h3>RNN vs LSTM vs GRU, on more data</h3>
+  <div class="prose">
+    {{text:rnn-p4}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Validation perplexity per epoch · solid validation, dashed train</span><span class="btnrow"><button class="primary" id="btn-cells-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-cells"><span class="q">{{inline:bet-cells}}</span></div>
+      <div id="cells-out" hidden>
+        <div id="cells-chart"></div>
+        <div class="scroll-x" style="margin-top:14px"><table id="cells-table"></table></div>
+        <div class="eyebrow" style="margin:18px 0 6px">The LSTM's samples, plain sampling, seeds 0–2</div>
+        <div class="gen-list" id="cells-samples"></div>
+      </div>
+    </div>
+    <div class="panel-note" id="cells-note" hidden>{{inline:cells-note}}</div>
+  </div>
+
+  <h3>Why the plain RNN is living on borrowed time: gradients through time</h3>
+  <div class="panel">
+    <div class="panel-head"><span>The gradient of the loss at the last token, travelling back · one box = 5 steps</span><span class="btnrow"><span class="mono" id="grad-anim-status"></span><button id="btn-grad-replay">Replay</button></span></div>
+    <div class="panel-body"><div id="grad-anim"></div></div>
+    <div class="panel-note">{{inline:rnn-note3}}</div>
+  </div>
+<div class="formula"><span class="fn">Gradients through time · a product of Jacobians, and the LSTM's additive path</span><math display="block"><mrow><mfrac><mrow><mo>∂</mo><mi>ℒ</mi></mrow><mrow><mo>∂</mo><msub><mi>h</mi><mn>1</mn></msub></mrow></mfrac><mo>=</mo><mfrac><mrow><mo>∂</mo><mi>ℒ</mi></mrow><mrow><mo>∂</mo><msub><mi>h</mi><mi>T</mi></msub></mrow></mfrac><munderover><mo>∏</mo><mrow><mi>t</mi><mo>=</mo><mn>2</mn></mrow><mi>T</mi></munderover><mfrac><mrow><mo>∂</mo><msub><mi>h</mi><mi>t</mi></msub></mrow><mrow><mo>∂</mo><msub><mi>h</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub></mrow></mfrac></mrow></math><math display="block"><mrow><msub><mi>c</mi><mi>t</mi></msub><mo>=</mo><msub><mi>f</mi><mi>t</mi></msub><mo>⊙</mo><msub><mi>c</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><msub><mi>i</mi><mi>t</mi></msub><mo>⊙</mo><msub><mover accent="true"><mi>c</mi><mo>~</mo></mover><mi>t</mi></msub></mrow></math></div>  <div class="panel">
+    <div class="panel-head"><span>‖∂ loss / ∂ input embedding‖ · mean over 50 test jokes · loss at position 40</span><span class="mono">log scale</span></div>
+    <div class="panel-body">
+      <div class="grid-2">
+        <div><div class="eyebrow" style="margin-bottom:6px">Gradient against distance from the loss</div><div id="grad-chart"></div></div>
+        <div><div class="eyebrow" style="margin-bottom:6px">Gradient norm before clipping, every 20th step</div><div id="gnorm-chart"></div></div>
+      </div>
+    </div>
+    <div class="panel-note">{{inline:rnn-note4}}</div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">nn.LSTM · nn.GRU · nn.RNN · cross_entropy(ignore_index=PAD) · clip_grad_norm_ · retain_grad</span></summary>
+      <pre>class RNNLM(nn.Module):                      # embedding -> recurrent cell -> linear over V
+    def forward(self, x, state=None):
+        h, state = self.rnn(self.emb(x), state)
+        return self.out(h), state
+
+loss = F.cross_entropy(logits.reshape(-1, V), y.reshape(-1), ignore_index=PAD)
+loss.backward()
+nn.utils.clip_grad_norm_(model.parameters(), 1.0)   # the one line that saves the run
+
+e = model.emb(x); e.retain_grad()            # gradient through time: loss at the last position only
+F.cross_entropy(model.out(model.rnn(e)[0])[0, -1:], y[-1:]).backward()
+e.grad[0].norm(dim=-1)                       # one number per input position</pre>
+      <div class="why">{{inline:rnn-why1}}</div>
+    </details>
+  </div>
+</section>
+
+<!-- ========================================================== 05 decode -->
+<section id="decode">
+  <p class="eyebrow">Block 05 · the decoding rule</p>
+  <h2>Turning a distribution into text — with the real LSTM, here</h2>
+  <div class="prose">
+    {{text:decode-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The two extremes · notebook run · LSTM, 12k jokes × 3 epochs</span><span class="btnrow"><button class="primary" id="btn-ext-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-ext"><span class="q">{{inline:bet-ext}}</span></div>
+      <div class="grid-2" id="ext-out" hidden></div>
+    </div>
+    <div class="panel-note" id="ext-note" hidden>{{inline:ext-note}}</div>
+  </div>
+
+  <h3>The sampler</h3>
+  <div class="prose">
+    {{text:decode-p2}}
+  </div>
+<div class="formula"><span class="fn">Temperature · one dial over the whole distribution</span><math display="block"><mrow><msub><mi>P</mi><mi>i</mi></msub><mo>=</mo><mfrac><mrow><mi mathvariant="normal">exp</mi><mrow><mo>(</mo><msub><mi>z</mi><mi>i</mi></msub><mo>/</mo><mi>T</mi><mo>)</mo></mrow></mrow><mrow><munder><mo>∑</mo><mi>j</mi></munder><mi mathvariant="normal">exp</mi><mrow><mo>(</mo><msub><mi>z</mi><mi>j</mi></msub><mo>/</mo><mi>T</mi><mo>)</mo></mrow></mrow></mfrac></mrow></math></div><div class="formula"><span class="fn">Truncation · keep a set V′, zero the rest, renormalise</span><math display="block"><mrow><mtext>top-k:</mtext><mspace width="0.5em"/><msub><mi>V</mi><mi>k</mi></msub><mo>=</mo><mtext>the k most probable tokens</mtext><mo>;</mo><mspace width="0.5em"/><mtext>top-p:</mtext><mspace width="0.5em"/><mtext>the smallest</mtext><mspace width="0.5em"/><msub><mi>V</mi><mi>p</mi></msub><mspace width="0.5em"/><mtext>with</mtext><mspace width="0.5em"/><munder><mo>∑</mo><mrow><mi>w</mi><mo>∈</mo><msub><mi>V</mi><mi>p</mi></msub></mrow></munder><mi>P</mi><mrow><mo>(</mo><mi>w</mi><mo>)</mo></mrow><mo>≥</mo><mi>p</mi></mrow></math><math display="block"><mrow><mtext>min-p:</mtext><mspace width="0.5em"/><msub><mi>V</mi><mtext>min</mtext></msub><mo>=</mo><mo>{</mo><mi>w</mi><mo>:</mo><mi>P</mi><mrow><mo>(</mo><mi>w</mi><mo>)</mo></mrow><mo>≥</mo><msub><mi>p</mi><mtext>min</mtext></msub><mo>·</mo><munder><mo>max</mo><mi>v</mi></munder><mi>P</mi><mrow><mo>(</mo><mi>v</mi><mo>)</mo></mrow><mo>}</mo><mo>;</mo><mspace width="0.5em"/><mi>P′</mi><mrow><mo>(</mo><mi>w</mi><mo>)</mo></mrow><mo>=</mo><mfrac><mrow><mi>P</mi><mrow><mo>(</mo><mi>w</mi><mo>)</mo></mrow></mrow><mrow><munder><mo>∑</mo><mrow><mi>v</mi><mo>∈</mo><mi>V′</mi></mrow></munder><mi>P</mi><mrow><mo>(</mo><mi>v</mi><mo>)</mo></mrow></mrow></mfrac><mspace width="0.5em"/><mtext>for</mtext><mspace width="0.5em"/><mi>w</mi><mo>∈</mo><mi>V′</mi></mrow></math></div>  <div class="panel">
+    <div class="panel-head">
+      <span>generate(lm, decode_step) · in this page</span>
+      <span class="btnrow">
+        <span class="mono" id="gen-timing"></span>
+        <button class="primary" id="btn-gen">Generate</button>
+        <button id="btn-gen-step">One token</button>
+        <button id="btn-gen-clear">Clear</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <label class="field" for="gen-prompt">prompt</label>
+      <input type="text" id="gen-prompt" value="Заходит мужик в бар" spellcheck="false">
+      <div class="btnrow" id="gen-presets" style="margin-top:8px"></div>
+      <div class="btnrow" id="gen-methods" style="margin-top:14px"></div>
+      <div class="sliders">
+        <div id="sl-T"><label class="field">temperature <b>1.0</b></label><input type="range" min="0.1" max="2.5" step="0.1" value="1.0"></div>
+        <div id="sl-k"><label class="field">top-k <b>40</b></label><input type="range" min="1" max="400" step="1" value="40"></div>
+        <div id="sl-p"><label class="field">top-p <b>0.90</b></label><input type="range" min="0.05" max="1" step="0.05" value="0.9"></div>
+        <div id="sl-mp"><label class="field">min-p <b>0.05</b></label><input type="range" min="0.01" max="0.5" step="0.01" value="0.05"></div>
+        <div id="sl-rep"><label class="field">repetition penalty <b>1.0</b></label><input type="range" min="1" max="2" step="0.05" value="1"></div>
+        <div id="sl-ng"><label class="field">no-repeat n-gram <b>off</b></label><input type="range" min="0" max="6" step="1" value="0"></div>
+        <div id="sl-seed"><label class="field">seed <b>0</b></label><input type="range" min="0" max="50" step="1" value="0"></div>
+      </div>
+      <div class="grid-2" style="grid-template-columns:minmax(0,1.3fr) minmax(280px,.7fr)">
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Output · colour = P the model gave that token</div>
+          <div class="gen" id="gen-out"><span class="prompt">nothing generated yet</span></div>
+          <div class="footnote" id="gen-stats"></div>
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Next-token distribution · top 12 of 8 000</div>
+          <div id="gen-dist"></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-note">{{inline:decode-note1}}</div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">torch.softmax · torch.multinomial · topk · cumsum · transformers.generate(top_p, temperature, repetition_penalty)</span></summary>
+      <pre>def truncated_step(method, value, T=1.0):
+    def step(logits, g=None):
+        p = torch.softmax(logits / T, dim=-1)
+        if method == "top_k":   keep = p.topk(value).indices
+        elif method == "top_p": sp, si = p.sort(descending=True); keep = si[:int((sp.cumsum(0) &lt; value).sum()) + 1]
+        elif method == "min_p": keep = (p &gt;= value * p.max()).nonzero().squeeze(-1)
+        m = torch.zeros_like(p); m[keep] = p[keep]
+        return int(torch.multinomial(m / m.sum(), 1, generator=g))
+    return step
+
+gpt.generate(**inp, do_sample=True, top_p=0.9, temperature=0.9, repetition_penalty=1.3)  # the same knobs</pre>
+      <div class="why">{{inline:decode-why1}}</div>
+    </details>
+  </div>
+  <div class="prose">
+    {{text:decode-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>P(next token | prompt) · the LSTM in this page</span><span class="btnrow" id="dist-presets"></span></div>
+    <div class="panel-body">
+      <label class="field" for="dist-prompt">prompt</label>
+      <input type="text" id="dist-prompt" value="Заходит мужик в бар" spellcheck="false">
+      <div class="sliders" style="grid-template-columns:repeat(auto-fit, minmax(150px, 1fr))">
+        <div id="dsl-T"><label class="field">temperature <b>1.0</b></label><input type="range" min="0.1" max="3" step="0.1" value="1"></div>
+        <div id="dsl-k"><label class="field">top-k <b>10</b></label><input type="range" min="1" max="40" step="1" value="10"></div>
+        <div id="dsl-p"><label class="field">top-p <b>0.90</b></label><input type="range" min="0.05" max="1" step="0.05" value="0.9"></div>
+        <div id="dsl-mp"><label class="field">min-p <b>0.05</b></label><input type="range" min="0.01" max="0.5" step="0.01" value="0.05"></div>
+      </div>
+      <div class="eyebrow" style="margin-bottom:6px">Temperature · top 25 tokens · solid bars at T, outlines at T = 1</div>
+      <div id="dist-temp-chart"></div>
+      <div class="stat-row" id="dist-temp-stats" style="margin:10px 0 4px"></div>
+      <div class="eyebrow" style="margin:22px 0 6px">Truncation · top 40 tokens at T · what each rule keeps</div>
+      <div id="dist-trunc-chart"></div>
+      <div class="stat-row" id="dist-trunc-stats" style="margin:10px 0 4px"></div>
+    </div>
+    <div class="panel-note">{{inline:decode-note2}}</div>
+  </div>
+
+</section>
+
+<!-- =========================================================== 06 holtz -->
+<section id="holtz">
+  <p class="eyebrow">Block 06 · likelihood is not quality</p>
+  <h2>The picture that named the problem</h2>
+  <div class="prose">
+    {{text:holtz-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>P assigned to the chosen token, per position</span><span class="btnrow" id="holtz-picks"></span></div>
+    <div class="panel-body">
+      <div id="holtz-chart"></div>
+      <div class="grid-2" style="margin-top:12px">
+        <div><div class="eyebrow" style="margin-bottom:4px">The actual joke</div><div class="gen" id="holtz-human"></div></div>
+        <div><div class="eyebrow" style="margin-bottom:4px">The model's greedy continuation</div><div class="gen" id="holtz-greedy"></div></div>
+      </div>
+    </div>
+    <div class="panel-note">{{inline:holtz-note1}}</div>
+  </div>
+
+  <h3>Every method, two numbers</h3>
+  <div class="prose">
+    {{text:holtz-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Six decoding rules · 5 prompts × 6 seeds · notebook run</span><span class="mono">repetition · distinct-2 · avg logprob / token</span></div>
+    <div class="panel-body scroll-x"><table id="decode-table"></table></div>
+    <div class="panel-note">{{inline:holtz-note2}}</div>
+  </div>
+  <div class="grid-2">
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>Repetition penalty · patching the symptom</span></div>
+      <div class="panel-body"><div class="gen-list" id="penalty-out"></div></div>
+      <div class="panel-note">{{inline:holtz-note3}}</div>
+    </div>
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>The same rules on a real LLM · ruGPT-3 small</span></div>
+      <div class="panel-body"><div class="gen-list" id="gpt2-out"></div></div>
+      <div class="panel-note">{{inline:holtz-note4}}</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 07 s2s -->
+<section id="s2s">
+  <p class="eyebrow">Block 07 · conditioning on another sequence</p>
+  <h2>Encoder–decoder: a language model that starts from a summary</h2>
+  <div class="prose">
+    {{text:s2s-p1}}
+  </div>
+<div class="formula"><span class="fn">Encoder–decoder · the same chain rule, conditioned on one vector</span><math display="block"><mrow><mi>P</mi><mrow><mo>(</mo><mi>y</mi><mo>|</mo><mi>x</mi><mo>)</mo></mrow><mo>=</mo><munderover><mo>∏</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><mi>P</mi><mrow><mo>(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>|</mo><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>,</mo><mi>c</mi><mo>)</mo></mrow><mo>,</mo><mspace width="0.5em"/><mi>c</mi><mo>=</mo><mi mathvariant="normal">encoder</mi><mrow><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mo>∈</mo><msup><mi>ℝ</mi><mn>256</mn></msup></mrow></math></div>  <div class="panel">
+    <div class="panel-head"><span>Seq2SeqLSTM · bidirectional encoder → one vector → decoder</span><span class="mono">8.0M parameters · no attention</span></div>
+    <div class="panel-body"><div id="s2s-diagram"></div></div>
+    <div class="panel-note">{{inline:s2s-note1}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Training · 6 epochs · Multi30k</span><span class="mono" id="s2s-train-stats"></span></div>
+    <div class="panel-body"><div class="grid-2"><div id="s2s-loss-chart"></div><div id="s2s-bleu-chart"></div></div></div>
+    <div class="panel-note">{{inline:s2s-note2}}</div>
+  </div>
+
+<div class="formula"><span class="fn">BLEU · Papineni et al. 2002</span><math display="block"><mrow><mi mathvariant="normal">BLEU</mi><mo>=</mo><munder><mrow><mi mathvariant="normal">min</mi><mrow><mo>(</mo><mn>1</mn><mo>,</mo><msup><mi>e</mi><mrow><mn>1</mn><mo>−</mo><mi>r</mi><mo>/</mo><mi>c</mi></mrow></msup><mo>)</mo></mrow></mrow><mtext>brevity penalty</mtext></munder><mo>·</mo><msup><mrow><mo>(</mo><munderover><mo>∏</mo><mrow><mi>n</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><msub><mi>p</mi><mi>n</mi></msub><mo>)</mo></mrow><mrow><mn>1</mn><mo>/</mo><mn>4</mn></mrow></msup></mrow></math></div>  <h3>The encoder–decoder on one screen</h3>
+  <div class="prose">
+    {{text:s2s-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>pairs → batches → model → teacher-forced training → greedy decoding → BLEU · 70 lines</span><span class="mono" id="recipe-s2s-stats"></span></div>
+    <div class="panel-body recipe">
+      <div class="step"><div class="k"><b>1</b>data</div><pre><span class="c"># 1. data: German ids on the source side; [BOS] English [EOS] on the target side</span>
+def encode_pairs(de, en):
+    return [(torch.tensor(s.ids), torch.tensor([BOS] + t.ids + [EOS]))
+            for s, t in zip(tok_de.encode_batch(de), tok_en.encode_batch(en))]
+
+def batches(pairs, batch_size=64):
+    for i in range(0, len(pairs), batch_size):
+        src, trg = zip(*pairs[i:i + batch_size])
+        yield (pad_sequence(src, batch_first=True, padding_value=PAD).to(device),
+               torch.tensor([len(s) for s in src]),<span class="c">           # true lengths: packing skips [PAD]</span>
+               pad_sequence(trg, batch_first=True, padding_value=PAD).to(device))
+
+pairs, te_pairs = encode_pairs(tr_de[:5_000], tr_en[:5_000]), encode_pairs(te_de, te_en)
+</pre></div>
+      <div class="step"><div class="k"><b>2</b>model</div><pre><span class="c"># 2. model: bidirectional encoder → one vector → a decoder that is an LM started from it</span>
+class Seq2Seq(nn.Module):
+    def __init__(self, src_vocab, trg_vocab, d=256):
+        super().__init__()
+        self.src_emb = nn.Embedding(src_vocab, d, padding_idx=PAD)
+        self.trg_emb = nn.Embedding(trg_vocab, d, padding_idx=PAD)
+        self.encoder = nn.LSTM(d, d, batch_first=True, bidirectional=True)
+        self.h_proj = nn.Linear(2 * d, d)<span class="c">                    # 512 → 256: the bottleneck</span>
+        self.c_proj = nn.Linear(2 * d, d)
+        self.decoder = nn.LSTM(d, d, batch_first=True)
+        self.out = nn.Linear(d, trg_vocab)
+
+    def encode(self, src, src_len):
+        packed = pack_padded_sequence(self.src_emb(src), src_len, batch_first=True,
+                                      enforce_sorted=False)
+        _, (h, c) = self.encoder(packed)<span class="c">                     # (2, B, d): forward and backward</span>
+        h, c = torch.cat([h[0], h[1]], -1), torch.cat([c[0], c[1]], -1)
+        return torch.tanh(self.h_proj(h))[None], torch.tanh(self.c_proj(c))[None]
+
+    def forward(self, src, src_len, trg_in):<span class="c">                 # training: the gold prefix goes in</span>
+        o, _ = self.decoder(self.trg_emb(trg_in), self.encode(src, src_len))
+        return self.out(o)
+
+    @torch.no_grad()
+    def greedy(self, src, src_len, max_len=40):<span class="c">              # inference: its own output goes in</span>
+        state, out = self.encode(src, src_len), []
+        y = torch.full((src.size(0), 1), BOS, device=src.device)
+        for _ in range(max_len):
+            o, state = self.decoder(self.trg_emb(y), state)
+            y = self.out(o).argmax(-1)
+            out.append(y)
+        return torch.cat(out, 1)
+</pre></div>
+      <div class="step"><div class="k"><b>3</b>training</div><pre><span class="c"># 3. training: the decoder reads trg[:, :-1], is scored against trg[:, 1:] — teacher forcing</span>
+model = Seq2Seq(tok_de.get_vocab_size(), tok_en.get_vocab_size()).to(device)
+opt = torch.optim.AdamW(model.parameters(), lr=2e-3)
+for src, src_len, trg in batches(pairs):
+    logits = model(src, src_len, trg[:, :-1])
+    loss = nn.functional.cross_entropy(logits.reshape(-1, logits.size(-1)),
+                                       trg[:, 1:].reshape(-1), ignore_index=PAD)
+    opt.zero_grad(); loss.backward()
+    nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    opt.step()
+</pre></div>
+      <div class="step"><div class="k"><b>4</b>the number</div><pre><span class="c"># 4. the number: translate the test set greedily, cut at [EOS], score with sacrebleu</span>
+def to_text(row):
+    ids = row.tolist()
+    return tok_en.decode(ids[:ids.index(EOS)] if EOS in ids else ids)
+
+hyps = [to_text(row) for src, src_len, _ in batches(te_pairs)
+        for row in model.greedy(src, src_len)]
+print(f&quot;one epoch on 5 000 pairs: test BLEU {sacrebleu.corpus_bleu(hyps, [te_en]).score:.2f}&quot;)</pre></div>
+    </div>
+    <div class="panel-note">{{inline:s2s-note3}}</div>
+  </div>
+
+  <h3>Browse the test set</h3>
+  <div class="prose">
+    {{text:s2s-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>Multi30k test · greedy vs beam-5</span>
+      <span class="btnrow">
+        <span class="btnrow" id="tr-buckets"></span>
+        <button class="primary" id="btn-tr-random">Random sentence</button>
+      </span>
+    </div>
+    <div class="panel-body" id="tr-out"></div>
+    <div class="panel-note" id="tr-note">{{inline:tr-note}}</div>
+  </div>
+</section>
+
+<!-- ====================================================== 08 bottleneck -->
+<section id="bottleneck">
+  <p class="eyebrow">Block 08 · the bottleneck, measured</p>
+  <h2>Two experiments that make it visible instead of asserted</h2>
+  <div class="prose">
+    {{text:bottleneck-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>BLEU per source-length bucket · three bottleneck widths</span><span class="btnrow"><button class="primary" id="btn-len-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-len"><span class="q">{{inline:bet-len}}</span></div>
+      <div class="bet" id="bet-flat"><span class="q">{{inline:bet-flat}}</span></div>
+      <div id="len-out" hidden><div id="bleu-len-chart"></div></div>
+    </div>
+    <div class="panel-note" id="len-note" hidden>{{inline:len-note}}</div>
+  </div>
+  <div class="grid-2">
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>Second: the summary vectors · PCA of 600 test sentences</span><span class="mono" id="pca-stats"></span></div>
+      <div class="panel-body"><div id="pca-chart"></div></div>
+      <div class="panel-note">{{inline:bottleneck-note1}}</div>
+    </div>
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>Beam search · now it earns its place</span><span class="btnrow"><button class="primary" id="btn-beam-reveal">Reveal</button></span></div>
+      <div class="panel-body">
+<div class="formula" style="margin-top:0"><span class="fn">Length-normalised beam score · Wu et al. 2016 · <span style="text-transform:none">α</span> ≈ 0.6</span><math display="block"><mrow><mi mathvariant="normal">score</mi><mrow><mo>(</mo><mi>y</mi><mo>)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><msup><mrow><mo>|</mo><mi>y</mi><mo>|</mo></mrow><mi>α</mi></msup></mfrac><munder><mo>∑</mo><mi>t</mi></munder><mi mathvariant="normal">log</mi><mspace width="0.5em"/><mi>P</mi><mrow><mo>(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>|</mo><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>,</mo><mi>x</mi><mo>)</mo></mrow></mrow></math></div>
+        <div class="bet" id="bet-beam"><span class="q">{{inline:bet-beam}}</span></div>
+        <div id="beam-out" hidden></div>
+      </div>
+      <div class="panel-note" id="beam-note" hidden>{{inline:beam-note}}</div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 09 table -->
+<section id="table">
+  <p class="eyebrow">Block 09 · where this goes</p>
+  <h2>The results table, read as one story</h2>
+  <div class="panel">
+    <div class="panel-head"><span>Every language model built today · 5 000 test jokes</span><span class="mono">test_ppl · bits/char · params · seconds</span></div>
+    <div class="panel-body"><div id="table-chart"></div></div>
+    <div class="panel-body scroll-x" style="border-top:1px solid var(--rule)"><table id="table-rows"></table></div>
+    <div class="panel-note">{{inline:table-note1}}</div>
+  </div>
+
+  <h2 style="margin-top:56px">Five things that transfer</h2>
+  <div class="prose">
+    {{text:table-p1}}
+  </div>
+</section>
+
+</div>
+</main>
+</div>

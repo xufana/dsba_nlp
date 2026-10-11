@@ -17,6 +17,7 @@ dependencies = [
     "ipykernel>=6.29",
     "jupyterlab>=4.2",
     "openai>=3.6.0",
+    "huggingface_hub>=1.0",   # scripts/hub.py pulls the GloVe subset and AG News
 ]
 
 # Only needed to regenerate the LLM-baseline artifact (precompute.py --only llm).

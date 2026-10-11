@@ -1,0 +1,369 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 4<br>Pretraining and Transfer</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div class="score" id="score"></div>
+    <div style="margin-top:10px">Every number on this page is read from the seminar notebook's artifacts (bert-base-uncased, fine-tuned on this laptop's MPS) — nothing is typed in. Live-cell rows vary run to run.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>solver = body × head × dial</h1>
+  <p class="lede">{{inline:lede}}</p>
+  <div class="prose">
+    {{text:hero-p1}}
+  </div>
+  <div class="formula"><span class="fn">The claim for today</span><math display="block"><mrow><mtext>solver</mtext><mo>=</mo><munder><mtext>pretrained body</mtext><mtext style="font-size:.8em">shared, 110M</mtext></munder><mo>×</mo><munder><mtext>head</mtext><mtext style="font-size:.8em">task, a few thousand</mtext></munder><mo>×</mo><munder><mtext>what you unfreeze</mtext><mtext style="font-size:.8em">a dial</mtext></munder></mrow></math></div>
+  <div class="prose keep">
+    {{text:hero-p2}}
+  </div>
+</section>
+
+<!-- ====================================================== 00 where we stopped -->
+<section id="stop">
+  <p class="eyebrow">Block 00 · where we stopped</p>
+  <h2>The data — AG News, again</h2>
+  <div class="prose">
+    {{text:stop-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>AG News · from the hub</span><span class="mono" id="data-split"></span></div>
+    <div class="panel-body" id="data-example"></div>
+  </div>
+  <h3>The results table</h3>
+  <div class="prose">
+    {{text:stop-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Results · AG News test, 7 600 texts</span></div>
+    <div class="panel-body tight scroll-x"><table class="results" id="results-0"></table></div>
+  </div>
+</section>
+
+<!-- ============================================================ 01 tokenizers -->
+<section id="tok">
+  <p class="eyebrow">Block 01 · tokenizers</p>
+  <h2>One loop, three criteria</h2>
+  <div class="prose">
+    {{text:tok-p1}}
+  </div>
+  <div class="formula"><math display="block"><mrow><mtext>BPE:</mtext><mspace width="1em"/><mtext>score</mtext><mo>(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo>)</mo><mo>=</mo><mtext>freq</mtext><mo>(</mo><mi>a</mi><mi>b</mi><mo>)</mo><mspace width="3em"/><mtext>WordPiece:</mtext><mspace width="1em"/><mtext>score</mtext><mo>(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mtext>freq</mtext><mo>(</mo><mi>a</mi><mi>b</mi><mo>)</mo></mrow><mrow><mtext>freq</mtext><mo>(</mo><mi>a</mi><mo>)</mo><mtext>freq</mtext><mo>(</mo><mi>b</mi><mo>)</mo></mrow></mfrac></mrow></math></div>
+  <h3>📌 Bet</h3>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · same corpus, same number of merges</span><span class="btnrow"><button class="primary" id="btn-tok-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-tok-first"><span class="q">{{inline:bet-tok-first}}</span></div>
+      <div class="reveal-wrap" id="tok-wrap"><div class="veil">the first twelve merges of each trainer are behind this veil</div>
+        <div id="tok-out" hidden><div class="grid-2"><div><div class="figcap">BPE · score = freq(ab)</div><div id="merges-bpe" class="merge-list"></div></div><div><div class="figcap">WordPiece · score = freq(ab) / freq(a) freq(b)</div><div id="merges-wp" class="merge-list"></div></div></div></div>
+      </div>
+    </div>
+    <div class="panel-note" id="tok-note" hidden>{{inline:tok-note}}</div>
+  </div>
+
+  <h3>Applying a vocabulary: replaying merges vs longest match</h3>
+  <div class="prose">
+    {{text:tok-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · the WordPiece vocabulary, applied two ways to the test words</span><span class="btnrow"><button class="primary" id="btn-enc-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-enc"><span class="q">{{inline:bet-enc}}</span></div>
+      <div id="enc-out" hidden></div>
+    </div>
+    <div class="panel-note" id="enc-note" hidden>{{inline:enc-note}}</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>Try it · the two trainers on the toy corpus, applied to your word</span><span class="mono" id="live-tok-stats"></span></div>
+    <div class="panel-body">
+      <div class="sliders"><label class="field"><span>word</span><input id="live-tok-word" type="text" value="unbelievable" style="width:180px"></label>
+        <label class="field"><span>merges used</span><b id="live-tok-k">300</b></label><input id="live-tok-n" type="range" min="0" max="300" value="300" style="width:100%"></div>
+      <div class="enc-row"><span class="k">BPE · replay</span><span class="pieces" id="live-bpe"></span></div>
+      <div class="enc-row"><span class="k">WordPiece · replay</span><span class="pieces" id="live-wp-replay"></span></div>
+      <div class="enc-row"><span class="k">WordPiece · longest match</span><span class="pieces" id="live-wp-longest"></span></div>
+    </div>
+    <div class="panel-note">{{inline:tok-note1}}</div>
+  </div>
+  <h3>Unigram: top-down, and Viterbi</h3>
+  <div class="prose">
+    {{text:tok-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Unigram · pruning rounds, and what a word looks like to it</span></div>
+    <div class="panel-body"><div class="grid-2"><div id="uni-chart"></div><div id="uni-segs"></div></div></div>
+    <div class="panel-note">{{inline:tok-note2}}</div>
+  </div>
+
+  <h3>Who uses what</h3>
+  <div class="panel">
+    <div class="panel-body tight scroll-x"><table>
+      <thead><tr><th></th><th>training</th><th>encoding</th><th>word boundary</th><th>used by</th></tr></thead>
+      <tbody>
+      <tr><td><b>BPE</b></td><td>merge the most frequent pair</td><td>replay the merges</td><td class="mono">&lt;/w&gt; / Ġ (GPT-2: a space <em>before</em> the word, at the byte level)</td><td>GPT-1, GPT-2+, RoBERTa, LLaMA</td></tr>
+      <tr><td><b>WordPiece</b></td><td>merge the pair with the best likelihood gain</td><td>longest match first</td><td class="mono">## on continuations</td><td>BERT, DistilBERT, ELECTRA</td></tr>
+      <tr><td><b>Unigram</b></td><td>prune a large vocabulary by likelihood loss</td><td>Viterbi (or sampling)</td><td class="mono">▁ on word starts (SentencePiece)</td><td>ALBERT, XLNet, T5, mBART</td></tr>
+      </tbody></table></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The zoo · one sentence, three tokenizers</span></div>
+    <div class="panel-body" id="zoo"></div>
+    <div class="panel-note">{{inline:tok-note3}}</div>
+  </div>
+</section>
+
+<!-- ============================================================ 02 bert -->
+<section id="bert">
+  <p class="eyebrow">Block 02 · BERT</p>
+  <h2>What the pretraining optimises</h2>
+  <div class="prose">
+    {{text:bert-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>BERT, the picture · after Alammar (2018)</span><span class="fig-states" id="fig-bert-btns"><button data-m="in" class="sel">the input</button><button data-m="mlm">MLM</button><button data-m="nsp">NSP</button></span></div>
+    <div class="panel-body"><div class="fig" id="fig-bert"></div>
+      <details class="variants"><summary>The code · which position each head reads, and its loss</summary><pre class="code" id="code-pretrain"></pre>
+        <div class="figline">Hover a line: the picture switches to that head. This is what <code>BertForPreTraining</code> does; the masking is <code>DataCollatorForLanguageModeling</code>'s.</div></details></div>
+    <div class="panel-note" id="fig-bert-note"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>bert-base-uncased · where the parameters are</span><span class="mono" id="body-config"></span></div>
+    <div class="panel-body" id="body-params"></div>
+    <div class="panel-note">{{inline:bert-note1}}</div>
+  </div>
+
+  <h3>Masked language modelling: 15%, then 80/10/10</h3>
+  <div class="prose">
+    {{text:bert-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The MLM head at every position · click a token</span><span class="fig-states" id="mlm-sents"></span></div>
+    <div class="panel-body"><div class="pieces" id="mlm-toks" style="margin-bottom:12px"></div><div class="grid-2"><div id="mlm-top"></div><div class="figline" id="mlm-say"></div></div></div>
+    <div class="panel-note">{{inline:bert-note2}}</div>
+  </div>
+
+  <details class="variants"><summary>If there is time · what came after 15% / 80-10-10: ELECTRA, T5, RetroMAE</summary>
+    <div class="variant"><div class="fig" id="fig-electra"></div><div class="say"><b>ELECTRA</b> (Clark et al. 2020) — <em>replaced token detection</em>. A small generator MLM fills the masked positions with plausible tokens; the model you keep is a <em>discriminator</em> that reads the corrupted sentence and says, for <em>every</em> token, original or replaced. The loss covers 100% of the positions instead of 15%, which is the direct answer to "we only get gradients from 15% of the input" — same compute, better downstream numbers than BERT.</div></div>
+    <div class="variant"><div class="fig" id="fig-t5"></div><div class="say"><b>T5</b> (Raffel et al. 2020) — <em>span corruption</em>. Drop contiguous spans (15% of the tokens, mean span length 3), replace each span by one sentinel token <code>&lt;extra_id_0&gt;</code>, <code>&lt;extra_id_1&gt;</code>…, and have an encoder–decoder <em>generate</em> the dropped spans in order. The mask is a sequence-to-sequence target, so the same model does translation and summarisation with no head at all — "text-to-text".</div></div>
+    <div class="variant"><div class="fig" id="fig-retromae"></div><div class="say"><b>RetroMAE</b> (Xiao et al. 2022) — masking for <em>retrieval</em>. The encoder sees the sentence with a moderate mask (~30%) and must pack it into one <code>[CLS]</code> vector; a one-layer decoder gets only that vector plus an aggressively masked copy (50–70%) and reconstructs the input. The <code>[CLS]</code> has to carry the whole sentence because nothing else survives — which is exactly the property 2.4 measured BERT's <code>[CLS]</code> <em>not</em> to have.</div></div>
+  </details>
+
+  <h3>📌 Bet · zero-shot classification through the mask</h3>
+  <div class="prose">
+    {{text:bert-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · pick the four label words · scored on all 7 600 test texts in your browser</span><span class="btnrow"><span class="mono" id="zs-pick-acc"></span><button class="primary" id="btn-zs-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-zs"><span class="q">{{inline:bet-zs}}</span></div>
+      <div class="zs-grid" id="zs-pick"></div>
+      <div id="zs-out" hidden style="margin-top:14px"><div class="grid-2"><div><div class="figcap">accuracy per class · and the confusion, gold rows × predicted columns</div><div id="zs-pick-out"></div><table class="conf" id="zs-conf" style="margin-top:10px"></table></div><div><div class="figcap">what the mask wants for World news · top words</div><div id="zs-top"></div></div></div></div>
+    </div>
+    <div class="panel-note" id="zs-note" hidden>{{inline:zs-note}}</div>
+  </div>
+
+  <h3>📌 Bet · NSP, the pooler, and the <code>[CLS]</code> myth</h3>
+  <div class="prose">
+    {{text:bert-p4}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · pooler vs raw [CLS] vs mean of tokens · logreg on 10 000 texts</span><span class="btnrow"><button class="primary" id="btn-probe-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-probe"><span class="q">{{inline:bet-probe}}</span></div>
+      <div id="probe-out" hidden></div>
+    </div>
+    <div class="panel-note" id="probe-note" hidden>{{inline:probe-note}}</div>
+  </div>
+
+  <h3>What the body learned by itself · the position table</h3>
+  <div class="prose">
+    {{text:bert-p5}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>learned position embeddings · cosine similarity, positions 0–127</span></div>
+    <div class="panel-body"><div class="grid-2"><div id="pos-sim" style="max-width:420px"></div><div class="figline">A bright diagonal band: neighbouring positions got similar vectors, far ones didn't, and nobody wrote that down anywhere. It was learned from the one fact that nearby tokens tend to be related. Compare it with the sinusoidal picture from week 3 — the same structure, arrived at from data instead of from a formula.</div></div></div>
+  </div>
+</section>
+
+<!-- ============================================================ 03 head -->
+<section id="head">
+  <p class="eyebrow">Block 03 · the head</p>
+  <h2>Shape, attachment point, loss</h2>
+  <div class="prose">
+    {{text:head-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>One H, three heads · which axis the softmax runs along</span><span class="fig-states" id="fig-heads-btns"><button data-m="seq" class="sel">sequence</button><button data-m="tok">token</button><button data-m="span">span</button></span></div>
+    <div class="panel-body"><div class="fig" id="fig-heads"></div></div>
+    <div class="panel-note" id="fig-heads-note"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The heads, by hand · read the shapes in the comments</span><span class="mono">hover a line: the picture follows</span></div>
+    <div class="panel-body"><pre class="code" id="code-heads"></pre></div>
+    <div class="panel-note">{{inline:head-note1}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-body tight scroll-x"><table>
+      <thead><tr><th>task</th><th>reads from H</th><th>logits</th><th>softmax over</th><th>loss</th><th>ignored</th></tr></thead>
+      <tbody>
+      <tr><td><b>sequence classification</b> (AG News)</td><td class="mono">H[:, 0] — [B, d]</td><td class="mono">[B, C]</td><td>C classes</td><td>cross-entropy, once per text</td><td>padding</td></tr>
+      <tr><td><b>token classification</b> (NER)</td><td class="mono">every vector — [B, L, d]</td><td class="mono">[B, L, C]</td><td>C classes, <em>at each position</em></td><td>cross-entropy, once per token</td><td class="mono">-100: [CLS], [SEP], padding, continuations</td></tr>
+      <tr><td><b>span extraction</b> (QA)</td><td class="mono">every vector — [B, L, d]</td><td class="mono">[B, L, 2] → two [B, L]</td><td>L <strong>positions</strong></td><td>cross-entropy twice, "classes" = positions</td><td>question tokens, padding</td></tr>
+      </tbody></table></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>What <code>transformers</code> does · the same lines, from the library source</span></div>
+    <div class="panel-body"><pre class="code" id="code-lib"></pre></div>
+    <div class="panel-note">{{inline:head-note2}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Counting the heads · against a body of <span id="body-n"></span> parameters</span></div>
+    <div class="panel-body"><div class="grid-2"><div id="head-counts"></div><div id="head-untrained"></div></div></div>
+    <div class="panel-note">{{inline:head-note3}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The recipe · <code>transformers</code>, one head class per task, one dial function, one Trainer</span></div>
+    <div class="panel-body"><pre class="code" id="code-recipe" style="font-size:13px;white-space:pre-wrap"></pre></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Live cell · head only, body frozen, one epoch</span><span class="mono" id="ho-live-stats"></span></div>
+    <div class="panel-body" id="ho-live"></div>
+    <div class="panel-note">{{inline:head-note4}}</div>
+  </div>
+</section>
+
+<!-- ============================================================ 04 dial -->
+<section id="dial">
+  <p class="eyebrow">Block 04 · transfer is a dial</p>
+  <h2>Head only, top blocks, everything</h2>
+  <div class="prose">
+    {{text:dial-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · a linear probe per layer</span><span class="btnrow"><button class="primary" id="btn-layer-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-layer"><span class="q">{{inline:bet-layer}}</span></div>
+      <div class="reveal-wrap"><div class="veil" id="layer-veil">accuracy by layer, 0 = embeddings … 12 = last block</div><div id="layer-chart" hidden></div></div>
+    </div>
+    <div class="panel-note" id="layer-note" hidden>{{inline:layer-note}}</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>The dial · <code>set_trainable(model, k)</code></span></div>
+    <div class="panel-body"><div class="dial"><div><div class="knob" id="dial-knob"></div><div id="dial-knob-stats" style="margin-top:14px"></div></div><div id="dial-knob-fig"></div></div><pre class="code" id="code-dial" style="margin-top:14px"></pre></div>
+    <div class="panel-note">{{inline:dial-note1}}</div>
+  </div>
+  <h3>📌 Bet · turn the dial</h3>
+  <div class="prose">
+    {{text:dial-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · four settings, <span id="dial-n"></span> texts, 2 epochs</span><span class="btnrow"><span class="mono" id="dial-score"></span><button class="primary" id="btn-dial-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-dial-pass"><span class="q">{{inline:bet-dial-pass}}</span></div>
+      <div class="bet" id="bet-dial-gap"><span class="q">{{inline:bet-dial-gap}}</span></div>
+      <div id="dial-out" hidden>
+        <div class="scroll-x"><table id="dial-table"></table></div>
+        <div class="grid-2" style="margin-top:14px"><div><div class="figcap">test accuracy vs trainable parameters (log)</div><div id="dial-chart"></div></div><div><div class="figcap">the bill · seconds per epoch on this laptop</div><div id="dial-bill"></div></div></div>
+      </div>
+    </div>
+    <div class="panel-note" id="dial-note" hidden>{{inline:dial-note}}</div>
+  </div>
+</section>
+
+<!-- ============================================================ 05 tasks -->
+<section id="tasks">
+  <p class="eyebrow">Block 05 · two more heads</p>
+  <h2>NER and QA</h2>
+  <div class="prose">
+    {{text:tasks-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Token classification · word → tokens → label → Linear(768, 9) → softmax over the 9 tags</span><span class="fig-states" id="fig-ner-btns"><button data-m="ignore" class="sel">continuations −100</button><button data-m="label">continuations labelled</button></span></div>
+    <div class="panel-body"><div class="fig" id="fig-ner"></div></div>
+    <div class="panel-note" id="fig-ner-note"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The batch after the collator · and why −100</span><span class="mono" id="coll-ner-stats"></span></div>
+    <div class="panel-body"><div class="fig" id="fig-coll-ner"></div><pre class="code" id="code-ner" style="margin-top:14px"></pre></div>
+    <div class="panel-note">{{inline:tasks-note1}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · head only, <span id="ner-live-n"></span> sentences, one epoch, body frozen</span><span class="btnrow"><button class="primary" id="btn-ner-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-ner"><span class="q">{{inline:bet-ner}}</span></div>
+      <div id="ner-out" hidden></div>
+    </div>
+    <div class="panel-note" id="ner-note" hidden>{{inline:ner-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The artifacts · head only, continuations labelled, everything</span><span class="mono" id="ner-art-n"></span></div>
+    <div class="panel-body"><div class="scroll-x"><table id="ner-table"></table></div>
+      <div class="btnrow" style="margin-top:14px"><span class="figcap" style="margin:0">on sentences it has never seen ·</span><span class="fig-states" id="ner-preds-btns"><button data-m="pred" class="sel">everything</button><button data-m="predHeadOnly">head only</button></span></div>
+      <div id="ner-preds" style="margin-top:8px"></div></div>
+    <div class="panel-note">{{inline:tasks-note2}}</div>
+  </div>
+
+  <h3>Two pointers: extractive QA</h3>
+  <div class="prose">
+    {{text:tasks-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Span extraction · two score rows over the context · the fine-tuned model</span><span class="fig-states" id="qa-pick"></span></div>
+    <div class="panel-body"><div class="fig" id="fig-qa"></div></div>
+    <div class="panel-note" id="fig-qa-note">{{inline:fig-qa-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The input · one question, windows of <span id="qa-win-sel"></span> tokens</span><span class="btnrow" id="qa-win-btns"></span></div>
+    <div class="panel-body" id="qa-windows"></div>
+    <div class="panel-note">{{inline:tasks-note3}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The batch after the collator · <code>DataCollatorWithPadding</code></span><span class="mono" id="coll-qa-stats"></span></div>
+    <div class="panel-body"><div class="fig" id="fig-coll-qa"></div><pre class="code" id="code-qa" style="margin-top:14px"></pre></div>
+    <div class="panel-note">{{inline:tasks-note4}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · the same head-only setup as NER · <span id="qa-live-n"></span> questions, one epoch</span><span class="btnrow"><button class="primary" id="btn-qa-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-qa"><span class="q">{{inline:bet-qa}}</span></div>
+      <div id="qa-out" hidden></div>
+    </div>
+    <div class="panel-note" id="qa-note" hidden>{{inline:qa-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Fine-tuned everything · on paragraphs it has certainly never seen</span></div>
+    <div class="panel-body" id="qa-preds"></div>
+    <div class="panel-note">{{inline:tasks-note5}}</div>
+  </div>
+</section>
+
+<!-- ============================================================ 06 end -->
+<section id="end">
+  <p class="eyebrow">Block 06 · where this goes</p>
+  <h2>The results table, read as one story</h2>
+  <div class="panel">
+    <div class="panel-head"><span>Results · AG News test, 7 600 texts</span><span class="sorters" id="res-sort"><span class="mono" style="letter-spacing:.06em">sort by</span><button data-s="order" class="sel">the dial</button><button data-s="acc">accuracy</button><button data-s="params">trainable</button><button data-s="s">the bill</button></span></div>
+    <div class="panel-body tight scroll-x"><table class="results" id="results-1"></table></div>
+  </div>
+  <div class="prose keep">
+    {{text:end-p1}}
+  </div>
+</section>
+
+</div>
+</main>
+</div>

@@ -10,7 +10,7 @@ dependencies = [
     "matplotlib>=3.8",
     "scikit-learn>=1.4",
     "torch>=2.2",
-    "tokenizers>=0.20,<0.23.1",   # 0.23.1–0.23.2 drop the overflow windows past max_length (tokenizers #2091)
+    "tokenizers>=0.20,!=0.23.1,!=0.23.2",   # these two drop the overflow windows past max_length (tokenizers #2091, fixed in 0.23.3)
     "transformers[torch]>=5.0",
     "nbformat>=5.10",
     "nbclient>=0.10",

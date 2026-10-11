@@ -1,0 +1,417 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 5<br>The Decoder, Alone</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div class="score" id="score"></div>
+    <div style="margin-top:10px"><a href="week05_check_yourself.html" title="Questions on seminars 3–5, answers under a toggle">Check yourself →</a></div>
+    <div style="margin-top:10px">Every number on this page is read from the seminar notebook's artifacts (gpt2, fine-tuned on a Colab T4; the live cells on an M4) — nothing is typed in. Live-cell rows vary run to run.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>solver = prefix × decoder × vocabulary head</h1>
+  <p class="lede">{{inline:lede}}</p>
+  <div class="prose">
+    {{text:hero-p1}}
+  </div>
+  <div class="formula"><span class="fn">The claim for today</span><math display="block"><mrow><mtext>solver</mtext><mo>=</mo><munder><mtext>prefix</mtext><mtext style="font-size:.8em">the task, as text</mtext></munder><mo>×</mo><munder><mtext>pretrained decoder</mtext><mtext style="font-size:.8em">124M, causal</mtext></munder><mo>×</mo><munder><mtext>vocabulary head</mtext><mtext style="font-size:.8em">the same for every task</mtext></munder></mrow></math></div>
+  <div class="prose keep">
+    {{text:hero-p2}}
+  </div>
+</section>
+
+<!-- ====================================================== 00 where we stopped -->
+<section id="stop">
+  <p class="eyebrow">Block 00 · where we stopped</p>
+  <h2>Two tables</h2>
+  <div class="prose">
+    {{text:stop-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>AG News · test text 0, two ways</span><span class="mono" id="data-split"></span></div>
+    <div class="panel-body" id="data-example"></div>
+  </div>
+  <div class="prose">
+    {{text:stop-p2}}
+  </div>
+  <div class="grid-2">
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>Quality · AG News test</span></div>
+      <div class="panel-body tight scroll-x"><table class="results" id="results-0"></table></div>
+    </div>
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>Cost · per item</span><span class="mono" id="costs-0-n">no rows yet</span></div>
+      <div class="panel-body tight scroll-x"><table class="costs" id="costs-0"></table></div>
+    </div>
+  </div>
+  <h3>Three bodies, one picture</h3>
+  <div class="prose">
+    {{text:stop-p3}}
+  </div>
+  <div class="panel"><div class="panel-head"><span>Schematic · what each body reads, what comes out, where the task lives</span></div><div class="panel-body"><div class="fig" id="fig-bodies"></div></div></div>
+</section>
+
+<!-- ============================================================ 01 the decoder -->
+<section id="decoder">
+  <p class="eyebrow">Block 01 · the decoder, alone</p>
+  <h2>What physically comes out</h2>
+  <div class="prose">
+    {{text:decoder-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Schematic · the same stack, two readers</span><span class="fig-states" id="fig-block-btns"><button data-m="bert" class="sel">BERT</button><button data-m="gpt">GPT-2</button></span></div>
+    <div class="panel-body"><div class="fig" id="fig-block"></div><div class="panel-note" id="fig-block-note" style="border-top:none;padding:10px 0 0;background:none"></div></div>
+  </div>
+  <div class="prose">
+    {{text:decoder-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>gpt2 · 124M, where they sit</span><span class="mono" id="ppl-line"></span></div>
+    <div class="panel-body"><div id="params-bars"></div></div>
+  </div>
+
+  <h3>Why twelve layers — the logit lens</h3>
+  <div class="prose">
+    {{text:decoder-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · at which layer does the top-1 guess agree with the final answer on half the positions?</span><span class="btnrow"><button class="primary" id="btn-lens-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-lens"><span class="q">{{inline:bet-lens}}</span></div>
+      <div class="reveal-wrap"><div class="veil">the agreement and perplexity curves are behind this veil</div>
+        <div id="lens-out" hidden><div class="grid-2"><div id="lens-agree"></div><div id="lens-ppl"></div></div><div class="small-note" id="lens-stats"></div></div></div>
+    </div>
+    <div class="panel-note" id="lens-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:decoder-p4}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Logit lens · one text, every position, every layer</span><span class="mono" id="lens-pos-line"></span></div>
+    <div class="panel-body"><div class="tokrow" id="lens-toks"></div><div class="lens" id="lens-strip"></div></div>
+    <div class="panel-note">{{inline:decoder-note1}}</div>
+  </div>
+
+  <h3>Where the source went</h3>
+  <div class="prose">
+    {{text:decoder-p5}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · a 20-word prompt (32 tokens), 20 generated tokens</span><span class="btnrow"><button class="primary" id="btn-att-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-att-share"><span class="q">{{inline:bet-att-share}}</span></div>
+      <div class="bet" id="bet-att-sink"><span class="q">{{inline:bet-att-sink}}</span></div>
+      <div class="reveal-wrap"><div class="veil">the attention tensor — 12 layers × 12 heads × 52 × 52 — is behind this veil</div>
+        <div id="att-out" hidden>
+          <div class="att">
+            <div>
+              <div class="sliders"><div><label class="field">layer <b id="att-layer-v">6</b></label><input type="range" id="att-layer" min="1" max="12" value="6"></div><div><label class="field">head <b id="att-head-v">mean</b></label><input type="range" id="att-head" min="0" max="12" value="0"></div><div><label class="field">&nbsp;</label><span class="toggle" id="att-sink-tgl"><button data-m="on" class="sel">with token 0</button><button data-m="off">hide token 0</button></span></div></div>
+              <div class="hm-box"><canvas id="att-canvas"></canvas></div><div class="ax"><span>keys: prompt │ generated →</span><span id="att-cell"></span></div>
+            </div>
+            <div><div class="figcap">share of the generated tokens' attention, by layer</div><div id="att-chart"></div></div>
+          </div>
+        </div></div>
+    </div>
+    <div class="panel-note" id="att-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:decoder-p6}}
+  </div>
+</section>
+
+<!-- ============================================================ 02 positions -->
+<section id="positions">
+  <p class="eyebrow">Block 02 · positions</p>
+  <h2>The table, or the rotation</h2>
+  <div class="prose">
+    {{text:positions-p1}}
+  </div>
+  <div class="formula"><math display="block"><mrow><msub><mi>θ</mi><mi>i</mi></msub><mo>=</mo><msup><mn>10000</mn><mrow><mo>−</mo><mn>2</mn><mi>i</mi><mo>/</mo><mi>d</mi></mrow></msup><mo>,</mo><mspace width="1.4em"/><msub><mover><mi>q</mi><mo>~</mo></mover><mi>m</mi></msub><mo>=</mo><mi>R</mi><mo>(</mo><mi>m</mi><mo>)</mo><mi>q</mi><mo>,</mo><mspace width="1em"/><msub><mover><mi>k</mi><mo>~</mo></mover><mi>n</mi></msub><mo>=</mo><mi>R</mi><mo>(</mo><mi>n</mi><mo>)</mo><mi>k</mi><mo>,</mo><mspace width="1.4em"/><msub><mover><mi>q</mi><mo>~</mo></mover><mi>m</mi></msub><mo>·</mo><msub><mover><mi>k</mi><mo>~</mo></mover><mi>n</mi></msub><mo>=</mo><msup><mi>q</mi><mo>⊤</mo></msup><mi>R</mi><mo>(</mo><mi>n</mi><mo>−</mo><mi>m</mi><mo>)</mo><mi>k</mi></mrow></math></div>
+  <div class="prose">
+    {{text:positions-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>One query, one key · <code>rotate</code> from the notebook, running here</span><span class="ck" id="rope-ck"></span></div>
+    <div class="panel-body">
+      <div class="dials">
+        <div><label class="field">query position m <b id="rope-m-v">10</b></label><input type="range" id="rope-m" min="0" max="1023" value="10"></div>
+        <div><label class="field">key position n <b id="rope-n-v">3</b></label><input type="range" id="rope-n" min="0" max="1023" value="3"></div>
+        <div><label class="field">move both by <b id="rope-s-v">0</b></label><input type="range" id="rope-s" min="0" max="990" value="0"></div>
+      </div>
+      <div class="rope-out"><div class="box" id="rope-learned"><span class="k">learned table · (q + wpe[m]) · (k + wpe[n])</span><div class="v">—</div></div><div class="box" id="rope-rope"><span class="k">RoPE · R(m) q · R(n) k</span><div class="v">—</div></div></div>
+      <div class="figcap" style="margin-top:14px">the 32 pairs of one head, each turning at its own rate as the position moves</div>
+      <div class="clocks" id="rope-clocks"></div>
+    </div>
+    <div class="panel-note">{{inline:positions-note1}}</div>
+  </div>
+
+  <h3>Past the window: extrapolate, or interpolate</h3>
+  <div class="prose">
+    {{text:positions-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · loss by position</span><span class="btnrow"><button class="primary" id="btn-rope-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-rope-gpt"><span class="q">{{inline:bet-rope-gpt}}</span></div>
+      <div class="bet" id="bet-rope-ext"><span class="q">{{inline:bet-rope-ext}}</span></div>
+      <div class="bet" id="bet-rope-int"><span class="q">{{inline:bet-rope-int}}</span></div>
+      <div class="reveal-wrap"><div class="veil">four curves are behind this veil</div>
+        <div id="rope-out" hidden>
+          <div class="sliders" style="max-width:360px"><div><label class="field">bucket <b id="rope-b-v">128</b> positions</label><input type="range" id="rope-b" min="32" max="512" step="32" value="128"></div></div>
+          <div id="rope-chart"></div>
+          <pre class="report" id="rope-err" style="margin-top:10px"></pre>
+          <div class="scroll-x" style="margin-top:10px"><table id="rope-table"></table></div>
+        </div></div>
+    </div>
+    <div class="panel-note" id="rope-note" hidden></div>
+  </div>
+
+  <h3>YaRN: squeeze only what runs out of angles</h3>
+  <div class="prose">
+    {{text:positions-p4}}
+  </div>
+  <div class="formula"><math display="block"><mrow><msub><mi>γ</mi><mi>i</mi></msub><mo>=</mo><mtext>clip</mtext><mo>(</mo><mfrac><mrow><msub><mi>r</mi><mi>i</mi></msub><mo>−</mo><mi>α</mi></mrow><mrow><mi>β</mi><mo>−</mo><mi>α</mi></mrow></mfrac><mo>,</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>)</mo><mo>,</mo><mspace width="1.2em"/><msubsup><mi>θ</mi><mi>i</mi><mo>′</mo></msubsup><mo>=</mo><msub><mi>θ</mi><mi>i</mi></msub><mrow><mo>(</mo><mfrac><mrow><mn>1</mn><mo>−</mo><msub><mi>γ</mi><mi>i</mi></msub></mrow><mi>s</mi></mfrac><mo>+</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>)</mo></mrow><mo>,</mo><mspace width="1.2em"/><msqrt><mrow><mn>1</mn><mo>/</mo><mi>t</mi></mrow></msqrt><mo>=</mo><mn>0.1</mn><mo>&#8290;</mo><mi>ln</mi><mo>&#8289;</mo><mi>s</mi><mo>+</mo><mn>1</mn></mrow></math></div>
+  <div class="panel">
+    <div class="panel-head"><span>YaRN · what gets squeezed, per pair</span><span class="ck" id="yarn-ck"></span></div>
+    <div class="panel-body">
+      <div class="sliders" style="max-width:560px"><div><label class="field">stretch s <b id="yarn-s-v">1.5</b></label><input type="range" id="yarn-s" min="1" max="16" step="0.5" value="1.5"></div><div><label class="field">α <b id="yarn-a-v">1</b></label><input type="range" id="yarn-a" min="0.5" max="4" step="0.5" value="1"></div><div><label class="field">β <b id="yarn-b-v">32</b></label><input type="range" id="yarn-b" min="4" max="64" step="4" value="32"></div></div>
+      <div class="grid-2"><div id="yarn-chart"></div><div><div class="stat-row" id="yarn-stats"></div><div class="small-note" style="margin-top:10px">linear interpolation is the special case γ ≡ 0: every pair divided by s. The temperature multiplies the attention logits by 1/t.</div></div></div>
+    </div>
+    <div class="panel-note" id="yarn-note"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 03 one pass or T -->
+<section id="cost">
+  <p class="eyebrow">Block 03 · one pass, or T</p>
+  <h2>What is wasted, and the cache</h2>
+  <div class="prose">
+    {{text:cost-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Schematic · one step of greedy decoding, with and without the cache</span><span class="fig-states" id="fig-kv-btns"><button data-m="nocache" class="sel">no cache</button><button data-m="cache">KV cache</button></span></div>
+    <div class="panel-body">
+      <div class="stepper"><button id="kv-step">next token</button><button id="kv-reset">reset</button><span class="cnt">step <b id="kv-t">0</b> · positions evaluated so far: <b id="kv-eval">0</b> · needed: <b id="kv-need">0</b></span></div>
+      <div class="fig" id="fig-kv"></div>
+    </div>
+    <div class="panel-note">{{inline:cost-note1}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · measured on an M4, the notebook's live cells</span><span class="btnrow"><button class="primary" id="btn-kv-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-kv-one"><span class="q">{{inline:bet-kv-one}}</span></div>
+      <div class="bet" id="bet-kv-ratio"><span class="q">{{inline:bet-kv-ratio}}</span></div>
+      <div class="reveal-wrap"><div class="veil">the timings are behind this veil</div>
+        <div id="kv-out" hidden><div class="stat-row" id="kv-stats"></div><div class="grid-2" style="margin-top:14px"><div class="scroll-x"><table id="kv-table"></table></div><div id="kv-chart"></div></div></div></div>
+    </div>
+    <div class="panel-note" id="kv-note" hidden></div>
+  </div>
+  <h3>The accounting we will use today</h3>
+  <div class="prose">
+    {{text:cost-p2}}
+  </div>
+</section>
+
+<!-- ============================================================ 04 design first -->
+<section id="prefix">
+  <p class="eyebrow">Block 04 · design first</p>
+  <h2>Classify 7 600 texts with no labels at all</h2>
+  <div class="prose">
+    {{text:prefix-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · the scorer with the class names as written</span><span class="btnrow"><button class="primary" id="btn-zs-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-zs"><span class="q">{{inline:bet-zs}}</span></div>
+      <div class="reveal-wrap"><div class="veil">the artifact is behind this veil</div>
+        <div id="zs-out" hidden><div class="stat-row" id="zs-stats"></div><div class="scroll-x" style="margin-top:12px"><table id="zs-table"></table></div></div></div>
+    </div>
+    <div class="panel-note" id="zs-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:prefix-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Verbalizer builder · <span id="vb-n"></span> texts, argmax in the browser</span><span class="btnrow"><span class="toggle" id="vb-how"><button data-m="sum" class="sel">summed</button><button data-m="per">per token</button></span><span class="ck" id="vb-ck"></span></span></div>
+    <div class="panel-body"><div class="vb" id="vb"></div><div class="vb-acc" id="vb-acc"></div><div class="scroll-x" style="margin-top:10px"><table class="conf" id="vb-conf"></table></div></div>
+    <div class="panel-note">{{inline:prefix-note1}}</div>
+  </div>
+
+  <h3>The card</h3>
+  <div class="prose">
+    {{text:prefix-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Design · fill the card</span><span class="ck" id="est-ck"></span></div>
+    <div class="panel-body">
+      <div class="card-tabs" id="card-tabs"><button data-c="punct" class="sel">3.1 punctuation and case</button><button data-c="typos">3.2 typos in queries</button><button data-c="ner">3.3 entities</button></div>
+      <div class="prose" id="card-task" style="margin-bottom:10px">
+        {{text:prefix-p4}}
+      </div>
+      <div class="card" id="card"></div>
+      <div class="est" id="card-est"></div>
+    </div>
+    <div class="panel-note" id="card-note"></div>
+  </div>
+
+  <h3>Look at twenty examples first</h3>
+  <div class="prose">
+    {{text:prefix-p5}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>3.1 · which words can 32 labels express?</span><span class="ck" id="wl-ck"></span></div>
+    <div class="panel-body"><input type="text" id="wl-in" value="Fears for T N pension after talks: Wal-Mart, U.S. and iPhone sales fell 3.5% (Reuters)."><div class="wl" id="wl-out"></div><div class="small-note" id="wl-line"></div></div>
+  </div>
+  <div class="prose">
+    {{text:prefix-p6}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>3.2 · six kinds of noise, <code>add_noise</code> running here</span><span class="ck" id="noise-ck"></span></div>
+    <div class="panel-body">
+      <div class="io"><div><label class="field">query</label><input type="text" id="noise-in" value="cheap flights to moscow tomorrow"></div><div class="btnrow" id="noise-ops"></div></div>
+      <div class="sliders" style="max-width:420px"><div><label class="field">word <b id="noise-w-v">1</b></label><input type="range" id="noise-w" min="0" max="4" value="1"></div><div><label class="field">position in the word <b id="noise-k-v">2</b></label><input type="range" id="noise-k" min="1" max="6" value="2"></div></div>
+      <div class="io"><div class="out" id="noise-out"></div></div><div class="small-note" id="noise-line"></div>
+    </div>
+    <div class="panel-note">{{inline:prefix-note2}}</div>
+  </div>
+  <div class="prose">
+    {{text:prefix-p7}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>3.3 · two output formats, parsed back · <code>parse_inline</code> / <code>parse_list</code> running here</span><span class="ck" id="ner-ck"></span></div>
+    <div class="panel-body ner-write">
+      <div class="ent-line" id="ner-sent"></div>
+      <div class="grid-2"><div><label class="field">inline · <code>[LOC Germany] 's representative …</code></label><textarea id="ner-inline"></textarea><div class="ner-parse" id="ner-inline-out"></div></div><div><label class="field">list · <code>Germany: LOC; European Union: ORG</code></label><textarea id="ner-list"></textarea><div class="ner-parse" id="ner-list-out"></div></div></div>
+    </div>
+    <div class="panel-note">{{inline:prefix-note3}}</div>
+  </div>
+
+  <h3>Lightning round: which week?</h3>
+  <div class="prose">
+    {{text:prefix-p8}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Six systems · pick the week</span><span class="btnrow"><span class="ck" id="lr-score"></span><button class="primary" id="btn-lr-reveal">Reveal</button></span></div>
+    <div class="panel-body" id="lr"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 05 the reveal -->
+<section id="reveal">
+  <p class="eyebrow">Block 05 · the reveal</p>
+  <h2>Punctuation and case, two ways</h2>
+  <div class="prose">
+    {{text:reveal-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Label it yourself · test text <span id="pl-i">0</span>, 32 labels per word</span><span class="btnrow"><button id="pl-prev">‹</button><button id="pl-next">›</button><span class="ck" id="pl-score"></span><button class="primary" id="btn-pl-check">Check</button></span></div>
+    <div class="panel-body"><div class="words-pick" id="pl"></div></div>
+    <div class="panel-note" id="pl-note">{{inline:pl-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · 20 000 training texts, 2 000 test texts, 75 692 words</span><span class="btnrow"><button class="primary" id="btn-punct-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-punct-all"><span class="q">{{inline:bet-punct-all}}</span></div>
+      <div class="bet" id="bet-punct-cap"><span class="q">{{inline:bet-punct-cap}}</span></div>
+      <div class="bet" id="bet-punct-chg"><span class="q">{{inline:bet-punct-chg}}</span></div>
+      <div class="reveal-wrap"><div class="veil">the breakdown is behind this veil</div>
+        <div id="punct-out" hidden><div class="stat-row" id="punct-stats"></div><div class="grid-2" style="margin-top:14px"><div><div class="figcap">by the gold word's case</div><div id="punct-case"></div></div><div><div class="figcap">by the gold word's punctuation</div><div id="punct-punct"></div></div></div><div class="legend"><span><span class="sw" style="background:var(--cls-0)"></span>encoder, 32-label head</span><span><span class="sw" style="background:var(--cls-1)"></span>decoder, stripped ⇒ original</span></div>
+          <div class="figcap" style="margin-top:14px">what <code>changed</code> does not count: the first demo text, decoder against gold</div><div class="diffline" id="punct-drop"></div></div></div>
+    </div>
+    <div class="panel-note" id="punct-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:reveal-p2}}
+  </div>
+
+  <h3>Typos: detect, or rewrite</h3>
+  <div class="prose">
+    {{text:reveal-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · per kind of noise: is the encoder pipeline at zero <em>by construction</em>?</span><span class="btnrow"><button class="primary" id="btn-typos-reveal">Reveal</button></span></div>
+    <div class="panel-body"><div class="scroll-x"><table class="rowbet" id="typos-table"></table></div><div class="reveal-wrap" style="margin-top:12px"><div class="veil">the accuracies are behind this veil</div><div id="typos-out" hidden><div class="stat-row" id="typos-stats"></div><div class="figcap" style="margin-top:14px">four demo queries, both ways</div><div id="typos-demo"></div></div></div></div>
+    <div class="panel-note" id="typos-note" hidden></div>
+  </div>
+
+  <h3>NER: the same CoNLL, generated</h3>
+  <div class="prose">
+    {{text:reveal-p4}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · 8 000 training sentences, 3 453 test</span><span class="btnrow"><button class="primary" id="btn-ner-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-ner-f1"><span class="q">{{inline:bet-ner-f1}}</span></div>
+      <div class="bet" id="bet-ner-fmt"><span class="q">{{inline:bet-ner-fmt}}</span></div>
+      <div class="bet" id="bet-ner-unm"><span class="q">{{inline:bet-ner-unm}}</span></div>
+      <div class="reveal-wrap"><div class="veil">the table is behind this veil</div>
+        <div id="ner-out" hidden><div class="scroll-x"><table id="ner-table"></table></div><div class="btnrow" style="margin-top:14px" id="ner-demo-btns"><span class="toggle"><button data-m="inline" class="sel">inline</button><button data-m="list">list</button></span><button id="ner-demo-prev">‹</button><button id="ner-demo-next">›</button><span class="mono" id="ner-demo-i"></span></div><div id="ner-demo" style="margin-top:10px"></div></div></div>
+    </div>
+    <div class="panel-note" id="ner-note" hidden></div>
+  </div>
+
+  <h3>QA: answer, or point</h3>
+  <div class="prose">
+    {{text:reveal-p5}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Schematic · who sees whom, in the two orders</span><span class="fig-states" id="fig-order-btns"><button data-m="cq" class="sel">context, question</button><button data-m="qc">question, context</button></span></div>
+    <div class="panel-body"><div class="fig" id="fig-order"></div><div class="panel-note" id="fig-order-note" style="border-top:none;padding:10px 0 0;background:none"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet · 5 000 training questions, 2 000 dev</span><span class="btnrow"><button class="primary" id="btn-qa-reveal">Reveal</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-qa-em"><span class="q">{{inline:bet-qa-em}}</span></div>
+      <div class="bet" id="bet-qa-order"><span class="q">{{inline:bet-qa-order}}</span></div>
+      <div class="bet" id="bet-qa-sub"><span class="q">{{inline:bet-qa-sub}}</span></div>
+      <div class="reveal-wrap"><div class="veil">the table is behind this veil</div>
+        <div id="qa-out" hidden><div class="scroll-x"><table id="qa-table"></table></div><div class="btnrow" style="margin-top:14px"><span class="toggle" id="qa-order-tgl"><button data-m="context, question" class="sel">context, question</button><button data-m="question, context">question, context</button></span><button id="qa-demo-prev">‹</button><button id="qa-demo-next">›</button><span class="mono" id="qa-demo-i"></span></div><div id="qa-demo" style="margin-top:10px"></div></div></div>
+    </div>
+    <div class="panel-note" id="qa-note" hidden></div>
+  </div>
+</section>
+
+<!-- ============================================================ 06 both tables -->
+<section id="end">
+  <p class="eyebrow">Block 06 · where this goes</p>
+  <h2>Both tables</h2>
+  <div class="prose" id="end-prose">
+    {{text:end-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Quality · AG News and the three tasks</span></div>
+    <div class="panel-body tight scroll-x"><table class="results" id="results-1"></table></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Cost · per item</span></div>
+    <div class="panel-body tight scroll-x"><table class="costs" id="costs-1"></table></div>
+  </div>
+  <div class="prose">
+    {{text:end-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The course so far, in one table</span></div>
+    <div class="panel-body tight scroll-x"><table class="course" id="course"></table></div>
+  </div>
+  <div class="prose">
+    {{text:end-p3}}
+  </div>
+</section>
+
+</div>
+</main>
+</div>

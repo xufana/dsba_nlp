@@ -1,0 +1,20 @@
+[project]
+name = "dsba-nlp"
+version = "0.1.0"
+description = "NLP course for HSE DSBA. One environment for every week (uv workspace) plus the tools in scripts/ that build and check the seminar pages."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "markdown-it-py>=3.0",
+    "nbformat>=5.10",
+    "nbclient>=0.10",
+    "huggingface_hub>=1.0",
+    "ipykernel>=6.29",
+    "jupyterlab>=4.2",
+]
+
+[tool.uv]
+package = false
+# one .venv and one uv.lock at the root serve every week; `uv sync --all-packages` installs them all,
+# `uv run --package nlp-dsba-week03 ...` or plain `uv run` from the root uses it. scripts/new_week.py adds a member.
+[tool.uv.workspace]
+members = ["week*"]

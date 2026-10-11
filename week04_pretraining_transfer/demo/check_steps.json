@@ -140,7 +140,6 @@
    "dy": -20
   }
  ],
- "figuresDir": "../figures",
  "figures": [
   {
    "sel": "#fig-bert",

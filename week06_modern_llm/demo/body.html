@@ -1,0 +1,577 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 6<br>The Bill</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div class="score" id="score"></div>
+    <div style="margin-top:10px" id="rail-note">Every number on this page is read from the seminar notebook's artifacts (Pythia and the SmolLM2 family on a T4; the live cells on an M4) — nothing is typed in. Live-cell timings vary run to run.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>How models could afford to grow</h1>
+  <p class="lede">{{inline:lede}}</p>
+  <div class="prose">
+    {{text:hero-p1}}
+  </div>
+  <div class="formula"><span class="fn">The claim for today — three bills</span>
+    <math display="block"><mrow>
+      <munder><mrow><mn>6</mn><mi>N</mi><mi>D</mi></mrow><mtext style="font-size:.78em">training: paid once</mtext></munder>
+      <mspace width="2.2em"/>
+      <munder><mrow><mn>2</mn><msub><mi>N</mi><mtext>active</mtext></msub></mrow><mtext style="font-size:.78em">compute: paid per token</mtext></munder>
+      <mspace width="2.2em"/>
+      <munder><mrow><mtext>weights</mtext><mo>+</mo><mn>2</mn><mi>L</mi><msub><mi>h</mi><mi>kv</mi></msub><msub><mi>d</mi><mi>head</mi></msub><mo>·</mo><mi>T</mi></mrow><mtext style="font-size:.78em">memory: paid per request</mtext></munder>
+    </mrow></math>
+  </div>
+  <div class="prose keep">
+    {{text:hero-p2}}
+  </div>
+</section>
+
+<!-- ====================================================== 00 where we stopped -->
+<section id="stop">
+  <p class="eyebrow">Block 00 · where we stopped</p>
+  <h2>The bill</h2>
+  <div class="prose">
+    {{text:stop-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Bet, for the whole seminar</span><span class="mono" id="changes-count">pick three</span></div>
+    <div class="panel-body">
+      <div class="bet" style="margin-bottom:10px"><span class="q">{{inline:stop-bet1}}</span></div>
+      <div class="picklist" id="changes-pick"></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>The bill · one row per model</span><span class="mono" id="bill-0-n">columns appear at each reveal</span></div>
+      <div class="panel-body tight scroll-x"><table class="costs bill" id="bill-0"></table></div>
+    </div>
+    <div class="panel" style="margin-top:0">
+      <div class="panel-head"><span>Quality · AG News test</span></div>
+      <div class="panel-body tight scroll-x"><table class="results" id="results-0"></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== 01 the bill for training -->
+<section id="train">
+  <p class="eyebrow">Block 01 · the bill for training</p>
+  <h2>Six N D</h2>
+  <div class="prose">
+    {{text:train-p1}}
+  </div>
+  <div class="formula"><span class="fn">Kaplan et al. (2020)</span>
+    <math display="block"><mrow><mi>C</mi><mo>≈</mo><mn>6</mn><mi>N</mi><mi>D</mi><mtext> FLOPs,</mtext><mspace width="1.6em"/><mtext>and generating one token</mtext><mo>≈</mo><mn>2</mn><mi>N</mi></mrow></math>
+  </div>
+  <div class="prose">
+    {{text:train-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Place the models · log N against log D</span><span class="mono" id="plane-status">pick a model, then click on the plane</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-plane"><span class="q">{{inline:bet-plane}}</span></div>
+      <div class="plane-wrap">
+        <div class="plane-models" id="plane-models"></div>
+        <div id="plane"></div>
+      </div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-plane-reveal">Reveal the bill</button><span class="mono" id="plane-score"></span></div>
+    </div>
+    <div class="panel-note" id="plane-note" hidden></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>6ND, by hand</span><span class="mono" id="ndc-check"></span></div>
+    <div class="panel-body">
+      <div class="sliders"><div><label class="field">N · parameters <b id="ndc-n-v"></b></label><input type="range" id="ndc-n" min="7" max="12" step="0.01" value="11.243"></div><div><label class="field">D · tokens <b id="ndc-d-v"></b></label><input type="range" id="ndc-d" min="9" max="13.5" step="0.01" value="11.477"></div></div>
+      <div class="est" id="ndc-out"></div>
+    </div>
+    <div class="panel-note">{{inline:train-note1}}</div>
+  </div>
+
+  <h3>The law</h3>
+  <div class="prose">
+    {{text:train-p3}}
+  </div>
+  <figure class="michael" style="margin:0 0 18px">
+    <img src="{{stack_more_layers}}" alt="Stack more layers">
+    <figcaption>{{inline:train-cap1}}</figcaption>
+  </figure>
+  <div class="prose">
+    {{text:train-p4}}
+  </div>
+  <div class="formula"><span class="fn">What each law says</span>
+    <div class="fstack">
+      <div class="row"><span class="n">N</span><div><math><mrow><mi>L</mi><mo>(</mo><mi>N</mi><mo>)</mo><mo>∝</mo><msup><mi>N</mi><mrow><mo>−</mo><mn>0.076</mn></mrow></msup></mrow></math><div class="say">what a bigger model buys, <em>given enough data</em>. A large model on a small dataset is limited by the data.</div></div></div>
+      <div class="row"><span class="n">D</span><div><math><mrow><mi>L</mi><mo>(</mo><mi>D</mi><mo>)</mo><mo>∝</mo><msup><mi>D</mi><mrow><mo>−</mo><mn>0.095</mn></mrow></msup></mrow></math><div class="say">what more data buys, <em>given a model large enough</em>. A small model is limited by its own size, however much it reads.</div></div></div>
+      <div class="row"><span class="n">C</span><div><math><mrow><mi>L</mi><mo>(</mo><mi>C</mi><mo>)</mo><mo>∝</mo><msup><mi>C</mi><mrow><mo>−</mo><mn>0.050</mn></mrow></msup></mrow></math><div class="say">what money buys, <em>given that it is split well between N and D</em>. Smaller than the other two because <math><mi>C</mi><mo>=</mo><mn>6</mn><mi>N</mi><mi>D</mi></math>: the same money has to pay for both.</div></div></div>
+    </div>
+  </div>
+  <div class="prose">
+    {{text:train-p5}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Pythia · loss on AG News, bits per byte</span><span class="mono" id="scaling-meta"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-scaling"><span class="q">{{inline:bet-scaling}}</span></div>
+      <div class="reveal-wrap"><div class="veil">six sizes and nine checkpoints are behind this veil</div>
+        <div id="scaling-out" hidden>
+          <div class="btnrow" style="margin-bottom:8px"><span class="mono" style="font-size:13px">fit the line on the first</span><span class="fig-states" id="fit-k"><button data-m="3">3</button><button data-m="4">4</button><button data-m="5">5</button><button data-m="6" class="sel">all 6</button></span><span class="mono" style="font-size:13px">sizes, read off the rest</span><span class="mono" id="fit-line" style="margin-left:auto"></span></div>
+          <div class="grid-2"><div id="scaling-chart"></div><div id="steps-chart"></div></div>
+          <div class="small-note" id="fit-note"></div>
+        </div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-scaling-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="scaling-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:train-p6}}
+  </div>
+
+  <h3>How to split the money</h3>
+  <div class="prose">
+    {{text:train-p7}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>GPT-3's compute, split differently</span><span class="mono">C = 3.15 × 10²³ fixed</span></div>
+    <div class="panel-body">
+      <div class="sliders" style="max-width:520px"><div><label class="field">N · parameters <b id="split-n-v"></b></label><input type="range" id="split-n" min="9" max="12.3" step="0.005" value="11.243"></div></div>
+      <div class="est" id="split-out"></div>
+      <div id="tpp-chart" style="margin-top:14px"></div>
+    </div>
+    <div class="panel-note">{{inline:train-note2}}</div>
+  </div>
+  <div class="prose keep">
+    {{text:train-p8}}
+  </div>
+</section>
+
+<!-- ====================================================== 02 what had to be replaced -->
+<section id="parts">
+  <p class="eyebrow">Block 02 · what had to be replaced</p>
+  <h2>Two passports</h2>
+  <div class="prose">
+    {{text:parts-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>config.json, two models</span><span class="mono">hover a differing row</span></div>
+    <div class="panel-body tight"><div id="passports"></div></div>
+    <div class="panel-note">{{inline:parts-note1}}</div>
+  </div>
+  <div class="prose">
+    {{text:parts-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>decoder_params · six numbers of a config.json</span><span class="mono" id="dp-check"></span></div>
+    <div class="panel-body">
+      <div class="fig-code">
+        <pre class="code" id="code-dp"></pre>
+        <div>
+          <div class="sliders"><div><label class="field">d_model <b id="dp-d-v">576</b></label><input type="range" id="dp-d" min="256" max="4096" step="64" value="576"></div><div><label class="field">layers <b id="dp-L-v">30</b></label><input type="range" id="dp-L" min="2" max="48" step="1" value="30"></div><div><label class="field">kv heads <b id="dp-kv-v">3</b></label><input type="range" id="dp-kv" min="1" max="9" step="1" value="3"></div><div><label class="field">FFN hidden <b id="dp-h-v">1536</b></label><input type="range" id="dp-h" min="512" max="16384" step="64" value="1536"></div></div>
+          <div class="est" id="dp-out"></div>
+          <div class="btnrow" style="margin-top:8px"><span class="fig-states" id="dp-presets"><button data-m="smol" class="sel">SmolLM2-135M</button><button data-m="mistral">Mistral 7B</button><button data-m="llama3">Llama-3-8B</button></span></div>
+        </div>
+      </div>
+      <div id="params-bars" style="margin-top:16px"></div>
+    </div>
+    <div class="panel-note">{{inline:parts-note2}}</div>
+  </div>
+
+  <h3>The norm: where it stands, and what it computes</h3>
+  <div class="prose">
+    {{text:parts-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>One vector, two norms</span><span class="mono" id="norm-check"></span></div>
+    <div class="panel-body">
+      <div class="norm-grid">
+        <div>
+          <label class="field">x · four numbers</label><input type="text" id="norm-x" value="3, -1, 2, 0" style="max-width:260px">
+          <div class="fig-states" id="norm-states" style="margin-top:10px"><button data-m="x" class="sel">x</button><button data-m="centre">− mean</button><button data-m="scale">÷ scale</button><button data-m="gain">× γ (+ β)</button></div>
+          <div class="bet" id="bet-norm" style="margin-top:12px"><span class="q">{{inline:bet-norm}}</span></div>
+        </div>
+        <div id="fig-norm"></div>
+      </div>
+      <div class="fstack" style="margin-top:12px">
+        <div class="row"><span class="n">LN</span><div><span class="fx" data-f="centre scale gain"><math><mrow><mtext>LN</mtext><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mi>x</mi><mo>−</mo><mi>μ</mi></mrow><mi>σ</mi></mfrac><mo>⊙</mo><mi>γ</mi><mo>+</mo><mi>β</mi></mrow></math></span> <span class="say">μ the mean, σ the standard deviation — three steps, two learned vectors.</span></div></div>
+        <div class="row"><span class="n">RMS</span><div><span class="fx" data-f="rms gain"><math><mrow><mtext>RMSNorm</mtext><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mfrac><mi>x</mi><mrow><mtext>RMS</mtext><mo>(</mo><mi>x</mi><mo>)</mo></mrow></mfrac><mo>⊙</mo><mi>γ</mi><mo>,</mo><mspace width="1em"/><mtext>RMS</mtext><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><msqrt><mrow><mfrac><mn>1</mn><mi>d</mi></mfrac><munder><mo>∑</mo><mi>i</mi></munder><msubsup><mi>x</mi><mi>i</mi><mn>2</mn></msubsup><mo>+</mo><mi>ε</mi></mrow></msqrt></mrow></math></span> <span class="say">two steps, one learned vector. The ε (SmolLM2: 10<sup>−5</sup>) only keeps a zero vector from dividing by zero.</span></div></div>
+      </div>
+      <pre class="code" id="code-rms" style="margin-top:12px"></pre>
+    </div>
+    <div class="panel-note" id="norm-note">{{inline:norm-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Where the norm stands</span><span class="fig-states" id="prenorm-btns"><button data-m="post">post-norm · 2017, BERT</button><button data-m="pre" class="sel">pre-norm · GPT-2 on</button></span></div>
+    <div class="panel-body"><div id="fig-prenorm"></div></div>
+    <div class="panel-note">{{inline:parts-note3}}</div>
+  </div>
+
+  <h3>The feed-forward: a gate, and the 8/3</h3>
+  <div class="prose">
+    {{text:parts-p4}}
+  </div>
+  <div class="formula"><span class="fn">SwiGLU</span>
+    <math display="block"><mrow><mtext>FFN</mtext><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><msub><mi>W</mi><mi>down</mi></msub><mrow><mo>(</mo><mtext>SiLU</mtext><mo>(</mo><msub><mi>W</mi><mi>gate</mi></msub><mi>x</mi><mo>)</mo><mo>⊙</mo><msub><mi>W</mi><mi>up</mi></msub><mi>x</mi><mo>)</mo></mrow></mrow></math>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Two feed-forwards, drawn to parameter scale</span><span class="mono">d = 576</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-ffn"><span class="q">{{inline:bet-ffn}}</span></div>
+      <div id="fig-ffn"></div>
+      <div class="grid-2" style="margin-top:14px"><div id="ffn-curves"></div><div id="ffn-gate"></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-ffn-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="ffn-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:parts-p5}}
+  </div>
+
+  <h3>Positions: the rotation, on a real checkpoint</h3>
+  <div class="prose">
+    {{text:parts-p6}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The rotation matrix, 64 × 64, at position p</span><span class="mono" id="rope-check"></span></div>
+    <div class="panel-body">
+      <div class="rope-grid">
+        <div>
+          <div class="sliders"><div><label class="field">position p <b id="rope-p-v">1</b></label><input type="range" id="rope-p" min="0" max="64" step="1" value="1"></div><div><label class="field">pair i <b id="rope-i-v">0</b></label><input type="range" id="rope-i" min="0" max="31" step="1" value="0"></div></div>
+          <div id="rope-cell" class="small-note" style="min-height:4.5em"></div>
+          <div class="fstack">
+            <div class="row"><span class="n">ω</span><div><span class="fx" data-f="angle"><math><mrow><msub><mi>ω</mi><mi>i</mi></msub><mo>=</mo><msup><mi>θ</mi><mrow><mo>−</mo><mn>2</mn><mi>i</mi><mo>/</mo><msub><mi>d</mi><mi>head</mi></msub></mrow></msup></mrow></math></span> <span class="say">one frequency per pair; θ from the passport.</span></div></div>
+            <div class="row"><span class="n">R</span><div><span class="fx" data-f="cos sin pair"><math><mrow><msub><mi>R</mi><mi>p</mi></msub><mo>[</mo><mi>i</mi><mo>,</mo><mi>i</mi><mo>+</mo><mn>32</mn><mo>]</mo><mo>=</mo><mrow><mo>(</mo><mtable><mtr><mtd><mi>cos</mi><mo>⁡</mo><mi>p</mi><msub><mi>ω</mi><mi>i</mi></msub></mtd><mtd><mo>−</mo><mi>sin</mi><mo>⁡</mo><mi>p</mi><msub><mi>ω</mi><mi>i</mi></msub></mtd></mtr><mtr><mtd><mi>sin</mi><mo>⁡</mo><mi>p</mi><msub><mi>ω</mi><mi>i</mi></msub></mtd><mtd><mi>cos</mi><mo>⁡</mo><mi>p</mi><msub><mi>ω</mi><mi>i</mi></msub></mtd></mtr></mtable><mo>)</mo></mrow></mrow></math></span> <span class="say">32 such blocks, on coordinates (i, i + 32); every other cell is zero.</span></div></div>
+          </div>
+        </div>
+        <div id="fig-rope-matrix"></div>
+      </div>
+      <pre class="code" id="code-rope" style="margin-top:12px"></pre>
+    </div>
+    <div class="panel-note">{{inline:parts-note4}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>What lands in each coordinate · one real query vector</span><span class="mono" id="rope-real-meta"></span></div>
+    <div class="panel-body">
+      <div class="tokrow" id="rope-toks"></div>
+      <div id="fig-rope-coords"></div>
+    </div>
+    <div class="panel-note">{{inline:parts-note5}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Shift every position</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-shift"><span class="q">{{inline:bet-shift}}</span></div>
+      <div class="reveal-wrap"><div class="veil">two forward passes are behind this veil</div><div id="shift-out" hidden class="rope-out"></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-shift-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="shift-note" hidden>{{inline:shift-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Slow pairs · θ against the context</span></div>
+    <div class="panel-body">
+      <div class="sliders" style="max-width:560px"><div><label class="field">θ <b id="slow-theta-v">10 000</b></label><input type="range" id="slow-theta" min="3" max="7" step="0.01" value="4"></div><div><label class="field">context <b id="slow-ctx-v">2 048</b></label><input type="range" id="slow-ctx" min="9" max="18" step="0.05" value="11"></div></div>
+      <div id="fig-slow"></div>
+    </div>
+    <div class="panel-note">{{inline:parts-note6}}</div>
+  </div>
+
+  <h3>Attention: fewer keys and values</h3>
+  <div class="prose">
+    {{text:parts-p7}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Nine questions, three answer spaces</span><span class="fig-states" id="gqa-btns"><button data-m="1">kv = 1 · multi-query</button><button data-m="3" class="sel">kv = 3 · grouped</button><button data-m="9">kv = 9 · multi-head</button></span></div>
+    <div class="panel-body">
+      <div id="fig-gqa"></div>
+      <div class="est" id="gqa-out" style="margin-top:12px"></div>
+      <pre class="code" id="code-attn" style="margin-top:12px"></pre>
+    </div>
+    <div class="panel-note">{{inline:parts-note7}}</div>
+  </div>
+
+  <h3>Assembled: sixty lines, their weights</h3>
+  <div class="prose">
+    {{text:parts-p8}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The block, 2017 → 2024</span><span class="fig-states" id="stack-btns"><button data-m="2017">2017 · week 3</button><button data-m="2024" class="sel">2024 · SmolLM2</button></span></div>
+    <div class="panel-body">
+      <div id="fig-stack"></div>
+      <div class="bet" id="bet-assemble" style="margin-top:12px"><span class="q">{{inline:bet-assemble}}</span></div>
+      <div class="est" id="assemble-out" hidden></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-assemble-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="assemble-note" hidden>{{inline:assemble-note}}</div>
+  </div>
+</section>
+
+<!-- ====================================================== 03 the bill for serving -->
+<section id="serve">
+  <p class="eyebrow">Block 03 · the bill for serving</p>
+  <h2>Memory: the cache, with numbers</h2>
+  <div class="prose">
+    {{text:serve-p1}}
+  </div>
+  <div class="formula"><span class="fn">The cache</span><math display="block"><mrow><mn>2</mn><mo>·</mo><mi>L</mi><mo>·</mo><msub><mi>h</mi><mi>kv</mi></msub><mo>·</mo><msub><mi>d</mi><mi>head</mi></msub><mspace width="1em"/><mtext>numbers per token of context</mtext></mrow></math></div>
+  <div class="panel">
+    <div class="panel-head"><span>The cache, priced</span><span class="mono" id="cache-check"></span></div>
+    <div class="panel-body">
+      <div class="btnrow" style="margin-bottom:10px"><span class="fig-states" id="cache-presets"></span></div>
+      <div class="sliders"><div><label class="field">layers L <b id="cc-L-v"></b></label><input type="range" id="cc-L" min="2" max="96" value="32"></div><div><label class="field">K/V heads <b id="cc-kv-v"></b></label><input type="range" id="cc-kv" min="1" max="64" value="8"></div><div><label class="field">head_dim <b id="cc-hd-v"></b></label><input type="range" id="cc-hd" min="32" max="256" step="32" value="128"></div><div><label class="field">context T <b id="cc-T-v"></b></label><input type="range" id="cc-T" min="4" max="17" step="0.02" value="13"></div></div>
+      <div class="bet" id="bet-cache" style="margin-top:8px"><span class="q">{{inline:bet-cache}}</span></div>
+      <div class="est" id="cc-out"></div>
+      <div id="cc-bars" style="margin-top:10px"></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-cache-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="cache-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:serve-p2}}
+  </div>
+
+  <h3>Time: prefill and decode</h3>
+  <div class="prose">
+    {{text:serve-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Two regimes</span><span class="stepper"><button id="regime-step">step</button><button id="regime-reset">reset</button><span class="cnt" id="regime-cnt"></span></span></div>
+    <div class="panel-body"><div id="fig-regimes"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Prefill against decode · tokens per second</span><span class="mono" id="serving-meta"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-prefill"><span class="q">{{inline:bet-prefill}}</span></div>
+      <div class="bet" id="bet-decode"><span class="q">{{inline:bet-decode}}</span></div>
+      <div class="reveal-wrap"><div class="veil">eight prompt lengths on two machines are behind this veil</div>
+        <div id="serving-out" hidden>
+          <div class="btnrow" style="margin-bottom:8px"><span class="fig-states" id="serving-machine"></span></div>
+          <div class="grid-2"><div id="serving-chart"></div><div id="decode-chart"></div></div>
+          <div class="scroll-x" style="margin-top:10px"><table id="serving-table"></table></div>
+        </div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-serving-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="serving-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:serve-p4}}
+  </div>
+
+  <h3>Where the arithmetic happens</h3>
+  <div class="prose">
+    {{text:serve-p5}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The queue · a 4 096 × 4 096 product</span><span class="fig-states" id="queue-machine"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-queue"><span class="q">{{inline:bet-queue}}</span></div>
+      <div id="fig-queue"></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-queue-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="queue-note" hidden>{{inline:queue-note}}</div>
+  </div>
+  <div class="prose">
+    {{text:serve-p6}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Where the GPU wins · n × n product</span><span class="fig-states" id="xover-machine"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-xover"><span class="q">{{inline:bet-xover}}</span></div>
+      <div id="xover-chart"></div>
+      <div class="scroll-x" style="margin-top:10px"><table id="transfer-table"></table></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-xover-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="xover-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:serve-p7}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The round trip · 64 tokens with SmolLM2</span><span class="fig-states" id="rt-machine"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-rt"><span class="q">{{inline:bet-rt}}</span></div>
+      <div id="fig-roundtrip"></div>
+      <div class="est" id="rt-out" hidden></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-rt-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="rt-note" hidden></div>
+  </div>
+  <div class="prose keep">
+    {{text:serve-p8}}
+  </div>
+
+  <h3>More parameters than you can afford to run</h3>
+  <div class="prose">
+    {{text:serve-p9}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>One MoE block · a real residual vector per token, a random router</span><span class="stepper"><button id="moe-prev">‹</button><button id="moe-next">›</button><span class="cnt" id="moe-cnt"></span></span></div>
+    <div class="panel-body">
+      <div id="fig-moe"></div>
+      <pre class="code" id="code-moe" style="margin-top:12px"></pre>
+    </div>
+    <div class="panel-note">{{inline:serve-note1}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The batch stops being one matrix product</span><span class="fig-states" id="scatter-btns"><button data-m="dense" class="sel">dense FFN</button><button data-m="moe">MoE, top-2</button></span></div>
+    <div class="panel-body"><div id="fig-scatter"></div></div>
+    <div class="panel-note">{{inline:serve-note2}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Owned against run</span><span class="fig-states" id="moe-presets"><button data-m="mixtral" class="sel">Mixtral 8x7B</button><button data-m="gptoss">gpt-oss-20b</button><button data-m="ours">our block</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-moe"><span class="q">{{inline:bet-moe}}</span></div>
+      <div class="sliders"><div><label class="field">experts E <b id="moe-E-v"></b></label><input type="range" id="moe-E" min="2" max="64" value="8"></div><div><label class="field">active k <b id="moe-k-v"></b></label><input type="range" id="moe-k" min="1" max="8" value="2"></div></div>
+      <div class="est" id="moe-out"></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-moe-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="moe-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:serve-p10}}
+  </div>
+
+  <h3>Context: three limits, not one</h3>
+  <div class="prose">
+    {{text:serve-p11}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Three gauges · Llama-3-8B shapes</span><span class="mono" id="ctx-T-label"></span></div>
+    <div class="panel-body">
+      <div class="sliders" style="max-width:560px"><div><label class="field">context T <b id="ctx-T-v"></b></label><input type="range" id="ctx-T" min="7" max="17" step="0.02" value="13"></div></div>
+      <div class="est" id="ctx-out"></div>
+      <div id="fig-masks" style="margin-top:14px"></div>
+    </div>
+    <div class="panel-note">{{inline:serve-note3}}</div>
+  </div>
+  <div class="prose">
+    {{text:serve-p12}}
+  </div>
+  <div class="formula"><span class="fn">Linear attention</span>
+    <math display="block"><mrow><msub><mtext>out</mtext><mi>t</mi></msub><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mrow><mi>s</mi><mo>≤</mo><mi>t</mi></mrow></munder><mrow><mo>(</mo><mi>φ</mi><mo>(</mo><msub><mi>q</mi><mi>t</mi></msub><mo>)</mo><mo>·</mo><mi>φ</mi><mo>(</mo><msub><mi>k</mi><mi>s</mi></msub><mo>)</mo><mo>)</mo></mrow><msub><mi>v</mi><mi>s</mi></msub></mrow><mrow><munder><mo>∑</mo><mrow><mi>s</mi><mo>≤</mo><mi>t</mi></mrow></munder><mi>φ</mi><mo>(</mo><msub><mi>q</mi><mi>t</mi></msub><mo>)</mo><mo>·</mo><mi>φ</mi><mo>(</mo><msub><mi>k</mi><mi>s</mi></msub><mo>)</mo></mrow></mfrac><mo>=</mo><mfrac><mrow><mi>φ</mi><msup><mrow><mo>(</mo><msub><mi>q</mi><mi>t</mi></msub><mo>)</mo></mrow><mo>⊤</mo></msup><msub><mi>S</mi><mi>t</mi></msub></mrow><mrow><mi>φ</mi><msup><mrow><mo>(</mo><msub><mi>q</mi><mi>t</mi></msub><mo>)</mo></mrow><mo>⊤</mo></msup><msub><mi>z</mi><mi>t</mi></msub></mrow></mfrac><mo>,</mo><mspace width="1.4em"/><msub><mi>S</mi><mi>t</mi></msub><mo>=</mo><msub><mi>S</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><mi>φ</mi><mo>(</mo><msub><mi>k</mi><mi>t</mi></msub><mo>)</mo><msubsup><mi>v</mi><mi>t</mi><mo>⊤</mo></msubsup><mo>,</mo><mspace width="1em"/><msub><mi>z</mi><mi>t</mi></msub><mo>=</mo><msub><mi>z</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><mi>φ</mi><mo>(</mo><msub><mi>k</mi><mi>t</mi></msub><mo>)</mo></mrow></math>
+  </div>
+  <div class="prose">
+    {{text:serve-p13}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Softmax against linear · what each one keeps</span><span class="fig-states" id="lin-btns"><button data-m="softmax" class="sel">softmax · a cache of T rows</button><button data-m="linear">linear · a state of d × d</button></span></div>
+    <div class="panel-body">
+      <div id="fig-linear"></div>
+      <pre class="code" id="code-linear" style="margin-top:12px"></pre>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Three answers</span><span class="mono" id="lin-check"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-lin-state"><span class="q">{{inline:bet-lin-state}}</span></div>
+      <div class="bet" id="bet-lin-time"><span class="q">{{inline:bet-lin-time}}</span></div>
+      <div class="bet" id="bet-lin-swap"><span class="q">{{inline:bet-lin-swap}}</span></div>
+      <div class="reveal-wrap"><div class="veil">one chart, one table and one swapped model are behind this veil</div>
+        <div id="lin-out" hidden>
+          <div class="grid-2"><div id="lin-chart"></div><div><div class="scroll-x"><table id="lin-table"></table></div><div class="est" id="lin-swap" style="margin-top:10px"></div></div></div>
+        </div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-lin-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="lin-note" hidden></div>
+  </div>
+</section>
+
+<!-- ====================================================== 04 five years later -->
+<section id="later">
+  <p class="eyebrow">Block 04 · the same budget, five years later</p>
+  <h2>Bits per byte</h2>
+  <div class="prose">
+    {{text:later-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Your three changes</span></div>
+    <div class="panel-body"><div id="changes-out"></div></div>
+    <div class="panel-note">{{inline:later-note1}}</div>
+  </div>
+  <div class="prose">
+    {{text:later-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Order the four · bits per byte</span><span class="mono" id="bpb-meta"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-bpb"><span class="q">{{inline:bet-bpb}}</span></div>
+      <div class="orderpick" id="bpb-pick"></div>
+      <div class="reveal-wrap"><div class="veil">four numbers are behind this veil</div><div id="bpb-out" hidden></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-bpb-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="bpb-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:later-p3}}
+  </div>
+
+  <h3>The scorer, with the body swapped</h3>
+  <div class="prose">
+    {{text:later-p4}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Order the four · zero-shot accuracy</span><span class="mono" id="zs-meta"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-zs"><span class="q">{{inline:bet-zs}}</span></div>
+      <div class="bet" id="bet-zs-class"><span class="q">{{inline:bet-zs-class}}</span></div>
+      <div class="orderpick" id="zs-pick"></div>
+      <div class="reveal-wrap"><div class="veil">the per-class table is behind this veil</div><div id="zs-out" hidden></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-zs-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="zs-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:later-p5}}
+  </div>
+
+  <h3>The encoder's corner</h3>
+  <div class="prose">
+    {{text:later-p6}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>ModernBERT-base · week 4's recipe</span><span class="mono" id="enc-meta"></span></div>
+    <div class="panel-body"><div class="est" id="enc-out"></div><div id="enc-config" class="small-note" style="margin-top:10px"></div></div>
+    <div class="panel-note">{{inline:later-note2}}</div>
+  </div>
+
+  <h3>Both tables</h3>
+  <div class="panel">
+    <div class="panel-head"><span>The bill · every column</span></div>
+    <div class="panel-body tight scroll-x"><table class="costs bill" id="bill-1"></table></div>
+    <div class="panel-note">{{inline:later-note3}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Quality · AG News test</span></div>
+    <div class="panel-body tight scroll-x"><table class="results" id="results-1"></table></div>
+    <div class="panel-note">{{inline:later-note4}}</div>
+  </div>
+</section>
+
+<!-- ====================================================== 05 where this goes -->
+<section id="end">
+  <p class="eyebrow">Block 05 · where this goes</p>
+  <h2>The question from the top, in three lines</h2>
+  <div class="prose">
+    {{text:end-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The course so far</span></div>
+    <div class="panel-body tight scroll-x"><table class="course" id="course"></table></div>
+  </div>
+  <div class="footnote">Sources: Kaplan et al. (2020); Hoffmann et al. (2022); Brown et al. (2020); Biderman et al. (2023); Zhang &amp; Sennrich (2019); Xiong et al. (2020); Shazeer (2019, 2020); Su et al. (2021); Ainslie et al. (2023); Pope et al. (2022); Jiang et al. (2024); Katharopoulos et al. (2020); Yang et al. (2024); Gu &amp; Dao (2023); Allal et al. (2025); Warner et al. (2024). Full list with links in the notebook's README.</div>
+</section>
+
+</div>
+</main>
+</div>

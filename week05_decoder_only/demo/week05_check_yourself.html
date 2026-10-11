@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
 <style>
+/* The design system of the seminar pages, shared by every week (scripts/build_demo.py puts it in <style>).
+   A week adds its own rules in demo/week.css, appended after this file. */
 :root {
   color-scheme: light;
   --ground:        #f7f6f2;
@@ -673,6 +675,63 @@ table.rowbet td.zero { color: var(--bad); font-weight: 600; }
 .course td:first-child { font-family: var(--mono); }
 .course tr.now td { background: color-mix(in srgb, var(--cls-1) 10%, transparent); font-weight: 600; }
 .big-num { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: -.03em; line-height: 1; }
+
+/* ------------------------------------------------------- week 6 additions */
+/* the meme, kept: an image with a caption beside it */
+.michael { display: grid; grid-template-columns: minmax(0, .9fr) minmax(280px, 1.1fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; max-width: 452px; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+.michael figcaption { font-family: var(--body); font-size: 17.7px; color: var(--ink-2); line-height: 1.55; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+/* pick three changes */
+.picklist { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.picklist button { font-size: 15px; padding: 4px 11px; }
+.picklist button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.picklist button.yes { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.picklist button.no { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.picklist button .why { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+/* the N–D plane */
+.plane-wrap { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .plane-wrap { grid-template-columns: 1fr; } }
+.plane-models { display: flex; flex-direction: column; gap: 6px; }
+.plane-models button { text-align: left; font-size: 14.5px; display: flex; justify-content: space-between; gap: 8px; }
+.plane-models button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.plane-models button .st { font-family: var(--mono); font-size: 12px; opacity: .7; }
+#plane svg { max-width: 760px; cursor: crosshair; }
+#plane svg.done { cursor: default; }
+/* the bill table */
+table.bill td, table.bill th { font-size: 14px; white-space: nowrap; }
+table.bill td:first-child { font-weight: 600; font-family: var(--display); }
+/* passports as a diff */
+.pp-row { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 6px 14px; padding: 6px 0; border-bottom: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; align-items: baseline; }
+.pp-row:last-child { border-bottom: none; }
+.pp-row .k { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pp-row.head { font-family: var(--display); font-weight: 700; font-size: 16px; }
+.pp-row.diff { background: color-mix(in srgb, var(--cls-1) 9%, transparent); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 3px; }
+.pp-row.diff .k { color: var(--cls-1); }
+.pp-row .sec { font-size: 11.5px; color: var(--ink-3); margin-left: 6px; }
+/* norm grid and rope grid: controls beside the picture */
+.norm-grid, .rope-grid { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .norm-grid, .rope-grid { grid-template-columns: 1fr; } }
+#fig-norm svg { max-width: 620px; } #fig-rope-matrix svg { max-width: 560px; display: block; margin: 0 auto; }
+#fig-rope-coords svg, #fig-slow svg, #fig-gqa svg, #fig-ffn svg, #fig-stack svg, #fig-prenorm svg, #fig-regimes svg, #fig-queue svg, #fig-roundtrip svg, #fig-moe svg, #fig-scatter svg, #fig-linear svg, #fig-masks svg { max-width: 920px; display: block; }
+#ffn-curves svg, #ffn-gate svg, #scaling-chart svg, #steps-chart svg, #tpp-chart svg, #serving-chart svg, #decode-chart svg, #xover-chart svg, #lin-chart svg { max-width: 640px; }
+/* order-the-models bet */
+.orderpick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+.orderpick button { font-size: 15px; }
+.orderpick button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.orderpick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.orderpick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.orderpick button i { font-style: normal; font-family: var(--mono); font-size: 11.5px; margin-right: 6px; opacity: .7; }
+.orderpick .arrow { color: var(--ink-3); }
+/* heatmap cells for the per-class table */
+.conf td.v { font-variant-numeric: tabular-nums; }
+/* small inline stat row */
+.est .stat .v small { font-size: 13px; font-weight: 400; color: var(--ink-3); margin-left: 4px; }
+.small-note { font-family: var(--mono); font-size: 13px; color: var(--ink-3); line-height: 1.5; margin-top: 8px; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 18px; margin-bottom: 10px; }
+.bet .q input { vertical-align: middle; }
+#bpb-out .pbar { grid-template-columns: 190px 1fr 70px; }
+#bpb-out .pbar .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>
 
 </head>
@@ -1198,3 +1257,5 @@ table.pieces td.mono { font-size: 15.5px; }
 
 </body>
 </html>
+
+<!-- built from demo/ · sha256:d71043cc7dc67c0b66f91043a108aba4930aa444f46e33a0a427b6c88f67bbec -->

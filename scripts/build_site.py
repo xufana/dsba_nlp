@@ -5,7 +5,9 @@
 Every week*/demo/week*_demo.html is copied to <out>/weekNN/index.html, and a
 week*/demo/week*_check_yourself.html appendix to <out>/weekNN/check-yourself/index.html
 (the two pages' relative links to each other are rewritten to match); <out>/index.html
-lists all week directories. Each card's topic and formula are read from the demo's own
+lists all week directories. On copy, each page's rail gets a site navigation line —
+all weeks / previous / next — that the standalone file has no use for. <out> defaults
+to /tmp/dsba_nlp/_site. Each card's topic and formula are read from the demo's own
 rail and h1, so the index cannot drift from the pages. A week without a built demo is
 listed with its notebook links only.
 """
@@ -39,10 +41,36 @@ def readme_title(week_dir):
     return html.escape(re.sub(r"^#\s*Week\s*\d+\s*[—-]\s*", "", first).strip())
 
 
+NAV_STYLE = """<style>
+.site-nav { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 12px; font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+.site-nav a { color: var(--ink-2); text-decoration: none; }
+.site-nav a:hover { color: var(--ink); text-decoration: underline; }
+</style>
+"""
+
+
+def with_nav(page, up, prev_num, next_num):
+    """Add the all-weeks / previous / next line at the top of the rail footer. `up` is the path to the site root."""
+    links = [f'<a href="{up}">all weeks</a>']
+    if prev_num:
+        links.append(f'<a href="{up}week{prev_num}/">← week {prev_num}</a>')
+    if next_num:
+        links.append(f'<a href="{up}week{next_num}/">week {next_num} →</a>')
+    nav = '<div class="site-nav">' + " ".join(links) + "</div>\n    "
+    page, n = re.subn(r'(<div class="rail-foot">\s*)', lambda m: m.group(1) + nav, page, count=1)
+    if n:
+        page = page.replace("</head>", NAV_STYLE + "</head>", 1)
+    return page
+
+
 def collect(out, branch):
     weeks = []
-    for week_dir in sorted(ROOT.glob("week[0-9][0-9]_*")):
+    week_dirs = sorted(ROOT.glob("week[0-9][0-9]_*"))
+    built = [d.name[4:6] for d in week_dirs if list((d / "demo").glob("week*_demo.html"))]
+    for week_dir in week_dirs:
         num = week_dir.name[4:6]
+        prev_num = max((n for n in built if n < num), default=None)
+        next_num = min((n for n in built if n > num), default=None)
         demo = next(iter(sorted((week_dir / "demo").glob("week*_demo.html"))), None)
         nb = week_dir / f"{week_dir.name}.ipynb"
         check = next(iter(sorted((week_dir / "demo").glob("week*_check_yourself.html"))), None)
@@ -63,13 +91,13 @@ def collect(out, branch):
             dest.mkdir(parents=True, exist_ok=True)
             # the demo's rail links to the appendix by file name; on the site it is a directory
             page = re.sub(r'href="week\d\d_check_yourself\.html"', 'href="check-yourself/"', page)
-            (dest / "index.html").write_text(page)
+            (dest / "index.html").write_text(with_nav(page, "../", prev_num, next_num))
             card["href"] = f"week{num}/"
         if check:
             dest = out / f"week{num}" / "check-yourself"
             dest.mkdir(parents=True, exist_ok=True)
             page = re.sub(r'href="week\d\d_demo\.html"', 'href="../"', check.read_text())
-            (dest / "index.html").write_text(page)
+            (dest / "index.html").write_text(with_nav(page, "../../", prev_num, next_num))
             card["check"] = f"week{num}/check-yourself/"
         card["topic"] = card["topic"] or readme_title(week_dir)
         weeks.append(card)
@@ -202,7 +230,7 @@ footer { margin-top: 48px; font-family: var(--mono); font-size: 14px; color: var
 
 
 def main():
-    out = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "_site"
+    out = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("/tmp/dsba_nlp/_site")
     branch = sys.argv[2] if len(sys.argv) > 2 else "autumn-2026"
     if out.exists():
         shutil.rmtree(out)

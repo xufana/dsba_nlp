@@ -40,7 +40,7 @@ record their own n_train, and the notebook reads it from there.
 --smoke runs every step on a two-layer random BERT with a 2k WordPiece vocabulary
 trained on the spot and on a few hundred examples, in a couple of minutes on a 2-core
 CPU, so the notebook can be executed end-to-end before the real run. Smoke artifacts go
-to artifacts_smoke/; never commit them.
+to /tmp/dsba_nlp/week04/artifacts_smoke/.
 
 The blocks between `# --- notebook: <name> ---` and `# --- end ---` are the same code as the
 seminar notebook's definition cells — if you change one, change the other.
@@ -719,7 +719,7 @@ def main():
     ap.add_argument("--smoke", action="store_true", help="tiny random BERT, a few hundred examples: checks the code")
     ap.add_argument("--full", action="store_true", help="paper-scale sizes (SIZES['full']); the default is SIZES['demo']")
     cfg = ap.parse_args()
-    cfg.out = cfg.out or ("artifacts_smoke" if cfg.smoke else "artifacts")
+    cfg.out = cfg.out or ("/tmp/dsba_nlp/week04/artifacts_smoke" if cfg.smoke else "artifacts")
     cfg.sizes = "smoke" if cfg.smoke else "full" if cfg.full else "demo"
     for k, v in SIZES[cfg.sizes].items():
         setattr(cfg, k, v)

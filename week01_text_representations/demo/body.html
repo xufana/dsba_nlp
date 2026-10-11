@@ -1,0 +1,694 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 1<br>Representations of Text</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div style="margin-top:10px">Every number on this page comes from the seminar notebook, or is computed in your browser right now.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>classifier =<br>representation × head</h1>
+  <p class="lede">{{inline:lede}}</p>
+  <div class="panel">
+    <div class="panel-head"><span>Seventy years of answers to one question</span><span>how to turn text into a numerical representation</span></div>
+    <div class="scroll-x"><table id="tbl-history"></table></div>
+    <div class="panel-note">{{inline:hero-note1}}</div>
+  </div>
+  <div class="prose">
+    {{text:hero-p1}}
+  </div>
+</section>
+
+<!-- ========================================================== 01 label -->
+<section id="label">
+  <p class="eyebrow">Block 00 · before you see a model</p>
+  <h2>Twelve headlines you label yourself</h2>
+  <div class="prose">
+    {{text:label-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>AG News · test set · 12 items</span>
+      <span class="btnrow">
+        <span id="label-progress" class="mono">0 / 12 labelled</span>
+        <button id="btn-label-reveal" disabled>Reveal the dataset’s answer</button>
+        <button id="btn-label-reset">Reset</button>
+      </span>
+    </div>
+    <div class="panel-body tight"><div id="label-list"></div></div>
+    <div class="panel-note" id="label-score" hidden></div>
+  </div>
+</section>
+
+<!-- ========================================================= 02 tokens -->
+<section id="tokens">
+  <p class="eyebrow">Block 01 · tokenization</p>
+  <h2>Where the vocabulary comes from</h2>
+  <div class="prose">
+    {{text:tokens-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>Four tokenizers, one string</span>
+      <span class="btnrow" id="tok-cases"></span>
+    </div>
+    <div class="panel-body">
+      <div id="tok-input-row" style="margin-bottom:14px">
+        <label class="field" for="tok-input">Type your own — <span class="mono">naive</span>, <span class="mono">regex</span> and <span class="mono">wordpunct</span> run live in the browser</label>
+        <input type="text" id="tok-input" value="Contact alex.smith_92@hse.ru for details." spellcheck="false">
+      </div>
+      <div id="tok-out"></div>
+    </div>
+    <div class="panel-note">{{inline:tokens-note1}}</div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">nltk.tokenize · word_tokenize · wordpunct_tokenize · re.findall · spaCy</span></summary>
+      <pre>import re, nltk
+from nltk.tokenize import word_tokenize, wordpunct_tokenize
+
+re.findall(r"\w+", text)          # the regex tokenizer above
+wordpunct_tokenize(text)          # splits on every non-word character
+word_tokenize(text)               # Treebank rules: needs nltk.download("punkt_tab")</pre>
+      <div class="why">{{inline:tokens-why1}}</div>
+    </details>
+  </div>
+
+  <h3>Stemming and lemmatization</h3>
+  <div class="prose">
+    {{text:tokens-p2}}
+  </div>
+  <div class="panel reveal-wrap">
+    <div class="panel-head"><span>nltk · WordNetLemmatizer + PorterStemmer</span><span class="mono">textbook vs. reality</span></div>
+    <div class="panel-body">
+      <div class="veil" id="veil-morph">
+        <span>Commit to an answer, then look.</span>
+        <button class="primary" data-reveal="morph">Show what nltk returns</button>
+      </div>
+      <div id="morph-out" hidden></div>
+    </div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">nltk.stem · PorterStemmer · WordNetLemmatizer · nltk.pos_tag · pymorphy3</span></summary>
+      <pre>from nltk.stem import PorterStemmer, WordNetLemmatizer
+
+PorterStemmer().stem("studies")            # 'studi' — rules, no dictionary
+WordNetLemmatizer().lemmatize("was")       # 'wa'    — pos defaults to 'n'
+WordNetLemmatizer().lemmatize("was", "v")  # 'be'    — with the right tag</pre>
+      <div class="why">{{inline:tokens-why2}}</div>
+    </details>
+    <div class="panel-note" id="morph-note" hidden>{{inline:morph-note}}</div>
+  </div>
+
+  <h3>Subword: the boundary is a trained artefact</h3>
+  <div class="prose">
+    {{text:tokens-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>tiktoken · cl100k_base</span><span class="mono">precomputed — the encoder does not run in a browser</span></div>
+    <div class="panel-body" id="bpe-out">
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">tiktoken · tokenizers (BpeTrainer, Unigram) · sentencepiece · transformers.AutoTokenizer</span></summary>
+      <pre>import tiktoken
+enc = tiktoken.get_encoding("cl100k_base")
+enc.encode("unbelievability")     # [1234, ...] — ids, not strings
+[enc.decode([t]) for t in ids]    # what each id actually is</pre>
+      <div class="why">{{inline:tokens-why3}}</div>
+    </details>
+    </div>
+    <div class="panel-note">{{inline:tokens-note2}}</div>
+  </div>
+</section>
+
+<!-- =========================================================== 03 prep -->
+<section id="prep">
+  <p class="eyebrow">Block 02 · preprocessing</p>
+  <h2>To clean or not to clean</h2>
+  <div class="prose">
+    {{text:prep-p1}}
+  </div>
+
+  <h3>Where you must not skip it</h3>
+  <div class="prose">
+    {{text:prep-p2}}
+  </div>
+  <div class="panel reveal-wrap">
+    <div class="panel-head"><span>LDA · <span id="lda-topic-count">topics</span> · raw vs lemmatised</span><span class="btnrow"><button id="btn-lda-raw" class="on">raw</button><button id="btn-lda-lem">lemmatised</button></span></div>
+    <div class="panel-body" id="lda-out">
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">sklearn.decomposition.LatentDirichletAllocation · gensim.LdaModel · CoherenceModel · BERTopic</span></summary>
+      <pre>from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+
+X = CountVectorizer(max_df=0.95, min_df=5).fit_transform(docs)
+lda = LatentDirichletAllocation(n_components=8, random_state=42).fit(X)
+lda.components_          # topic × term weights; sort each row for the top words</pre>
+      <div class="why">{{inline:prep-why1}}</div>
+    </details>
+    </div>
+    <div class="panel-note">{{inline:prep-note1}}</div>
+  </div>
+
+  <h3>Where it destroys the signal</h3>
+  <div class="prose">
+    {{text:prep-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Drop the stopwords · live</span><span class="mono" id="stop-count"></span></div>
+    <div class="panel-body">
+      <label class="field" for="stop-input">Any sentence — the full 198-word nltk list is loaded</label>
+      <input type="text" id="stop-input" value="the movie was not good" spellcheck="false">
+      <div id="stop-out" style="margin-top:14px"></div>
+      <div class="btnrow" style="margin-top:12px" id="stop-presets"></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">nltk.corpus.stopwords · TfidfVectorizer(stop_words=…)</span></summary>
+      <pre>from nltk.corpus import stopwords
+stop = set(stopwords.words("english"))     # 198 entries, "not" among them
+
+# or let the vectorizer do it — and notice you cannot see the list
+TfidfVectorizer(stop_words="english")      # sklearn's own list, 318 entries</pre>
+      <div class="why">{{inline:prep-why2}}</div>
+    </details>
+    </div>
+    <div class="panel-note">{{inline:prep-note2}}</div>
+  </div>
+
+  <h3>Which cleaning, for which task</h3>
+  <div class="prose">
+    {{text:prep-p4}}
+  </div>
+  <div class="panel reveal-wrap">
+    <div class="panel-head">
+      <span>Preprocessing &times; task &middot; <span class="mono" id="preproc-progress">0 / 12 bets placed</span></span>
+      <span class="btnrow"><button id="btn-preproc-reveal" class="primary">Reveal all</button><button id="btn-preproc-reset">Reset</button></span>
+    </div>
+    <div class="panel-body">
+      <div id="preproc-grid" class="scroll-x"></div>
+      <div id="preproc-score" class="stat-row" style="margin-top:18px" hidden></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">TfidfVectorizer(analyzer=&hellip;) &middot; rank_bm25 &middot; LatentDirichletAllocation &middot; gensim.CoherenceModel</span></summary>
+      <pre>def ab(analyzer):                 # one knob; split, seed, model all fixed
+    v = TfidfVectorizer(analyzer=analyzer, min_df=2)
+    X = v.fit_transform(train_texts)
+    m = LogisticRegression(max_iter=2000, random_state=42).fit(X, y_train)
+    return m.score(v.transform(test_texts), y_test)
+
+plain  = lambda t: re.findall(r"(?u)\b\w\w+\b", t.lower())
+nostop = lambda t: [w for w in plain(t) if w not in stop]
+
+ab(nostop) - ab(plain)            # the delta is the whole answer</pre>
+      <div class="why">{{inline:prep-why3}}</div>
+    </details>
+    </div>
+    <div class="panel-note" id="preproc-note" hidden></div>
+  </div>
+
+</section>
+
+<!-- ========================================================== 04 tfidf -->
+<section id="tfidf">
+  <p class="eyebrow">Block 03 · sparse representations</p>
+  <h2>Building TF-IDF by hand, understanding how does the vector look like</h2>
+  <div class="prose">
+    {{text:tfidf-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>The vectorizer, stage by stage</span>
+      <span class="btnrow" id="tfidf-stages"></span>
+    </div>
+    <div class="panel-body">
+      <div class="grid-2" style="align-items:start">
+        <div>
+          <label class="field">Four documents — editable</label>
+          <textarea id="toy-input" rows="4" spellcheck="false" style="line-height:1.7"></textarea>
+          <div class="footnote" style="margin-top:8px" id="tfidf-caption"></div>
+        </div>
+        <div id="tfidf-formula"></div>
+      </div>
+      <div class="scroll-x" style="margin-top:18px"><table id="tfidf-matrix"></table></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">sklearn.feature_extraction.text · CountVectorizer · TfidfVectorizer · rank_bm25</span></summary>
+      <pre>from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+
+CountVectorizer(min_df=4)                                   # the raw counts
+TfidfVectorizer(min_df=4, max_df=0.95)                      # the five stages above
+TfidfVectorizer(min_df=4, ngram_range=(1, 2))               # + bigrams
+TfidfVectorizer(min_df=4, analyzer="char_wb", ngram_range=(3, 5))
+
+vec.idf_, vec.get_feature_names_out()   # the two arrays that explain any row</pre>
+      <div class="why">{{inline:tfidf-why1}}</div>
+    </details>
+    </div>
+    <div class="panel-note" id="tfidf-note"></div>
+  </div>
+
+  <h3>What the bag threw away in step zero</h3>
+  <div class="prose">
+    {{text:tfidf-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Word order · cosine similarity</span><span class="btnrow"><button id="btn-ng-1" class="on">unigrams</button><button id="btn-ng-2">unigrams + bigrams</button></span></div>
+    <div class="panel-body" id="order-out"></div>
+    <div class="panel-note">{{inline:tfidf-note1}}</div>
+  </div>
+
+
+</section>
+
+<!-- ========================================================== 04 train -->
+<section id="train">
+  <p class="eyebrow">Block 04 · under the hood</p>
+  <h2>Watch the classifier learn its vocabulary</h2>
+  <div class="prose">
+    {{text:train-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>Multinomial logistic regression · TF-IDF · minibatch SGD</span>
+      <span class="btnrow">
+        <button id="btn-train-run" class="primary">Train</button>
+        <button id="btn-train-step">One epoch</button>
+        <button id="btn-train-reset">Reset weights</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div class="stat-row" style="margin-bottom:18px">
+        <div class="stat"><span class="v" id="tr-epoch">0</span><span class="k">epoch</span></div>
+        <div class="stat"><span class="v" id="tr-loss">—</span><span class="k">train loss</span></div>
+        <div class="stat"><span class="v" id="tr-acc">—</span><span class="k">test accuracy</span></div>
+        <div class="stat"><span class="v" id="tr-nz">0</span><span class="k">non-zero weights</span></div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Learning curve</div>
+          <div id="train-chart"></div>
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Weight magnitude, all 16 000 coefficients</div>
+          <div id="train-hist"></div>
+        </div>
+      </div>
+      <div class="eyebrow" style="margin:22px 0 8px">Top-weighted words, per class, right now</div>
+      <div class="grid-4" id="train-words"></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">sklearn.linear_model · LogisticRegression · SGDClassifier · LinearSVC · MultinomialNB · Ridge</span></summary>
+      <pre>from sklearn.linear_model import LogisticRegression, SGDClassifier, Ridge
+from sklearn.svm import LinearSVC
+from sklearn.naive_bayes import MultinomialNB
+
+clf = LogisticRegression(max_iter=1000, random_state=42).fit(X_train, y_train)
+clf.coef_          # 4 × 29 350 — the lists above, once it converges
+clf.predict_proba(X_test)          # calibrated-ish scores you can threshold
+
+# swapping the head is one line, and buys ±0.002 on this matrix
+LinearSVC(); MultinomialNB(); SGDClassifier(loss="modified_huber")
+Ridge()            # same features, continuous target — text regression, done</pre>
+      <div class="why">{{inline:train-why1}}</div>
+    </details>
+    </div>
+    <div class="panel-note">{{inline:train-note1}}</div>
+  </div>
+</section>
+
+<!-- ======================================================== 05 weights -->
+<section id="weights">
+  <p class="eyebrow">Block 05 · reading a linear model</p>
+  <h2>The weights are readable, we can guess from the data</h2>
+  <div class="prose">
+    {{text:weights-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>tf-idf, words 1-1 · LogisticRegression · top 15 coefficients</span><span class="btnrow"><button id="btn-guess-reveal">Reveal</button><button id="btn-guess-reset">Shuffle again</button></span></div>
+    <div class="panel-body"><div class="grid-4" id="guess-cols"></div></div>
+    <div class="panel-note" id="guess-note">{{inline:guess-note}}</div>
+  </div>
+
+  <h3>A leak is hiding in the data</h3>
+  <div class="prose">
+    {{text:weights-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Source marker × class · training set</span><span class="mono" id="shortcut-coverage"></span></div>
+    <div class="panel-body scroll-x"><table id="shortcut-table"></table></div>
+    <div class="panel-note">{{inline:weights-note1}}</div>
+  </div>
+  <div class="prose">
+    {{text:weights-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-body">
+      <div class="grid-2">
+        <div>
+          <label class="field" for="bet-marker">Your guess: accuracy from the marker alone</label>
+          <input type="range" id="bet-marker" min="25" max="100" value="60" step="1">
+          <div class="mono" style="margin-top:4px"><span id="bet-marker-v">60</span>%</div>
+        </div>
+        <div>
+          <label class="field" for="bet-strip">Your guess: accuracy lost after stripping</label>
+          <input type="range" id="bet-strip" min="0" max="30" value="8" step="1">
+          <div class="mono" style="margin-top:4px">−<span id="bet-strip-v">8</span> points</div>
+        </div>
+      </div>
+      <div class="btnrow" style="margin-top:16px"><button class="primary" id="btn-shortcut-reveal">Run both experiments</button></div>
+      <div id="shortcut-result" style="margin-top:18px" hidden></div>
+    </div>
+    <div class="panel-note" id="shortcut-note" hidden>{{inline:shortcut-note}}</div>
+  </div>
+</section>
+
+<!-- ========================================================= 06 attack -->
+<section id="attack">
+  <p class="eyebrow">Block 06 · break it</p>
+  <h2>The real model, running in your browser</h2>
+  <div class="prose">
+    {{text:attack-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>predict_proba · and where it came from</span><span class="mono" id="attack-timing"></span></div>
+    <div class="panel-body">
+      <label class="field" for="attack-input">Headline</label>
+      <input type="text" id="attack-input" value="Apple sued over patent dispute in federal court" spellcheck="false">
+      <div class="btnrow" style="margin-top:10px" id="attack-presets"></div>
+      <div style="margin-top:20px" id="attack-probs"></div>
+      <div class="eyebrow" style="margin:24px 0 8px">Word contributions · coef × tf-idf, in logit units, for the predicted class</div>
+      <div id="attack-words"></div>
+      <div class="footnote" style="margin-top:10px">Click any word to delete it and re-run the model — that is <em>occlusion</em>, the exact version of the estimate SHAP and LIME spend hundreds of model calls approximating.</div>
+      <div id="attack-occl" style="margin-top:12px"></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">clf.coef_ · shap · lime.lime_text · sklearn.pipeline.make_pipeline</span></summary>
+      <pre># free and exact, because the model is linear
+x = vec.transform([headline])
+contrib = clf.coef_[cls, x.indices] * x.data     # the highlighting above
+
+# model-agnostic, and three orders of magnitude more expensive
+import shap, lime.lime_text
+shap.Explainer(pipe.predict_proba, shap.maskers.Text(r"\W+"))(texts)
+lime.lime_text.LimeTextExplainer().explain_instance(text, pipe.predict_proba,
+                                                    num_samples=5000)</pre>
+      <div class="why">{{inline:attack-why1}}</div>
+    </details>
+    </div>
+    <div class="panel-note">{{inline:attack-note1}}</div>
+  </div>
+</section>
+
+<!-- ======================================================= 07 skipgram -->
+<section id="skipgram">
+  <p class="eyebrow">Block 07 · dense embeddings</p>
+  <h2>Skip-gram, from noise to neighbourhoods</h2>
+  <div class="prose">
+    {{text:skipgram-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Window = 2 · one headline · what a single step sees</span><span class="btnrow"><button id="btn-win-play" class="primary">Slide the window</button><button id="btn-win-back" title="Previous centre word">◀ Back</button><button id="btn-win-step" title="Next centre word">Step ▶</button><button id="btn-win-reset">Reset</button></span></div>
+    <div class="panel-body">
+      <div id="window-text" style="font-family:var(--mono);font-size:16.8px;line-height:2.4"></div>
+      <div id="window-pairs" style="margin-top:16px"></div>
+    </div>
+    <div class="panel-note">{{inline:skipgram-note1}}</div>
+  </div>
+  <div class="prose">
+    {{text:skipgram-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>The architecture · live weights from the model below</span>
+      <span class="btnrow">
+        <button id="btn-arch-back" title="Previous centre word">◀</button>
+        <button id="btn-arch-step" title="Next centre word">▶</button>
+        <button id="btn-arch-mode">output: negative sampling</button>
+        <button id="btn-arch-math">Show the loss and its gradient</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div id="sg-arch"></div>
+      <div id="sg-math" hidden></div>
+      <div class="footnote" style="margin-top:10px">Every number in the strips is read out of the matrices being trained in the next panel — press <em>Train</em> there and come back, or step the window here to see a different pair go through. The original 2013 formulation put a softmax over the whole vocabulary at the end; negative sampling replaces it with one sigmoid per sampled word, which is what makes this cheap enough to run in a browser tab.</div>
+    </div>
+    <div class="panel-note">{{inline:skipgram-note2}}</div>
+  </div>
+  <div class="prose">
+    {{text:skipgram-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>Skip-gram with negative sampling · SGD</span>
+      <span class="btnrow">
+        <button id="btn-sg-run" class="primary">Train</button>
+        <button id="btn-sg-reset">Reset</button>
+        <button id="btn-sg-stop">without stopwords</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div class="stat-row" style="margin-bottom:16px">
+        <div class="stat"><span class="v" id="sg-epoch">0</span><span class="k">epoch</span></div>
+        <div class="stat"><span class="v" id="sg-pairs">0</span><span class="k">pairs seen</span></div>
+        <div class="stat"><span class="v" id="sg-loss">—</span><span class="k">loss</span></div>
+        <div class="stat"><span class="v" id="sg-mode">with stopwords</span><span class="k">corpus</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:minmax(0,1.75fr) minmax(230px,1fr);gap:22px;align-items:start">
+        <div id="sg-map"></div>
+        <div>
+          <label class="field" for="sg-word">Nearest neighbours of</label>
+          <select id="sg-word"></select>
+          <div id="sg-neighbours" style="margin-top:14px"></div>
+        </div>
+      </div>
+    </div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">gensim.models · Word2Vec(sg=1) · FastText · model.wv · model.syn1neg</span></summary>
+      <pre>from gensim.models import Word2Vec, FastText
+
+w2v = Word2Vec(corpus, vector_size=100, window=5, min_count=5,
+               sg=1, negative=5, epochs=5, seed=42, workers=1).wv
+w2v.most_similar("oil")            # the neighbour list above
+w2v["oil"]                         # one row of W_in
+
+# the two matrices, if you want to look at them
+model.wv.vectors                   # W_in  — this is what you ship
+model.syn1neg                      # W_out — negative-sampling output table
+
+FastText(corpus, min_n=3, max_n=5)  # same call, plus character n-grams:
+                                    # an unseen word still gets a vector</pre>
+      <div class="why">{{inline:skipgram-why1}}</div>
+    </details>
+    <div class="panel-note">{{inline:skipgram-note3}}</div>
+  </div>
+
+
+</section>
+
+<!-- ========================================================== 08 space -->
+<section id="space">
+  <p class="eyebrow">Block 08 · pretrained vectors</p>
+  <h2>The semantics and the space</h2>
+  <div class="prose">
+    {{text:space-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>a − b + c · cosine nearest neighbours</span>
+      <span class="btnrow"><button id="btn-excl" class="on">exclude the input words</button><button id="btn-noexcl">keep them</button></span>
+    </div>
+    <div class="panel-body">
+      <div class="grid-4" style="margin-bottom:16px">
+        <div><label class="field" for="an-a">positive</label><input type="text" id="an-a" value="king" spellcheck="false"></div>
+        <div><label class="field" for="an-b">minus</label><input type="text" id="an-b" value="man" spellcheck="false"></div>
+        <div><label class="field" for="an-c">plus</label><input type="text" id="an-c" value="woman" spellcheck="false"></div>
+        <div><label class="field">&nbsp;</label><div class="btnrow" id="an-presets"></div></div>
+      </div>
+      <div class="grid-2" style="align-items:start">
+        <div id="an-map"></div>
+        <div id="an-out"></div>
+      </div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">gensim.downloader · KeyedVectors · most_similar · HuggingFace Hub</span></summary>
+      <pre>import gensim.downloader as api
+kv = api.load("glove-twitter-100")        # 406 MB; a catalogue frozen around 2020
+
+kv.most_similar(positive=["king", "woman"], negative=["man"])
+# note: most_similar drops the input words from the result by construction
+
+from gensim.models import KeyedVectors
+KeyedVectors.load_word2vec_format(path, binary=True)   # anything off the Hub</pre>
+      <div class="why">{{inline:space-why1}}</div>
+    </details>
+    </div>
+    <div class="panel-note" id="an-note">{{inline:an-note}}</div>
+  </div>
+
+  <h3>Bias</h3>
+  <div class="panel">
+    <div class="panel-head"><span>Twitter, ~2014 · what the corpus said about who does which job</span><span class="btnrow" id="bias-presets"></span></div>
+    <div class="panel-body" id="bias-out"></div>
+    <div class="panel-note">{{inline:space-note1}}</div>
+  </div>
+
+  <h3>There is actually no such thing as a map</h3>
+  <div class="prose">
+    {{text:space-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>t-SNE · 1 000 GloVe words</span><span class="btnrow" id="tsne-btns"></span></div>
+    <div class="panel-body"><div id="tsne-map"></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">sklearn.manifold.TSNE · umap-learn</span></summary>
+      <pre>from sklearn.manifold import TSNE
+TSNE(n_components=2, perplexity=30, init="pca", random_state=42).fit_transform(X)
+
+import umap                        # pip install umap-learn
+umap.UMAP(n_neighbors=15, min_dist=0.1).fit_transform(X)</pre>
+      <div class="why">{{inline:space-why2}}</div>
+    </details>
+    </div>
+    <div class="panel-note">{{inline:space-note2}}</div>
+  </div>
+
+  <h3>From words to documents — and the bill for it</h3>
+  <div class="prose">
+    {{text:space-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Document vectors · AG News · same head, same test set</span><span class="mono">three rows from block 10</span></div>
+    <div class="panel-body scroll-x"><table id="pooling-table"></table></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">numpy mean pooling · SIF weighting · sentence-transformers</span></summary>
+      <pre>def embed_mean(texts, kv, idf=None):
+    for text in texts:
+        toks = [t for t in re.findall(r"\w+", text.lower()) if t in kv]
+        vecs = np.stack([kv[t] for t in toks])
+        yield vecs.mean(0) if idf is None else \
+              (vecs * [[idf.get(t, 1.0)] for t in toks]).sum(0) / w.sum()</pre>
+      <div class="why">{{inline:space-why3}}</div>
+    </details>
+
+    <div class="panel-note">{{inline:space-note3}}</div>
+  </div>
+  <div class="prose">
+    {{text:space-p4}}
+  </div>
+</section>
+
+<!-- ============================================================ 09 llm -->
+<section id="llm">
+  <p class="eyebrow">Block 09 · zero-shot</p>
+  <h2>Asking an LLM, and reading the bill</h2>
+  <div class="prose">
+    {{text:llm-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span id="llm-head"></span><span class="mono">precomputed · see precompute.py --only llm</span></div>
+    <div class="panel-body">
+      <div class="eyebrow" style="margin-bottom:8px">Accuracy by prompt and repeat</div>
+      <div id="llm-chart"></div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">anthropic / vendor SDK · temperature=0 · structured output</span></summary>
+      <pre>from anthropic import Anthropic          # or the vendor SDK you use
+
+client.messages.create(
+    model="claude-sonnet-4-5", max_tokens=8, temperature=0,
+    messages=[{"role": "user",
+               "content": f"Classify into World/Sports/Business/Sci-Tech: {text}"}])
+# then parse the string back into a label — and handle the ones that don't parse</pre>
+      <div class="why">{{inline:llm-why1}}</div>
+    </details>
+      <div class="stat-row" style="margin-top:24px">
+        <div class="stat"><span class="v" id="llm-unstable"></span><span class="k">examples where 3 identical calls disagreed</span></div>
+        <div class="stat"><span class="v" id="llm-lat"></span><span class="k">median latency per example</span></div>
+        <div class="stat"><span class="v">~0.4 ms</span><span class="k">TF-IDF, same measurement</span></div>
+      </div>
+    </div>
+    <div class="panel-note">{{inline:llm-note1}}</div>
+  </div>
+</section>
+
+<!-- ========================================================== 10 table -->
+<section id="table">
+  <p class="eyebrow">Block 10 · the results table</p>
+  <h2>So, who's the winner by now?</h2>
+  <div class="prose">
+    {{text:table-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span>AG News · 120 000 train / 7 600 test · accuracy</span>
+      <span class="btnrow">
+        <span class="mono" id="table-shown">0 / 10 revealed</span>
+        <button id="btn-row-next" class="primary">Reveal next row</button>
+        <button id="btn-row-all">Reveal all</button>
+        <button id="btn-row-reset">Reset</button>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div class="btnrow" style="margin-bottom:14px" id="table-axes"></div>
+      <div id="table-chart"></div>
+    </div>
+    <div class="panel-body" style="border-top:1px solid var(--rule)">
+      <div class="scroll-x"><table id="table-rows"></table></div>
+    </div>
+    <details class="codenote">
+      <summary><span class="k">in code</span><span class="libs">sklearn.metrics · accuracy_score · f1_score · pandas.DataFrame</span></summary>
+      <pre>results = []
+
+def record(representation, head, y_true, y_pred, vectorize_s=None, fit_s=None):
+    results.append({
+        "representation": representation, "head": head,
+        "accuracy": accuracy_score(y_true, y_pred),
+        "macro_f1": f1_score(y_true, y_pred, average="macro"),
+        "vectorize_s": vectorize_s, "fit_s": fit_s})
+    return pd.DataFrame(results)</pre>
+      <div class="why">{{inline:table-why1}}</div>
+    </details>
+    <div class="panel-note" id="table-note">{{inline:table-note}}</div>
+  </div>
+  <div class="prose">
+    {{text:table-p2}}
+  </div>
+</section>
+
+<!-- ======================================================== 11 ceiling -->
+<section id="ceiling">
+  <p class="eyebrow">Block 11 · the ceiling</p>
+  <h2>Where the missing accuracy actually is</h2>
+  <div class="prose">
+    {{text:ceiling-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>tf-idf 1-1 · LogisticRegression · 20 errors, sampled</span><span class="mono">gold ≠ predicted</span></div>
+    <div class="panel-body scroll-x"><table id="mistakes-table"></table></div>
+  </div>
+  <div class="prose">
+    {{text:ceiling-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The disputed twelve · you / dataset / model</span><span class="mono" id="ceiling-agree"></span></div>
+    <div class="panel-body scroll-x"><table id="ceiling-table"></table></div>
+    <div class="panel-note">{{inline:ceiling-note1}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Agreement with the dataset · one measure, four populations</span><span class="mono" id="ceiling-spread"></span></div>
+    <div class="panel-body"><div id="ceiling-bars"></div></div>
+    <div class="panel-note">{{inline:ceiling-note2}}</div>
+  </div>
+
+  <h2 style="margin-top:56px">Four things that transfer</h2>
+  <div class="prose">
+    {{text:ceiling-p3}}
+  </div>
+</section>
+
+</div>
+</main>
+</div>

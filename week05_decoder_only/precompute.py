@@ -51,7 +51,7 @@ and the prompt takes 33 of them, so 1 024 new tokens does not fit — 896 is the
 --smoke runs every step on two-layer random models with 2k vocabularies trained on the
 spot, on a few hundred examples and with synthetic CoNLL / SQuAD look-alikes, in a couple
 of minutes on a 2-core CPU with no network — so the notebook can be executed end-to-end
-before the real run. Smoke artifacts go to artifacts_smoke/; never commit them.
+before the real run. Smoke artifacts go to /tmp/dsba_nlp/week05/artifacts_smoke/.
 
 The blocks between `# --- notebook: <name> ---` and `# --- end ---` are the same code as the
 seminar notebook's definition cells — if you change one, change the other.
@@ -995,7 +995,7 @@ def main():
     tier = "full" if args.full else "smoke" if args.smoke else "demo"
     cfg = {"name": tier, **SIZES[tier]}
     here = os.path.dirname(os.path.abspath(__file__))
-    out = os.path.join(here, "artifacts_smoke" if args.smoke else "artifacts")
+    out = os.path.join("/tmp/dsba_nlp", os.path.basename(here)[:6], "artifacts_smoke") if args.smoke else os.path.join(here, "artifacts")
     os.makedirs(out, exist_ok=True)
     device = torch.device("cpu" if args.cpu else "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     budget = (torch.mps.recommended_max_memory() / 1e9 if device.type == "mps" else

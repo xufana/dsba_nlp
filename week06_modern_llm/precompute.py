@@ -35,7 +35,7 @@ Every step records the device it ran on; the notebook reads it from the artifact
 --smoke runs every step on two-layer random models with a 2k vocabulary trained on the
 spot, on a few dozen texts, in about a minute on a 2-core CPU with no network — so the
 notebook can be executed end-to-end before the real run. Smoke artifacts go to
-artifacts_smoke/; never commit them.
+/tmp/dsba_nlp/week06/artifacts_smoke/.
 
 The blocks between `# --- notebook: <name> ---` and `# --- end ---` are the same code as the
 seminar notebook's definition cells — if you change one, change the other.
@@ -607,7 +607,7 @@ def main():
     tier = "full" if args.full else "smoke" if args.smoke else "demo"
     cfg = {"name": tier, **SIZES[tier]}
     here = os.path.dirname(os.path.abspath(__file__))
-    out = os.path.join(here, "artifacts_smoke" if args.smoke else "artifacts")
+    out = os.path.join("/tmp/dsba_nlp", os.path.basename(here)[:6], "artifacts_smoke") if args.smoke else os.path.join(here, "artifacts")
     os.makedirs(out, exist_ok=True)
     device = torch.device("cpu" if args.cpu else "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     log(f"tier {tier}, device {device}, steps {args.only}")
