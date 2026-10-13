@@ -40,6 +40,28 @@ PATCHES = {
         ("N_DEMO = 200 ", "N_DEMO = 40 "),
         ("!python precompute.py", "pass  # !python precompute.py"),
     ],
+    "week07_training_alignment": [
+        *[(f'"{hub}"', f'"{{SMOKE}}/tiny_{local}"') for hub, local in [
+            ("allenai/OLMo-2-0425-1B", "olmo_2_0425_1b"), ("allenai/OLMo-2-0425-1B-SFT", "olmo_2_0425_1b_sft"),
+            ("allenai/OLMo-2-0425-1B-DPO", "olmo_2_0425_1b_dpo"), ("allenai/OLMo-2-0425-1B-Instruct", "olmo_2_0425_1b_instruct"),
+            ("HuggingFaceTB/SmolLM2-135M", "smollm2_135m"), ("HuggingFaceTB/SmolLM2-135M-Instruct", "smollm2_135m_instruct"),
+            ("Qwen/Qwen3-0.6B", "qwen3_0_6b"), ("HuggingFaceFW/fineweb-edu-classifier", "fineweb_edu_classifier"),
+            ("xufana/dsba-week05-punct", "dsba_week05_punct")]],
+        ('GPT2 = "gpt2"', 'GPT2 = "{SMOKE}/tiny_gpt2"'),
+        ('ART_DIR = "artifacts"', 'ART_DIR = "{SMOKE}"'),
+        ('ds = load_dataset("fancyzhx/ag_news")',
+         'ds = load_dataset("json", data_files={"train": "{SMOKE}/data/ag_train.jsonl", "test": "{SMOKE}/data/ag_test.jsonl"})'),
+        ('load_dataset("HuggingFaceFW/fineweb", name="sample-10BT", split="train", streaming=True)',
+         'load_dataset("json", data_files="{SMOKE}/data/web.jsonl", split="train")'),
+        ('load_dataset(SFT_DATA, split="train", streaming=True).shuffle(seed=SEED, buffer_size=10_000)',
+         'load_dataset("json", data_files="{SMOKE}/data/sft.jsonl", split="train")'),
+        ('load_dataset(PREF_DATA, split="train", streaming=True).shuffle(seed=SEED, buffer_size=5_000)',
+         'load_dataset("json", data_files="{SMOKE}/data/pref.jsonl", split="train")'),
+        ('load_dataset("openai/gsm8k", "main", split="test")', 'load_dataset("json", data_files="{SMOKE}/data/gsm8k.jsonl", split="train")'),
+        ("N_DEMO = 200 ", "N_DEMO = 24 "),
+        ("N_LIVE = 2_000 ", "N_LIVE = 64 "),
+        ("!python precompute.py", "pass  # !python precompute.py"),
+    ],
 }
 
 if __name__ == "__main__":

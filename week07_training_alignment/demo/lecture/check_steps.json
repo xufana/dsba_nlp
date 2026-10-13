@@ -1,0 +1,14 @@
+{
+ "steps": [
+  {
+   "name": "count",
+   "expr": "return document.querySelectorAll('.qz').length + ' questions \u00b7 ' + document.getElementById('quiz-progress').textContent;"
+  }
+ ],
+ "screens": [
+  {
+   "sel": "#hero",
+   "file": "lec_00_hero.png"
+  }
+ ]
+}

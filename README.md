@@ -10,6 +10,7 @@ This repository contain materials for NLP course for 4th year students of HSE DS
 4. Week 4: Pretraining and transfer with encoders. [seminar](/week04_pretraining_transfer/)
 5. Week 5: Decoder-only models. [seminar](/week05_decoder_only/)
 6. Week 6: The bill — scaling laws, the modern block, serving. [seminar](/week06_modern_llm/)
+7. Week 7: From next token to assistant — pretraining data, SFT, DPO, RL with a verifier, and the cost of fine-tuning. [seminar](/week07_training_alignment/)
 
 Interactive pages for the seminars: [xufana.github.io/dsba_nlp](https://xufana.github.io/dsba_nlp/).
 

@@ -1,0 +1,16 @@
+{
+ "steps": [
+  {"name": "loaded", "expr": "return document.querySelectorAll('section').length + ' sections';"},
+  {"name": "filled", "expr": "return ['fig-stages'].map(id=>{const n=document.getElementById(id);return id+':'+(n?n.innerHTML.length:'MISSING')}).filter(x=>/MISSING|:0$/.test(x)).join(' ') || 'all filled'"},
+  {"name": "svg text clipping", "expr": "const bad=[]; document.querySelectorAll('svg').forEach((s,si)=>{ const vb=s.viewBox.baseVal; if(!vb||!vb.width) return; s.querySelectorAll('text').forEach(t=>{ if(t.getAttribute('transform')) return; let b; try{b=t.getBBox();}catch(e){return;} if(b.width===0) return; if(b.x<-1||b.y<-1||b.x+b.width>vb.width+1||b.y+b.height>vb.height+1) bad.push((s.closest('[id]')||{id:'svg'+si}).id+': \"'+t.textContent.slice(0,30)+'\" '+Math.round(b.x)+','+Math.round(b.y)+' '+Math.round(b.width)+'x'+Math.round(b.height)+' in '+vb.width+'x'+vb.height); }); }); return bad.length? bad.slice(0,25).join(' | ') : 'no clipped text'"},
+  {"name": "svg text overlaps", "expr": "const bad=[]; document.querySelectorAll('svg').forEach((s,si)=>{ const ts=Array.from(s.querySelectorAll('text')).filter(t=>!t.getAttribute('transform')&&t.textContent.trim()); const bs=ts.map(t=>{try{return t.getBBox();}catch(e){return null;}}); for(let i=0;i<ts.length;i++) for(let j=i+1;j<ts.length;j++){ const a=bs[i],b=bs[j]; if(!a||!b||!a.width||!b.width) continue; const ox=Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x), oy=Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y); if(ox>3&&oy>3) bad.push((s.closest('[id]')||{id:'svg'+si}).id+': \"'+ts[i].textContent.slice(0,22)+'\" x \"'+ts[j].textContent.slice(0,22)+'\"'); } }); return bad.length? bad.slice(0,25).join(' | ') : 'no overlaps'"},
+  {"name": "perf", "expr": "return performance.getEntriesByType('mark').map(m=>m.name+'@'+Math.round(m.startTime)).join(' ')"}
+ ],
+ "screens": [
+  {"sel": "#hero", "file": "00_hero.png", "dy": -20},
+  {"sel": "#fig-stages", "file": "00_stages.png", "dy": -80}
+ ],
+ "figures": [
+  {"sel": "#fig-stages svg", "file": "training_stages.png"}
+ ]
+}

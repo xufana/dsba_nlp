@@ -1,0 +1,50 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 7<br>From Next Token to Assistant</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div class="score" id="score"></div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>From Next Token to Assistant: What Each Training Stage Changes</h1>
+  <p class="lede">{{inline:lede}}</p>
+  <div class="prose">
+    {{text:hero-p1}}
+  </div>
+  <div class="formula"><span class="fn">The claim for today</span>
+    <math display="block"><mrow>
+      <mi>ℒ</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mo>−</mo>
+      <munder><mo>∑</mo><mrow><mi>t</mi><mo>∈</mo><mtext>trained tokens</mtext></mrow></munder>
+      <msub><mi>w</mi><mi>t</mi></msub><mspace width="0.2em"/><mi>log</mi><mspace width="0.15em"/>
+      <msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>∣</mo><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo stretchy="false">)</mo>
+    </mrow></math>
+  </div>
+  <div class="prose keep">
+    {{text:claim-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Four stages, one sum · whose tokens are in it, who sets w<sub>t</sub></span></div>
+    <div class="panel-body"><div id="fig-stages"></div></div>
+  </div>
+  <div class="prose keep">
+    {{text:claim-p2}}
+  </div>
+</section>
+
+</div>
+</main>
+</div>
