@@ -8,3 +8,6 @@ function TXT(key, vars) {
   if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
   return s;
 }
+
+// reference lists (demo/text, `## end-refs`): external links open in a new tab
+document.querySelectorAll('.prose.footnote a[href^="http"]').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });

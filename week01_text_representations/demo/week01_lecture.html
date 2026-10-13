@@ -1,0 +1,1745 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lecture 1 · Check yourself</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* The design system of the seminar pages, shared by every week (scripts/build_demo.py puts it in <style>).
+   A week adds its own rules in demo/week.css, appended after this file. */
+:root {
+  color-scheme: light;
+  --ground:        #f7f6f2;
+  --panel:         #fdfdfc;
+  --panel-sunk:    #f1efe9;
+  --ink:           #14161a;
+  --ink-2:         #55595f;
+  --ink-3:         #8b8e92;
+  --rule:          #dcdad3;
+  --rule-strong:   #bab7ad;
+  --cls-0: #2a78d6; --cls-1: #eb6834; --cls-2: #1baf7a; --cls-3: #4a3aa7;
+  --good:  #0ca30c; --bad: #d03b3b;
+  --seq-1: #5598e7; --seq-2: #3987e5; --seq-3: #2a78d6; --seq-4: #256abf; --seq-5: #104281;
+  --shadow: 0 1px 2px rgba(20,22,26,.05), 0 8px 24px -16px rgba(20,22,26,.28);
+
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground:      #131413;
+    --panel:       #1b1c1b;
+    --panel-sunk:  #232422;
+    --ink:         #f0efe9;
+    --ink-2:       #a8a79f;
+    --ink-3:       #7b7a73;
+    --rule:        #31322e;
+    --rule-strong: #4c4d47;
+    --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+    --good: #0ca30c; --bad: #d03b3b;
+    --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground:      #131413;
+  --panel:       #1b1c1b;
+  --panel-sunk:  #232422;
+  --ink:         #f0efe9;
+  --ink-2:       #a8a79f;
+  --ink-3:       #7b7a73;
+  --rule:        #31322e;
+  --rule-strong: #4c4d47;
+  --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+  --good: #0ca30c; --bad: #d03b3b;
+  --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 20.1px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+
+/* ---------------------------------------------------------------- shell */
+.shell { display: grid; grid-template-columns: 278px minmax(0, 1fr); gap: 0; }
+.rail {
+  position: sticky; top: 0; align-self: start; height: 100vh;
+  border-right: 1px solid var(--rule);
+  padding: 26px 18px 18px 26px;
+  display: flex; flex-direction: column; gap: 18px;
+  overflow-y: auto;
+}
+.rail-mark {
+  font-family: var(--mono); font-size: 14px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.rail-eq { font-family: var(--display); font-size: 17.7px; font-weight: 700; line-height: 1.3; }
+.rail nav { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
+.rail nav a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: baseline;
+  padding: 4px 6px 4px 0; text-decoration: none; color: var(--ink-2);
+  font-family: var(--display); font-size: 16.4px; line-height: 1.32;
+  border-radius: 3px;
+}
+.rail nav a span:first-child {
+  font-family: var(--mono); font-size: 13.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.rail nav a:hover { color: var(--ink); background: var(--panel-sunk); }
+.rail nav a.on { color: var(--ink); font-weight: 700; }
+.rail nav a.on span:first-child { color: var(--ink); }
+.rail-foot { margin-top: auto; font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.6; }
+.rail-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+main { padding: 0 0 140px; min-width: 0; }
+.wrap { max-width: 1160px; padding: 0 48px; margin: 0 auto; }
+section { padding: 64px 0 8px; scroll-margin-top: 20px; }
+.prose { max-width: none; }
+.prose p { margin: 0 0 1.05em; }
+.prose p + p { margin-top: -.15em; }
+
+/* --------------------------------------------------------------- type */
+h1 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(41px, 6.04vw, 72.9px); line-height: .98; letter-spacing: -.025em;
+  margin: 0 0 22px; text-wrap: balance;
+}
+h2 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(27.5px, 3.19vw, 37.8px); line-height: 1.08; letter-spacing: -.018em;
+  margin: 0 0 14px; text-wrap: balance;
+}
+h3 {
+  font-family: var(--display); font-weight: 700; font-size: 20.6px;
+  letter-spacing: -.008em; margin: 34px 0 10px;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 14px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px;
+}
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.lede { font-size: 23.5px; line-height: 1.52; color: var(--ink-2); max-width: none; }
+.prose strong { font-weight: 600; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.prose code { background: var(--panel-sunk); padding: .1em .34em; border-radius: 3px; }
+a { color: inherit; text-underline-offset: 2px; text-decoration-color: var(--rule-strong); }
+
+/* -------------------------------------------------------------- panels */
+.panel {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 4px; box-shadow: var(--shadow);
+  margin: 22px 0 26px; overflow: hidden;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 11px 16px; border-bottom: 1px solid var(--rule);
+  background: var(--panel-sunk);
+  font-family: var(--mono); font-size: 14px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-2); flex-wrap: wrap;
+}
+.panel-body { padding: 18px 16px; }
+.panel-body.tight { padding: 12px 16px; }
+.panel-note {
+  padding: 12px 16px; border-top: 1px solid var(--rule); background: var(--panel-sunk);
+  font-size: 17.7px; color: var(--ink-2); line-height: 1.55;
+}
+.scroll-x { overflow-x: auto; }
+
+/* ------------------------------------------------------------- controls */
+button, .btn {
+  font-family: var(--display); font-size: 16.4px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px;
+  padding: 6px 12px; cursor: pointer; line-height: 1.35;
+  transition: background .12s ease, border-color .12s ease;
+}
+button:hover { background: var(--panel-sunk); border-color: var(--ink-3); }
+button[disabled] { opacity: .42; cursor: not-allowed; }
+button.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+button.primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
+button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.btnrow { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+input[type="text"], textarea, select {
+  font-family: var(--mono); font-size: 16.4px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px; padding: 8px 10px;
+  width: 100%;
+}
+input[type="range"] { accent-color: var(--ink); width: 100%; }
+label.field { display: block; font-family: var(--mono); font-size: 14px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+
+/* ---------------------------------------------------------------- data */
+table { border-collapse: collapse; width: 100%; font-size: 16.4px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--mono); font-size: 15.4px; }
+th.data-th { text-transform: none; letter-spacing: 0; font-size: 14.5px; color: var(--ink-2); }
+tr:last-child td { border-bottom: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 14.5px; letter-spacing: .02em;
+  padding: 2px 8px; border-radius: 2px; border: 1px solid var(--rule-strong);
+  white-space: nowrap;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.c0 { background: var(--cls-0); } .c1 { background: var(--cls-1); }
+.c2 { background: var(--cls-2); } .c3 { background: var(--cls-3); }
+.t0 { color: var(--cls-0); } .t1 { color: var(--cls-1); }
+.t2 { color: var(--cls-2); } .t3 { color: var(--cls-3); }
+
+.stat-row { display: flex; gap: 34px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .v { font-family: var(--display); font-weight: 700; font-size: 32.5px;
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); }
+
+.reveal-wrap { position: relative; }
+.veil {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 26px 16px; background: var(--panel-sunk);
+  border: 1px dashed var(--rule-strong); border-radius: 3px;
+  font-family: var(--mono); font-size: 15.4px; color: var(--ink-2);
+  text-align: center; flex-wrap: wrap;
+}
+[hidden] { display: none !important; }
+
+.tok {
+  display: inline-block; font-family: var(--mono); font-size: 15.4px;
+  padding: 1px 6px; margin: 2px 3px 2px 0; border-radius: 2px;
+  background: var(--panel-sunk); border: 1px solid var(--rule);
+}
+.tok.diff { border-color: var(--ink-3); background: var(--panel); font-weight: 500; }
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+
+svg { display: block; max-width: 100%; }
+svg text { font-family: var(--mono); fill: var(--ink-2); }
+.axis line, .axis path { stroke: var(--rule); }
+.gridline { stroke: var(--rule); stroke-dasharray: 2 3; }
+
+.tooltip {
+  position: fixed; pointer-events: none; z-index: 50; opacity: 0;
+  background: var(--panel); border: 1px solid var(--rule-strong);
+  border-radius: 3px; box-shadow: var(--shadow); padding: 7px 10px;
+  font-family: var(--mono); font-size: 14.5px; line-height: 1.5; color: var(--ink);
+  transition: opacity .1s ease; max-width: 280px;
+}
+
+.footnote { font-size: 17.2px; color: var(--ink-2); max-width: none; }
+
+/* library pointers: a quiet line of names, with the actual call one click away */
+.codenote { margin: 16px 0 0; border-top: 1px solid var(--rule); padding-top: 9px; }
+.codenote > summary {
+  cursor: pointer; list-style: none; display: flex; gap: 9px;
+  align-items: baseline; flex-wrap: wrap; padding: 2px 0;
+}
+.codenote > summary::-webkit-details-marker { display: none; }
+.codenote > summary::before {
+  content: "+"; font-family: var(--mono); font-size: 15px; color: var(--ink-3);
+  width: 9px; flex: none;
+}
+.codenote[open] > summary::before { content: "−"; }
+.codenote > summary:hover .libs, .codenote[open] > summary .libs { color: var(--ink); }
+.codenote .k {
+  font-family: var(--mono); font-size: 13px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3); flex: none;
+}
+.codenote .libs {
+  font-family: var(--mono); font-size: 15px; line-height: 1.55; color: var(--ink-2);
+  transition: color .12s ease;
+}
+.codenote pre {
+  margin: 11px 0 0; padding: 13px 15px; background: var(--panel-sunk);
+  border-radius: 3px; font-family: var(--mono); font-size: 15.4px; line-height: 1.8;
+  white-space: pre-wrap; word-break: break-word; color: var(--ink);
+}
+.codenote .why { font-size: 16.4px; color: var(--ink-2); line-height: 1.55; margin-top: 10px; }
+.codenote .why code { font-family: var(--mono); font-size: 15.4px; }
+.kbd {
+  font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; color: var(--ink-2);
+}
+
+/* ------------------------------------------------------- week 2 additions */
+.michael { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); }
+.michael figcaption { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-top: 8px; line-height: 1.5; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+
+/* a bet: pick one option, then reveal */
+.bet { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 12px; }
+.bet .q { font-family: var(--body); font-size: 17.5px; font-weight: 600; color: var(--ink); flex-basis: 100%; line-height: 1.4; }
+.bet button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.bet button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.bet button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.bet .verdict { font-family: var(--mono); font-size: 15px; margin-left: 6px; }
+.bet .verdict.ok { color: var(--good); } .bet .verdict.no { color: var(--bad); }
+
+/* generated text */
+.gen { font-size: 19.5px; line-height: 1.75; margin: 0 0 12px; }
+.gen .t { padding: 1px 1px; border-radius: 2px; white-space: pre-wrap; }
+.gen .copied { background: color-mix(in srgb, var(--cls-1) 22%, transparent); border-bottom: 2px solid var(--cls-1); }
+.gen .dead { color: var(--bad); font-family: var(--mono); }
+.gen .prompt { color: var(--ink-3); }
+.gen-list { display: flex; flex-direction: column; gap: 10px; }
+.gen-list .gen { padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; margin: 0; }
+
+.merge-row { display: grid; grid-template-columns: 54px 1fr 110px; gap: 10px; font-family: var(--mono); font-size: 15px; padding: 3px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.merge-row .n { color: var(--ink-3); } .merge-row .c { text-align: right; color: var(--ink-2); }
+.merge-row .p { display: flex; gap: 6px; align-items: center; }
+.merge-row .p .tok { margin: 0; }
+.merge-row .tok.new { border-color: var(--ink); font-weight: 600; }
+.eow { color: var(--cls-1); }
+
+.pbar { display: grid; grid-template-columns: 150px 1fr 64px; gap: 10px; align-items: center; font-family: var(--mono); font-size: 14.5px; padding: 2px 0; }
+.pbar .lab { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pbar .bar { height: 14px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pbar .bar i { display: block; height: 100%; background: var(--cls-0); }
+.pbar.cut .bar i { background: var(--rule-strong); } .pbar.cut .lab { color: var(--ink-3); }
+.pbar .v { color: var(--ink-2); }
+
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 18px; margin: 12px 0; }
+.sliders label.field { display: flex; justify-content: space-between; }
+.sliders label.field b { color: var(--ink); font-weight: 500; }
+.sliders .off { opacity: .4; }
+
+.tr-row { display: grid; grid-template-columns: 64px 1fr; gap: 8px 14px; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 18.5px; line-height: 1.5; }
+.tr-row .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.tr-row .bleu { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-left: 8px; }
+.tr-row:last-child { border-bottom: none; }
+.nowrap { white-space: nowrap; }
+.busy { opacity: .55; pointer-events: none; }
+
+/* formulas: native MathML, kept outside .prose so they survive presentation mode */
+math { font-family: "STIX Two Math", "Latin Modern Math", "Cambria Math", "Times New Roman", serif; }
+.prose math { font-size: 1.05em; }
+.formula {
+  margin: 12px 0 22px; padding: 14px 20px 12px; background: var(--panel-sunk);
+  border-left: 3px solid var(--rule-strong); border-radius: 3px; overflow-x: auto;
+}
+.formula .fn {
+  display: block; font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px;
+}
+.formula math { font-size: 1.25em; margin: 6px 0; }
+.formula math + math { margin-top: 10px; }
+.formula mtext { font-family: var(--body); font-size: .82em; color: var(--ink-2); }
+body.present .formula { margin-top: 10px; }
+
+/* the one-screen recipe */
+.recipe { padding: 4px 16px 6px; }
+.recipe .step { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--rule); }
+.recipe .step:first-child { border-top: none; }
+.recipe .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.recipe .k b { display: block; font-family: var(--display); font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1; margin-bottom: 4px; }
+.recipe pre { margin: 0; font-family: var(--mono); font-size: 14.5px; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--ink); }
+.recipe .c { color: var(--ink-3); }
+
+/* --------------------------------------------------- presentation mode */
+body.present .prose:not(.keep) { display: none; }
+body.present .footnote { display: none; }
+body.present section { min-height: 100vh; padding-top: 40px; }
+body.present .panel { margin-top: 14px; }
+body.present .lede { display: none; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; border-right: none;
+    border-bottom: 1px solid var(--rule); padding: 18px 20px; }
+  .rail nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .wrap { padding: 0 20px; }
+  body { font-size: 18.6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+/* ------------------------------------------------------- week 3 additions */
+/* code next to the formula it implements: hover a line, the term lights up (and back) */
+.two { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .two { grid-template-columns: 1fr; } }
+/* wide code: the formulas go below it, as a row of cards */
+.two.stacked { grid-template-columns: 1fr; }
+.two.stacked .fstack { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 6px 22px; }
+.two.stacked .fstack .row { border-top: none; border-left: 2px solid var(--rule); padding: 4px 0 4px 12px; grid-template-columns: 1fr; gap: 2px; }
+.two.stacked .fstack .row .n { white-space: nowrap; }
+.hm svg rect.flat { stroke: none; }
+#masks-out > div { display: flex; flex-direction: column; justify-content: flex-end; }
+#masks-out .hm-title { min-height: 2.8em; }
+.temp-table td:first-child { white-space: nowrap; }
+pre.code { margin: 0; padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; white-space: normal; overflow-x: auto; color: var(--ink); counter-reset: ln; }
+pre.code .ln { display: block; white-space: pre; min-height: 1.5em; padding: 0 8px 0 40px; margin: 0 -8px; position: relative; border-radius: 2px; transition: background .12s ease; }
+pre.code .ln::before { counter-increment: ln; content: counter(ln); position: absolute; left: 8px; width: 24px; text-align: right; color: var(--ink-3); font-size: 12.5px; top: 1px; }
+pre.code .ln[data-f] { cursor: default; }
+pre.code .ln.hi, .fstack .fx.hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .c { color: var(--ink-3); }
+pre.code .kw { color: var(--cls-3); }
+.fstack .fx { padding: 2px 6px; border-radius: 3px; transition: background .12s ease; }
+.fstack .fx[data-f] { cursor: default; }
+.fstack .fx.dim { opacity: .35; }
+.fstack .row { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--rule); }
+.fstack .row:first-child { border-top: none; }
+.fstack .row .n { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .08em; }
+.fstack .row .say { font-size: 16.4px; color: var(--ink-2); line-height: 1.5; margin-top: 2px; }
+.fstack math { font-size: 1.1em; }
+.fstack .row > div { min-width: 0; overflow-x: auto; }
+.two:not(.stacked) .fstack math { font-size: 1em; }
+.two:not(.stacked) .fstack math[display="block"] { display: inline-block; margin: 2px 0; }
+.fstack .fx.hi math { color: var(--ink); }
+
+/* a redrawn schematic and its credit line */
+.fig { margin: 8px 0 0; }
+.figcap { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.5; margin: 8px 0 2px; }
+.figcap a { color: var(--ink-2); }
+
+/* attention heatmaps */
+.hm-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.hm-title { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.hm svg rect.cell { stroke: var(--panel); stroke-width: .6; }
+.hm svg rect.cell:hover { stroke: var(--ink); stroke-width: 1.5; }
+.headgrid { display: grid; grid-template-columns: 40px repeat(8, minmax(0, 1fr)); gap: 4px; align-items: center; }
+.headgrid .lab { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); text-align: center; }
+.headgrid svg { cursor: pointer; border: 1px solid var(--rule); border-radius: 2px; background: var(--panel); }
+.headgrid svg.on { outline: 2px solid var(--cls-1); }
+
+/* the score table */
+.scores td math { font-size: 1.1em; }
+.scores td:first-child { font-weight: 600; font-family: var(--display); }
+
+/* live text-in → text-out panels */
+.io { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.io .out { font-family: var(--mono); font-size: 22px; letter-spacing: .04em; padding: 8px 12px; background: var(--panel-sunk); border-radius: 3px; min-height: 46px; }
+.io .out.ok { border-left: 3px solid var(--good); } .io .out.no { border-left: 3px solid var(--bad); }
+.small-note { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); margin-top: 6px; }
+.toggle { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 3px; overflow: hidden; }
+.toggle button { border: none; border-radius: 0; }
+.toggle button.sel { background: var(--ink); color: var(--ground); }
+.ck { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.ck b { color: var(--good); font-weight: 500; } .ck b.no { color: var(--bad); }
+.results th.data-th, .results td { font-size: 15.4px; }
+.results tr.hl td { background: color-mix(in srgb, var(--cls-0) 10%, transparent); }
+
+/* ------------------------------------------------------- week 4 additions */
+/* token strips: WordPiece pieces, with the continuation marker and special tokens coloured */
+.pieces { display: flex; flex-wrap: wrap; gap: 4px 3px; align-items: center; line-height: 1.3; }
+.pieces .tok { margin: 0; }
+.pieces .tok.cont { border-color: color-mix(in srgb, var(--cls-1) 60%, var(--rule)); background: color-mix(in srgb, var(--cls-1) 10%, var(--panel)); }
+.pieces .tok.sp { border-color: var(--ink-3); color: var(--ink-2); font-weight: 600; }
+.pieces .tok.unk { border-color: var(--bad); color: var(--bad); font-weight: 600; }
+.pieces .tok.eow { color: var(--cls-1); }
+.pieces .tok.seg1 { background: color-mix(in srgb, var(--cls-2) 12%, var(--panel)); }
+.pieces .tok.mk { background: color-mix(in srgb, var(--cls-3) 22%, var(--panel)); border-color: var(--cls-3); }
+.pieces .tok.rnd { background: color-mix(in srgb, var(--cls-1) 22%, var(--panel)); border-color: var(--cls-1); }
+.pieces .tok.keep { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.pieces .tok.ans { background: color-mix(in srgb, var(--good) 22%, var(--panel)); border-color: var(--good); font-weight: 600; }
+.pieces .tok.ent { font-weight: 600; }
+.pieces .tok.dim { opacity: .45; }
+.pieces .tok.word { border-style: dashed; }
+.pieces .gap { flex-basis: 100%; height: 0; }
+.pieces .lab { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin-right: 6px; letter-spacing: .06em; text-transform: uppercase; }
+/* the merge stepper */
+.merge-row.wp { grid-template-columns: 54px 1fr 190px; }
+.merge-row .c small { color: var(--ink-3); }
+.merge-list { max-height: 330px; overflow-y: auto; }
+.merge-row.now { background: color-mix(in srgb, var(--cls-1) 12%, transparent); }
+/* the two encoders side by side */
+.enc-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.enc-row .k { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.enc-row:last-child { border-bottom: none; }
+.enc-row.diff .k { color: var(--cls-1); }
+/* segmentation lattice rows */
+.seg-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.seg-row .p { font-family: var(--mono); font-size: 14.5px; text-align: right; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.seg-row.best .p { color: var(--ink); font-weight: 600; }
+.seg-row:last-child { border-bottom: none; }
+/* a small legend line */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin: 8px 0 0; align-items: center; }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; border: 1px solid var(--rule-strong); }
+/* zero-shot label pickers */
+.zs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 14px; }
+.zs-grid label.field b { color: var(--ink); }
+.zs-grid select { width: 100%; }
+.conf { border-collapse: collapse; font-family: var(--mono); font-size: 14px; }
+.conf td, .conf th { padding: 4px 9px; text-align: right; border-bottom: none; }
+.conf th { font-size: 12.5px; }
+.conf td.hit { background: color-mix(in srgb, var(--good) 18%, transparent); }
+.conf td.miss { color: var(--ink-3); }
+/* the head figure toggle and the task tables */
+.task-table td:first-child { font-weight: 600; font-family: var(--display); white-space: nowrap; }
+.task-table td { vertical-align: top; font-size: 15.4px; }
+.task-table code { white-space: nowrap; }
+/* a load report */
+pre.report { margin: 0; font-family: var(--mono); font-size: 13.5px; line-height: 1.55; white-space: pre; overflow-x: auto; color: var(--ink-2); padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; }
+pre.report .miss { color: var(--bad); font-weight: 600; } pre.report .unex { color: var(--ink-3); }
+/* the dial */
+.dial { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .dial { grid-template-columns: 1fr; } }
+.dial .knob { display: flex; gap: 6px; flex-wrap: wrap; }
+.dial .knob button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the MLM variants, under a toggle */
+details.variants { margin: 12px 0 0; }
+details.variants > summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 18px; padding: 8px 0; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+details.variants > summary::-webkit-details-marker { display: none; }
+details.variants > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.variants[open] > summary::before { content: "−"; }
+.variant { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: center; padding: 14px 0; border-top: 1px solid var(--rule); }
+@media (max-width: 1000px) { .variant { grid-template-columns: 1fr; } }
+.variant .say { font-size: 17px; line-height: 1.55; color: var(--ink-2); }
+.variant .say b { color: var(--ink); }
+/* NER entity chips */
+.ent-line { font-size: 18.5px; line-height: 2.1; margin: 0 0 8px; }
+.ent { padding: 2px 6px; border-radius: 3px; border-bottom: 2px solid; white-space: nowrap; }
+.ent i { font-family: var(--mono); font-style: normal; font-size: 11.5px; letter-spacing: .06em; margin-left: 5px; opacity: .8; }
+.ent.PER { background: color-mix(in srgb, var(--cls-0) 16%, transparent); border-color: var(--cls-0); }
+.ent.ORG { background: color-mix(in srgb, var(--cls-1) 16%, transparent); border-color: var(--cls-1); }
+.ent.LOC { background: color-mix(in srgb, var(--cls-2) 16%, transparent); border-color: var(--cls-2); }
+.ent.MISC { background: color-mix(in srgb, var(--cls-3) 16%, transparent); border-color: var(--cls-3); }
+.ent.wrong { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* alignment table */
+.align { font-family: var(--mono); font-size: 14.5px; border-collapse: collapse; }
+.align td, .align th { padding: 3px 10px; }
+.align td.ign { color: var(--ink-3); }
+.align tr.cont td:first-child { color: var(--cls-1); }
+/* QA */
+.ctx { font-size: 18px; line-height: 1.7; }
+.ctx mark { background: color-mix(in srgb, var(--good) 28%, transparent); color: inherit; padding: 1px 2px; border-radius: 2px; }
+.ctx mark.gold { background: none; box-shadow: inset 0 -2px 0 var(--cls-0); }
+.ctx .q { color: var(--ink-3); }
+.window { border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; margin: 8px 0; }
+.window .wh { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+.window .wh b { color: var(--ink); font-weight: 500; }
+.qa-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px 14px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; align-items: baseline; }
+.qa-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: block; }
+.qa-row:last-child { border-bottom: none; }
+.qa-row .ok { color: var(--good); } .qa-row .no { color: var(--bad); }
+
+/* ------------------------------------------------ week 4, second pass (2026-09-30) */
+/* a schematic with states: the buttons switch what the same picture highlights */
+.fig-states { display: flex; gap: 6px; flex-wrap: wrap; }
+.fig-states button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the variants footnote: three small pictures, each with its paragraph */
+.variant .fig svg { max-width: 560px; }
+/* clickable tokens (the MLM picker): the chosen one is outlined */
+.pieces .tok.pick { cursor: pointer; }
+.pieces .tok.pick:hover { border-color: var(--ink); }
+.pieces .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* the scoreboard in the rail: rows light up as reveals happen */
+.score { margin-top: 12px; border-top: 1px solid var(--rule); padding-top: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+.score .row { display: grid; grid-template-columns: 1fr 52px; gap: 6px; padding: 2px 0; line-height: 1.35; align-items: baseline; }
+.score .row.off { opacity: .38; }
+.score .row.on { color: var(--ink); }
+.score .row.line { color: var(--bad); border-bottom: 1px dashed var(--bad); margin-bottom: 3px; }
+.score .row .v { text-align: right; font-variant-numeric: tabular-nums; }
+.score .row.pass .v { color: var(--good); font-weight: 600; }
+.score .t { letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+/* the results table sorters */
+.sorters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.sorters button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* a bare figure caption line under a schematic */
+.figline { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin: 6px 0 0; line-height: 1.5; }
+/* two-column figure + code */
+.fig-code { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+/* the QA score rows: hover a token to read both scores */
+.qa-pick { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.qa-pick button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.qa-pick button.noans { border-style: dashed; }
+
+/* ------------------------------------------------------- week 5 additions */
+/* the two tables, growing: a row that has just been written */
+.results tr.new td, .costs tr.new td { animation: rowin .9s ease; }
+@keyframes rowin { from { background: color-mix(in srgb, var(--cls-1) 30%, transparent); } to { background: transparent; } }
+.costs td, .costs th { font-size: 14.5px; }
+.costs td.mono { font-size: 13.5px; }
+/* the logit-lens strip: one column per layer, five guesses each */
+.lens { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); gap: 4px; overflow-x: auto; }
+.lens .col { display: flex; flex-direction: column; gap: 2px; }
+.lens .col .h { font-family: var(--mono); font-size: 12px; color: var(--ink-3); text-align: center; letter-spacing: .06em; padding-bottom: 3px; border-bottom: 1px solid var(--rule); margin-bottom: 2px; }
+.lens .g { font-family: var(--mono); font-size: 13px; padding: 1px 5px; border-radius: 2px; white-space: pre; overflow: hidden; text-overflow: ellipsis; background: var(--panel-sunk); }
+.lens .g.gold { background: color-mix(in srgb, var(--good) 28%, transparent); font-weight: 600; }
+.lens .g.same { box-shadow: inset 0 0 0 1px var(--cls-1); }
+.lens .g i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+.tokrow { display: flex; flex-wrap: wrap; gap: 3px; margin: 8px 0; }
+.tokrow .tok { cursor: pointer; margin: 0; }
+.tokrow .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* attention: the heatmap and its controls */
+.att { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .att { grid-template-columns: 1fr; } }
+.att canvas { width: 100%; image-rendering: pixelated; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+.att .hm-box { position: relative; }
+.att .ax { font-family: var(--mono); font-size: 12px; color: var(--ink-3); display: flex; justify-content: space-between; }
+/* RoPE dials */
+.dials { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin: 8px 0 14px; }
+.clocks svg { max-width: 760px; }
+.rope-out { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rope-out .box { padding: 12px 14px; background: var(--panel-sunk); border-radius: 3px; }
+.rope-out .box .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.rope-out .box .v { font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; transition: color .15s; }
+.rope-out .box.moved .v { color: var(--bad); } .rope-out .box.still .v { color: var(--good); }
+/* the KV stepper */
+.stepper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.stepper .cnt { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.stepper .cnt b { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* the verbalizer builder */
+.vb { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; }
+@media (max-width: 900px) { .vb { grid-template-columns: repeat(2, 1fr); } }
+.vb .cls { border-top: 3px solid; padding-top: 6px; }
+.vb .cls.c0 { border-color: var(--cls-0); background: none; } .vb .cls.c1 { border-color: var(--cls-1); background: none; }
+.vb .cls.c2 { border-color: var(--cls-2); background: none; } .vb .cls.c3 { border-color: var(--cls-3); background: none; }
+.vb .cls .h { font-family: var(--display); font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.vb .words { display: flex; flex-wrap: wrap; gap: 4px; }
+.vb .words button { font-family: var(--mono); font-size: 13px; padding: 2px 7px; }
+.vb .words button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.vb .words button i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 3px; }
+.vb .words button.on i { color: var(--ground); opacity: .7; }
+.vb-acc { display: flex; gap: 30px; align-items: baseline; flex-wrap: wrap; margin-top: 12px; }
+/* the design card as a form */
+.card { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px 16px; align-items: center; }
+.card .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.card select, .card input { width: auto; min-width: 200px; }
+.card .row-btns button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.card-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.card-tabs button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.est { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+.est .stat .v { font-size: 26px; }
+/* label-it-yourself over words */
+.words-pick { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: flex-end; }
+.words-pick .w { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.words-pick .w .s { font-family: var(--mono); font-size: 14px; }
+.words-pick .w select { font-size: 12.5px; padding: 2px 4px; width: auto; }
+.words-pick .w.hit select { border-color: var(--good); } .words-pick .w.miss select { border-color: var(--bad); }
+.words-pick .w .g { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+.words-pick .w.unx .s { text-decoration: underline dotted var(--bad); }
+/* unexpressible words in a typed sentence */
+.wl { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.wl .tok.unx { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+.wl .tok i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+/* per-row bets over a table */
+table.rowbet td.b { white-space: nowrap; }
+table.rowbet td.b button { font-size: 13px; padding: 2px 8px; }
+table.rowbet td.b button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.rowbet td.b button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.rowbet td.b button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.rowbet td.zero { color: var(--bad); font-weight: 600; }
+/* horizontal bar pairs for the breakdowns */
+.pair { display: grid; grid-template-columns: 90px 1fr 1fr 150px; gap: 8px; align-items: center; font-family: var(--mono); font-size: 13.5px; padding: 2px 0; }
+.pair .lab { text-align: right; color: var(--ink-2); }
+.pair .bar { height: 12px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pair .bar i { display: block; height: 100%; }
+.pair .bar.e i { background: var(--cls-0); } .pair .bar.d i { background: var(--cls-1); }
+.pair .n { color: var(--ink-3); }
+.pair.hl .lab { color: var(--bad); font-weight: 600; }
+/* generated text against gold: dropped words */
+.diffline { font-size: 17px; line-height: 1.8; }
+.diffline .drop { color: var(--bad); text-decoration: line-through; }
+.diffline .chg { background: color-mix(in srgb, var(--cls-1) 24%, transparent); border-radius: 2px; }
+/* NER writer */
+.ner-write textarea { min-height: 64px; }
+.ner-parse { margin-top: 8px; }
+.ent.inv { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* QA */
+.ctx mark.pred { background: color-mix(in srgb, var(--good) 28%, transparent); }
+.ctx .nosub { color: var(--bad); font-weight: 600; }
+.order-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; }
+.order-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.order-row:last-child { border-bottom: none; }
+/* lightning round */
+.lr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.lr:last-child { border-bottom: none; }
+.lr .pick { display: flex; gap: 4px; flex-wrap: wrap; }
+.lr .pick button { font-family: var(--mono); font-size: 13px; padding: 2px 8px; }
+.lr .pick button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.lr .pick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.lr .pick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.lr .ans { grid-column: 1 / -1; font-size: 16px; color: var(--ink-2); line-height: 1.5; }
+/* the course table */
+.course td:first-child { font-family: var(--mono); }
+.course tr.now td { background: color-mix(in srgb, var(--cls-1) 10%, transparent); font-weight: 600; }
+.big-num { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: -.03em; line-height: 1; }
+
+/* ------------------------------------------------------- week 6 additions */
+/* the meme, kept: an image with a caption beside it */
+.michael { display: grid; grid-template-columns: minmax(0, .9fr) minmax(280px, 1.1fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; max-width: 452px; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+.michael figcaption { font-family: var(--body); font-size: 17.7px; color: var(--ink-2); line-height: 1.55; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+/* pick three changes */
+.picklist { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.picklist button { font-size: 15px; padding: 4px 11px; }
+.picklist button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.picklist button.yes { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.picklist button.no { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.picklist button .why { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+/* the N–D plane */
+.plane-wrap { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .plane-wrap { grid-template-columns: 1fr; } }
+.plane-models { display: flex; flex-direction: column; gap: 6px; }
+.plane-models button { text-align: left; font-size: 14.5px; display: flex; justify-content: space-between; gap: 8px; }
+.plane-models button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.plane-models button .st { font-family: var(--mono); font-size: 12px; opacity: .7; }
+#plane svg { max-width: 760px; cursor: crosshair; }
+#plane svg.done { cursor: default; }
+/* the bill table */
+table.bill td, table.bill th { font-size: 14px; white-space: nowrap; }
+table.bill td:first-child { font-weight: 600; font-family: var(--display); }
+/* passports as a diff */
+.pp-row { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 6px 14px; padding: 6px 0; border-bottom: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; align-items: baseline; }
+.pp-row:last-child { border-bottom: none; }
+.pp-row .k { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pp-row.head { font-family: var(--display); font-weight: 700; font-size: 16px; }
+.pp-row.diff { background: color-mix(in srgb, var(--cls-1) 9%, transparent); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 3px; }
+.pp-row.diff .k { color: var(--cls-1); }
+.pp-row .sec { font-size: 11.5px; color: var(--ink-3); margin-left: 6px; }
+/* norm grid and rope grid: controls beside the picture */
+.norm-grid, .rope-grid { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .norm-grid, .rope-grid { grid-template-columns: 1fr; } }
+#fig-norm svg { max-width: 620px; } #fig-rope-matrix svg { max-width: 560px; display: block; margin: 0 auto; }
+#fig-rope-coords svg, #fig-slow svg, #fig-gqa svg, #fig-ffn svg, #fig-stack svg, #fig-prenorm svg, #fig-regimes svg, #fig-queue svg, #fig-roundtrip svg, #fig-moe svg, #fig-scatter svg, #fig-linear svg, #fig-masks svg { max-width: 920px; display: block; }
+#ffn-curves svg, #ffn-gate svg, #scaling-chart svg, #steps-chart svg, #tpp-chart svg, #serving-chart svg, #decode-chart svg, #xover-chart svg, #lin-chart svg { max-width: 640px; }
+/* order-the-models bet */
+.orderpick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+.orderpick button { font-size: 15px; }
+.orderpick button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.orderpick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.orderpick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.orderpick button i { font-style: normal; font-family: var(--mono); font-size: 11.5px; margin-right: 6px; opacity: .7; }
+.orderpick .arrow { color: var(--ink-3); }
+/* heatmap cells for the per-class table */
+.conf td.v { font-variant-numeric: tabular-nums; }
+/* small inline stat row */
+.est .stat .v small { font-size: 13px; font-weight: 400; color: var(--ink-3); margin-left: 4px; }
+.small-note { font-family: var(--mono); font-size: 13px; color: var(--ink-3); line-height: 1.5; margin-top: 8px; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 18px; margin-bottom: 10px; }
+.bet .q input { vertical-align: middle; }
+#bpb-out .pbar { grid-template-columns: 190px 1fr 70px; }
+#bpb-out .pbar .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prose.footnote ul { padding-left: 1.2em; line-height: 1.6; }  /* reference lists */
+
+/* ------------------------------------------------- lecture pages (demo_base/quiz.js) */
+/* one question: number + kind, the question, the answering UI, the answer (hidden until committed) */
+.qz { border-top: 1px solid var(--rule); padding: 22px 0 26px; }
+.qz:last-of-type { border-bottom: 1px solid var(--rule); }
+.qz-head { display: flex; gap: 12px; align-items: baseline; font-family: var(--mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.qz-n { font-weight: 500; color: var(--ink-2); }
+.qz.done .qz-n::after { content: " ✓"; color: var(--good); }
+.qz-q { font-family: var(--display); font-size: 21.5px; font-weight: 600; line-height: 1.35; color: var(--ink); margin-bottom: 12px; }
+.qz-q p { margin: 0 0 .55em; } .qz-q p:last-child { margin-bottom: 0; }
+.qz-q code { font-size: .82em; font-weight: 500; background: var(--panel-sunk); padding: .05em .3em; border-radius: 3px; }
+.qz-q [data-fig] { margin: 14px 0 10px; }
+.qz-q [data-fig] svg, .qz-a [data-fig] svg, .panel [data-fig] svg { width: 100%; max-width: 820px; height: auto; display: block; margin: 0 auto; }
+.qz-q table { font-family: var(--body); font-weight: 400; font-size: 16.4px; margin: 10px 0; width: auto; }
+.qz-ui { margin: 0 0 6px; }
+.qz-row { margin-top: 10px; min-height: 28px; }
+.qz-verdict { font-family: var(--mono); font-size: 15px; color: var(--ink-2); }
+.qz-verdict.ok { color: var(--good); } .qz-verdict.no { color: var(--bad); }
+.qz-opts button.missed { border-style: dashed; border-color: var(--good); }
+.qz-opts button[disabled] { opacity: 1; cursor: default; }
+.qz-opts button[disabled]:not(.right):not(.wrong):not(.missed) { opacity: .5; }
+/* clickable parts of a figure: lecture.js draws a rect.hit as the last child of every [data-pick] group */
+svg rect.hit { fill: transparent; stroke: none; }  /* a figure drawn outside a question: its click targets stay invisible */
+.qz-pickable { cursor: pointer; }
+.qz-pickable rect.hit { fill: transparent; stroke: transparent; stroke-width: 2; stroke-dasharray: 4 3; transition: stroke .12s ease; }
+.qz-pickable:hover rect.hit { stroke: var(--ink-3); }
+.qz-pickable.pick rect.hit { stroke: var(--ink); stroke-dasharray: none; fill: color-mix(in srgb, var(--ink) 8%, transparent); }
+.qz-pickable.right rect.hit { stroke: var(--good); stroke-dasharray: none; fill: color-mix(in srgb, var(--good) 12%, transparent); }
+.qz-pickable.wrong rect.hit { stroke: var(--bad); stroke-dasharray: none; fill: color-mix(in srgb, var(--bad) 12%, transparent); }
+.qz-pickable.missed rect.hit { stroke: var(--good); }
+/* sort: one row per item, the bins as buttons */
+table.qz-sort td { padding: 7px 10px 7px 0; vertical-align: top; }
+table.qz-sort td.qz-item { font-size: 17.5px; width: 38%; }
+table.qz-sort td.qz-bins { display: flex; flex-wrap: wrap; gap: 5px 6px; }
+table.qz-sort td.qz-bins button { font-size: 14.5px; padding: 3px 10px; }
+table.qz-sort button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.qz-sort button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.qz-sort button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.qz-sort button.ans { border-color: var(--good); border-style: dashed; }
+table.qz-sort button[disabled] { opacity: 1; cursor: default; }
+table.qz-sort button[disabled]:not(.right):not(.wrong):not(.ans) { opacity: .45; }
+.qz-count { font-size: 14px; color: var(--ink-3); }
+/* fill: inputs inline in the question */
+input.qz-blank { width: auto; display: inline-block; font-size: .85em; padding: 1px 8px; margin: 0 2px; text-align: center; vertical-align: baseline; border-radius: 3px; }
+input.qz-blank.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+input.qz-blank.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); text-decoration: line-through; color: var(--ink-3); }
+.qz-exp { font-family: var(--mono); font-size: .8em; color: var(--good); margin: 0 6px 0 2px; font-weight: 500; }
+/* write: a textarea, then a checklist */
+textarea.qz-text { font-family: var(--body); font-size: 17.5px; line-height: 1.5; min-height: 80px; resize: vertical; }
+.qz-ticks { margin-top: 14px; display: flex; flex-direction: column; gap: 5px; }
+.qz-ticks-k { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px; }
+.qz-ticks label { display: flex; gap: 10px; align-items: baseline; font-size: 17.2px; line-height: 1.45; cursor: pointer; }
+.qz-ticks input { accent-color: var(--ink); flex: none; }
+/* the answer */
+.qz-a { margin-top: 16px; padding: 14px 18px 14px 18px; background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--ink); border-radius: 4px; font-size: 18.6px; line-height: 1.62; }
+.qz-a p { margin: 0 0 .75em; } .qz-a p:last-child { margin-bottom: 0; }
+.qz-a ul, .qz-a ol { margin: 0 0 .75em; padding-left: 1.3em; }
+.qz-a code { background: var(--panel-sunk); padding: .08em .32em; border-radius: 3px; font-size: .86em; }
+.qz-a table { font-size: 16px; margin: 8px 0 12px; width: auto; }
+.qz-a [data-fig] { margin: 10px 0 12px; }
+.qz-miss { color: var(--ink-2); font-size: 17.2px; line-height: 1.55; border-top: 1px dashed var(--rule); padding-top: 10px; margin-top: .9em !important; }
+.qz-miss b { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--ink-3); margin-right: 8px; }
+.qz-nofig { font-family: var(--mono); font-size: 14px; color: var(--bad); padding: 8px 0; }
+/* optional depth under a toggle; its questions do not count toward the page's progress */
+details.optional { margin: 20px 0 0; border: 1px dashed var(--rule-strong); border-radius: 4px; padding: 0 18px; }
+details.optional > summary { cursor: pointer; list-style: none; display: flex; gap: 10px; align-items: baseline; padding: 12px 0; font-family: var(--display); font-weight: 600; font-size: 18px; }
+details.optional > summary::-webkit-details-marker { display: none; }
+details.optional > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.optional[open] > summary::before { content: "−"; }
+details.optional > summary .optional-count { margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--ink-3); font-weight: 400; }
+details.optional > .prose { padding-top: 4px; }
+details.optional .qz:last-of-type { border-bottom: none; }
+.rail .quiz-progress { font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin-top: 8px; }
+.rail a.back { display: inline-block; margin-top: 8px; font-family: var(--display); font-size: 16px; color: var(--ink-2); }
+.sources { font-size: 17.2px; color: var(--ink-2); }
+.sources ul { padding-left: 1.2em; line-height: 1.6; }
+@media (max-width: 760px) {
+  .qz-q { font-size: 19px; }
+  table.qz-sort td.qz-item { width: 100%; display: block; padding-bottom: 2px; }
+  table.qz-sort td.qz-bins { display: flex; padding-top: 0; }
+  table.qz-sort tr { display: block; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+}
+
+/* --- this week --- */
+/* lecture 1: the clickable tf-idf matrix and the OOV table */
+.lec-matrix td.cell { cursor: pointer; }
+.lec-matrix td.cell:hover { outline: 1px solid var(--ink-3); outline-offset: -1px; }
+.lec-matrix td.cell.on { outline: 2px solid var(--ink); outline-offset: -2px; }
+.lec-trace { font-size: 14px; color: var(--ink-2); padding: 10px 2px 2px; line-height: 1.7; min-height: 36px; }
+.lec-trace b { color: var(--ink); }
+.lec-oov td { font-size: 15.4px; vertical-align: top; line-height: 1.55; }
+.lec-oov .tok { font-size: 13px; }
+.lec-docs { display: flex; flex-wrap: wrap; gap: 4px 22px; font-size: 14px; color: var(--ink-2); padding: 4px 2px 10px; }
+.lec-docs b { color: var(--ink-3); font-weight: 500; margin-right: 4px; }
+/* the aggregation explorer, in the reveal of q-agg */
+.agg { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 18px; align-items: start; margin: 6px 0; }
+@media (max-width: 900px) { .agg { grid-template-columns: 1fr; } }
+.agg-k { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px; }
+.agg-texts button { font-size: 13px; padding: 2px 8px; font-family: var(--mono); }
+.agg-plane svg { width: 100%; max-width: 240px; display: block; margin-top: 8px; }
+.agg-flat { font-size: 15px; color: var(--ink-2); padding: 18px 4px; border: 1px dashed var(--rule-strong); border-radius: 3px; margin-top: 8px; }
+.agg-out { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; }
+table.agg-table { font-size: 14.5px; }
+table.agg-table th { white-space: normal; font-size: 11.5px; }
+table.agg-table tr[data-a] { cursor: pointer; }
+table.agg-table tr[data-a]:hover td { background: var(--panel-sunk); }
+table.agg-table tr.on td { background: color-mix(in srgb, var(--cls-1) 12%, transparent); font-weight: 600; }
+.agg-ok { color: var(--good); font-weight: 600; } .agg-no { color: var(--bad); font-weight: 600; }
+.agg-note { font-size: 13.5px; color: var(--ink-3); margin-top: 6px; }
+.lec-norm td, .lec-norm th { padding: 5px 14px 5px 0; }
+.lec-norm td.mono { font-size: 15px; }
+</style>
+<meta name="quiz-store" content="week01_lecture">
+
+</head>
+<body>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Lecture 1<br>Representations of Text · check yourself</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-btns">
+    <button id="btn-reset" title="Forget every answer on this page">Reset answers</button>
+    <button id="btn-theme" title="Light / dark">Theme</button>
+  </div>
+  <div class="quiz-progress" id="quiz-progress"></div>
+  <div class="rail-foot">
+    <a class="back" href="week01_demo.html">← the seminar demo</a>
+    <div style="margin-top:10px">Answer first, then open. Numbers on this page are computed here or come from the articles.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>Representations of text,<br>as questions</h1>
+  <p class="lede">First, we gonna start with the main question of the course, meaning the question &quot;WHY?&quot; -- why would we do a whole separate course about NLP as a field, and what's the difficulty of language processing. As well, as the others: what is in the vector, what task the model actually solves, where the embedding comes from. </p>
+  <div class="prose"><p>To make the study process more efficient we suggest you those little questions that you might have (or might not), so you can check yourself and your understanding of the concepts. Do not open them until you think of an answer yourself. If you got the question not in a way you expected -- it's a good sign to read on the topic a bit more or ask the lecturers the stuff that confuses you. Your answers stay in this browser, so you can leave and come back.</p></div>
+</section>
+
+<!-- ============================================================= why -->
+<section id="why">
+  <p class="eyebrow">Block 00 · the question behind the course</p>
+  <h2>Why learn NLP in 2026?</h2>
+  <div class="prose"><p>A fair question. An LLM will classify these headlines without any of the code in the seminar. So why does this course exist?</p></div>
+  <div class="qz" data-q="q-why"></div>
+</section>
+
+<!-- ============================================================ repr -->
+<section id="repr">
+  <p class="eyebrow">Block 01 · what we want from a vector</p>
+  <h2>What we want from a vector</h2>
+  <div class="prose"><p>Before any method, the demand. A classifier can do only a few things with its input: add it up, compare it, draw a line through it. So whatever we turn a string into has to be an object those operations make sense on — numeric, of a fixed size, and with a geometry that means something. The last one is the whole difficulty. We want <code>like</code> to sit near <code>love</code> and both of them far from <code>geografia</code>; we want the vector of a text to be buildable from the vectors of its words; we want it cheap, at a million documents; and we want it from the data we actually have, which is text, mostly without labels.</p></div>
+  <div class="qz" data-q="q-want"></div>
+  <div class="prose"><p>The first thing anyone tries is to number the words. That pretends <code>cat</code> = 7 is closer to <code>dog</code> = 8 than to <code>house</code> = 200, so the next move is to give every word its own axis instead: <strong>one-hot</strong>, a vector of |V| zeros and a single 1. It is numeric and fixed-size, and it is useless as a representation of meaning. Every two words are at exactly the same distance, so <code>like</code> is as far from <code>love</code> as from <code>geografia</code>. Whatever the model learns about <code>love</code> tells it nothing about <code>like</code>. And a word that was not in the vocabulary has no axis at all — not a bad vector, no vector; two different unknown words are the same nothing. The dimension is the size of the vocabulary, tens of thousands, almost all zeros.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>One-hot · three words</span><span>|V| axes, one per word</span></div>
+    <div class="panel-body"><div data-fig="ohe"></div></div>
+    <div class="panel-note">Three words, three axes. The dot product of any two rows is 0: the representation knows that the words differ, and nothing else.</div>
+  </div>
+  <div class="qz" data-q="q-ohe"></div>
+  <div class="qz" data-q="q-ohe-why"></div>
+  <div class="prose"><p>There are two objects to represent, and they want different things. A <strong>word</strong> vector should carry meaning — the geometry above, which we cannot read off the word itself and have to get from somewhere: from its contexts in a corpus, or from the labels of a task. A <strong>text</strong> vector should make the operation cheap — classification, search, deduplication — and it has to turn a variable number of words into one fixed-size object: a sum, an average, or something learned. That second step is a decision of its own, and it is where a good part of the meaning can get lost. We'll cover it later, stay tuned.</p><p>Every method of this week makes four combinations: how the numbers are made — counted from the text, or learned by a model — and what gets a vector, a word or a text.</p>
+<p>First, counted, per text: the bag of words and tf-idf, no semantics, very cheap, and the strongest baseline for the text-classification and regression tasks (speaking of the cost-quality tradeoff). Next, learned, per word: word2vec, GloVe, fastText — meaning by substitutability, learned from contexts. Though they are learned per word, next they can be assembled per text: mean pooling, the cheapest bridge between the two objects. Learned per <em>occurrence</em>: the contextual models of week 4, where <code>bank</code> finally gets two vectors. Each cell bought something and paid for something; none of them replaced the others.</p></div>
+  <div class="qz" data-q="q-two-objects"></div>
+  <div class="prose"><p>How do we get from word vectors to one vector for a text? The simple ways are all arithmetic over the word vectors: <strong>sum</strong>, <strong>mean</strong>, <strong>max</strong> per coordinate, a <strong>weighted mean</strong> (by idf, so rare words count more), <strong>concatenation</strong>, or keeping <strong>one word</strong> (the last, the first). The requirements come from what the classifier needs: one fixed size for every text; nothing new to train, so it works the moment you have word vectors; every word contributing; no dependence on length, or a long review and a short one with the same content end up in different places; and similar texts close together. Check them yourself — every number below is computed in your browser on toy 2-d word vectors:</p>
+<div data-fig="agg"></div>
+<p>Concatenation fails the first requirement at once, the last word ignores every other word and depends on order, the sum fails length, max keeps only the loudest word per coordinate. Mean and weighted mean pass all five — that is why mean pooling is the default bridge. And the last column fails for <em>every</em> row: no arithmetic over word vectors knows that <code>not</code> flips <code>good</code>, because a sum does not know which vector stood next to which. Order and composition need a model that reads the sequence — that is where weeks 2–4 go.</p></div>
+  <div class="qz" data-q="q-map"></div>
+  <div class="qz" data-q="q-agg-props"></div>
+</section>
+
+<!-- ========================================================== vector -->
+<section id="vector">
+  <p class="eyebrow">Block 02 · the vector</p>
+  <h2>What is the vector, actually?</h2>
+  <div class="prose"><p>A <strong>bag of words</strong> represents a document as one number per vocabulary word. The vocabulary is the columns; each document is a row. That is the whole idea — the document becomes a point in a space with one axis per word. Two things are already gone and will not come back: <strong>word order</strong> and <strong>anything not in the vocabulary</strong>.</p><p>Raw counts are a poor number to put in a cell, for two reasons. A long document has bigger counts for everything, so it looks different from a short one about the same thing. And a word that occurs in every document — <code>the</code>, <code>today</code> — gets large counts while telling us nothing about which document this is. <strong>tf-idf</strong> fixes both, in three steps.</p>
+<p><strong>Term frequency</strong> divides the count by the length of the document: <math><mi mathvariant="normal">tf</mi><mo>(</mo><mi>t</mi><mo>,</mo><mi>d</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mi>N</mi><mo>(</mo><mi>t</mi><mo>,</mo><mi>d</mi><mo>)</mo></mrow><mrow><mo>|</mo><mi>d</mi><mo>|</mo></mrow></mfrac></math>, how much of <em>this</em> document the word is.</p>
+<p><strong>Inverse document frequency</strong> measures how much the word distinguishes documents across the corpus: <math><mi mathvariant="normal">idf</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><mi mathvariant="normal">ln</mi><mfrac><mrow><mo>|</mo><mi>D</mi><mo>|</mo></mrow><mrow><mi mathvariant="normal">df</mi><mo>(</mo><mi>t</mi><mo>)</mo></mrow></mfrac></math>, where <math><mi mathvariant="normal">df</mi><mo>(</mo><mi>t</mi><mo>)</mo></math> is the number of documents that contain <math><mi>t</mi></math>. A word in one document of four gets <math><mi mathvariant="normal">ln</mi><mo>,</mo><mn>4</mn></math>; a word in all four gets <math><mi mathvariant="normal">ln</mi><mo>,</mo><mn>1</mn><mo>=</mo><mn>0</mn></math>.</p>
+<p><strong>Multiply, then normalise</strong>: the cell is <math><mi mathvariant="normal">tf</mi><mo>·</mo><mi mathvariant="normal">idf</mi></math>, and each row is divided by its length, so that every document is a vector of length 1. Libraries usually smooth the idf so that it never reaches exactly zero; the idea does not change. Click a cell below to see what is written in it and where it came from.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>Four documents · tf-idf</span><span id="matrix-dims" class="mono"></span></div>
+    <div class="panel-body tight"><div data-fig="tfidf-matrix"></div></div>
+    <div class="panel-note">Columns are the vocabulary, sorted; rows are the documents. A cell is tf × idf, divided by the length of its row. Computed in your browser.</div>
+  </div>
+  <div class="qz" data-q="q-twice"></div>
+  <div class="prose"><p>Where the columns come from matters as much as what goes in them. The vocabulary is collected once, from the training documents, and fixed: every later document is mapped onto those columns. Before anything is counted the text goes through preprocessing — usually lowercasing and splitting into tokens — and whatever the preprocessing merges or drops never reaches the vector.</p></div>
+  <div class="qz" data-q="q-newdoc"></div>
+  <div class="qz" data-q="q-changes"></div>
+  <div class="prose"><p>The last step deserves a second look. Normalising each row to length 1 means the vector says <em>in what proportions</em> the document uses its words, and nothing about how long it is.</p></div>
+  <div class="qz" data-q="q-oneword"></div>
+</section>
+
+<!-- ============================================================ norm -->
+<section id="norm">
+  <p class="eyebrow">Block 03 · normalisation</p>
+  <h2>Stemming, lemmatization and the rest of preprocessing</h2>
+  <div class="prose"><p>A bag of words gives every surface form its own column. <code>study</code>, <code>studies</code>, <code>studied</code>, <code>studying</code> are four columns, and what the model learns about one of them says nothing about the others — the one-hot problem again, one level up. In English it is a nuisance. In Russian, where a noun has a dozen forms, it splits the statistics of every word a dozen ways, and most forms are seen a handful of times. <strong>Normalisation</strong> maps the forms of a word onto one key before anything is counted.</p><p>There are two ways to do it. <strong>Stemming</strong> cuts endings off by rules, with no dictionary: Porter's algorithm (1980) is a cascade of suffix rules. It is fast and works on any string, including words nobody has seen — but the stem is not necessarily a word, and the rules know nothing about meaning. <strong>Lemmatization</strong> maps a word to its dictionary form, the <strong>lemma</strong>, using a dictionary and the word's part of speech: <code>went</code> → <code>go</code>, <code>better</code> → <code>good</code>. It needs a morphological analyser for each language, and without the part of speech it has to guess.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>One word, three normalisations</span><span>stem · lemma · lemma without POS</span></div>
+    <div class="panel-body tight"><div data-fig="norm-table"></div></div>
+    <div class="panel-note">Porter's stemmer and the WordNet lemmatizer, run on these words. The last column is the same lemmatizer without the part of speech. For Russian, the Snowball stemmer.</div>
+  </div>
+  <div class="prose"><p>Read the table row by row. The stemmer merges <code>university</code> and <code>universe</code> into <code>univers</code>, and <code>organization</code> into <code>organ</code> — two different words in one column. It cannot touch <code>went</code> or <code>better</code>, whose forms share no ending to cut; a lemmatizer can, because it looks the word up. Without the part of speech the lemmatizer falls back to treating every word as a noun and leaves <code>went</code> alone, and <code>was</code> loses its <code>s</code> like a plural. In Russian the stemmer does well on the regular forms of <code>кот</code> and gives three different stems to <code>шёл</code>, <code>иду</code>, <code>пошла</code> — three forms of one verb, <code>идти</code>, that only a dictionary knows belong together.</p></div>
+  <div class="qz" data-q="q-norm-sort"></div>
+  <div class="prose"><p>Normalisation is a bet that what it merges is not what the task needs. It shrinks the vocabulary and pools the statistics of rare forms, which pays off when there is little labelled data to learn each form on its own, and in search, where a query and a document have to share a form to match at all — <code>treating diabetes</code> never meets <code>treatment of diabetic</code> without it. It loses whatever the form carried — tense, number, and sometimes the meaning, when two words collapse into one stem. With plenty of data the model learns each form on its own and the gain disappears. <strong>Preprocessing is chosen by the representation and the task, not by habit.</strong></p></div>
+  <div class="qz" data-q="q-norm-when"></div>
+  <div class="prose"><p>Stemming is one step of a longer list that usually goes under &quot;clean your text&quot;: lowercasing, removing <strong>stopwords</strong> (the most frequent function words — <code>the</code>, <code>and</code>, <code>of</code>, and, in most lists, <code>not</code>), stripping punctuation and numbers, removing markup. The usual advice is to do all of them, and the usual advice is wrong roughly half the time. Every step deletes something. For one task that something is noise, for another it is the signal: casing, function words and punctuation are noise for a topic and the very thing that tells two authors apart or a company from a fruit. And a text is not always long enough to spare it — in a long review one deleted word changes little, in a one-line message it can be most of the evidence there is.</p></div>
+  <div class="qz" data-q="q-prep"></div>
+</section>
+
+<!-- ============================================================= oov -->
+<section id="oov">
+  <p class="eyebrow">Block 04 · the long tail</p>
+  <h2>Zipf's law, unknown words, and the distributional hypothesis</h2>
+  <div class="prose"><p>Count every word in the 120 000 headlines of AG News — {zipf_tokens} word occurrences — and sort the {zipf_types} distinct words by frequency. A handful of words are everywhere: {zipf_top}. The 100 most frequent words make up {zipf_top100} of all the text. At the other end the list never ends: {zipf_hapax_pct} of the distinct words occur exactly once.</p>
+<p>This shape has a name. <strong>Zipf's law</strong>: the frequency of the r-th most frequent word is roughly proportional to <math><mn>1</mn><mo>/</mo><mi>r</mi></math> — the second word is half as frequent as the first, the tenth a tenth as frequent. On log-log axes that is a straight line with slope −1; on these headlines the slope is {zipf_slope}. It holds for every language and almost every corpus anyone has counted.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>Rank × frequency · AG News, training set</span><span>log-log</span></div>
+    <div class="panel-body"><div data-fig="zipf"></div></div>
+    <div class="panel-note">Every distinct word of the AG News training set, by rank and count, both axes logarithmic. The dashed line has slope −1. (<code>39</code> among the top words is the debris of <code>&amp;#39;</code>, an HTML apostrophe.)</div>
+  </div>
+  <div class="prose"><p>For a representation built by counting, Zipf's law is the bill. The head of the curve is a few dozen function words: they dominate every count and say almost nothing about the topic, which is why idf downweights them and stopword lists exist. The tail is most of the vocabulary: words seen once or twice, each a column with almost no examples to learn its weight from. And the tail does not end when the data grows — a bigger corpus moves the curve to the right and brings new words with it, so there is always a word the training set never saw.</p></div>
+  <div class="qz" data-q="q-zipf-double"></div>
+  <div class="qz" data-q="q-zipf-follows"></div>
+  <div class="prose"><p>A word the training set never contained. It happens three different ways — a misspelling, a name nobody had used yet, a rare form of a word everybody knows — and the question is not whether it happens. On clean English news with a large training set it is a fraction of a percent of test tokens (on AG News, {oov_rate_pct}), mostly timestamps and article codes; on Russian, on chat text, on a small training set it is an order of magnitude more. The question is what a representation does when it happens.</p><p>For a bag of words nothing raises. The new word has no column, so the row is computed as if the word were not there. The model is not <em>wrong</em> about the word, it is blind to it — and blindness is silent, which is the dangerous part: a product name, a new disease, a typo in the one word that carried the label all vanish without a trace in the logs. word2vec at least fails loudly: it has no row for the word and raises an error.</p><p>There are three families of answers. <strong>Normalise</strong> the word to something that was seen: stemming and lemmatisation map the forms of a word onto one stem or lemma, so <code>walked</code> meets <code>walking</code>. <strong>Change the unit</strong>: cut words into pieces that are always known — character n-grams, or the subwords of BPE, which falls back to single characters if it must, so nothing is ever out of vocabulary. <strong>Build the vector from pieces</strong>: fastText represents a word as the sum of the vectors of its character n-grams, so an unseen word still gets a vector from the pieces it shares with seen ones. And word2vec has none of these: one row per training word, and nothing for anything else.</p><p>Here is what each of them does with three words that are not among the {vocab_size} words of the AG News training set — a misspelling, a new brand name and a rare form of a known word. Every cell is computed by the real tool.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>Three unknown words, six methods</span><span>computed</span></div>
+    <div class="panel-body tight"><div data-fig="oov-table"></div></div>
+    <div class="panel-note">Porter's stemmer, character 3–5-grams, the <code>cl100k_base</code> BPE tokenizer and fastText's n-grams, run on these three words against the AG News training vocabulary.</div>
+  </div>
+  <div class="prose"><p>Read the stemming row first, because it is the one the textbook gets wrong. Porter turns <code>recieved</code> into <code>reciev</code>, and no training word stems to that — the stem of <code>received</code> is <code>receiv</code>. Stemming rescues <strong>morphology</strong>, not spelling: <code>unbelievability</code> → <code>unbeliev</code>, which is also the stem of <code>unbelievable</code>, a training word, so that one is saved. A misspelling and a new name are not. Character n-grams never fail completely — {ng_recieved} of the {ng_total_recieved} n-grams of <code>recieved</code> were seen in training, as pieces of <code>received</code>, <code>believed</code>, <code>achieved</code>. BPE never fails at all: <code>{bpe_recieved}</code>, pieces that are in the vocabulary by construction. fastText builds the vector as the sum of {ft_recieved} n-gram vectors, and <code>recieved</code> lands next to <code>received</code> because they share most of them.</p><p>Every fix has a bill, and the bill is the same in different currencies: things that look alike are treated alike, whether or not they <em>are</em> alike. Character n-grams pay in dimension — a news corpus has tens of thousands of words and hundreds of thousands of distinct 3–5-grams, most of which separate nothing. fastText pays in the vector space: <code>recieved</code> is near <code>received</code>, good, but so is any pair that shares a long substring. Stemming pays in collisions, <code>universe</code> and <code>university</code> in one column, and buys nothing for spelling. BPE moves the cost from the vocabulary into the sequence: nothing is ever unknown, but a rare word becomes several tokens, each a step to compute and a place to be wrong, and the pieces have no meaning of their own — <code>rec</code> is in <code>record</code> and <code>recipe</code> as well.</p><p>Zipf's law says that learning each word from its own occurrences runs out of data for most of the vocabulary. The way round is to let words share what is learned about them — and for that we need to know which words are alike, without anyone labelling them.</p>
+<p>The answer is the <strong>distributional hypothesis</strong>: &quot;you shall know a word by the company it keeps&quot; (Firth 1957; Harris 1954 for the formal version). Words that occur in similar contexts tend to have similar meanings. The meaning of a word is not observable; its contexts are, in every sentence ever written. A rare word appears a few times, but each time among frequent, well-known words, and those contexts tell us which known words it resembles. Every method in the next block is this hypothesis turned into a loss.</p></div>
+  <div class="qz" data-q="q-dist"></div>
+</section>
+
+<!-- ============================================================= w2v -->
+<section id="w2v">
+  <p class="eyebrow">Block 05 · the embedding</p>
+  <h2>Word2vec: skip-gram, CBOW, and fastText</h2>
+  <div class="prose"><p>One-hot gave every word its own axis and no similarity at all. <strong>Word2vec</strong> (Mikolov et al. 2013) gives every word a short dense vector — a hundred or three hundred numbers — and learns those numbers from raw text, so that words used alike end up close. It is the distributional hypothesis turned into a prediction task, in two mirror-image versions.</p></div>
+  <div class="prose"><p><strong>Skip-gram</strong> takes one word — the <em>centre</em> — and predicts the words around it. A window, say two words on each side, slides over the text, and every (centre, context) pair inside it is one training example: <code>oil prices rise today</code> with the centre <code>prices</code> gives (prices, oil), (prices, rise), (prices, today).</p>
+<p>The model is two matrices. <math><msub><mi>W</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub></math>, of size |V| × d, holds one row per word. The centre word comes in as a one-hot vector, and multiplying it by <math><msub><mi>W</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub></math> just picks out its row — that row, <math><msub><mi>v</mi><mi>c</mi></msub></math>, <em>is</em> the word's current vector, and it is called <math><mi>h</mi></math> while it passes through the network. <math><msub><mi>W</mi><mrow><mi>o</mi><mi>u</mi><mi>t</mi></mrow></msub></math>, of size d × |V|, holds one column <math><msub><mi>u</mi><mi>w</mi></msub></math> per word. Multiplying <math><mi>h</mi></math> by <math><msub><mi>W</mi><mrow><mi>o</mi><mi>u</mi><mi>t</mi></mrow></msub></math> gives a score <math><msub><mi>u</mi><mi>w</mi></msub><mo>·</mo><msub><mi>v</mi><mi>c</mi></msub></math> for every word of the vocabulary, and a softmax turns the scores into a distribution over possible context words:</p>
+<p><math><mi>P</mi><mo>(</mo><mi>o</mi><mo>|</mo><mi>c</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mi mathvariant="normal">exp</mi><mo>(</mo><msub><mi>u</mi><mi>o</mi></msub><mo>·</mo><msub><mi>v</mi><mi>c</mi></msub><mo>)</mo></mrow><mrow><munder><mo>∑</mo><mi>w</mi></munder><mi mathvariant="normal">exp</mi><mo>(</mo><msub><mi>u</mi><mi>w</mi></msub><mo>·</mo><msub><mi>v</mi><mi>c</mi></msub><mo>)</mo></mrow></mfrac></math></p>
+<p>We're gonna work in pairs: one word that comes in, one word that comes out. For skip-gram there going to be the same centre word and <math><mi>n</mi></math> different outputs as a second word in the pair. So, the model will see one input and learn to give <math><mi>n</mi></math> different outputs. The loss of one pair is the cross-entropy against the context word that was actually there, <math><mo>−</mo><mi mathvariant="normal">log</mi><mi>P</mi><mo>(</mo><mi>o</mi><mo>|</mo><mi>c</mi><mo>)</mo></math>: a |V|-way classification, the same softmax as any classifier, with the neighbouring word as the label.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>Skip-gram</span><span>the centre predicts each context word</span></div>
+    <div class="panel-body"><div data-fig="sg"></div></div>
+    <div class="panel-note">One training pair: centre <code>oil</code>, context <code>prices</code>. The highlighted row of <math><msub><mi>W</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub></math> is the vector of <code>oil</code>; the highlighted column of <math><msub><mi>W</mi><mrow><mi>o</mi><mi>u</mi><mi>t</mi></mrow></msub></math> belongs to <code>prices</code>.</div>
+  </div>
+  <div class="qz" data-q="q-sg-where"></div>
+  <div class="qz" data-q="q-sg-target"></div>
+  <div class="prose"><p>Training is plain gradient descent on that loss, one pair at a time. Both matrices start as <strong>small random numbers</strong> — nothing about language is put in. For a pair (c, o), the gradient moves the centre's row <math><msub><mi>v</mi><mi>c</mi></msub></math> towards <math><msub><mi>u</mi><mi>o</mi></msub></math> and away from the columns of the other words in proportion to how much probability they took, and moves <math><msub><mi>u</mi><mi>o</mi></msub></math> towards <math><msub><mi>v</mi><mi>c</mi></msub></math>. Two words that keep appearing next to the same context words receive the same pushes and drift together: the distributional hypothesis, executed by the optimiser. The derivation of these gradients, step by step, is in <a href="https://youtu.be/ERibwqs9p38">Stanford CS224N, Lecture 2: Word Vector Representations — word2vec</a>.</p>
+<p>The prediction task itself is a <strong>pretext</strong>. Nobody needs a model that guesses the neighbours of a word, and it never guesses them well. What we want is the by-product: the rows of <math><msub><mi>W</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub></math>.</p></div>
+  <div class="qz" data-q="q-w2v-init"></div>
+  <div class="qz" data-q="q-w2v-task"></div>
+  <div class="prose"><p><strong>CBOW</strong> — continuous bag of words — is the mirror image: the context predicts the centre. The rows of all context words are taken from <math><msub><mi>W</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub></math> and <em>averaged</em> into one vector <math><mi>h</mi></math>; their order is lost on the way, hence &quot;bag of words&quot;. <math><mi>h</mi></math> goes through <math><msub><mi>W</mi><mrow><mi>o</mi><mi>u</mi><mi>t</mi></mrow></msub></math> and a softmax over the vocabulary, now scored against the centre word. One window is one training example, where skip-gram made one example per context word.</p>
+<p>The difference shows up on frequency. CBOW is faster and smooths over frequent words. Skip-gram gives every occurrence of a rare word its own updates, one per neighbour, and represents rare words better (Mikolov et al. 2013): for CBOW there going to be only one run with one central word, while for Skip-Gram we'll see it <math><mi>n</mi></math> times.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>CBOW</span><span>the averaged context predicts the centre</span></div>
+    <div class="panel-body"><div data-fig="cbow"></div></div>
+    <div class="panel-note">One window: the context <code>oil</code>, <code>prices</code>, <code>sharply</code>, <code>today</code> predicts the centre <code>rise</code>. Four rows of the same <math><msub><mi>W</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub></math> are averaged into <math><mi>h</mi></math>.</div>
+  </div>
+  <div class="qz" data-q="q-cbow-target"></div>
+  <div class="qz" data-q="q-cbow-vs"></div>
+  <div class="prose"><p>One practical problem remains. The softmax over the whole vocabulary costs one dot product per vocabulary word — tens of thousands — for every single training pair. The same paper replaced it with a cheaper task, <strong>negative sampling</strong>: for each real pair (c, o), draw k random words (five to twenty, sampled by frequency) and train a yes/no classifier — the sigmoid of the dot product — to say <em>yes</em> to the real pair and <em>no</em> to the random ones:</p>
+<p><math><mi mathvariant="normal">log</mi><mi>σ</mi><mo>(</mo><msub><mi>u</mi><mi>o</mi></msub><mo>·</mo><msub><mi>v</mi><mi>c</mi></msub><mo>)</mo><mo>+</mo><munder><mo>∑</mo><mi>k</mi></munder><mi mathvariant="normal">log</mi><mi>σ</mi><mo>(</mo><mo>−</mo><msub><mi>u</mi><mi>k</mi></msub><mo>·</mo><msub><mi>v</mi><mi>c</mi></msub><mo>)</mo></math></p>
+<p>The two matrices stay; only the loss changes, from one |V|-way softmax to k + 1 sigmoids.</p></div>
+  <div class="qz" data-q="q-w2v-neg"></div>
+  <div class="prose"><p>Word2vec has one row per word of the training vocabulary and nothing for anything else, and it treats <code>walk</code>, <code>walks</code>, <code>walked</code> as three unrelated rows. <strong>fastText</strong> (Bojanowski et al. 2017) keeps the skip-gram objective and changes what the vector of a word is: the sum of the vectors of its <strong>character n-grams</strong>. The word is wrapped in boundary marks and cut into pieces — for <code>where</code> with n = 3: <code>&lt;wh</code>, <code>whe</code>, <code>her</code>, <code>ere</code>, <code>re&gt;</code>, plus the whole word <code>&lt;where&gt;</code>; by default n runs from 3 to 6. Every piece has its own learned vector, and the word's vector is their sum.</p>
+<p>Two things follow. Pieces are shared between words, so <code>walked</code> and <code>walking</code> share most of their parameters and rare forms borrow from frequent ones. And a word never seen in training still gets a vector — the sum of the pieces it shares with seen words. To keep memory bounded, n-grams are hashed into a fixed number of buckets, two million by default; two different n-grams can land in one bucket, and that collision is accepted.</p></div>
+  <div class="panel">
+    <div class="panel-head"><span>fastText</span><span>a word is the sum of its character n-grams</span></div>
+    <div class="panel-body"><div data-fig="ft"></div></div>
+    <div class="panel-note">The vector of <code>where</code> is the sum of six vectors from one table of n-gram vectors. That table — not a table of words — is what fastText learns.</div>
+  </div>
+  <div class="qz" data-q="q-ft-learned"></div>
+  <div class="qz" data-q="q-ft-oov"></div>
+  <div class="prose"><p>When training ends, the task is thrown away and <math><msub><mi>W</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub></math> is kept: a table with one vector per word of the vocabulary — or, for fastText, a table of n-gram vectors that yields a vector for any string — learned from raw text with no labels at all.</p></div>
+  <div class="qz" data-q="q-w2v-use"></div>
+</section>
+
+<!-- ========================================================== design -->
+<section id="design">
+  <p class="eyebrow">Block 06 · system design</p>
+  <h2>Design it</h2>
+  <div class="prose"><p>One system, end to end, with the week's tools and nothing newer. There is no single right design; there is a short list of things a right design cannot skip.</p></div>
+  <div class="qz" data-q="q-design"></div>
+</section>
+
+<!-- ========================================================= sources -->
+<section id="sources">
+  <p class="eyebrow">Sources</p>
+  <div class="prose sources"><ul>
+<li>Harris (1954). <a href="https://doi.org/10.1080/00437956.1954.11659520"><em>Distributional Structure.</em></a> Word 10(2–3).</li>
+<li>Zipf (1949). <em>Human Behavior and the Principle of Least Effort.</em> Addison-Wesley. A book, not online.</li>
+<li>Firth (1957). <em>A Synopsis of Linguistic Theory, 1930–1955.</em> Studies in Linguistic Analysis, Blackwell. Not online.</li>
+<li>Spärck Jones (1972). <a href="https://doi.org/10.1108/eb026526"><em>A Statistical Interpretation of Term Specificity and Its Application in Retrieval.</em></a> Journal of Documentation 28(1).</li>
+<li>Salton, Buckley (1988). <a href="https://doi.org/10.1016/0306-4573(88)90021-0"><em>Term-weighting Approaches in Automatic Text Retrieval.</em></a> Information Processing &amp; Management 24(5).</li>
+<li>Porter (1980). <a href="https://doi.org/10.1108/eb046814"><em>An Algorithm for Suffix Stripping.</em></a> Program 14(3).</li>
+<li>Miller (1995). <a href="https://doi.org/10.1145/219717.219748"><em>WordNet: A Lexical Database for English.</em></a> Communications of the ACM 38(11).</li>
+<li>Sennrich, Haddow, Birch (2016). <a href="https://arxiv.org/abs/1508.07909"><em>Neural Machine Translation of Rare Words with Subword Units.</em></a> ACL 2016.</li>
+<li>Mikolov et al. (2013). <a href="https://arxiv.org/abs/1301.3781"><em>Efficient Estimation of Word Representations in Vector Space.</em></a> ICLR 2013 Workshop.</li>
+<li>Mikolov et al. (2013). <a href="https://arxiv.org/abs/1310.4546"><em>Distributed Representations of Words and Phrases and their Compositionality.</em></a> NeurIPS 2013.</li>
+<li>Bojanowski et al. (2017). <a href="https://arxiv.org/abs/1607.04606"><em>Enriching Word Vectors with Subword Information.</em></a> TACL 5.</li>
+<li>Joulin et al. (2017). <a href="https://arxiv.org/abs/1607.01759"><em>Bag of Tricks for Efficient Text Classification.</em></a> EACL 2017.</li>
+<li>Arora, Liang, Ma (2017). <a href="https://openreview.net/forum?id=SyK00v5xx"><em>A Simple but Tough-to-Beat Baseline for Sentence Embeddings.</em></a> ICLR 2017.</li>
+<li>Wang, Manning (2012). <a href="https://aclanthology.org/P12-2018/"><em>Baselines and Bigrams: Simple, Good Sentiment and Topic Classification.</em></a> ACL 2012.</li>
+<li>Bolukbasi et al. (2016). <a href="https://arxiv.org/abs/1607.06520"><em>Man is to Computer Programmer as Woman is to Homemaker? Debiasing Word Embeddings.</em></a> NeurIPS 2016.</li>
+<li>Nissim, van Noord, van der Goot (2020). <a href="https://arxiv.org/abs/1905.09866"><em>Fair is Better than Sensational: Man is to Doctor as Woman is to Doctor.</em></a> Computational Linguistics 46(2).</li>
+<li>Geirhos et al. (2020). <a href="https://arxiv.org/abs/2004.07780"><em>Shortcut Learning in Deep Neural Networks.</em></a> Nature Machine Intelligence 2.</li>
+<li>Zhang, Zhao, LeCun (2015). <a href="https://arxiv.org/abs/1509.01626"><em>Character-level Convolutional Networks for Text Classification.</em></a> NeurIPS 2015. Source of the AG News classification set.</li>
+<li>Alammar. <a href="https://jalammar.github.io/illustrated-word2vec/"><em>The Illustrated Word2vec.</em></a></li>
+<li>Stanford CS224N (2017). <a href="https://youtu.be/ERibwqs9p38"><em>Lecture 2: Word Vector Representations — word2vec.</em></a> Video lecture; the gradient of the skip-gram loss is derived step by step.</li>
+</ul></div>
+</section>
+
+</div>
+</main>
+</div>
+
+<div hidden id="text-chunks">
+<template data-text="map-caption">Rows: how the numbers are made. Columns: what gets a vector. Click a cell in the question below.</template>
+<template data-text="topics"><ul>
+<li>what we want from a vector: one-hot and its limits</li>
+<li>bag of words and tf-idf</li>
+<li>stemming, lemmatization, preprocessing</li>
+<li>Zipf's law and out-of-vocabulary words</li>
+<li>the distributional hypothesis</li>
+<li>word2vec: skip-gram and CBOW · fastText</li>
+</ul></template>
+</div>
+<script type="application/json" id="quiz-data">
+{"q-why":{"key":"q-why","type":"write","q":"<p>Why are we still doing NLP in 2026, when an LLM classifies, translates and summarises out of the box? List your reasons or the things that make working with texts complicated.<\/p>","a":"<p>Because the thing we have been solving for seventy years was never &quot;build a model&quot;. It was: <strong>turn a string into an object where the operation you care about is cheap and is keeping the properties of the language<\/strong> That is the whole field. TF-IDF, LSA, word2vec, a contextual encoder, a prompt to an LLM — each is one answer to that question, and every answer bought something and paid for something. No new method fully replaced the one before it.<\/p>\n<p>So the job is not to know the newest model. It is to choose a representation on purpose — with a price in latency, memory, labelled data and predictability — and to be able to explain the choice.<\/p>","miss":"if your answer is a list of applications (chatbots, translation, search), you listed the operations and skipped the object. The applications are what the course is <em>for<\/em>; the representation is what it is <em>about<\/em>. Keep in mind the difference between &quot;how&quot; and the task formulation.","check":["to keep the semantics is a hard thing to do for texts","turn a string into an object where the operation you care about is cheap","every representation bought something and paid for something; there is no winner","choosing one is an engineering decision with a price: latency, memory, labelled data, predictability"],"n":1},"q-want":{"key":"q-want","type":"write","q":"<p>A vector for a word. What must be true of it for a classifier — or a search engine — to be able to use it? List the requirements, not the methods.<\/p>","a":"<p>Five things, and most methods satisfy three. Fixed-size and numeric is the price of entry. A geometry that reflects meaning is the hard requirement, and the one that one-hot, the bag of words and tf-idf all fail — by construction, not by accident. Composability is what lets a word representation become a text representation; it is also where meaning leaks. Cost decides what runs in production. And the source decides what is possible at all: a representation that needs labels for every word does not exist for most languages and most domains, which is why the field spent sixty years learning meaning from raw text.<\/p>","miss":"if the list is &quot;captures semantics&quot; and nothing else: that is the one everyone remembers, and the other four are why tf-idf is still in production and a dictionary of meanings is not.","check":["fixed size, numeric","distance means something: <code>like<\/code> near <code>love<\/code>, far from <code>geografia<\/code>","a text's vector can be built from its words' vectors","cheap to compute and to compare, at the size of a real corpus","obtainable from what we have — text, mostly unlabelled"],"n":2},"q-ohe":{"key":"q-ohe","type":"fill","q":"<p>One-hot vectors for <code>like<\/code>, <code>love<\/code> and <code>geografia<\/code>. The cosine between <code>like<\/code> and <code>love<\/code> is <input class=\"qz-blank\" data-blank=\"a\" size=\"4\" autocomplete=\"off\" spellcheck=\"false\">; between <code>like<\/code> and <code>geografia<\/code> it is <input class=\"qz-blank\" data-blank=\"b\" size=\"4\" autocomplete=\"off\" spellcheck=\"false\">; the vectors have <input class=\"qz-blank\" data-blank=\"d\" size=\"4\" autocomplete=\"off\" spellcheck=\"false\"> dimensions.<\/p>","a":"<p>0 and 0: every pair of distinct words is orthogonal, so the representation cannot prefer <code>love<\/code> to <code>geografia<\/code> as a neighbour of <code>like<\/code>. The dimension is the vocabulary. Those two facts are the same fact — one axis per word means no axis is shared, and sharing is what similarity would have to be made of.<\/p>","miss":"if the cosines came out different: you gave the words some structure they do not have. One-hot is exactly &quot;these are different&quot;, nothing more.","blanks":[{"id":"a","alts":["0","0.0","zero"],"tol":null},{"id":"b","alts":["0","0.0","zero"],"tol":null},{"id":"d","alts":["V","|V|","the vocabulary size","vocabulary size","vocab size","number of words","the number of words in the vocabulary"],"tol":null}],"n":3},"q-ohe-why":{"key":"q-ohe-why","type":"pick","q":"<p>What is wrong with one-hot as a representation of a word? Tick everything that applies.<\/p>","a":"<p>Three real faults, and they are one fault seen three times: nothing is shared between words. No shared axis, so no similarity; one axis per word, so the dimension is |V|; no axis for a new word, so unseen means absent. It is instant to compute and it is exact, which is why it survives as the <em>input<\/em> to things that learn — the lookup into <code>W_in<\/code> in the word2vec block is one-hot times a matrix — just never as the output.<\/p>","miss":"if &quot;slow&quot;: it is the fastest representation there is. The cost of one-hot is not time; it is that it knows nothing.","opts":[{"k":"o0","label":"every two words are at the same distance — no similarity at all","right":true},{"k":"o1","label":"the dimension is the whole vocabulary, almost all zeros","right":true},{"k":"o2","label":"a word outside the vocabulary gets nothing, and two unknown words are indistinguishable","right":true},{"k":"o3","label":"it is slow to compute","right":false},{"k":"o4","label":"it loses the order of the letters","right":false}],"multi":true,"n":4},"q-agg-props":{"key":"q-agg-props","type":"pick","q":"<p>The mean of a text's word vectors. Which of these does it keep? Tick all that apply.<\/p>","a":"<p>The first three, and not the last two. The mean is fixed-size, length-invariant and hears every word — though each word gets only <math><mn>1<\/mn><mo>/<\/mo><mi>n<\/mi><\/math> of the vote, so one decisive rare word in a long text is diluted; the weighted mean softens that. Order and negation are lost by construction: the mean of <code>good film<\/code> and <code>film good<\/code> is the same point, and <code>not a good film<\/code> lands next to <code>good film<\/code>, as the cosine in the table shows.<\/p>","miss":"if you ticked order: the windows of word2vec saw order while training the word vectors, but the mean throws positions away. What the words learned does not survive into how they are added up.","opts":[{"k":"o0","label":"a fixed size for any text","right":true},{"k":"o1","label":"the same vector for a text and that text written twice","right":true},{"k":"o2","label":"a contribution from every word","right":true},{"k":"o3","label":"the order of the words","right":false},{"k":"o4","label":"the effect of <code>not<\/code> on the word after it","right":false}],"multi":true,"n":7},"q-two-objects":{"key":"q-two-objects","type":"sort","q":"<p>Which object does each method give a vector to?<\/p>","a":"<p>The count methods represent texts directly, because they count what a text contains. The learned static methods represent words, and getting from them to a text is a separate step — pooling — with a price of its own. The contextual models represent <em>occurrences<\/em>: the same word gets a different vector in every sentence, and a text vector is again a pooling decision on top. Keep the two objects apart when you read a paper: &quot;sentence embeddings&quot; and &quot;word embeddings&quot; are different problems with different requirements, and a good solution to one is routinely a weak solution to the other.<\/p>","miss":"if word2vec went to &quot;a text&quot;: gensim gives you a vector per word. The text vector you have seen built from it was <em>your<\/em> average, not the model's.","bins":["a word","a text","each occurrence of a word, then pooled"],"items":[{"label":"tf-idf","bins":["a text"]},{"label":"word2vec","bins":["a word"]},{"label":"GloVe","bins":["a word"]},{"label":"fastText","bins":["a word"]},{"label":"mean pooling of word vectors","bins":["a text"]},{"label":"an LDA topic vector","bins":["a text"]},{"label":"BERT (week 4)","bins":["each occurrence of a word, then pooled"]}],"n":5},"q-map":{"key":"q-map","type":"point","q":"<p>Where does the mean of word2vec vectors sit? Click the cell.<\/p>\n<div data-fig=\"repr-map\"><\/div>","a":"<p>Learned, per text — with the catch that only the word vectors were learned; the text vector is assembled by an average that nobody trained. That is why the cell is weaker than it looks, and why with plenty of labels a tf-idf baseline often beats it: the counted-per-text cell gives the classifier one parameter per word, the assembled one gives it 100 numbers fixed before the labels were seen. The other cells: counted per text is the bag of words, tf-idf and LDA; learned per word is word2vec, GloVe, fastText; counted per word is the co-occurrence matrix and LSA, the ancestor of the learned row. Week 4 adds a column the table does not have yet — per occurrence.<\/p>","miss":"if &quot;learned · per word&quot;: those are the inputs. The question was about the object you hand to the classifier, and that is a text.","opts":[{"k":"cw","label":"counted · per word","right":false},{"k":"ct","label":"counted · per text","right":false},{"k":"lw","label":"learned · per word","right":false},{"k":"lt","label":"learned · per text","right":true}],"multi":false,"n":6},"q-twice":{"key":"q-twice","type":"pick","q":"<p>In <code>d0 = oil prices rise today<\/code> the cell for <code>prices<\/code> holds {w_prices_1}. Now write <code>prices<\/code> twice: <code>oil prices prices rise today<\/code>. What happens to the row?<\/p>","a":"<p>The row <code>d0<\/code>, computed in your browser before and after:<\/p>\n<div data-fig=\"tfidf-twice\"><\/div>\n<p><code>prices<\/code> goes from {w_prices_1} to {w_prices_2} — up, but not doubled. Two things hold it back. The tf is relative: two occurrences in a five-word document is 2/5, not 2/4. And the normalisation keeps the row at length 1, so whatever <code>prices<\/code> gains the other words have to give up: <code>rise<\/code> falls from {w_rise_1} to {w_rise_2}, <code>oil<\/code> from {w_oil_1} to {w_oil_2}. A tf-idf weight is a <em>share<\/em> of the document, not a count. The idf does not move at all — it depends on how many documents contain the word, and <code>prices<\/code> is still in the same two.<\/p>","miss":"if &quot;doubles&quot;: that would be true of raw counts. tf divides by the length and the normalisation divides by the row's size, so the cells compete with each other.","opts":[{"k":"o0","label":"the <code>prices<\/code> cell doubles, the others stay as they were","right":false},{"k":"o1","label":"the <code>prices<\/code> cell grows, but less than twice — and every other word in the row loses weight","right":true},{"k":"nothing","label":"tf-idf only records whether a word is present","right":false},{"k":"o3","label":"the <code>prices<\/code> cell grows and the idf of <code>prices<\/code> grows with it","right":false}],"multi":false,"n":8},"q-newdoc":{"key":"q-newdoc","type":"pick","q":"<p>A new headline arrives at test time: nine words, two of them never seen in training. How long is its tf-idf vector?<\/p>","a":"<p>|V|, and nothing else is possible: the columns are the training vocabulary. The new headline has at most seven non-zero cells out of |V| — tens of thousands on a real corpus — and the two new words leave no trace at all: not an error, not an <code>[UNK]<\/code>, just nothing. The block on out-of-vocabulary words is about exactly that.<\/p>","miss":"if 7 or 9: you described the headline, not the vector. A vector is a point in a space whose axes were chosen before this headline existed.","opts":[{"k":"o0","label":"9 — one number per word in the headline","right":false},{"k":"o1","label":"7 — the two unseen words have no column","right":false},{"k":"o2","label":"|V| — the number of columns was fixed by the training set","right":true},{"k":"o3","label":"|V| + 2 — the two new words get columns of their own","right":false}],"multi":false,"n":9},"q-changes":{"key":"q-changes","type":"pick","q":"<p>Which one of these changes the tf-idf vector of a document? (Lowercasing is on, as usual.)<\/p>","a":"<p>Only the repetition: the count of that word grows, and its cell with it. Order was thrown away at step zero — <code>oil prices rise, stocks fall<\/code> and <code>oil prices fall, stocks rise<\/code> are the same row, cosine similarity exactly 1. Casing is removed before anything is counted. And a word outside the vocabulary has no column; it changes nothing except the length <math><mo>|<\/mo><mi>d<\/mi><mo>|<\/mo><\/math> in the tf, which the final normalisation removes again.<\/p>","miss":"if the unseen word: adding it changes nothing <em>because<\/em> the vector cannot see it. That is the OOV problem, stated as a non-event.","opts":[{"k":"o0","label":"swapping two words","right":false},{"k":"o1","label":"repeating a word","right":true},{"k":"o2","label":"writing a word in capitals","right":false},{"k":"o3","label":"adding a word that is not in the vocabulary","right":false}],"multi":false,"n":10},"q-oneword":{"key":"q-oneword","type":"pick","q":"<p>A document that is the single word <code>oil<\/code>, written three times and nothing else. After normalisation its vector has<\/p>","a":"<p>One cell, and it is 1.0: the row is <math><mo>(<\/mo><mn>0<\/mn><mo>,<\/mo><mo>…<\/mo><mo>,<\/mo><mi mathvariant=\"normal\">tf<\/mi><mo>·<\/mo><mi mathvariant=\"normal\">idf<\/mi><mo>,<\/mo><mo>…<\/mo><mo>,<\/mo><mn>0<\/mn><mo>)<\/mo><\/math>, and dividing by its own length leaves exactly 1. The count and the idf cancel. A tf-idf weight is <em>relative within the document<\/em>, and a one-word document is all that word. (If <code>oil<\/code> were in every training document its idf would be 0 and the row would be all zeros — the one case where the answer changes.)<\/p>","miss":"if 3 × idf: you stopped before the last step. The normalisation is the step that makes documents comparable.","opts":[{"k":"o0","label":"one non-zero cell, holding 3 × idf(oil)","right":false},{"k":"o1","label":"one non-zero cell, holding 1.0","right":true},{"k":"o2","label":"three non-zero cells","right":false},{"k":"o3","label":"no non-zero cells — <code>oil<\/code> is too common","right":false}],"multi":false,"n":11},"q-norm-sort":{"key":"q-norm-sort","type":"sort","q":"<p>Stemming, lemmatization, or both?<\/p>","a":"<p>Stemming is string surgery: rules over endings, fast, language-specific only in its rule set, and indifferent to whether the result is a word or whether two merged words mean the same thing. Lemmatization is a lookup: it returns a real dictionary form and handles irregular forms, at the price of a dictionary, a morphological analyser and the part of speech of each token. Both serve the same purpose — fewer columns, pooled statistics — and both lose whatever the form carried.<\/p>","miss":"if &quot;works on an unseen word&quot; went to lemmatization: a lemmatizer can only return a lemma for a word its dictionary knows. An unseen word comes back unchanged; a stemmer still cuts its ending.","bins":["stemming","lemmatization","both"],"items":[{"label":"cuts endings off by rules, with no dictionary","bins":["stemming"]},{"label":"needs to know the part of speech to do it right","bins":["lemmatization"]},{"label":"turns <code>went<\/code> into <code>go<\/code>","bins":["lemmatization"]},{"label":"can produce a string that is not a word, like <code>studi<\/code>","bins":["stemming"]},{"label":"puts <code>cats<\/code> and <code>cat<\/code> into one column","bins":["both"]},{"label":"works on a word nobody has seen before","bins":["stemming"]},{"label":"shrinks the vocabulary","bins":["both"]}],"n":12},"q-norm-when":{"key":"q-norm-when","type":"pick","q":"<p>Where would you expect stemming or lemmatization to help? Tick all that apply.<\/p>","a":"<p>Help where forms are many and data is scarce: 500 documents cannot teach a model every form of every word, so pooling them is real regularisation, and Russian has far more forms per word than English. In search it is not even a trade-off — without a shared form there is no match. With 120 000 documents each frequent form has enough examples of its own, and the gain shrinks to nothing. A subword tokenizer already shares the stem between forms, so a separate normaliser adds little. And when the task <em>is<\/em> the form — tense, number, style — normalisation deletes the signal.<\/p>","miss":"if you ticked the 120 000 documents: normalisation rarely hurts a big topic classifier, but it rarely helps either. The data does the pooling for you.","opts":[{"k":"o0","label":"a topic classifier trained on 500 labelled documents","right":true},{"k":"o1","label":"keyword search: the query says <code>cats<\/code>, the document says <code>cat<\/code>","right":true},{"k":"o2","label":"the same classifier on Russian texts rather than English","right":true},{"k":"o3","label":"a topic classifier trained on 120 000 labelled documents","right":false},{"k":"o4","label":"a model whose tokenizer already splits words into subwords","right":false},{"k":"o5","label":"telling whether a sentence is about the past or the future","right":false}],"multi":true,"n":13},"q-prep":{"key":"q-prep","type":"sort","q":"<p>For each pair: does the preprocessing step help, hurt, or make no real difference?<\/p>","a":"<p>A preprocessing step is a bet that what it deletes is not what the task needs. Read the rows by what got deleted. A topic model counts words and has no notion of function words, so without a stoplist every topic starts with <code>the<\/code> and <code>and<\/code> — there deletion is the difference between topics and noise. In a one-sentence review <code>not<\/code> may be most of the evidence, and the stoplist deletes it; in authorship attribution function words <em>are<\/em> the signal, because how often a writer says <code>upon<\/code> or <code>whilst<\/code> is style. Lowercasing merges <code>Apple<\/code> and <code>apple<\/code>, which is exactly the distinction NER needs. Stemming lets <code>treating<\/code> meet <code>treatment<\/code> in search, where a shared form is the only way to match; with 120 000 labelled documents a classifier learns every frequent form on its own and the gain disappears. Markup debris is never signal. A number is the content of a financial headline. On a small Russian corpus lemmatization pools a dozen forms into one word with enough contexts to learn from. And a pretrained LLM was trained on raw text: stems it never saw are worse input than the words it knows.<\/p>","miss":"if every &quot;removing stopwords&quot; row went to &quot;helps&quot;: that is the habit the block is about. The same step flips sign with the task and with the length of the text.","bins":["helps","hurts","no real difference"],"items":[{"label":"removing stopwords, before a topic model (LDA)","bins":["helps"]},{"label":"removing stopwords, for the sentiment of one-sentence reviews","bins":["hurts"]},{"label":"removing stopwords, to tell which of five authors wrote a novel","bins":["hurts"]},{"label":"lowercasing, for finding company names in news","bins":["hurts"]},{"label":"stemming, for keyword search over medical articles","bins":["helps"]},{"label":"stemming, for a topic classifier with 120 000 labelled documents","bins":["no real difference"]},{"label":"removing HTML tags and <code>&amp;quot;<\/code> debris, before anything","bins":["helps"]},{"label":"stripping numbers and punctuation, for financial news where <code>3.5%<\/code> is the point","bins":["hurts"]},{"label":"lemmatization, before training word vectors on a small Russian corpus","bins":["helps"]},{"label":"stemming the text before feeding it to a pretrained LLM","bins":["hurts"]}],"n":14},"q-zipf-double":{"key":"q-zipf-double","type":"pick","q":"<p>Take the first 60 000 headlines, then all 120 000 — twice the text. What happens to the vocabulary?<\/p>","a":"<p>Measured on AG News: the first half has {half_types} distinct words, {half_hapax_pct} of them seen once; the full set has {zipf_types}, and still {zipf_hapax_pct} seen once. The second half brought {new_in_second} words the first half never had. That is Zipf's law from the other side: the tail is not a shortage of data that more data will fix. Some rare words become frequent, new rare words arrive to take their place, and the vocabulary grows more slowly than the text but does not stop. For a counting representation it means OOV words and one-example columns are permanent — the reason to look for a representation in which a word can borrow from other words.<\/p>","miss":"if &quot;it barely grows&quot;: that is true for the head — <code>the<\/code> and <code>of<\/code> were all there after a hundred headlines. The question was about the vocabulary, and the vocabulary is mostly tail.","opts":[{"k":"o0","label":"it keeps growing — by about a third — and the share of words seen only once stays the same","right":true},{"k":"o1","label":"it barely grows: almost every word was already in the first half","right":false},{"k":"o2","label":"it doubles, like the text","right":false},{"k":"o3","label":"it grows, but the words seen only once mostly disappear","right":false}],"multi":false,"n":15},"q-zipf-follows":{"key":"q-zipf-follows","type":"pick","q":"<p>What follows from Zipf's law for a representation built by counting words? Tick all that apply.<\/p>","a":"<p>The first three. The head is function words — the reason for idf and stopword lists. The tail is where the vocabulary lives and where the statistics are thin — the reason to share information between words instead of learning each one alone. And the tail grows with the corpus: more data turns some rare words into frequent ones and adds new rare ones, so OOV shrinks but never vanishes.<\/p>","miss":"if &quot;more data makes OOV disappear&quot;: the number of distinct words keeps growing as the corpus grows. More data moves the curve; it does not cut the tail.","opts":[{"k":"o0","label":"a few dozen frequent words dominate every count and carry little about the topic","right":true},{"k":"o1","label":"most columns belong to rare words, each with too few examples to learn a reliable weight","right":true},{"k":"o2","label":"however big the training set, new texts keep bringing words it never saw","right":true},{"k":"o3","label":"ten times more data makes out-of-vocabulary words disappear","right":false},{"k":"o4","label":"the most frequent words carry most of the meaning","right":false}],"multi":true,"n":16},"q-dist":{"key":"q-dist","type":"write","q":"<p>Explain the distributional hypothesis. How does it motivate methods such as word2vec?<\/p>","a":"<p>The hypothesis says that words which occur in similar contexts tend to have similar meanings. Its practical consequence is that the context of a word is <em>observable<\/em> while its meaning is not — so meaning can be learned from raw, unlabelled text.<\/p>\n<p>word2vec turns the hypothesis into a loss. Skip-gram asks every word to predict the words around it; CBOW asks the surrounding words to predict the word. Two words that keep the same company are asked to make the same predictions, and the only way gradient descent can satisfy that is to give them similar vectors. Nobody tells the model that <code>oil<\/code> and <code>petroleum<\/code> are related — they end up close because they are interchangeable in the same sentences.<\/p>\n<p>The hypothesis also explains the failures. It measures <em>substitutability<\/em>, not meaning: <code>good<\/code> and <code>bad<\/code>, <code>hot<\/code> and <code>cold<\/code> appear in the same contexts and land close, and the embedding cannot tell synonyms from antonyms. And it inherits whatever the corpus says about who does which job — the bias in embeddings is the hypothesis working exactly as intended.<\/p>","miss":"if your answer described the architecture (two matrices, a softmax): that is how word2vec is built, not why it works. The why is the hypothesis — similar contexts, similar vectors — and the architecture is just the cheapest way to make it a loss.","check":["words that occur in similar contexts tend to have similar meanings (Harris 1954; Firth 1957: &quot;you shall know a word by the company it keeps&quot;)","so meaning can be learned from raw text alone, without a dictionary or labels","word2vec turns it into a training task: predict the context from the word (or the word from the context)","words with similar contexts must make similar predictions, so their vectors end up close","the catch: it captures substitutability, not meaning — <code>good<\/code> and <code>bad<\/code> share contexts and land close"],"n":17},"q-sg-where":{"key":"q-sg-where","type":"point","q":"<p>The same picture, without the labels. Choose the matrix with the embeddings.<\/p>\n<div data-fig=\"sg-q\"><\/div>","a":"<p><strong>B<\/strong>, <math><msub><mi>W<\/mi><mrow><mi>i<\/mi><mi>n<\/mi><\/mrow><\/msub><\/math>: one row per word of the vocabulary, and after training that row is the word's embedding — the matrix libraries hand you and the one we keep. C is <math><mi>h<\/mi><\/math>, a single row of B on its way through the network, not a matrix. D, <math><msub><mi>W<\/mi><mrow><mi>o<\/mi><mi>u<\/mi><mi>t<\/mi><\/mrow><\/msub><\/math>, is the other matrix of the model: one column per word, the vector a word has when it plays the <em>context<\/em>. It is trained by the same dot products and some systems average it with B, but the standard embedding is B. A is the one-hot input, E the predicted distribution.<\/p>","miss":"if you chose D: it has one vector per word too, which is why the confusion is fair. It is the output side of the model — the vectors the centre word is compared against — and by default it is thrown away with the task.","opts":[{"k":"onehot","label":"A","right":false},{"k":"win","label":"B","right":true},{"k":"h","label":"C","right":false},{"k":"wout","label":"D","right":false},{"k":"out","label":"E","right":false}],"multi":false,"n":18},"q-sg-target":{"key":"q-sg-target","type":"point","q":"<p>Which part is compared with the training label — and what is the label?<\/p>\n<div data-fig=\"sg-q2\"><\/div>","a":"<p><strong>E<\/strong>, the softmax output, is compared with the one-hot vector of the word that actually stood in the window — <code>prices<\/code> for the pair (oil, prices) — and the loss is <math><mo>−<\/mo><mi mathvariant=\"normal\">log<\/mi><\/math> of the probability E gives to it. The label is free: the text itself says which words were neighbours. That is why word2vec needs no annotation at all.<\/p>","miss":"if you clicked A: A is the input, the centre word. In skip-gram the centre is what you condition on; its neighbours are what you predict.","opts":[{"k":"onehot","label":"A","right":false},{"k":"win","label":"B","right":false},{"k":"h","label":"C","right":false},{"k":"wout","label":"D","right":false},{"k":"out","label":"E","right":true}],"multi":false,"n":19},"q-w2v-init":{"key":"q-w2v-init","type":"pick","q":"<p>Before training starts, <math><msub><mi>W<\/mi><mrow><mi>i<\/mi><mi>n<\/mi><\/mrow><\/msub><\/math> is filled with<\/p>","a":"<p>Random, and it has to be: two identical rows would receive identical gradients forever and never separate. Nothing semantic is loaded — no dictionary, no counts, no prior model. The corpus enters only through the gradients of the training task, and the geometry you see at the end is the <em>result<\/em> of that task pushing rows around, not an input to it.<\/p>","miss":"if co-occurrence counts: that is a different family — LSA, GloVe — which builds the matrix first and factorises it. Skip-gram never materialises the counts; it meets the corpus one window at a time.","opts":[{"k":"o0","label":"zeros","right":false},{"k":"o1","label":"small random numbers","right":true},{"k":"o2","label":"co-occurrence counts from the corpus","right":false},{"k":"o3","label":"vectors from a dictionary of meanings","right":false}],"multi":false,"n":20},"q-w2v-task":{"key":"q-w2v-task","type":"pick","q":"<p>What is skip-gram trained to do — and what do we actually want from it?<\/p>","a":"<p>The training target is the neighbour: given the centre, a softmax over the vocabulary scored against the word that was really in the window. Its accuracy is poor and irrelevant. What we keep is <math><msub><mi>W<\/mi><mrow><mi>i<\/mi><mi>n<\/mi><\/mrow><\/msub><\/math> — one vector per word, shaped by millions of these predictions — and the task is thrown away. Next-word prediction is the language model of the next lecture: a related conditional, a different goal. Nobody labels synonyms; the point of the construction is that the only supervision is raw text.<\/p>","miss":"if &quot;the next word&quot;: close family, different conditional. Skip-gram looks both ways inside a window and never models a sequence.","opts":[{"k":"o0","label":"trained to predict a context word from the centre word (a |V|-way classification); we want the matrix <math><msub><mi>W<\/mi><mrow><mi>i<\/mi><mi>n<\/mi><\/mrow><\/msub><\/math> it learns on the way","right":true},{"k":"o1","label":"trained to predict synonyms; we want the list of synonyms","right":false},{"k":"o2","label":"trained to predict the next word; we want a text generator","right":false},{"k":"o3","label":"trained to classify texts; we want the classifier","right":false}],"multi":false,"n":21},"q-cbow-target":{"key":"q-cbow-target","type":"point","q":"<p>CBOW, without the labels. Which part is the training target?<\/p>\n<div data-fig=\"cbow-q\"><\/div>","a":"<p><strong>E<\/strong>: the distribution over the vocabulary, scored against the centre word, <code>rise<\/code>. A are the context words — the input. B is <math><msub><mi>W<\/mi><mrow><mi>i<\/mi><mi>n<\/mi><\/mrow><\/msub><\/math>, the same embedding matrix as in skip-gram, read four times. C is their average, D the output matrix. Compared with skip-gram the arrows point the other way: there one word predicted each neighbour, here all neighbours together predict one word.<\/p>","miss":"if you clicked A: in CBOW the context is the input. The words around the gap are given; the word in the gap is what is predicted.","opts":[{"k":"ctx","label":"A","right":false},{"k":"win","label":"B","right":false},{"k":"h","label":"C","right":false},{"k":"wout","label":"D","right":false},{"k":"out","label":"E","right":true}],"multi":false,"n":22},"q-cbow-vs":{"key":"q-cbow-vs","type":"pick","q":"<p>What is the real difference between CBOW and skip-gram?<\/p>","a":"<p>The direction of prediction, and with it the number of examples. CBOW averages the context into one vector and predicts one word per window; skip-gram turns one window into several (centre, context) pairs. Both use the same two matrices, both learn from raw text only, both keep <math><msub><mi>W<\/mi><mrow><mi>i<\/mi><mi>n<\/mi><\/mrow><\/msub><\/math> at the end. Neither keeps order inside the window: CBOW averages it away, skip-gram treats every neighbour as a separate example.<\/p>","miss":"if &quot;CBOW keeps the order&quot;: the bag in its name says the opposite. The average of <code>oil prices<\/code> and of <code>prices oil<\/code> is the same vector.","opts":[{"k":"o0","label":"the direction: CBOW predicts the centre from the averaged context, skip-gram predicts each context word from the centre","right":true},{"k":"o1","label":"CBOW keeps the order of the context words, skip-gram does not","right":false},{"k":"o2","label":"CBOW has no output matrix","right":false},{"k":"o3","label":"skip-gram needs labelled data, CBOW does not","right":false}],"multi":false,"n":23},"q-w2v-neg":{"key":"q-w2v-neg","type":"pick","q":"<p>Negative sampling turns the training task into<\/p>","a":"<p>A binary task. Instead of normalising over the whole vocabulary, the model scores one real pair and a handful of random ones with a sigmoid of the dot product between the centre's row of <math><msub><mi>W<\/mi><mrow><mi>i<\/mi><mi>n<\/mi><\/mrow><\/msub><\/math> and the word's column of <math><msub><mi>W<\/mi><mrow><mi>o<\/mi><mi>u<\/mi><mi>t<\/mi><\/mrow><\/msub><\/math>. That is also why <math><msub><mi>W<\/mi><mrow><mi>o<\/mi><mi>u<\/mi><mi>t<\/mi><\/mrow><\/msub><\/math> is a legitimate embedding: it is trained by the same dot products as <math><msub><mi>W<\/mi><mrow><mi>i<\/mi><mi>n<\/mi><\/mrow><\/msub><\/math>, from the other side.<\/p>","miss":"if &quot;dropping frequent words&quot;: that is subsampling, a separate trick in the same paper, applied to the <em>input<\/em> text. Negative sampling is about the loss.","opts":[{"k":"o0","label":"a yes/no decision per pair: was this (centre, word) seen together, or was the word drawn at random?","right":true},{"k":"o1","label":"the same |V|-way softmax, computed faster","right":false},{"k":"o2","label":"a regression onto co-occurrence counts","right":false},{"k":"o3","label":"dropping the most frequent words","right":false}],"multi":false,"n":24},"q-ft-learned":{"key":"q-ft-learned","type":"point","q":"<p>fastText, without the labels. Which part holds the parameters that training learns?<\/p>\n<div data-fig=\"ft-q\"><\/div>","a":"<p><strong>B<\/strong>, the table of n-gram vectors (with the output matrix of the skip-gram objective, not drawn). A are the pieces — a deterministic function of the spelling, nothing to learn. C is a plain sum, D its result: the vector of <code>where<\/code> is <em>computed<\/em> every time from B, it is not stored. That is the whole difference from word2vec, where D would be a row of its own.<\/p>","miss":"if D: in word2vec it would be. In fastText the word's vector is assembled from pieces on demand, which is exactly what lets it exist for words nobody stored.","opts":[{"k":"pieces","label":"A","right":false},{"k":"table","label":"B","right":true},{"k":"sum","label":"C","right":false},{"k":"vec","label":"D","right":false}],"multi":false,"n":25},"q-ft-oov":{"key":"q-ft-oov","type":"pick","q":"<p><code>unbelievability<\/code> never occurred in training. What does fastText return for it?<\/p>","a":"<p>A sum of pieces: <code>&lt;un<\/code>, <code>unb<\/code>, <code>bel<\/code>, <code>lie<\/code>, <code>iev<\/code>, … <code>ity<\/code>, <code>ty&gt;<\/code> — most of them were seen inside <code>unbelievable<\/code>, <code>ability<\/code>, <code>believe<\/code>. The result lands near those words without anyone having stored <code>unbelievability<\/code>. word2vec has no row to return and raises an error. The price is the one from the OOV block: two words that share letters but not meaning — <code>university<\/code>, <code>universe<\/code> — share pieces too.<\/p>","miss":"if &quot;the closest known word&quot;: fastText never searches for a neighbour. It builds the vector arithmetically, which is why it works in constant time on any string.","opts":[{"k":"o0","label":"the sum of the vectors of its character n-grams that were seen in training as parts of other words","right":true},{"k":"o1","label":"a <code>KeyError<\/code>, like word2vec","right":false},{"k":"o2","label":"the vector of the closest known word by spelling","right":false},{"k":"o3","label":"a zero vector","right":false}],"multi":false,"n":26},"q-w2v-use":{"key":"q-w2v-use","type":"write","q":"<p>Now you have <math><msub><mi>W<\/mi><mrow><mi>i<\/mi><mi>n<\/mi><\/mrow><\/msub><\/math>: 30 000 rows of 100 numbers, trained on raw text with no labels. What could you solve with it as it is — and what would you still need labels for?<\/p>","a":"<p>Without labels: everything that is a <em>distance<\/em>. Nearest neighbours — synonyms, spelling variants, query expansion for search; clustering of words, and of documents through pooled vectors; the arithmetic, <code>king − man + woman<\/code>, and its uncomfortable twin, <code>doctor − man + woman<\/code>, which is a bias audit of the corpus (Bolukbasi et al. 2016; and read Nissim et al. 2020 before you trust the demo — with the input words kept, the nearest vector to <code>king − man + woman<\/code> is <code>king<\/code> itself). As an initialisation: the embedding layer of any later model can start from these rows instead of from random.<\/p>\n<p>With labels: any decision. Classification, regression, routing — the embedding is only the input, and a classifier on top of it still has to be trained. What the labels buy is cheaper: 100 numbers per word are a far smaller input than 30 000, so a few hundred examples can train the head where a bag of words needed thousands.<\/p>","miss":"if the list is only &quot;classification&quot;: that is a head, not a use of the embedding. The embedding is the part that works before anyone labels anything.","check":["nearest neighbours: synonyms, query expansion, grouping misspellings and variants","a document vector by pooling, as the input of a classifier — the head still needs labels","word arithmetic and the bias audit that comes with it (and the catch: the nearest vector to king − man + woman is king)","initialising the embedding layer of a larger model","clustering words or documents without any labels"],"n":27},"q-design":{"key":"q-design","type":"write","q":"<p>A bank wants to route incoming support messages — Russian, from chat and e-mail — to one of 40 teams. You have 2 000 labelled messages, a million unlabelled ones, and the router has to answer in under 100 ms on a CPU. Sketch the system: data, representation, model, metric, and what breaks first.<\/p>","a":"<p><strong>Task.<\/strong> One message in, one of 40 teams out: multi-class, single-label, so one softmax and a cross-entropy. If messages routinely belong to two teams, say so now — that is multi-label, a different loss and a different metric, and it changes the labelling instructions.<\/p>\n<p><strong>Data.<\/strong> 2 000 labels over 40 classes is 50 per class on average and far fewer for the long tail. Look at the label counts before anything else; the rare teams are where the system will fail, and where the metric has to look. The million unlabelled messages cannot vote on a team, but they can train word vectors, a subword tokenizer and an idf table on the bank's own vocabulary — and they are the pool you sample from when you go back to label more.<\/p>\n<p><strong>Representation.<\/strong> The strong sparse baseline first: tf-idf over words <em>and<\/em> character 3–5-grams, because the text is Russian (five surface forms per noun) and typed in a hurry (typos). That is the OOV answer from this lecture, and it runs in microseconds. Do not drop stopwords by habit: on a two-line message <code>не работает<\/code> is the signal, and on short texts the negation can be most of the evidence there is. Stemming is a bet; measure it on a held-out split, do not assume it. Mean-pooled embeddings trained on the million messages are the second experiment, not the first — they bring knowledge from unlabelled text, and they dilute the one decisive word; which effect wins with 50 labels per class is an empirical question.<\/p>\n<p><strong>Model.<\/strong> Logistic regression on the sparse matrix. On text the features do most of the work, and this model is fast, calibrated — <code>predict_proba<\/code> is a number you can threshold to send low-confidence messages to a human queue — and readable: the top weights per team are a sanity check you can show to the team itself.<\/p>\n<p><strong>Metric.<\/strong> Not accuracy. With 40 unbalanced teams, a model that routes everything to the two largest ones scores well on accuracy and is useless. Macro-F1, or recall per team with a floor for the small ones, on a split that is stratified by team.<\/p>\n<p><strong>What breaks first.<\/strong> The shortcut: e-mail signatures, quoted earlier replies and team names <em>inside<\/em> the text — a model that learns &quot;contains <code>отдел карт<\/code>&quot; is classifying the thread, not the request; strip them, retrain and compare. Then OOV: new products and campaign names arrive weekly, and a word model is blind to them — this is what the character n-grams are for, and what a monthly refit of the vocabulary is for. Then the labels: 2 000 messages labelled by whoever was free will disagree with each other, and the ceiling of every model is set there, not in the representation. When all your models land within a point of each other, go read the labels.<\/p>","miss":"if the design starts with an encoder or an LLM: it may end there, but it cannot start there. You have no baseline to beat, no latency budget left under 100 ms on a CPU, and 2 000 labels is enough for the sparse model to be strong. Build the cheap thing, then earn the expensive one.","check":["the task: 40-way single-label classification — one message, one team","a sparse baseline first: tf-idf over words and character n-grams, logistic regression; an hour of work","Russian plus chat text: character n-grams or subwords for morphology and typos; stemming measured, not assumed","stopwords stay: on short messages <code>не<\/code> can be most of the evidence","the metric: macro-F1 or per-team recall, not accuracy — 40 teams are not balanced","the shortcut check: signatures, team names, quoted replies and ticket ids inside the text","the million unlabelled messages buy you word vectors or a tokenizer — not labels","what breaks first: new product names (OOV), a team that splits in two, and noise in the 2 000 labels"],"n":28}}
+</script>
+<script type="application/json" id="lecture-data">
+{"toy":["oil prices rise today","oil prices fall today","the team wins the game today","the team loses the game today"],"vocabSize":29350,"oovRate":0.0055114616382919805,"oovExamples":["0058","02usc","0306gmt","039","0700","0750"],"oov":[{"w":"recieved","kind":"a misspelling","inVocab":false,"stem":"reciev","stemKnown":false,"stemOf":[],"ngrams":[" re","rec","eci","cie","iev","eve","ved","ed "," rec","reci","ecie","ciev","ieve","eved","ved "," reci","recie","eciev","cieve","ieved","eved "],"ngramsSeen":17,"ngramsTotal":21,"bpe":["rec","ieved"],"ft":["<re","rec","eci","cie","iev","eve","ved","ed>","<rec","reci","ecie","ciev","ieve","eved","ved>","<reci","recie","eciev","cieve","ieved","eved>"],"ftN":21},{"w":"lumorix","kind":"a new brand name","inVocab":false,"stem":"lumorix","stemKnown":false,"stemOf":[],"ngrams":[" lu","lum","umo","mor","ori","rix","ix "," lum","lumo","umor","mori","orix","rix "," lumo","lumor","umori","morix","orix "],"ngramsSeen":11,"ngramsTotal":18,"bpe":["l","umor","ix"],"ft":["<lu","lum","umo","mor","ori","rix","ix>","<lum","lumo","umor","mori","orix","rix>","<lumo","lumor","umori","morix","orix>"],"ftN":18},{"w":"unbelievability","kind":"a rare form of a known word","inVocab":false,"stem":"unbeliev","stemKnown":true,"stemOf":["unbelievable"],"ngrams":[" un","unb","nbe","bel","eli","lie","iev","eva","vab","abi","bil","ili","lit","ity","ty "," unb","unbe","nbel","beli","elie","liev","ieva","evab","vabi","abil","bili","ilit","lity","ity "," unbe","unbel","nbeli","belie","eliev","lieva","ievab","evabi","vabil","abili","bilit","ility","lity "],"ngramsSeen":39,"ngramsTotal":42,"bpe":["un","belie","v","ability"],"ft":["<un","unb","nbe","bel","eli","lie","iev","eva","vab","abi","bil","ili","lit","ity","ty>","<unb","unbe","nbel","beli","elie","liev","ieva","evab","vabi","abil","bili","ilit","lity","ity>","<unbe","unbel","nbeli","belie","eliev","lieva","ievab","evabi","vabil","abili","bilit","ility","lity>"],"ftN":42}],"normEn":[{"w":"studies","pos":"v","stem":"studi","lemma":"study","lemmaNoPos":"study"},{"w":"went","pos":"v","stem":"went","lemma":"go","lemmaNoPos":"went"},{"w":"better","pos":"a","stem":"better","lemma":"good","lemmaNoPos":"better"},{"w":"was","pos":"v","stem":"wa","lemma":"be","lemmaNoPos":"wa"},{"w":"meeting","pos":"n","stem":"meet","lemma":"meeting","lemmaNoPos":"meeting"},{"w":"university","pos":"n","stem":"univers","lemma":"university","lemmaNoPos":"university"},{"w":"universe","pos":"n","stem":"univers","lemma":"universe","lemmaNoPos":"universe"},{"w":"organization","pos":"n","stem":"organ","lemma":"organization","lemmaNoPos":"organization"},{"w":"organ","pos":"n","stem":"organ","lemma":"organ","lemmaNoPos":"organ"}],"normRu":[[{"w":"кот","stem":"кот"},{"w":"кота","stem":"кот"},{"w":"коту","stem":"кот"},{"w":"котом","stem":"кот"},{"w":"коты","stem":"кот"}],[{"w":"шёл","stem":"шел"},{"w":"иду","stem":"ид"},{"w":"пошла","stem":"пошл"}]],"zipf":{"tokens":4759159,"types":65043,"hapax":20925,"top100share":0.38070129617438714,"slope":-1.0560765573771023,"top":["the","to","a","of","in","and","s","on","for","39"],"points":[[1,205478],[2,120746],[3,113353],[4,98652],[5,96425],[6,69678],[7,61984],[8,57667],[9,50674],[10,44506],[11,28169],[12,26812],[13,25378],[14,25068],[15,22123],[16,22098],[17,21427],[18,20942],[19,20538],[20,20267],[21,19340],[22,19025],[23,17828],[24,17001],[25,16276],[26,14942],[27,14618],[28,14552],[29,13731],[30,13231],[31,13230],[33,11834],[34,11356],[35,11213],[36,10740],[38,10226],[39,9802],[41,9772],[42,9596],[44,9149],[46,8632],[47,8439],[49,8226],[51,7656],[53,7564],[55,7531],[57,7346],[59,7062],[61,6870],[64,6677],[66,6453],[68,6335],[71,6099],[74,5994],[76,5936],[79,5760],[82,5534],[85,5279],[89,4966],[92,4907],[96,4819],[99,4719],[103,4663],[107,4529],[111,4455],[115,4272],[119,4044],[124,3962],[128,3822],[133,3741],[138,3706],[144,3562],[149,3425],[155,3242],[160,3198],[167,3078],[173,2998],[179,2889],[186,2808],[193,2713],[200,2658],[208,2599],[216,2539],[224,2489],[232,2429],[241,2368],[250,2271],[260,2199],[270,2126],[280,2099],[290,2048],[301,1969],[313,1896],[325,1841],[337,1802],[349,1768],[363,1723],[376,1670],[391,1611],[405,1549],[421,1495],[437,1465],[453,1421],[470,1376],[488,1334],[506,1291],[525,1248],[545,1215],[566,1182],[587,1151],[609,1104],[632,1063],[656,1018],[681,981],[707,955],[733,918],[761,895],[790,855],[820,819],[851,790],[883,760],[916,734],[951,705],[987,675],[1024,645],[1063,627],[1103,601],[1144,576],[1188,555],[1232,536],[1279,519],[1327,501],[1377,483],[1429,466],[1483,448],[1539,428],[1597,416],[1658,399],[1720,386],[1785,371],[1853,356],[1923,344],[1995,329],[2071,316],[2149,304],[2230,291],[2314,281],[2402,266],[2492,255],[2586,245],[2684,234],[2785,223],[2891,213],[3000,203],[3113,194],[3231,186],[3353,177],[3479,170],[3611,160],[3747,152],[3888,143],[4035,137],[4188,131],[4346,124],[4510,117],[4680,111],[4857,106],[5040,100],[5231,95],[5428,90],[5633,85],[5846,80],[6067,75],[6296,71],[6533,67],[6780,64],[7036,60],[7302,57],[7578,53],[7864,50],[8161,47],[8469,44],[8789,42],[9121,39],[9465,37],[9822,34],[10193,32],[10578,30],[10978,28],[11392,26],[11822,25],[12269,23],[12732,22],[13213,20],[13712,19],[14230,18],[14767,17],[15325,15],[15903,14],[16504,13],[17127,12],[17774,12],[18445,11],[19142,10],[19864,9],[20615,9],[21393,8],[22201,7],[23039,7],[23909,6],[24812,6],[25749,5],[26721,5],[27730,5],[28777,4],[29864,4],[30992,4],[32162,3],[33377,3],[34637,3],[35945,2],[37302,2],[38711,2],[40173,2],[41690,2],[43264,2],[44898,1],[46593,1],[48353,1],[50178,1],[52073,1],[54040,1],[56080,1],[58198,1],[60396,1],[62676,1],[65043,1]],"half":{"tokens":2395731,"types":48497,"hapax":15637},"newInSecondHalf":16546}}
+</script>
+<script>
+/* Shared by every week's demo.js; scripts/build_demo.py puts this in front of it. */
+
+// TXT("key", {n: 12}) — a text chunk from demo/text/*.md with its {n} placeholders filled; see scripts/demo_text.py
+function TXT(key, vars) {
+  const t = document.querySelector(`template[data-text="${key}"]`);
+  if (!t) throw new Error("no text chunk '" + key + "' — add it to demo/text/");
+  let s = t.innerHTML;
+  if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
+  return s;
+}
+
+// reference lists (demo/text, `## end-refs`): external links open in a new tab
+document.querySelectorAll('.prose.footnote a[href^="http"]').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
+
+/* The questions of a lecture page. scripts/build_demo.py puts this in front of the week's demo/lecture/lecture.js;
+   the questions themselves are parsed from demo/lecture/text/*.md by scripts/quiz_text.py into #quiz-data.
+
+   lecture.js registers what the markdown cannot hold:
+     QUIZ.figs.name = host => { ...draw an SVG into host... }   for every <div data-fig="name"></div> in a question
+                                                                 or an answer; a `point` question's clickable parts
+                                                                 carry data-pick="key" matching its options
+     QUIZ.values.name = 0.631                                     for a fill answer written as `@name`
+   Answers are kept in localStorage per page (meta[name=quiz-store]) so a student can leave and come back;
+   "Reset answers" in the rail clears them. Nothing here depends on the seminar's demo_data. */
+"use strict";
+const QUIZ = { figs: {}, values: {}, data: null, state: null };
+
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const DATA = JSON.parse($("#quiz-data").textContent);
+  const STORE = "quiz:" + (($('meta[name="quiz-store"]') || {}).content || location.pathname);
+  const load = () => { try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { return {}; } };
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* private window: answers live until reload */ } };
+  let state = load();
+  QUIZ.data = DATA; QUIZ.state = () => state;
+
+  /* ------------------------------------------------------------- figures */
+  function drawFigs(root) {
+    $$("[data-fig]", root).forEach(h => {
+      if (h.dataset.drawn) return;
+      const f = QUIZ.figs[h.dataset.fig];
+      if (f) { f(h); h.dataset.drawn = "1"; }
+      else h.innerHTML = `<div class="qz-nofig">figure “${esc(h.dataset.fig)}” is not drawn in lecture.js</div>`;
+    });
+  }
+
+  /* -------------------------------------------------------------- answers */
+  const norm = s => String(s).toLowerCase().replace(/[×*]/g, "x").replace(/\s+/g, " ").replace(/[.,;:]+$/, "").trim();
+  const num = s => { const v = parseFloat(String(s).replace(",", ".").replace(/[^0-9eE+.\-]/g, "")); return isNaN(v) ? null : v; };
+  function expected(alt) {
+    if (alt.startsWith("@")) {
+      const v = QUIZ.values[alt.slice(1)];
+      if (v === undefined) throw new Error(`QUIZ.values.${alt.slice(1)} is not set in lecture.js`);
+      return v;
+    }
+    return alt;
+  }
+  function matches(given, blank) {
+    for (const alt of blank.alts) {
+      const e = expected(alt);
+      const en = typeof e === "number" ? e : num(e);
+      if (en !== null && (blank.tol != null || typeof e === "number" || /^[-+]?[0-9.,eE]+$/.test(String(e).trim()))) {
+        const g = num(given); if (g === null) continue;
+        const dec = (String(e).split(".")[1] || "").length;
+        const tol = Math.max(blank.tol || 0, dec ? 0.5 * Math.pow(10, -dec) : 0, Math.abs(en) * 1e-9);
+        if (Math.abs(g - en) <= tol) return true;
+      } else if (norm(given) === norm(e)) return true;
+    }
+    return false;
+  }
+  const shown = blank => { const e = expected(blank.alts[0]); return typeof e === "number" ? (blank.tol != null ? +e.toFixed(Math.max(0, Math.ceil(-Math.log10(blank.tol)))) : +e.toFixed(3)) : e; };
+
+  /* `{name}` in a question, an option or an answer -> QUIZ.values.name (a number the browser computed), so the
+     markdown holds the sentence and never the number */
+  const fmtv = v => typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(3)) : String(v);
+  const fill = html => html.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? esc(fmtv(QUIZ.values[k])) : m);
+
+  /* ------------------------------------------------------------ rendering */
+  const KIND = {
+    pick: q => q.multi ? "tick all that apply" : "pick one",
+    point: q => q.multi ? "click everything that fits" : "click in the picture",
+    sort: () => "sort into bins", fill: () => "fill in", write: () => "write, then reveal",
+  };
+  const pad = n => String(n).padStart(2, "0");
+
+  function render(q) {
+    const host = $(`.qz[data-q="${q.key}"]`);
+    const st = state[q.key] || (state[q.key] = {});
+    host.dataset.type = q.type;
+    host.classList.toggle("done", !!st.done);
+    host.innerHTML = `<div class="qz-head"><span class="qz-n">${pad(q.n)}</span><span class="qz-kind">${KIND[q.type](q)}</span></div>
+      <div class="qz-q">${fill(q.q)}</div><div class="qz-ui"></div>
+      <div class="qz-a" hidden>${fill(q.a)}${q.miss ? `<p class="qz-miss"><b>if the answer is</b>${fill(q.miss)}</p>` : ""}</div>`;
+    drawFigs(host);
+    UI[q.type](q, host, st);
+    if (st.done) finish(q, host, st, true);
+  }
+
+  function row(extra) { return `<div class="btnrow qz-row">${extra || ""}<span class="qz-verdict"></span></div>`; }
+  const verdict = (host, text, ok) => { const v = $(".qz-verdict", host); v.textContent = text; v.className = "qz-verdict " + (ok === true ? "ok" : ok === false ? "no" : ""); };
+
+  const UI = {
+    pick(q, host, st) { UI.point(q, host, st); },
+    point(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<div class="picklist qz-opts">${q.opts.map(o => `<button data-k="${esc(o.k)}">${fill(o.label)}</button>`).join("")}</div>`
+        + row(q.multi ? `<button class="primary qz-check" disabled>Check</button>` : "");
+      st.sel = st.sel || [];
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      parts.forEach(p => p.classList.add("qz-pickable"));
+      const btns = $$(".qz-opts button", host);
+      const keyOf = el => el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+      const paint = () => {
+        [...btns, ...parts].forEach(el => el.classList.toggle("pick", st.sel.includes(keyOf(el))));
+        const ck = $(".qz-check", host); if (ck) ck.disabled = !st.sel.length;
+      };
+      const choose = k => {
+        if (st.done) return;
+        if (q.multi) { st.sel = st.sel.includes(k) ? st.sel.filter(x => x !== k) : [...st.sel, k]; paint(); save(); }
+        else { st.sel = [k]; finish(q, host, st); }
+      };
+      btns.forEach(b => b.addEventListener("click", () => choose(b.dataset.k)));
+      parts.forEach(p => p.addEventListener("click", () => choose(p.dataset.pick)));
+      const ck = $(".qz-check", host); if (ck) ck.addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    sort(q, host, st) {
+      const ui = $(".qz-ui", host);
+      st.sel = st.sel || {};
+      ui.innerHTML = `<table class="qz-sort"><tbody>${q.items.map((it, i) => `<tr data-i="${i}"><td class="qz-item">${fill(it.label)}</td>
+        <td class="qz-bins">${q.bins.map(b => `<button data-b="${esc(b)}">${esc(b)}</button>`).join("")}</td></tr>`).join("")}</tbody></table>`
+        + row(`<button class="primary qz-check" disabled>Check</button><span class="qz-count mono"></span>`);
+      const paint = () => {
+        $$("tr", ui).forEach(tr => $$("button", tr).forEach(b => b.classList.toggle("pick", st.sel[tr.dataset.i] === b.dataset.b)));
+        const n = Object.keys(st.sel).length;
+        $(".qz-check", host).disabled = n < q.items.length;
+        $(".qz-count", host).textContent = st.done ? "" : `${n} / ${q.items.length} placed`;
+      };
+      ui.addEventListener("click", e => {
+        const b = e.target.closest("button[data-b]"); if (!b || st.done) return;
+        st.sel[b.closest("tr").dataset.i] = b.dataset.b; paint(); save();
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    fill(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = row(`<button class="primary qz-check" disabled>Check</button>`);
+      st.vals = st.vals || {};
+      const inputs = $$("input.qz-blank", host);
+      const paint = () => { $(".qz-check", host).disabled = inputs.some(i => !i.value.trim()); };
+      inputs.forEach(i => {
+        i.value = st.vals[i.dataset.blank] || "";
+        i.addEventListener("input", () => { st.vals[i.dataset.blank] = i.value; paint(); save(); });
+        i.addEventListener("keydown", e => { if (e.key === "Enter" && !$(".qz-check", host).disabled) finish(q, host, st); });
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    write(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<textarea class="qz-text" rows="3" placeholder="Your answer, in a few sentences — then reveal."></textarea>`
+        + row(`<button class="primary qz-check">Reveal</button>`);
+      const ta = $("textarea", ui);
+      ta.value = st.text || "";
+      ta.addEventListener("input", () => { st.text = ta.value; save(); });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+    },
+  };
+
+  function finish(q, host, st, restoring) {
+    st.done = true;
+    host.classList.add("done");
+    const ck = $(".qz-check", host); if (ck) ck.remove();
+    if (q.type === "pick" || q.type === "point") {
+      const right = new Set(q.opts.filter(o => o.right).map(o => o.k));
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      [...$$(".qz-opts button", host), ...parts].forEach(el => {
+        const k = el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+        el.classList.remove("pick");
+        el.classList.toggle("right", right.has(k));
+        el.classList.toggle("wrong", st.sel.includes(k) && !right.has(k));
+        el.classList.toggle("missed", right.has(k) && !st.sel.includes(k));
+        el.disabled = true;
+      });
+      const hit = st.sel.filter(k => right.has(k)).length, wrong = st.sel.length - hit, missed = right.size - hit;
+      if (!q.multi) verdict(host, hit ? "right" : "not quite", !!hit);
+      else verdict(host, wrong + missed === 0 ? "all of them" : `${hit} right · ${wrong} wrong · ${missed} missed`, wrong + missed === 0);
+    } else if (q.type === "sort") {
+      let agree = 0;
+      $$("table.qz-sort tr", host).forEach(tr => {
+        const it = q.items[+tr.dataset.i], chosen = st.sel[tr.dataset.i], ok = it.bins.includes(chosen);
+        agree += ok ? 1 : 0;
+        $$("button", tr).forEach(b => {
+          b.classList.remove("pick"); b.disabled = true;
+          b.classList.toggle("right", b.dataset.b === chosen && ok);
+          b.classList.toggle("wrong", b.dataset.b === chosen && !ok);
+          b.classList.toggle("ans", it.bins.includes(b.dataset.b) && b.dataset.b !== chosen);
+        });
+      });
+      $(".qz-count", host).textContent = "";
+      verdict(host, `${agree} of ${q.items.length} agree with the answer`, agree === q.items.length ? true : agree >= q.items.length * 0.7 ? null : false);
+    } else if (q.type === "fill") {
+      let ok = 0;
+      $$("input.qz-blank", host).forEach(i => {
+        const b = q.blanks.find(x => x.id === i.dataset.blank), good = matches(i.value, b);
+        ok += good ? 1 : 0;
+        i.classList.toggle("right", good); i.classList.toggle("wrong", !good); i.readOnly = true;
+        if (!good && !i.nextElementSibling?.classList.contains("qz-exp")) i.insertAdjacentHTML("afterend", `<span class="qz-exp">${esc(shown(b))}</span>`);
+      });
+      verdict(host, ok === q.blanks.length ? "right" : `${ok} of ${q.blanks.length}`, ok === q.blanks.length);
+    } else if (q.type === "write") {
+      $("textarea", host).readOnly = false;
+      if (q.check.length && !$(".qz-ticks", host)) {
+        st.ticks = st.ticks || [];
+        $(".qz-ui", host).insertAdjacentHTML("beforeend", `<div class="qz-ticks"><div class="qz-ticks-k">tick what your answer had</div>${q.check.map((c, i) =>
+          `<label><input type="checkbox" data-i="${i}" ${st.ticks.includes(i) ? "checked" : ""}> <span>${fill(c)}</span></label>`).join("")}</div>`);
+        $(".qz-ticks", host).addEventListener("change", e => {
+          const i = +e.target.dataset.i; st.ticks = e.target.checked ? [...new Set([...st.ticks, i])] : st.ticks.filter(x => x !== i); save();
+        });
+      }
+    }
+    const a = $(".qz-a", host); a.hidden = false; drawFigs(a);
+    if (!restoring) save();
+    progress();
+  }
+
+  /* ------------------------------------------------------------- progress */
+  const isOptional = host => !!host.closest("details.optional");
+  function progress() {
+    const hosts = $$(".qz"), main = hosts.filter(h => !isOptional(h)), opt = hosts.filter(isOptional);
+    const done = l => l.filter(h => h.classList.contains("done")).length;
+    const el = $("#quiz-progress"); if (!el) return;
+    el.textContent = `answered ${done(main)} / ${main.length}` + (opt.length ? ` · ${done(opt)} / ${opt.length} optional` : "");
+    $$(".optional-count").forEach(c => { const l = $$(".qz", c.closest("details")); c.textContent = `${done(l)} / ${l.length}`; });
+  }
+
+  /* ----------------------------------------------------------------- rail */
+  const nav = $("#nav");
+  if (nav) {
+    const secs = $$("main section").filter(s => s.id && $("h2", s));
+    nav.innerHTML = secs.map((s, i) => `<a href="#${s.id}"><span>${pad(i + 1)}</span><span>${esc($("h2", s).textContent)}</span></a>`).join("");
+    const links = $$("a", nav);
+    const onScroll = () => {
+      const y = window.scrollY + 120; let cur = 0;
+      secs.forEach((s, i) => { if (s.offsetTop <= y) cur = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === cur));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  }
+  const theme = $("#btn-theme");
+  if (theme) theme.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+  const reset = $("#btn-reset");
+  if (reset) {
+    let armed = 0;
+    reset.addEventListener("click", () => {
+      if (Date.now() - armed > 4000) { armed = Date.now(); reset.textContent = "Click again to reset"; setTimeout(() => { reset.textContent = "Reset answers"; }, 4000); return; }
+      QUIZ.reset();
+      reset.textContent = "Reset answers";
+    });
+  }
+  QUIZ.reset = () => { state = {}; save(); $$("[data-fig]").forEach(h => delete h.dataset.drawn); Object.values(DATA).forEach(render); progress(); };
+
+  /* ----------------------------------------------------------------- go */
+  (function fillProse() {   // `{name}` in the page's own prose, text nodes only, so markup and figures are untouched
+    const walker = document.createTreeWalker(document.querySelector("main") || document.body, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walker.nextNode()) if (/\{[a-z][a-z0-9_]*\}/.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+    nodes.forEach(n => { n.nodeValue = n.nodeValue.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? fmtv(QUIZ.values[k]) : m); });
+  })();
+  drawFigs(document);
+  Object.values(DATA).sort((a, b) => a.n - b.n).forEach(render);
+  progress();
+});
+
+/* Lecture 1 — figures and browser-computed values for the questions (demo_base/quiz.js renders the questions).
+   #lecture-data is artifacts/lecture_data.json (export_lecture_data.py): the four toy documents, the OOV table. */
+(function () {
+  const LD = JSON.parse(document.getElementById("lecture-data").textContent);
+  const $ = (s, r) => (r || document).querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const NS = "http://www.w3.org/2000/svg";
+  const PAINT = { fill: 1, stroke: 1 };
+  function el(tag, attrs, parent, text) {
+    const n = document.createElementNS(NS, tag); let style = "";
+    for (const k in attrs) { const v = attrs[k]; if (PAINT[k] && typeof v === "string" && v.startsWith("var(")) style += `${k}:${v};`; else n.setAttribute(k, v); }
+    if (style) n.setAttribute("style", style);
+    if (text != null) n.textContent = text;
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  const svg = (host, w, h) => el("svg", { viewBox: `0 0 ${w} ${h}`, width: "100%", preserveAspectRatio: "xMidYMid meet" }, host);
+  const txt = (p, x, y, s, a) => el("text", Object.assign({ x, y, "font-size": 12, fill: "var(--ink)" }, a || {}), p, s);
+  const box = (p, x, y, w, h, a) => el("rect", Object.assign({ x, y, width: w, height: h, rx: 3, fill: "var(--panel-sunk)", stroke: "var(--rule-strong)", "stroke-width": 1 }, a || {}), p);
+  const arrow = (p, x1, y1, x2, y2) => el("path", { d: `M${x1},${y1} L${x2},${y2}`, stroke: "var(--ink-3)", "stroke-width": 1.2, fill: "none", "marker-end": "url(#lec-arr)" }, p);
+  function defs(s) { const d = el("defs", {}, s); const m = el("marker", { id: "lec-arr", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" }, d); el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--ink-3)" }, m); }
+  /* a clickable part of a `point` figure: the group carries data-pick, its last child is the hit rect quiz.js styles */
+  function pickable(parent, key, x, y, w, h) { const g = el("g", { "data-pick": key }, parent); g.hit = () => el("rect", { class: "hit", x: x - 5, y: y - 5, width: w + 10, height: h + 10, rx: 5 }, g); return g; }
+
+  /* ------------------------------------------ tf-idf on four toy documents */
+  const TOKPAT = /[A-Za-z0-9_À-ɏЀ-ӿ]{2,}/g;
+  const analyze = t => String(t).toLowerCase().match(TOKPAT) || [];
+  /* the textbook tf-idf: tf = count / |d|, idf = ln(|D| / df), then each row to unit length */
+  function vectorize(docs) {
+    const analyzed = docs.map(analyze);
+    const vocab = Array.from(new Set(analyzed.flat())).sort();
+    const idx = new Map(vocab.map((w, i) => [w, i]));
+    const counts = analyzed.map(toks => { const r = new Float64Array(vocab.length); toks.forEach(t => r[idx.get(t)]++); return r; });
+    const lens = analyzed.map(t => t.length);
+    const n = docs.length;
+    const df = vocab.map((_, j) => counts.reduce((a, r) => a + (r[j] > 0 ? 1 : 0), 0));
+    const idf = df.map(d => Math.log(n / d));
+    const tf = counts.map((r, i) => r.map(v => v / lens[i]));
+    const raw = tf.map(r => r.map((v, j) => v * idf[j]));
+    const norms = raw.map(r => Math.hypot(...r) || 1);
+    const l2 = raw.map((r, i) => r.map(v => v / norms[i]));
+    return { vocab, counts, lens, df, idf, tf, raw, l2, norms, n };
+  }
+  const V = vectorize(LD.toy);
+  const jRise = V.vocab.indexOf("rise"), jThe = V.vocab.indexOf("the");
+  Object.assign(QUIZ.values, {
+    idf_rise: V.idf[jRise], w_rise_d0: V.l2[0][jRise], norm_d0: V.norms[0], raw_rise_d0: V.raw[0][jRise], w_the_d2: jThe >= 0 ? V.l2[2][jThe] : null,
+    vocab_size: LD.vocabSize.toLocaleString("en-US").replace(/,/g, " "),
+    oov_rate_pct: (100 * LD.oovRate).toFixed(2) + "%", oov_example: LD.oovExamples[2] || LD.oovExamples[0],
+  });
+  LD.oov.forEach(r => {
+    QUIZ.values["ng_" + r.w] = r.ngramsSeen; QUIZ.values["ng_total_" + r.w] = r.ngramsTotal;
+    QUIZ.values["bpe_" + r.w] = r.bpe.join(" · "); QUIZ.values["ft_" + r.w] = r.ftN; QUIZ.values["stem_" + r.w] = r.stem;
+  });
+
+  /* the same corpus with `prices` written twice in d0 — the row before and after */
+  const toy2 = LD.toy.slice(); toy2[0] = toy2[0].replace("prices", "prices prices");
+  const V2 = vectorize(toy2);
+  const col = (VV, w) => VV.vocab.indexOf(w);
+  ["prices", "rise", "oil"].forEach(w => {
+    QUIZ.values[`w_${w}_1`] = V.l2[0][col(V, w)];
+    QUIZ.values[`w_${w}_2`] = V2.l2[0][col(V2, w)];
+  });
+  QUIZ.figs["tfidf-twice"] = host => {
+    const words = V.vocab.filter(w => V.counts[0][col(V, w)] > 0);
+    const cell = (VV, w) => VV.l2[0][col(VV, w)];
+    const row = (label, VV) => `<tr><td class="mono" style="white-space:nowrap">${esc(label)}</td>${words.map(w => {
+      const v = cell(VV, w), d = VV === V2 ? v - cell(V, w) : 0;
+      return `<td class="num">${v.toFixed(3)}${VV === V2 && Math.abs(d) > 1e-9 ? ` <span style="color:var(${d > 0 ? "--good" : "--bad"});font-size:.85em">${d > 0 ? "▲" : "▼"}</span>` : ""}</td>`;
+    }).join("")}</tr>`;
+    host.innerHTML = `<div class="scroll-x"><table class="lec-matrix" style="width:auto"><thead><tr><th>d0</th>${words.map(w => `<th class="num data-th">${esc(w)}</th>`).join("")}</tr></thead><tbody>
+      ${row(LD.toy[0], V)}${row(toy2[0], V2)}</tbody></table></div>`;
+  };
+
+  /* ------------------------------------------------------------- stemming vs lemmatization, computed by nltk in the export */
+  QUIZ.figs["norm-table"] = host => {
+    const merged = new Set(LD.normEn.map(r => r.stem).filter((st, i, a) => a.indexOf(st) !== i));
+    const ru = LD.normRu.map(g => `<tr><td class="mono">${g.map(r => esc(r.w)).join(", ")}</td><td class="mono" colspan="3">${g.map(r => esc(r.stem)).join(", ")}${new Set(g.map(r => r.stem)).size === 1 ? ' <span style="color:var(--good)">· one stem</span>' : ' <span style="color:var(--bad)">· ' + new Set(g.map(r => r.stem)).size + ' different stems</span>'}</td></tr>`).join("");
+    host.innerHTML = `<div class="scroll-x"><table class="lec-norm"><thead><tr><th>word</th><th>Porter stem</th><th>lemma (with POS)</th><th>lemma, no POS</th></tr></thead><tbody>` +
+      LD.normEn.map(r => `<tr><td class="mono">${esc(r.w)}</td><td class="mono"${merged.has(r.stem) ? ' style="color:var(--bad)"' : ""}>${esc(r.stem)}</td><td class="mono">${esc(r.lemma)}</td><td class="mono"${r.lemmaNoPos !== r.lemma ? ' style="color:var(--bad)"' : ""}>${esc(r.lemmaNoPos)}</td></tr>`).join("") +
+      `<tr><th colspan="4" style="padding-top:14px">Russian · Snowball stemmer</th></tr>` + ru + `</tbody></table></div>`;
+  };
+
+  QUIZ.figs["tfidf-matrix"] = host => {
+    const maxV = Math.max(...V.l2.flatMap(r => Array.from(r)));
+    host.innerHTML = `<div class="lec-docs mono">${LD.toy.map((d, i) => `<span><b>d${i}</b> ${esc(d)}</span>`).join("")}</div>
+      <div class="scroll-x"><table class="lec-matrix"><thead><tr><th></th>${V.vocab.map(w => `<th class="num data-th">${esc(w)}</th>`).join("")}<th class="num">‖row‖</th></tr></thead><tbody>` +
+      V.l2.map((r, i) => `<tr><td class="mono" style="color:var(--ink-3)">d${i}</td>` +
+        Array.from(r).map((v, j) => `<td class="num cell" data-i="${i}" data-j="${j}" style="background:color-mix(in srgb, var(--seq-3) ${Math.round(v / maxV * 34)}%, transparent);${v === 0 ? "color:var(--ink-3)" : ""}">${v ? v.toFixed(3) : "0"}</td>`).join("") +
+        `<td class="num" style="color:var(--ink-2)">${Math.hypot(...r).toFixed(3)}</td></tr>`).join("") + `</tbody></table></div>
+      <div class="lec-trace mono" id="lec-trace">click a cell</div>`;
+    const dims = $("#matrix-dims"); if (dims) dims.textContent = `${V.n} documents · ${V.vocab.length} columns`;
+    host.addEventListener("click", e => {
+      const c = e.target.closest("td.cell"); if (!c) return;
+      host.querySelectorAll("td.cell.on").forEach(x => x.classList.remove("on")); c.classList.add("on");
+      const i = +c.dataset.i, j = +c.dataset.j, w = V.vocab[j], cnt = V.counts[i][j];
+      $("#lec-trace").innerHTML = cnt === 0
+        ? `(d${i}, <b>${esc(w)}</b>): count 0 — <b>${esc(w)}</b> is not in d${i}, so the cell is 0 whatever the idf is`
+        : `(d${i}, <b>${esc(w)}</b>): tf = ${cnt}/${V.lens[i]} = <b>${V.tf[i][j].toFixed(3)}</b> &nbsp;×&nbsp; idf = ln(${V.n}/${V.df[j]}) = <b>${V.idf[j].toFixed(3)}</b> &nbsp;→&nbsp; ${V.raw[i][j].toFixed(3)} &nbsp;÷&nbsp; ‖d${i}‖ = ${V.norms[i].toFixed(3)} &nbsp;→&nbsp; <b>${V.l2[i][j].toFixed(3)}</b>`
+        + (V.df[j] === V.n ? ` &nbsp;·&nbsp; <span style="color:var(--bad)">in every document: idf = 0</span>` : "");
+    });
+  };
+
+  /* ------------------------------------------------------------- word2vec and fastText schematics
+     Each is drawn twice: labelled, in the theory (L = true), and with letters only, in the questions that ask
+     "what is what" (L = false). The parts are data-pick groups so a `point` question can be answered on them. */
+  const title = (g, L, x, y, label, letter, a) => L
+    ? txt(g, x, y, label, Object.assign({ "text-anchor": "middle", "font-size": 13 }, a || {}))
+    : txt(g, x, y, letter, Object.assign({ "text-anchor": "middle", "font-size": 16, "font-weight": 700, fill: "var(--cls-3)" }, a || {}));
+  const note = (g, L, x, y, t, a) => L ? txt(g, x, y, t, Object.assign({ "text-anchor": "middle", "font-size": 10, fill: "var(--ink-3)" }, a || {})) : null;
+
+  function skipgram(host, L) {
+    const W = 760, H = L ? 250 : 220, s = svg(host, W, H); defs(s);
+    const top = 40, Vh = 150, d = 56;
+    let g = pickable(s, "onehot", 44, top, 18, Vh);
+    for (let k = 0; k < 15; k++) el("rect", { x: 44, y: top + k * 10, width: 18, height: 9, fill: k === 6 ? "var(--cls-0)" : "var(--panel-sunk)", stroke: "var(--rule)", "stroke-width": .5 }, g);
+    title(g, L, 53, top - 14, "x", "A"); note(g, L, 53, top + Vh + 16, "one-hot · |V|");
+    if (L) txt(g, 66, top + 67, "oil = 1", { "font-size": 9.5, fill: "var(--cls-0)" });
+    g.hit();
+    arrow(s, 66, top + Vh / 2, 96, top + Vh / 2);
+    g = pickable(s, "win", 100, top, d + 30, Vh);
+    box(g, 100, top, d + 30, Vh, { fill: "var(--panel)" });
+    el("rect", { x: 100, y: top + 60, width: d + 30, height: 9, fill: "var(--cls-0)" }, g);
+    title(g, L, 100 + (d + 30) / 2, top - 14, "W_in · |V| × d", "B"); note(g, L, 100 + (d + 30) / 2, top + Vh + 16, "one row per word"); g.hit();
+    arrow(s, 190, top + Vh / 2, 240, top + Vh / 2); note(s, L, 215, top + Vh / 2 - 8, "lookup", { "font-size": 9 });
+    g = pickable(s, "h", 244, top + Vh / 2 - 9, 86, 18);
+    for (let k = 0; k < 8; k++) el("rect", { x: 244 + k * 11, y: top + Vh / 2 - 9, width: 10, height: 18, fill: "var(--cls-0)", opacity: .35 + .08 * ((k * 5) % 7), stroke: "var(--rule)", "stroke-width": .5 }, g);
+    title(g, L, 287, top + Vh / 2 - 18, "h · d", "C"); note(g, L, 287, top + Vh / 2 + 26, "= the oil row"); g.hit();
+    arrow(s, 334, top + Vh / 2, 384, top + Vh / 2);
+    g = pickable(s, "wout", 388, top + Vh / 2 - 40, 150, 80);
+    box(g, 388, top + Vh / 2 - 40, 150, 80, { fill: "var(--panel)" });
+    el("rect", { x: 388 + 66, y: top + Vh / 2 - 40, width: 9, height: 80, fill: "var(--cls-1)" }, g);
+    title(g, L, 463, top + Vh / 2 - 48, "W_out · d × |V|", "D"); note(g, L, 463, top + Vh / 2 + 56, "one column per word");
+    if (L) txt(g, 388 + 71, top + Vh / 2 + 70, "prices", { "text-anchor": "middle", "font-size": 9.5, fill: "var(--cls-1)" });
+    g.hit();
+    arrow(s, 542, top + Vh / 2, 590, top + Vh / 2); note(s, L, 566, top + Vh / 2 - 8, "softmax", { "font-size": 9 });
+    g = pickable(s, "out", 594, top, 60, Vh);
+    const ps = [.02, .04, .03, .07, .02, .05, .03, .41, .04, .06, .03, .08, .04, .05, .03];
+    ps.forEach((p, k) => el("rect", { x: 594, y: top + k * 10, width: 2 + 110 * p, height: 9, fill: k === 7 ? "var(--cls-1)" : "var(--rule-strong)" }, g));
+    if (L) { txt(g, 594, top - 14, "P(context | oil)", { "font-size": 13 }); note(g, L, 594, top + Vh + 16, "|V| numbers, sum 1", { "text-anchor": "start" }); txt(g, 594 + 50, top + 78, "↑ prices", { "font-size": 9.5, fill: "var(--cls-1)" }); }
+    else title(g, L, 624, top - 14, "", "E");
+    g.hit();
+    if (L) txt(s, W / 2, H - 8, "one training example: centre oil, context prices — the loss raises P(prices | oil)", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
+  }
+
+  function cbow(host, L) {
+    const W = 760, H = L ? 260 : 230, s = svg(host, W, H); defs(s);
+    const top = 40, Vh = 150, ctx = ["oil", "prices", "sharply", "today"], rows = [18, 52, 92, 124];
+    let g = pickable(s, "ctx", 14, top + 4, 92, 4 * 36 - 10);
+    ctx.forEach((w, i) => { box(g, 14, top + 4 + i * 36, 92, 24); txt(g, 60, top + 21 + i * 36, w, { "text-anchor": "middle", "font-size": 12, "font-family": "var(--mono)" }); });
+    title(g, L, 60, top - 14, "context words", "A"); g.hit();
+    ctx.forEach((w, i) => arrow(s, 108, top + 16 + i * 36, 146, top + rows[i] + 4));
+    g = pickable(s, "win", 150, top, 86, Vh);
+    box(g, 150, top, 86, Vh, { fill: "var(--panel)" });
+    rows.forEach(r => el("rect", { x: 150, y: top + r, width: 86, height: 8, fill: "var(--cls-0)" }, g));
+    title(g, L, 193, top - 14, "W_in · |V| × d", "B"); note(g, L, 193, top + Vh + 16, "four rows, one matrix"); g.hit();
+    const cx = 272, cy = top + Vh / 2;
+    rows.forEach(r => el("path", { d: `M236,${top + r + 4} L${cx - 9},${cy}`, stroke: "var(--ink-3)", "stroke-width": 1, fill: "none" }, s));
+    el("circle", { cx, cy, r: 9, fill: "var(--panel)", stroke: "var(--ink-3)" }, s); txt(s, cx, cy + 4, "÷", { "text-anchor": "middle", "font-size": 12 });
+    arrow(s, cx + 10, cy, 300, cy);
+    g = pickable(s, "h", 304, cy - 9, 86, 18);
+    for (let k = 0; k < 8; k++) el("rect", { x: 304 + k * 11, y: cy - 9, width: 10, height: 18, fill: "var(--cls-0)", opacity: .35 + .08 * ((k * 3) % 7), stroke: "var(--rule)", "stroke-width": .5 }, g);
+    title(g, L, 347, cy - 18, "h · d", "C"); note(g, L, 347, cy + 26, "average of the four rows"); g.hit();
+    arrow(s, 394, cy, 436, cy);
+    g = pickable(s, "wout", 440, cy - 40, 140, 80);
+    box(g, 440, cy - 40, 140, 80, { fill: "var(--panel)" });
+    el("rect", { x: 500, y: cy - 40, width: 9, height: 80, fill: "var(--cls-1)" }, g);
+    title(g, L, 510, cy - 48, "W_out · d × |V|", "D");
+    if (L) txt(g, 505, cy + 54, "rise", { "text-anchor": "middle", "font-size": 9.5, fill: "var(--cls-1)" });
+    g.hit();
+    arrow(s, 584, cy, 622, cy); note(s, L, 603, cy - 8, "softmax", { "font-size": 9 });
+    g = pickable(s, "out", 626, top, 60, Vh);
+    const ps = [.03, .05, .02, .06, .03, .04, .38, .05, .03, .07, .02, .06, .04, .03, .05];
+    ps.forEach((p, k) => el("rect", { x: 626, y: top + k * 10, width: 2 + 110 * p, height: 9, fill: k === 6 ? "var(--cls-1)" : "var(--rule-strong)" }, g));
+    if (L) { txt(g, 656, top - 14, "P(centre | context)", { "text-anchor": "middle", "font-size": 13 }); txt(g, 626 + 46, top + 68, "↑ rise", { "font-size": 9.5, fill: "var(--cls-1)" }); }
+    else title(g, L, 656, top - 14, "", "E");
+    g.hit();
+    if (L) txt(s, W / 2, H - 8, "one training example per window: oil prices _ sharply today → rise", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
+  }
+
+  function fasttext(host, L) {
+    const W = 760, H = L ? 270 : 245, s = svg(host, W, H); defs(s);
+    const top = 34, pieces = ["<wh", "whe", "her", "ere", "re>", "<where>"], rowY = [14, 46, 70, 104, 132, 160];
+    if (L) txt(s, 40, top + 96, "where", { "text-anchor": "middle", "font-size": 14, "font-family": "var(--mono)" });
+    else txt(s, 40, top + 96, "where", { "text-anchor": "middle", "font-size": 14, "font-family": "var(--mono)" });
+    let g = pickable(s, "pieces", 96, top, 84, pieces.length * 30 - 8);
+    pieces.forEach((p, i) => { box(g, 96, top + i * 30, 84, 22); txt(g, 138, top + 15 + i * 30, p, { "text-anchor": "middle", "font-size": 11.5, "font-family": "var(--mono)" }); });
+    title(g, L, 138, top - 12, "character n-grams", "A"); g.hit();
+    pieces.forEach((p, i) => el("path", { d: `M70,${top + 92} L94,${top + 11 + i * 30}`, stroke: "var(--rule-strong)", "stroke-width": .8, fill: "none" }, s));
+    const tx = 240, tw = 150, th = 186;
+    g = pickable(s, "table", tx, top, tw, th);
+    box(g, tx, top, tw, th, { fill: "var(--panel)" });
+    rowY.forEach(r => el("rect", { x: tx, y: top + r, width: tw, height: 7, fill: "var(--cls-0)" }, g));
+    title(g, L, tx + tw / 2, top - 12, "n-gram vectors", "B"); note(g, L, tx + tw / 2, top + th + 16, "buckets × d · the learned parameters"); g.hit();
+    pieces.forEach((p, i) => arrow(s, 182, top + 11 + i * 30, tx - 2, top + rowY[i] + 3, { "stroke-width": .9 }));
+    const cx = 440, cy = top + th / 2;
+    g = pickable(s, "sum", cx - 13, cy - 13, 26, 26);
+    rowY.forEach(r => el("path", { d: `M${tx + tw},${top + r + 3} L${cx - 13},${cy}`, stroke: "var(--ink-3)", "stroke-width": .9, fill: "none" }, s));
+    el("circle", { cx, cy, r: 13, fill: "var(--panel)", stroke: "var(--ink-3)" }, g); txt(g, cx, cy + 5, "Σ", { "text-anchor": "middle", "font-size": 14 });
+    if (!L) title(g, L, cx, cy - 22, "", "C");
+    g.hit();
+    arrow(s, cx + 14, cy, 476, cy);
+    g = pickable(s, "vec", 480, cy - 9, 86, 18);
+    for (let k = 0; k < 8; k++) el("rect", { x: 480 + k * 11, y: cy - 9, width: 10, height: 18, fill: "var(--cls-1)", opacity: .35 + .08 * ((k * 5) % 7), stroke: "var(--rule)", "stroke-width": .5 }, g);
+    title(g, L, 523, cy - 18, "vector of where", "D"); note(g, L, 523, cy + 26, "computed, not stored"); g.hit();
+    arrow(s, 570, cy, 604, cy);
+    box(s, 608, cy - 26, 140, 52, { fill: "transparent", "stroke-dasharray": "4 3" });
+    txt(s, 678, cy - 4, "skip-gram objective", { "text-anchor": "middle", "font-size": 11.5 });
+    txt(s, 678, cy + 12, "as in word2vec", { "text-anchor": "middle", "font-size": 10, fill: "var(--ink-3)" });
+    if (L) txt(s, W / 2, H - 8, "an unseen word still has n-grams, so it still gets a vector", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
+  }
+
+  QUIZ.figs.sg = h => skipgram(h, true);
+  QUIZ.figs["sg-q"] = h => skipgram(h, false);
+  QUIZ.figs["sg-q2"] = h => skipgram(h, false);
+  QUIZ.figs.cbow = h => cbow(h, true);
+  QUIZ.figs["cbow-q"] = h => cbow(h, false);
+  QUIZ.figs.ft = h => fasttext(h, true);
+  QUIZ.figs["ft-q"] = h => fasttext(h, false);
+
+
+  /* ------------------------------------------------------------- Zipf's law on the AG News training set */
+  const Z = LD.zipf, sp = n => n.toLocaleString("en-US").replace(/,/g, " ");
+  Object.assign(QUIZ.values, {
+    zipf_tokens: sp(Z.tokens), zipf_types: sp(Z.types), zipf_top: Z.top.slice(0, 6).join(", "),
+    zipf_top100: Math.round(100 * Z.top100share) + "%", zipf_hapax: 100 * Z.hapax / Z.types,
+    zipf_hapax_pct: Math.round(100 * Z.hapax / Z.types) + "%",
+    half_types: sp(Z.half.types), half_hapax_pct: Math.round(100 * Z.half.hapax / Z.half.types) + "%", new_in_second: sp(Z.newInSecondHalf), zipf_slope: "−" + Math.abs(Z.slope).toFixed(2),
+  });
+  QUIZ.figs.zipf = host => {
+    const W = 640, H = 300, s = svg(host, W, H), x0 = 60, y0 = 20, pw = W - x0 - 20, ph = H - y0 - 46;
+    const lx = Math.log10(Z.points[Z.points.length - 1][0]), ly = Math.log10(Z.points[0][1]);
+    const X = r => x0 + Math.log10(r) / Math.ceil(lx) * pw, Y = c => y0 + ph - Math.log10(c) / Math.ceil(ly) * ph;
+    for (let k = 0; k <= Math.ceil(lx); k++) { el("line", { x1: X(10 ** k), y1: y0, x2: X(10 ** k), y2: y0 + ph, stroke: "var(--rule)", "stroke-width": .6 }, s); txt(s, X(10 ** k), y0 + ph + 16, "10" + "⁰¹²³⁴⁵⁶"[k], { "text-anchor": "middle", "font-size": 10.5, fill: "var(--ink-3)" }); }
+    for (let k = 0; k <= Math.ceil(ly); k++) { el("line", { x1: x0, y1: Y(10 ** k), x2: x0 + pw, y2: Y(10 ** k), stroke: "var(--rule)", "stroke-width": .6 }, s); if (k) txt(s, x0 - 8, Y(10 ** k) + 4, "10" + "⁰¹²³⁴⁵⁶⁷"[k], { "text-anchor": "end", "font-size": 10.5, fill: "var(--ink-3)" }); }
+    txt(s, x0 + pw / 2, H - 6, "rank of the word", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
+    txt(s, 14, y0 + ph / 2, "count", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)", transform: `rotate(-90 14 ${y0 + ph / 2})` });
+    const c1 = Z.points[0][1];
+    el("line", { x1: X(1), y1: Y(c1), x2: X(c1), y2: Y(1), stroke: "var(--ink-3)", "stroke-width": 1, "stroke-dasharray": "5 4" }, s);
+    el("polyline", { points: Z.points.map(([r, c]) => `${X(r).toFixed(1)},${Y(c).toFixed(1)}`).join(" "), fill: "none", stroke: "var(--cls-0)", "stroke-width": 2 }, s);
+    txt(s, X(1) + 6, Y(c1) - 6, Z.top[0], { "font-size": 11, "font-family": "var(--mono)" });
+    const hy = Y(1);
+    txt(s, X(20), Y(2.2), `${sp(Z.hapax)} words seen once →`, { "text-anchor": "start", "font-size": 10.5, fill: "var(--cls-1)" });
+  };
+
+  /* ------------------------------------------------------------- one-hot: three words, three axes */
+  QUIZ.figs.ohe = host => {
+    const words = ["like", "love", "geografia"], V = 14, W = 760, H = 150, s = svg(host, W, H);
+    const x0 = 120, cw = 34, ch = 24, rows = { like: 3, love: 7, geografia: 11 };
+    txt(s, x0, 22, "axes of the vocabulary · |V| of them, one per word", { "font-size": 11, fill: "var(--ink-3)" });
+    words.forEach((w, i) => {
+      const y = 34 + i * (ch + 10);
+      txt(s, x0 - 12, y + 16, w, { "text-anchor": "end", "font-size": 12.5, "font-family": "var(--mono)" });
+      for (let k = 0; k < V; k++) {
+        const on = k === rows[w];
+        el("rect", { x: x0 + k * cw, y, width: cw - 2, height: ch, rx: 2, fill: on ? "var(--cls-0)" : "var(--panel-sunk)", stroke: "var(--rule)", "stroke-width": .6 }, s);
+        txt(s, x0 + k * cw + (cw - 2) / 2, y + 16, on ? "1" : "0", { "text-anchor": "middle", "font-size": 11, fill: on ? "var(--ground)" : "var(--ink-3)", "font-family": "var(--mono)" });
+      }
+      txt(s, x0 + V * cw + 10, y + 16, "…", { "font-size": 12, fill: "var(--ink-3)" });
+    });
+    ["like · love = 0", "like · geografia = 0", "love · geografia = 0"].forEach((t, i) => txt(s, x0 + i * 170, H - 8, t, { "font-size": 11.5, "font-family": "var(--mono)", fill: "var(--ink-2)" }));
+  };
+
+
+  /* ------------------------------------------------------------- aggregating word vectors into a text vector
+     Toy 2-d word vectors, set by hand so the picture is readable; every property in the table is computed
+     by running the aggregation, not typed in. */
+  QUIZ.figs.agg = host => {
+    const WV = { good: [0.9, 0.15], film: [0.1, 0.9], a: [0.06, 0.04], really: [0.35, 0.05], not: [-0.25, 0.1] };
+    const IDF = { a: 0.2, really: 1, good: 1, film: 1, not: 1.2 };
+    const TEXTS = ["good film", "film good", "a really good film", "good film good film", "not a good film"];
+    const AGG = {
+      sum: { name: "sum", f: vs => vs.reduce((a, v) => a.map((x, i) => x + v[i]), [0, 0]) },
+      mean: { name: "mean", f: vs => vs.reduce((a, v) => a.map((x, i) => x + v[i] / vs.length), [0, 0]) },
+      max: { name: "max per coordinate", f: vs => [0, 1].map(i => Math.max(...vs.map(v => v[i]))) },
+      wmean: { name: "idf-weighted mean", f: (vs, ws) => { const z = ws.reduce((a, b) => a + b, 0); return vs.reduce((a, v, k) => a.map((x, i) => x + ws[k] * v[i] / z), [0, 0]); } },
+      concat: { name: "concatenation", f: vs => vs.flat() },
+      last: { name: "last word only", f: vs => vs[vs.length - 1].slice() },
+    };
+    const words = t => t.split(" ");
+    const run = (k, t, wv) => { const w = words(t); return AGG[k].f(w.map(x => (wv || WV)[x]), w.map(x => IDF[x])); };
+    const same = (a, b) => a.length === b.length && a.every((x, i) => Math.abs(x - b[i]) < 1e-9);
+    const cos = (a, b) => { const d = a.reduce((s, x, i) => s + x * b[i], 0); return d / (Math.hypot(...a) * Math.hypot(...b)); };
+    function props(k) {
+      const fixed = new Set(TEXTS.map(t => run(k, t).length)).size === 1;
+      const order = same(run(k, "good film"), run(k, "film good"));
+      const length = same(run(k, "good film"), run(k, "good film good film"));
+      // every word: nudge each word of a text and see whether the text vector moves
+      const t = "a really good film";
+      const every = words(t).every(w => { const wv = Object.assign({}, WV, { [w]: WV[w].map(x => x - 0.01) }); return !same(run(k, t), run(k, t, wv)); });
+      const a = run(k, "good film"), b = run(k, "not a good film");
+      const neg = a.length === b.length ? cos(a, b) : null;
+      return { fixed, order, length, every, neg };
+    }
+    const P = Object.fromEntries(Object.keys(AGG).map(k => [k, props(k)]));
+    let agg = "mean", text = 2;
+    const mark = v => v ? '<span class="agg-ok">✓</span>' : '<span class="agg-no">✗</span>';
+    host.innerHTML = `<div class="agg">
+      <div class="agg-left">
+        <div class="agg-k">text</div><div class="btnrow agg-texts">${TEXTS.map((t, i) => `<button data-t="${i}">${esc(t)}</button>`).join("")}</div>
+        <div class="agg-plane"></div>
+        <div class="agg-out mono"></div>
+      </div>
+      <div class="agg-right scroll-x"><table class="agg-table"><thead><tr><th>aggregation</th><th>fixed size</th><th>every word counts</th><th>order-free</th><th>length-free</th><th>cos(good film, not a good film)</th></tr></thead><tbody>
+        ${Object.keys(AGG).map(k => `<tr data-a="${k}"><td>${AGG[k].name}</td><td>${mark(P[k].fixed)}</td><td>${mark(P[k].every)}</td><td>${mark(P[k].order)}</td><td>${mark(P[k].length)}</td><td class="num">${P[k].neg == null ? "—" : P[k].neg.toFixed(2)}</td></tr>`).join("")}
+      </tbody></table><div class="agg-note">Click a row to draw it. Toy 2-d vectors: x ≈ "positive", y ≈ "about cinema".</div></div></div>`;
+    function draw() {
+      host.querySelectorAll(".agg-texts button").forEach(b => b.classList.toggle("on", +b.dataset.t === text));
+      host.querySelectorAll(".agg-table tr[data-a]").forEach(r => r.classList.toggle("on", r.dataset.a === agg));
+      const t = TEXTS[text], ws = words(t), v = run(agg, t), plane = host.querySelector(".agg-plane");
+      plane.innerHTML = "";
+      host.querySelector(".agg-out").innerHTML = `${esc(AGG[agg].name)}(${esc(t)}) = [${v.map(x => x.toFixed(2)).join(", ")}] · ${v.length} numbers`;
+      if (v.length !== 2) { plane.innerHTML = `<div class="agg-flat">${v.length} numbers for ${ws.length} words — no longer a point in the words' plane, and a longer text would be a longer vector.</div>`; return; }
+      const S = 220, s2 = svg(plane, S, S), o = 40, span = Math.max(2, ...[v, ...ws.map(w => WV[w])].flat().map(Math.abs)) * 1.1, sc = (S - o - 14) / span;
+      const P2 = ([x, y]) => [o + x * sc, S - o - y * sc];
+      el("line", { x1: 8, y1: S - o, x2: S - 6, y2: S - o, stroke: "var(--rule-strong)" }, s2);
+      el("line", { x1: o, y1: 6, x2: o, y2: S - 8, stroke: "var(--rule-strong)" }, s2);
+      txt(s2, S - 8, S - o + 14, "positive", { "text-anchor": "end", "font-size": 9.5, fill: "var(--ink-3)" });
+      txt(s2, o + 4, 14, "cinema", { "font-size": 9.5, fill: "var(--ink-3)" });
+      const seen = new Set();
+      ws.forEach(w => {
+        if (seen.has(w)) return; seen.add(w);
+        const [x, y] = P2(WV[w]);
+        el("line", { x1: o, y1: S - o, x2: x, y2: y, stroke: "var(--ink-3)", "stroke-width": 1.2 }, s2);
+        el("circle", { cx: x, cy: y, r: 2.5, fill: "var(--ink-3)" }, s2);
+        txt(s2, x + 4, y - 4, w, { "font-size": 10, fill: "var(--ink-2)" });
+      });
+      const [x, y] = P2(v);
+      el("line", { x1: o, y1: S - o, x2: x, y2: y, stroke: "var(--cls-1)", "stroke-width": 2.4 }, s2);
+      el("circle", { cx: x, cy: y, r: 4, fill: "var(--cls-1)" }, s2);
+      txt(s2, x + 6, y + 12, "text", { "font-size": 10.5, fill: "var(--cls-1)" });
+    }
+    host.addEventListener("click", e => {
+      const b = e.target.closest("button[data-t]"), r = e.target.closest("tr[data-a]");
+      if (b) text = +b.dataset.t; else if (r) agg = r.dataset.a; else return;
+      draw();
+    });
+    draw();
+  };
+
+  /* ------------------------------------------------------------- the 2 x 2 map of the week's methods */
+  QUIZ.figs["repr-map"] = host => {
+    const W = 760, H = 250, s = svg(host, W, H);
+    const x0 = 150, y0 = 44, cw = 290, ch = 90;
+    const cells = [
+      ["cw", 0, 0, "counted · per word", ["co-occurrence counts", "LSA"]],
+      ["ct", 1, 0, "counted · per text", ["bag of words", "tf-idf", "LDA topics"]],
+      ["lw", 0, 1, "learned · per word", ["word2vec", "GloVe", "fastText"]],
+      ["lt", 1, 1, "learned · per text", ["mean pooling of word vectors", "sentence encoders (later)"]],
+    ];
+    txt(s, x0 + cw / 2, y0 - 12, "a word", { "text-anchor": "middle", "font-size": 12.5 });
+    txt(s, x0 + cw + cw / 2, y0 - 12, "a text", { "text-anchor": "middle", "font-size": 12.5 });
+    txt(s, x0 - 14, y0 + ch / 2 + 4, "counted", { "text-anchor": "end", "font-size": 12.5 });
+    txt(s, x0 - 14, y0 + ch + ch / 2 + 4, "learned", { "text-anchor": "end", "font-size": 12.5 });
+    cells.forEach(([key, cx, cy, name, items]) => {
+      const x = x0 + cx * cw, y = y0 + cy * ch;
+      const g = pickable(s, key, x + 4, y + 4, cw - 8, ch - 8);
+      box(g, x + 4, y + 4, cw - 8, ch - 8, { fill: "var(--panel)" });
+      txt(g, x + 16, y + 26, name, { "font-size": 11, fill: "var(--ink-3)" });
+      items.forEach((it, i) => txt(g, x + 16, y + 46 + i * 15, it, { "font-size": 12 }));
+      g.hit();
+    });
+    txt(s, x0 + cw, y0 + 2 * ch + 18, "a third column, per occurrence of a word, arrives in week 4", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-3)" });
+  };
+
+  /* ------------------------------------------------------------- what each method does with each unknown word */
+  QUIZ.figs["oov-table"] = host => {
+    const tok = p => `<span class="tok">${esc(p)}</span>`;
+    const rows = [
+      ["bag of words / tf-idf", r => `<span style="color:var(--ink-3)">no column — dropped</span>`],
+      ["Porter stem → bag of words", r => r.stemKnown ? `<code>${esc(r.stem)}</code> <span style="color:var(--good)">= stem of ${r.stemOf.map(esc).join(", ")}</span>` : `<code>${esc(r.stem)}</code> <span style="color:var(--bad)">no training word has this stem</span>`],
+      ["character 3–5-grams", r => `<b>${r.ngramsSeen}</b> of ${r.ngramsTotal} n-grams seen in training`],
+      ["BPE (cl100k_base)", r => `<span class="pieces">${r.bpe.map(tok).join("")}</span> <span style="color:var(--ink-3)">${r.bpe.length} tokens</span>`],
+      ["word2vec", r => `<code>KeyError</code>`],
+      ["fastText", r => `sum of <b>${r.ftN}</b> n-gram vectors: ${r.ft.slice(0, 4).map(tok).join("")}<span style="color:var(--ink-3)">…</span>`],
+    ];
+    host.innerHTML = `<div class="scroll-x"><table class="lec-oov"><thead><tr><th></th>${LD.oov.map(r => `<th class="data-th"><code>${esc(r.w)}</code><br><span style="font-weight:400;color:var(--ink-3)">${esc(r.kind)}</span></th>`).join("")}</tr></thead><tbody>` +
+      rows.map(([name, f]) => `<tr><td style="white-space:nowrap">${name}</td>${LD.oov.map(r => `<td>${f(r)}</td>`).join("")}</tr>`).join("") + `</tbody></table></div>`;
+  };
+})();
+
+</script>
+</body>
+</html>
+
+<!-- built from demo/ · sha256:645599943b37d2179d57a4f0ea5f55f397d018b4571e352640faacaa86de691a -->

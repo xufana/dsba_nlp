@@ -2,6 +2,7 @@
 
        node scripts/check_demo.js week06_modern_llm                       # demo/week06_demo.html with demo/check_steps.json
        node scripts/check_demo.js week05_decoder_only --check-yourself    # the appendix with demo/check_steps_cy.json
+       node scripts/check_demo.js week01_text_representations --lecture   # demo/week01_lecture.html with demo/lecture/check_steps.json
        node scripts/check_demo.js week06_modern_llm PAGE.html STEPS.json  # anything else
 
    Loads the page, then evaluates the steps in check_steps.json one at a time, each with its own timeout,
@@ -18,13 +19,13 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const args = process.argv.slice(2);
-const cy = args.includes("--check-yourself");
+const cy = args.includes("--check-yourself"), lec = args.includes("--lecture");
 const pos = args.filter(a => !a.startsWith("--"));
-if (!pos[0]) { console.log("usage: node scripts/check_demo.js <week dir> [--check-yourself] [page.html] [steps.json]"); process.exit(2); }
+if (!pos[0]) { console.log("usage: node scripts/check_demo.js <week dir> [--check-yourself | --lecture] [page.html] [steps.json]"); process.exit(2); }
 const WEEK = path.basename(path.resolve(pos[0]));
 const WD = path.join(ROOT, WEEK), NUM = WEEK.slice(4, 6);
-const PAGE = path.resolve(pos[1] || path.join(WD, "demo", cy ? `week${NUM}_check_yourself.html` : `week${NUM}_demo.html`));
-const STEPS = JSON.parse(fs.readFileSync(pos[2] || path.join(WD, "demo", cy ? "check_steps_cy.json" : "check_steps.json"), "utf8"));
+const PAGE = path.resolve(pos[1] || path.join(WD, "demo", lec ? `week${NUM}_lecture.html` : cy ? `week${NUM}_check_yourself.html` : `week${NUM}_demo.html`));
+const STEPS = JSON.parse(fs.readFileSync(pos[2] || (lec ? path.join(WD, "demo", "lecture", "check_steps.json") : path.join(WD, "demo", cy ? "check_steps_cy.json" : "check_steps.json")), "utf8"));
 const OUT = path.join("/tmp/dsba_nlp", `week${NUM}`, "check_out");
 const FIGURES = path.join(WD, "figures");
 fs.mkdirSync(OUT, { recursive: true });

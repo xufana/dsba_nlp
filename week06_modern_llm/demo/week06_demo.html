@@ -732,6 +732,7 @@ table.bill td:first-child { font-weight: 600; font-family: var(--display); }
 .bet .q input { vertical-align: middle; }
 #bpb-out .pbar { grid-template-columns: 190px 1fr 70px; }
 #bpb-out .pbar .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prose.footnote ul { padding-left: 1.2em; line-height: 1.6; }  /* reference lists */
 </style>
 
 </head>
@@ -1318,7 +1319,33 @@ table.bill td:first-child { font-weight: 600; font-family: var(--display); }
     <div class="panel-head"><span>The course so far</span></div>
     <div class="panel-body tight scroll-x"><table class="course" id="course"></table></div>
   </div>
-  <div class="footnote">Sources: Kaplan et al. (2020); Hoffmann et al. (2022); Brown et al. (2020); Biderman et al. (2023); Zhang &amp; Sennrich (2019); Xiong et al. (2020); Shazeer (2019, 2020); Su et al. (2021); Ainslie et al. (2023); Pope et al. (2022); Jiang et al. (2024); Katharopoulos et al. (2020); Yang et al. (2024); Gu &amp; Dao (2023); Allal et al. (2025); Warner et al. (2024). Full list with links in the notebook's README.</div>
+  <h3>References</h3>
+  <div class="prose footnote">
+    <ul>
+<li>Kaplan et al. (2020). <a href="https://arxiv.org/abs/2001.08361"><em>Scaling Laws for Neural Language Models.</em></a></li>
+<li>Hoffmann et al. (2022). <a href="https://arxiv.org/abs/2203.15556"><em>Training Compute-Optimal Large Language Models.</em></a> — Chinchilla.</li>
+<li>Brown et al. (2020). <a href="https://arxiv.org/abs/2005.14165"><em>Language Models are Few-Shot Learners.</em></a> — GPT-3 and its compute table.</li>
+<li>Biderman et al. (2023). <a href="https://arxiv.org/abs/2304.01373"><em>Pythia: A Suite for Analyzing Large Language Models Across Training and Scaling.</em></a></li>
+<li>Zhang, Sennrich (2019). <a href="https://arxiv.org/abs/1910.07467"><em>Root Mean Square Layer Normalization.</em></a></li>
+<li>Xiong et al. (2020). <a href="https://arxiv.org/abs/2002.04745"><em>On Layer Normalization in the Transformer Architecture.</em></a> — pre-norm.</li>
+<li>Shazeer (2020). <a href="https://arxiv.org/abs/2002.05202"><em>GLU Variants Improve Transformer.</em></a> — SwiGLU, GeGLU.</li>
+<li>Su et al. (2021). <a href="https://arxiv.org/abs/2104.09864"><em>RoFormer: Enhanced Transformer with Rotary Position Embedding.</em></a></li>
+<li>Shazeer (2019). <a href="https://arxiv.org/abs/1911.02150"><em>Fast Transformer Decoding: One Write-Head is All You Need.</em></a> — multi-query attention.</li>
+<li>Ainslie et al. (2023). <a href="https://arxiv.org/abs/2305.13245"><em>GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints.</em></a></li>
+<li>Pope et al. (2022). <a href="https://arxiv.org/abs/2211.05102"><em>Efficiently Scaling Transformer Inference.</em></a></li>
+<li>Shazeer et al. (2017). <a href="https://arxiv.org/abs/1701.06538"><em>Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer.</em></a></li>
+<li>Jiang et al. (2024). <a href="https://arxiv.org/abs/2401.04088"><em>Mixtral of Experts.</em></a></li>
+<li>Katharopoulos, Vyas, Pappas, Fleuret (2020). <a href="https://arxiv.org/abs/2006.16236"><em>Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention.</em></a> ICML.</li>
+<li>Gu, Dao (2023). <a href="https://arxiv.org/abs/2312.00752"><em>Mamba: Linear-Time Sequence Modeling with Selective State Spaces.</em></a></li>
+<li>Yang, Wang, Shen, Panda, Kim (2024). <a href="https://arxiv.org/abs/2312.06635"><em>Gated Linear Attention Transformers with Hardware-Efficient Training.</em></a> ICML.</li>
+<li>Radford et al. (2019). <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf"><em>Language Models are Unsupervised Multitask Learners.</em></a> — GPT-2.</li>
+<li>Allal et al. (2025). <a href="https://arxiv.org/abs/2502.02737"><em>SmolLM2: When Smol Goes Big — Data-Centric Training of a Small Language Model.</em></a></li>
+<li>Warner et al. (2024). <a href="https://arxiv.org/abs/2412.13663"><em>Smarter, Better, Faster, Longer: A Modern Bidirectional Encoder for Fast, Memory Efficient, and Long Context Finetuning and Inference.</em></a> — ModernBERT.</li>
+<li>Gemma Team (2025). <a href="https://arxiv.org/abs/2503.19786"><em>Gemma 3 Technical Report.</em></a></li>
+<li>Leviathan, Kalman, Matias (2023). <a href="https://arxiv.org/abs/2211.17192"><em>Fast Inference from Transformers via Speculative Decoding.</em></a> ICML.</li>
+<li>OpenAI (2025). <a href="https://arxiv.org/abs/2508.10925"><em>gpt-oss-120b &amp; gpt-oss-20b Model Card.</em></a></li>
+</ul>
+  </div>
 </section>
 
 </div>
@@ -1372,6 +1399,9 @@ function TXT(key, vars) {
   if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
   return s;
 }
+
+// reference lists (demo/text, `## end-refs`): external links open in a new tab
+document.querySelectorAll('.prose.footnote a[href^="http"]').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
 
 "use strict";
 const D = JSON.parse(document.getElementById("demo-data").textContent);
@@ -2179,4 +2209,4 @@ performance.mark("extra:end");
 </body>
 </html>
 
-<!-- built from demo/ · sha256:d842737634e187293e5c7d8a3786865ff0f6366fe585cf52e5841c73dc8152d7 -->
+<!-- built from demo/ · sha256:57be722cf7eb9e8628b4abc5aed9325fb4197714a25c8b99185cea9d7f55594b -->

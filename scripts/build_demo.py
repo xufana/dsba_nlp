@@ -15,6 +15,12 @@ Sources, all inside the week directory:
   demo/demo.js               the interactive part; demo_base/base.js is put in front of it
   demo/check_yourself.html   optional appendix body (same head, no data)
   artifacts/demo_data.json   every number the page shows, written by export_demo_data.py
+  demo/lecture/              optional: the lecture's check-yourself page -> demo/weekNN_lecture.html
+    body.html                its structure; {{text:key}} / {{inline:key}} as above, {{quiz:key}} places a question
+    text/*.md                prose chunks and questions (`## key · type`, parsed by scripts/quiz_text.py)
+    lecture.js               optional: figures and browser-computed values (QUIZ.figs / QUIZ.values)
+    lecture.css, head.html   optional: rules added to the base; the <title>
+  artifacts/lecture_data.json  optional: numbers the lecture page needs (export_lecture_data.py), as #lecture-data
 
 Outputs are committed (GitHub Pages copies them as they are), so each one ends with a build marker:
 rebuilding refuses to overwrite a page whose content no longer matches its marker, i.e. one edited by
@@ -23,6 +29,7 @@ hand since the last build. Port the edit into demo/ first, or pass --force.
 import argparse
 import base64
 import hashlib
+import json
 import os
 import re
 import sys
@@ -30,6 +37,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import demo_text  # noqa: E402
+import quiz_text  # noqa: E402
 
 TMP = "/tmp/dsba_nlp"
 MARK = re.compile(r"\n<!-- built from demo/ · sha256:([0-9a-f]{64}) -->\n?$")
@@ -78,14 +86,45 @@ def standalone(head, body, title=None):
             + head + "\n</head>\n<body>\n" + body + "\n</body>\n</html>\n")
 
 
+def make_head(title_html, extra_css):
+    """<title> + fonts + the shared stylesheet (+ a page's own rules)."""
+    return (title_html.rstrip("\n") + "\n" + read(os.path.join(ROOT, "demo_base", "fonts.html")).rstrip("\n")
+            + "\n<style>\n" + read(os.path.join(ROOT, "demo_base", "base.css")).rstrip("\n")
+            + ("\n\n/* --- this week --- */\n" + read(extra_css).rstrip("\n") if extra_css and os.path.exists(extra_css) else "") + "\n</style>\n")
+
+
+def build_lecture(week, wd, num, artifact=None, force=False):
+    """demo/lecture/ -> demo/weekNN_lecture.html: the lecture's check-yourself page (demo_base/quiz.js)."""
+    lec = os.path.join(wd, "demo", "lecture")
+    head_path = os.path.join(lec, "head.html")
+    head = make_head(read(head_path) if os.path.exists(head_path) else f"<title>Lecture {int(num)} · Check yourself</title>",
+                     os.path.join(lec, "lecture.css"))
+    head += f'<meta name="quiz-store" content="week{num}_lecture">\n'
+    chunks, meta = demo_text.load_chunks_meta(os.path.join(lec, "text"))
+    qs = quiz_text.questions(chunks, meta)
+    prose = {k: v for k, v in chunks.items() if k not in meta}
+    body, used = demo_text.place(read(os.path.join(lec, "body.html")), prose)
+    body, _ = quiz_text.place(body, qs)
+    data_path = os.path.join(wd, "artifacts", "lecture_data.json")
+    js_path = os.path.join(lec, "lecture.js")
+    body = "\n".join([
+        inline_figures(body, os.path.join(wd, "figures")),
+        demo_text.templates(prose, used),
+        '<script type="application/json" id="quiz-data">', json.dumps(qs, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/"), "</script>",
+    ] + (['<script type="application/json" id="lecture-data">', read(data_path).replace("</", "<\\/"), "</script>"] if os.path.exists(data_path) else [])
+      + ["<script>", read(os.path.join(ROOT, "demo_base", "base.js")), read(os.path.join(ROOT, "demo_base", "quiz.js"))]
+      + ([read(js_path)] if os.path.exists(js_path) else []) + ["</script>"])
+    write(os.path.join(wd, "demo", f"week{num}_lecture.html"), standalone(head, body), force)
+    if artifact is not None:
+        write(os.path.join(TMP, f"week{num}", "lecture_artifact.html"), head + "\n" + body, force=True)
+    print(f"  {len(qs)} questions")
+
+
 def build(week, artifact=None, force=False):
     wd = os.path.join(ROOT, week)
     num = week[4:6]
     demo = os.path.join(wd, "demo")
-    week_css = os.path.join(demo, "week.css")
-    head = (read(os.path.join(demo, "head.html")).rstrip("\n") + "\n" + read(os.path.join(ROOT, "demo_base", "fonts.html")).rstrip("\n")
-            + "\n<style>\n" + read(os.path.join(ROOT, "demo_base", "base.css")).rstrip("\n")
-            + ("\n\n/* --- this week --- */\n" + read(week_css).rstrip("\n") if os.path.exists(week_css) else "") + "\n</style>\n")
+    head = make_head(read(os.path.join(demo, "head.html")), os.path.join(demo, "week.css"))
     data_path = os.path.join(wd, "artifacts", "demo_data.json")
     out = []
     if os.path.exists(data_path):
@@ -109,6 +148,8 @@ def build(week, artifact=None, force=False):
         if artifact is not None:
             check_head = re.sub(r"<title>.*?</title>", "<title>Check Yourself</title>", head, count=1)
             write(os.path.join(TMP, f"week{num}", "check_yourself_artifact.html"), check_head + "\n" + body, force=True)
+    if os.path.isdir(os.path.join(demo, "lecture")):
+        build_lecture(week, wd, num, artifact, force)
 
 
 if __name__ == "__main__":

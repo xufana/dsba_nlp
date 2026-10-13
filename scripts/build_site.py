@@ -2,9 +2,12 @@
 
     python scripts/build_site.py [out_dir] [branch]
 
-Every week*/demo/week*_demo.html is copied to <out>/weekNN/index.html, and a
-week*/demo/week*_check_yourself.html appendix to <out>/weekNN/check-yourself/index.html
-(the two pages' relative links to each other are rewritten to match); <out>/index.html
+Each card links the week's lecture page first and its seminar demo second, as two equal boxes; the lecture's
+topics (demo/lecture/text/09_topics.md, carried in the built page as a <template>) are listed above them.
+Every week*/demo/week*_demo.html is copied to <out>/weekNN/index.html, a
+week*/demo/week*_check_yourself.html appendix to <out>/weekNN/check-yourself/index.html and a
+week*/demo/week*_lecture.html page to <out>/weekNN/lecture/index.html
+(the pages' relative links to each other are rewritten to match); <out>/index.html
 lists all week directories. On copy, each page's rail gets a site navigation line —
 all weeks / previous / next — that the standalone file has no use for. <out> defaults
 to /tmp/dsba_nlp/_site. Each card's topic and formula are read from the demo's own
@@ -74,7 +77,8 @@ def collect(out, branch):
         demo = next(iter(sorted((week_dir / "demo").glob("week*_demo.html"))), None)
         nb = week_dir / f"{week_dir.name}.ipynb"
         check = next(iter(sorted((week_dir / "demo").glob("week*_check_yourself.html"))), None)
-        card = {"num": num, "topic": None, "formula": None, "href": None, "check": None,
+        lecture = next(iter(sorted((week_dir / "demo").glob("week*_lecture.html"))), None)
+        card = {"num": num, "topic": None, "formula": None, "href": None, "check": None, "lecture": None, "topics": [],
                 "github": f"https://github.com/{REPO}/tree/{branch}/{week_dir.name}",
                 "colab": None}
         if nb.exists():
@@ -91,14 +95,23 @@ def collect(out, branch):
             dest.mkdir(parents=True, exist_ok=True)
             # the demo's rail links to the appendix by file name; on the site it is a directory
             page = re.sub(r'href="week\d\d_check_yourself\.html"', 'href="check-yourself/"', page)
+            page = re.sub(r'href="week\d\d_lecture\.html"', 'href="lecture/"', page)
             (dest / "index.html").write_text(with_nav(page, "../", prev_num, next_num))
             card["href"] = f"week{num}/"
-        if check:
-            dest = out / f"week{num}" / "check-yourself"
+        if lecture:
+            # the lecture's demo/lecture/text/09_topics.md, which build_demo.py leaves in the page as a <template>
+            tpl = inner(r'<template data-text="topics">(.*?)</template>', lecture.read_text())
+            card["topics"] = [li.strip() for li in re.findall(r"<li>(.*?)</li>", tpl or "", re.S)]
+        for src, sub, key in ((check, "check-yourself", "check"), (lecture, "lecture", "lecture")):
+            if not src:
+                continue
+            dest = out / f"week{num}" / sub
             dest.mkdir(parents=True, exist_ok=True)
-            page = re.sub(r'href="week\d\d_demo\.html"', 'href="../"', check.read_text())
+            page = re.sub(r'href="week\d\d_demo\.html"', 'href="../"', src.read_text())
+            page = re.sub(r'href="week\d\d_check_yourself\.html"', 'href="../check-yourself/"', page)
+            page = re.sub(r'href="week\d\d_lecture\.html"', 'href="../lecture/"', page)
             (dest / "index.html").write_text(with_nav(page, "../../", prev_num, next_num))
-            card["check"] = f"week{num}/check-yourself/"
+            card[key] = f"week{num}/{sub}/"
         card["topic"] = card["topic"] or readme_title(week_dir)
         weeks.append(card)
     return weeks
@@ -107,24 +120,37 @@ def collect(out, branch):
 def render(weeks):
     cards = []
     for w in weeks:
-        links = []
-        if w["href"]:
-            links.append(f'<a class="go" href="{w["href"]}">Open the demo →</a>')
+        # two equal entry points, lecture first; the seminar box carries its own notebook links
+        if w["lecture"]:
+            lecture = (f'<div class="main"><a class="t" href="{w["lecture"]}">Lecture</a>'
+                       '<span class="s">theory, then check yourself</span></div>')
         else:
-            links.append('<span class="soon">demo not built yet</span>')
+            lecture = '<div class="main off"><span class="t">Lecture</span><span class="s">page coming</span></div>'
+        extra = []
         if w["check"]:
-            links.append(f'<a href="{w["check"]}">Check yourself</a>')
+            extra.append(f'<a href="{w["check"]}">Check yourself</a>')
         if w["colab"]:
-            links.append(f'<a href="{w["colab"]}">Colab</a>')
-        links.append(f'<a href="{w["github"]}">GitHub</a>')
+            extra.append(f'<a href="{w["colab"]}">Colab</a>')
+        extra.append(f'<a href="{w["github"]}">GitHub</a>')
+        if w["href"]:
+            seminar = (f'<div class="main"><a class="t" href="{w["href"]}">Seminar demo</a>'
+                       f'<span class="s">the live experiments</span><span class="x">{" · ".join(extra)}</span></div>')
+        else:
+            seminar = (f'<div class="main off"><span class="t">Seminar demo</span><span class="s">not built yet</span>'
+                       f'<span class="x">{" · ".join(extra)}</span></div>')
+        topics = ""
+        if w["topics"]:
+            topics = ('<div class="topics"><div class="k">This week\'s lecture</div><ul>'
+                      + "".join(f"<li>{t}</li>" for t in w["topics"]) + "</ul></div>")
         formula = f'<div class="formula">{w["formula"]}</div>' if w["formula"] else ""
-        cls = "card" if w["href"] else "card off"
+        cls = "card" if (w["href"] or w["lecture"]) else "card off"
         cards.append(f"""<li class="{cls}">
   <div class="num">{w["num"]}</div>
   <div class="text">
     <h2>{w["topic"]}</h2>
     {formula}
-    <div class="links">{" · ".join(links)}</div>
+    {topics}
+    <div class="entry">{lecture}{seminar}</div>
   </div>
 </li>""")
     return TEMPLATE.replace("{{cards}}", "\n".join(cards))
@@ -136,7 +162,7 @@ TEMPLATE = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NLP @ HSE DSBA</title>
-<meta name="description" content="Seminar demos for the NLP course, HSE DSBA, autumn 2026.">
+<meta name="description" content="Lectures and seminar demos for the NLP course, HSE DSBA, autumn 2026.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
@@ -202,7 +228,20 @@ h2 {
   letter-spacing: -.012em; line-height: 1.15; margin: 0 0 6px;
 }
 .formula { font-family: var(--mono); font-size: 16px; color: var(--ink-2); margin: 0 0 12px; overflow-wrap: anywhere; }
-.links { font-family: var(--mono); font-size: 15px; color: var(--ink-3); }
+.topics { margin: 2px 0 14px; padding: 12px 0 0; border-top: 1px solid var(--rule); }
+.topics .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.topics ul { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 22px; }
+.topics li { font-size: 17px; line-height: 1.4; padding-left: 14px; position: relative; }
+.topics li::before { content: "·"; position: absolute; left: 2px; color: var(--ink-3); }
+.entry { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 2px; }
+.entry .main { display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; border: 1px solid var(--rule-strong); border-radius: 4px; background: var(--panel-sunk); }
+.entry .main:has(a.t:hover) { border-color: var(--cls-0); }
+.entry .main .t { font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--cls-0); text-decoration: none; }
+.entry .main a.t::after { content: " →"; }
+.entry .main .s { font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
+.entry .main .x { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); margin-top: 6px; }
+.entry .main.off { background: transparent; border-style: dashed; }
+.entry .main.off .t { color: var(--ink-3); }
 a { color: inherit; text-underline-offset: 2px; text-decoration-color: var(--rule-strong); }
 a.go { color: var(--cls-0); font-weight: 600; text-decoration: none; }
 a.go:hover { text-decoration: underline; }
@@ -211,6 +250,7 @@ footer { margin-top: 48px; font-family: var(--mono); font-size: 14px; color: var
 @media (max-width: 560px) {
   .card { grid-template-columns: 1fr; gap: 4px; padding: 16px; }
   .num { font-size: 22px; }
+  .topics ul, .entry { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -218,7 +258,7 @@ footer { margin-top: 48px; font-family: var(--mono); font-size: 14px; color: var
 <div class="wrap">
   <p class="eyebrow">Author: Daria Andreeva</p>
   <h1>NLP @ HSE DSBA</h1>
-  <p class="lede">Seminar demos for the NLP course, 4th year DSBA, autumn 2026.</p>
+  <p class="lede">Lectures and seminar demos for the NLP course, 4th year DSBA, autumn 2026.</p>
   <ol>
 {{cards}}
   </ol>
@@ -238,7 +278,7 @@ def main():
     weeks = collect(out, branch)
     (out / "index.html").write_text(render(weeks))
     for w in weeks:
-        print(f"week {w['num']}: {w['href'] or '(no demo)'}  {w['topic']}" + (f"  + {w['check']}" if w['check'] else ""))
+        print(f"week {w['num']}: {w['href'] or '(no demo)'}  {w['topic']}" + (f"  + {w['check']}" if w['check'] else "") + (f"  + {w['lecture']}" if w['lecture'] else ""))
 
 
 if __name__ == "__main__":

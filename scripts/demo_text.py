@@ -22,25 +22,33 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mathml import latex_to_mathml  # noqa: E402
 
 md = MarkdownIt("commonmark", {"html": True, "typographer": False, "breaks": False})
-CHUNK = re.compile(r"^## (\S+)\s*$", re.M)
+CHUNK = re.compile(r"^## (\S+)(?:[ \t]+·[ \t]+(\S+))?[ \t]*$", re.M)
 MATH = re.compile(r"(?<![\\$\w])\$(?!\s)((?:[^$\\\n]|\\.)+?)(?<!\s)\$(?![\w$])")
 
 
 def load_chunks(text_dir):
     """All demo/text/*.md, in name order -> {key: markdown}. A key defined twice is an error."""
-    chunks = {}
+    return load_chunks_meta(text_dir)[0]
+
+
+def load_chunks_meta(text_dir):
+    """Like load_chunks, plus {key: tag} for chunks opened as `## key · tag` (a lecture page's questions,
+    see scripts/quiz_text.py); a plain `## key` has no tag."""
+    chunks, meta = {}, {}
     if not os.path.isdir(text_dir):
-        return chunks
+        return chunks, meta
     for name in sorted(os.listdir(text_dir)):
         if not name.endswith(".md"):
             continue
         src = open(os.path.join(text_dir, name), encoding="utf-8").read()
         parts = CHUNK.split(src)
-        for key, body in zip(parts[1::2], parts[2::2]):
+        for key, tag, body in zip(parts[1::3], parts[2::3], parts[3::3]):
             if key in chunks:
                 raise SystemExit(f"{text_dir}/{name}: chunk '{key}' is defined twice")
             chunks[key] = body.strip("\n")
-    return chunks
+            if tag:
+                meta[key] = tag
+    return chunks, meta
 
 
 CODE_SPAN = re.compile(r"(`+)(?!`).*?(?<!`)\1(?!`)", re.S)

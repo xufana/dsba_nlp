@@ -26,3 +26,12 @@ On items where the label itself is contested, both you and the best model collap
 **4 · The ceiling is set by the data.** When every method lands in the same narrow band, stop tuning and go read the labels.
 
 <p class="footnote" style="margin-top:30px">Full notebook, homework and the reading list: <span class="mono">week01_text_representations/</span>. Everything marked 🏠 there runs as-is — the learning curve of accuracy against number of labelled examples is the graph that actually answers “should I use an LLM here”.</p>
+
+## end-refs
+
+* Nissim, van Noord, van der Goot (2020). [*Fair is Better than Sensational: Man is to Doctor as Woman is to Doctor.*](https://arxiv.org/abs/1905.09866) Computational Linguistics 46(2).
+* Bolukbasi et al. (2016). [*Man is to Computer Programmer as Woman is to Homemaker? Debiasing Word Embeddings.*](https://arxiv.org/abs/1607.06520) NeurIPS 2016.
+* Arora, Liang, Ma (2017). [*A Simple but Tough-to-Beat Baseline for Sentence Embeddings.*](https://openreview.net/forum?id=SyK00v5xx) ICLR. — not on arXiv; the OpenReview page has the PDF.
+* Bojanowski et al. (2017). [*Enriching Word Vectors with Subword Information.*](https://arxiv.org/abs/1607.04606) TACL 5.
+* Wattenberg, Viégas, Johnson (2016). [*How to Use t-SNE Effectively.*](https://distill.pub/2016/misread-tsne/) distill.pub.
+* Alammar (2019). [*The Illustrated Word2vec.*](https://jalammar.github.io/illustrated-word2vec/)

@@ -1,0 +1,172 @@
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Lecture 1<br>Representations of Text · check yourself</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-btns">
+    <button id="btn-reset" title="Forget every answer on this page">Reset answers</button>
+    <button id="btn-theme" title="Light / dark">Theme</button>
+  </div>
+  <div class="quiz-progress" id="quiz-progress"></div>
+  <div class="rail-foot">
+    <a class="back" href="week01_demo.html">← the seminar demo</a>
+    <div style="margin-top:10px">{{inline:rail-note}}</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>Representations of text,<br>as questions</h1>
+  <p class="lede">{{inline:lede}}</p>
+  <div class="prose">{{text:intro-p1}}</div>
+</section>
+
+<!-- ============================================================= why -->
+<section id="why">
+  <p class="eyebrow">Block 00 · the question behind the course</p>
+  <h2>Why learn NLP in 2026?</h2>
+  <div class="prose">{{text:why-p1}}</div>
+  {{quiz:q-why}}
+</section>
+
+<!-- ============================================================ repr -->
+<section id="repr">
+  <p class="eyebrow">Block 01 · what we want from a vector</p>
+  <h2>What we want from a vector</h2>
+  <div class="prose">{{text:repr-p1}}</div>
+  {{quiz:q-want}}
+  <div class="prose">{{text:repr-p2}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>One-hot · three words</span><span>|V| axes, one per word</span></div>
+    <div class="panel-body"><div data-fig="ohe"></div></div>
+    <div class="panel-note">{{inline:ohe-caption}}</div>
+  </div>
+  {{quiz:q-ohe}}
+  {{quiz:q-ohe-why}}
+  <div class="prose">{{text:repr-p3}}{{text:repr-p4}}</div>
+  {{quiz:q-two-objects}}
+  <div class="prose">{{text:agg-p1}}</div>
+  {{quiz:q-map}}
+  {{quiz:q-agg-props}}
+</section>
+
+<!-- ========================================================== vector -->
+<section id="vector">
+  <p class="eyebrow">Block 02 · the vector</p>
+  <h2>What is the vector, actually?</h2>
+  <div class="prose">{{text:vector-p1}}{{text:vector-p2}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Four documents · tf-idf</span><span id="matrix-dims" class="mono"></span></div>
+    <div class="panel-body tight"><div data-fig="tfidf-matrix"></div></div>
+    <div class="panel-note">{{inline:matrix-note}}</div>
+  </div>
+  {{quiz:q-twice}}
+  <div class="prose">{{text:vector-p3}}</div>
+  {{quiz:q-newdoc}}
+  {{quiz:q-changes}}
+  <div class="prose">{{text:vector-p4}}</div>
+  {{quiz:q-oneword}}
+</section>
+
+<!-- ============================================================ norm -->
+<section id="norm">
+  <p class="eyebrow">Block 03 · normalisation</p>
+  <h2>Stemming, lemmatization and the rest of preprocessing</h2>
+  <div class="prose">{{text:norm-p1}}{{text:norm-p2}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>One word, three normalisations</span><span>stem · lemma · lemma without POS</span></div>
+    <div class="panel-body tight"><div data-fig="norm-table"></div></div>
+    <div class="panel-note">{{inline:norm-caption}}</div>
+  </div>
+  <div class="prose">{{text:norm-p3}}</div>
+  {{quiz:q-norm-sort}}
+  <div class="prose">{{text:norm-p4}}</div>
+  {{quiz:q-norm-when}}
+  <div class="prose">{{text:norm-p5}}</div>
+  {{quiz:q-prep}}
+</section>
+
+<!-- ============================================================= oov -->
+<section id="oov">
+  <p class="eyebrow">Block 04 · the long tail</p>
+  <h2>Zipf's law, unknown words, and the distributional hypothesis</h2>
+  <div class="prose">{{text:zipf-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Rank × frequency · AG News, training set</span><span>log-log</span></div>
+    <div class="panel-body"><div data-fig="zipf"></div></div>
+    <div class="panel-note">{{inline:zipf-caption}}</div>
+  </div>
+  <div class="prose">{{text:zipf-p2}}</div>
+  {{quiz:q-zipf-double}}
+  {{quiz:q-zipf-follows}}
+  <div class="prose">{{text:oov-p1}}{{text:oov-p1b}}{{text:oov-p2}}{{text:oov-table-intro}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Three unknown words, six methods</span><span>computed</span></div>
+    <div class="panel-body tight"><div data-fig="oov-table"></div></div>
+    <div class="panel-note">{{inline:oov-table-caption}}</div>
+  </div>
+  <div class="prose">{{text:oov-p3}}{{text:oov-p4}}{{text:dist-p1}}</div>
+  {{quiz:q-dist}}
+</section>
+
+<!-- ============================================================= w2v -->
+<section id="w2v">
+  <p class="eyebrow">Block 05 · the embedding</p>
+  <h2>Word2vec: skip-gram, CBOW, and fastText</h2>
+  <div class="prose">{{text:w2v-p1}}</div>
+  <div class="prose">{{text:sg-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Skip-gram</span><span>the centre predicts each context word</span></div>
+    <div class="panel-body"><div data-fig="sg"></div></div>
+    <div class="panel-note">{{inline:sg-caption}}</div>
+  </div>
+  {{quiz:q-sg-where}}
+  {{quiz:q-sg-target}}
+  <div class="prose">{{text:train-p1}}</div>
+  {{quiz:q-w2v-init}}
+  {{quiz:q-w2v-task}}
+  <div class="prose">{{text:cbow-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>CBOW</span><span>the averaged context predicts the centre</span></div>
+    <div class="panel-body"><div data-fig="cbow"></div></div>
+    <div class="panel-note">{{inline:cbow-caption}}</div>
+  </div>
+  {{quiz:q-cbow-target}}
+  {{quiz:q-cbow-vs}}
+  <div class="prose">{{text:neg-p1}}</div>
+  {{quiz:q-w2v-neg}}
+  <div class="prose">{{text:ft-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>fastText</span><span>a word is the sum of its character n-grams</span></div>
+    <div class="panel-body"><div data-fig="ft"></div></div>
+    <div class="panel-note">{{inline:ft-caption}}</div>
+  </div>
+  {{quiz:q-ft-learned}}
+  {{quiz:q-ft-oov}}
+  <div class="prose">{{text:keep-p1}}</div>
+  {{quiz:q-w2v-use}}
+</section>
+
+<!-- ========================================================== design -->
+<section id="design">
+  <p class="eyebrow">Block 06 · system design</p>
+  <h2>Design it</h2>
+  <div class="prose">{{text:design-p1}}</div>
+  {{quiz:q-design}}
+</section>
+
+<!-- ========================================================= sources -->
+<section id="sources">
+  <p class="eyebrow">Sources</p>
+  <div class="prose sources">{{text:sources}}</div>
+</section>
+
+</div>
+</main>
+</div>

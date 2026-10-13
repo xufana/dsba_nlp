@@ -732,6 +732,7 @@ table.bill td:first-child { font-weight: 600; font-family: var(--display); }
 .bet .q input { vertical-align: middle; }
 #bpb-out .pbar { grid-template-columns: 190px 1fr 70px; }
 #bpb-out .pbar .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prose.footnote ul { padding-left: 1.2em; line-height: 1.6; }  /* reference lists */
 </style>
 
 </head>
@@ -1468,6 +1469,35 @@ print(f&quot;one epoch on 5 000 pairs: test BLEU {sacrebleu.corpus_bleu(hyps, [t
 <strong>5 · Likelihood is not quality.</strong> The most probable continuation is usually not the one to show a human — the single most important thing decoding taught the field.</p>
 <p class="footnote" style="margin-top:30px">Full notebook, homework and the reading list: <span class="mono">week02_language_modelling/</span>. Everything marked 🏠 there runs as-is — Kneser–Ney against the LSTM per bits/char, weight tying and dropout, scheduled sampling, and min-p at T = 2 are the ones worth an evening.</p>
   </div>
+  <h3>References</h3>
+  <div class="prose footnote">
+    <ul>
+<li>Shannon (1948). <a href="https://doi.org/10.1002/j.1538-7305.1948.tb01338.x"><em>A Mathematical Theory of Communication.</em></a> Bell System Technical Journal 27.</li>
+<li>Jelinek, Mercer (1980). <em>Interpolated estimation of Markov source parameters from sparse data.</em> Pattern Recognition in Practice.</li>
+<li>Kneser, Ney (1995). <a href="https://doi.org/10.1109/ICASSP.1995.479394"><em>Improved backing-off for m-gram language modeling.</em></a> ICASSP.</li>
+<li>Gage (1994). <em>A New Algorithm for Data Compression.</em> C Users Journal. — BPE as compression.</li>
+<li>Sennrich, Haddow, Birch (2016). <a href="https://arxiv.org/abs/1508.07909"><em>Neural Machine Translation of Rare Words with Subword Units.</em></a> ACL.</li>
+<li>Bengio et al. (2003). <a href="https://www.jmlr.org/papers/v3/bengio03a.html"><em>A Neural Probabilistic Language Model.</em></a> JMLR 3.</li>
+<li>Elman (1990). <a href="https://doi.org/10.1207/s15516709cog1402_1"><em>Finding Structure in Time.</em></a> Cognitive Science 14.</li>
+<li>Mikolov et al. (2010). <a href="https://www.fit.vutbr.cz/research/groups/speech/publi/2010/mikolov_interspeech2010_IS100722.pdf"><em>Recurrent neural network based language model.</em></a> Interspeech.</li>
+<li>Hochreiter, Schmidhuber (1997). <a href="https://doi.org/10.1162/neco.1997.9.8.1735"><em>Long Short-Term Memory.</em></a> Neural Computation 9(8).</li>
+<li>Cho et al. (2014). <a href="https://arxiv.org/abs/1406.1078"><em>Learning Phrase Representations using RNN Encoder–Decoder.</em></a> EMNLP. — GRU and the encoder–decoder.</li>
+<li>Chung et al. (2014). <a href="https://arxiv.org/abs/1412.3555"><em>Empirical Evaluation of Gated Recurrent Neural Networks.</em></a></li>
+<li>Bengio et al. (1994). <a href="https://doi.org/10.1109/72.279181"><em>Learning Long-Term Dependencies with Gradient Descent is Difficult.</em></a> IEEE TNN 5(2).</li>
+<li>Pascanu, Mikolov, Bengio (2013). <a href="https://arxiv.org/abs/1211.5063"><em>On the difficulty of training recurrent neural networks.</em></a> ICML. — gradient clipping.</li>
+<li>Press, Wolf (2017). <a href="https://arxiv.org/abs/1608.05859"><em>Using the Output Embedding to Improve Language Models.</em></a> EACL. — weight tying.</li>
+<li>Sutskever, Vinyals, Le (2014). <a href="https://arxiv.org/abs/1409.3215"><em>Sequence to Sequence Learning with Neural Networks.</em></a> NeurIPS.</li>
+<li>Papineni et al. (2002). <a href="https://aclanthology.org/P02-1040/"><em>BLEU: a Method for Automatic Evaluation of Machine Translation.</em></a> ACL.</li>
+<li>Post (2018). <a href="https://arxiv.org/abs/1804.08771"><em>A Call for Clarity in Reporting BLEU Scores.</em></a> WMT. — <code>sacrebleu</code>.</li>
+<li>Ranzato et al. (2015). <a href="https://arxiv.org/abs/1511.06732"><em>Sequence Level Training with Recurrent Neural Networks.</em></a> ICLR. — exposure bias.</li>
+<li>Fan, Lewis, Dauphin (2018). <a href="https://arxiv.org/abs/1805.04833"><em>Hierarchical Neural Story Generation.</em></a> ACL. — top-k.</li>
+<li>Holtzman et al. (2019). <a href="https://arxiv.org/abs/1904.09751"><em>The Curious Case of Neural Text Degeneration.</em></a> ICLR 2020. — nucleus sampling.</li>
+<li>Keskar et al. (2019). <a href="https://arxiv.org/abs/1909.05858"><em>CTRL: A Conditional Transformer Language Model.</em></a> — repetition penalty.</li>
+<li>Nguyen et al. (2024). <a href="https://arxiv.org/abs/2407.01082"><em>Turning Up the Heat: Min-p Sampling for Creative and Coherent LLM Outputs.</em></a></li>
+<li>Wu et al. (2016). <a href="https://arxiv.org/abs/1609.08144"><em>Google's Neural Machine Translation System.</em></a> — length-normalised beam search.</li>
+<li>Bahdanau, Cho, Bengio (2015). <a href="https://arxiv.org/abs/1409.0473"><em>Neural Machine Translation by Jointly Learning to Align and Translate.</em></a> ICLR.</li>
+</ul>
+  </div>
 </section>
 
 </div>
@@ -1496,6 +1526,9 @@ function TXT(key, vars) {
   if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
   return s;
 }
+
+// reference lists (demo/text, `## end-refs`): external links open in a new tab
+document.querySelectorAll('.prose.footnote a[href^="http"]').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
 
 "use strict";
 const D = JSON.parse(document.getElementById("demo-data").textContent);
@@ -2881,4 +2914,4 @@ const NG = {
 </body>
 </html>
 
-<!-- built from demo/ · sha256:9de30e35f60ecbebb34c689132bd52a41bf22a3ca6f3afae612881cae91d6b09 -->
+<!-- built from demo/ · sha256:fbec820655683ca35c9236e22b138433ba638699784378b8d33774be60eb1f4c -->
