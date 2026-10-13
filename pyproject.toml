@@ -1,19 +1,72 @@
 [project]
 name = "nlp-dsba"
-version = "0.1.0"
-description = "NLP seminars notebooks"
+version = "0.2.0"
+description = "NLP seminars (HSE DSBA, autumn 2025): notebooks and their environments"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
+# Common to every week. Each week adds its own packages in a dependency group below;
+# the same lists appear in the first cell of every notebook (for Colab) and in seminars/README.md.
 dependencies = [
-    "bokeh>=3.8.0",
-    "gensim>=4.3.3",
-    "ipykernel>=6.30.1",
-    "jupyter-bokeh>=4.0.5",
-    "nltk>=3.9.1",
-    "notebook>=7.4.5",
-    "pandas>=2.3.2",
-    "scikit-learn>=1.7.1",
-    "torch==2.2.2",
-    "wandb>=0.21.3",
-    "wordcloud>=1.9.4",
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "matplotlib>=3.9",
+    "tqdm>=4.66",
+    "ipykernel>=6.29",
+    "jupyterlab>=4.2",
+    "ipython>=8",
+]
+
+# Notebooks were written against transformers 4.x and datasets 3.x (script datasets such as
+# conll2003 and feedbackQA need datasets < 4) and langchain 0.3; the next majors changed or
+# removed the APIs used here, hence the upper bounds.
+#
+#   uv sync --group week01          # one week
+#   uv sync --group week01 --group week02 ...
+#
+# Packages that exist only for Linux + NVIDIA (vllm, bitsandbytes, gptqmodel) are in the
+# `cuda` group and are skipped on other platforms.
+[dependency-groups]
+week01 = ["scikit-learn>=1.5", "nltk>=3.9", "gensim>=4.3.3", "wordcloud>=1.9", "bokeh>=3.4", "jupyter-bokeh>=4.0"]
+week02 = ["torch>=2.4,<3", "nltk>=3.9", "gensim>=4.3.3", "wandb>=0.18"]
+week03 = ["torch>=2.4,<3", "scikit-learn>=1.5", "bpe==1.0"]
+week04 = ["torch>=2.4,<3", "transformers>=4.56,<5", "datasets>=3.6,<4", "evaluate>=0.4.3", "accelerate>=1.0", "wandb>=0.18"]
+week05 = ["torch>=2.4,<3", "transformers>=4.56,<5", "datasets>=3.6,<4", "evaluate>=0.4.3", "accelerate>=1.0", "tokenizers>=0.20"]
+week06 = ["torch>=2.4,<3", "transformers>=4.56,<5", "datasets>=3.6,<4", "evaluate>=0.4.3", "accelerate>=1.0", "scikit-learn>=1.5"]
+week07 = ["torch>=2.4,<3", "transformers>=4.56,<5", "datasets>=3.6,<4", "evaluate>=0.4.3", "accelerate>=1.0", "seqeval>=1.2.2", "rouge-score>=0.1.2", "nltk>=3.9"]
+week08 = ["torch>=2.4,<3", "transformers>=4.56,<5", "accelerate>=1.0"]
+week09 = [
+    "torch>=2.4,<3", "transformers>=4.56,<5", "openpyxl>=3.1",
+    "langchain>=0.3.10,<1", "langchain-core>=0.3.16,<1", "langchain-community>=0.3,<1",
+    "langchain-huggingface>=0.1,<1", "langchain-qdrant>=0.2,<1", "langchain-text-splitters>=0.3,<1",
+    "qdrant-client>=1.12,<2", "sentence-transformers>=3.1,<5", "chonkie[all]>=1.0,<1.4.2",
+    "rapidfuzz>=3.9", "rank-bm25>=0.2.2", "outlines>=1.0,<2", "pydantic>=2",
+]
+week10 = ["torch>=2.4,<3", "transformers>=4.56,<5", "datasets>=3.6,<4", "evaluate>=0.4.3", "accelerate>=1.0", "peft>=0.13,<1", "torchmetrics>=1.4", "seaborn>=0.13", "seqeval>=1.2.2"]
+week11 = ["torch>=2.4,<3", "transformers>=4.56,<5", "datasets>=3.6,<4", "accelerate>=1.0", "huggingface-hub>=0.25", "lm-eval>=0.4.8"]
+week12 = ["torch>=2.4,<3", "transformers>=4.56,<5", "datasets>=3.6,<4", "evaluate>=0.4.3", "accelerate>=1.0", "peft>=0.13,<1", "optimum-onnx[onnxruntime]>=0.1", "onnxruntime>=1.19"]
+week14 = ["torch>=2.4,<3", "transformers>=4.56,<5", "huggingface-hub>=0.25", "smolagents>=1.10", "ddgs>=9"]
+# Linux + NVIDIA only (week 11: vLLM; week 12: 8/4-bit loading and GPTQ)
+cuda = [
+    "vllm>=0.6; sys_platform == 'linux'",
+    "bitsandbytes>=0.45; sys_platform == 'linux'",
+    "gptqmodel>=2.0; sys_platform == 'linux'",
+]
+# hosted structured-output example in week 9 (needs GEMINI_API_KEY)
+gemini = ["google-genai>=1.0"]
+
+[tool.uv]
+package = false
+# Resolve for the platforms the course is run on (keeps the lock small and avoids CUDA-only wheels elsewhere).
+environments = ["sys_platform == 'darwin'", "sys_platform == 'linux'"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+# CPU wheels for torch on Linux and Windows (macOS wheels on PyPI are CPU/MPS already).
+# For a CUDA machine, delete this table and install the matching wheel from https://pytorch.org.
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
