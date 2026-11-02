@@ -1,0 +1,465 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 8<br>From Next Token to Assistant</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div style="margin-top:10px" id="rail-note">Every number on this page is read from the seminar's artifacts (OLMo 2 1B's four checkpoints and Qwen3-0.6B, measured on a T4) or computed in the browser and checked against Python — nothing is typed in.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>From Next Token to Assistant: What Each Training Stage Changes</h1>
+  <p class="lede">{{inline:lede}}</p>
+  <div class="prose">
+    {{text:hero-p1}}
+  </div>
+  <div class="formula"><span class="fn">The claim for today</span>
+    <math display="block"><mrow>
+      <mi>ℒ</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mo>−</mo>
+      <munder><mo>∑</mo><mrow><mi>t</mi><mo>∈</mo><mtext>trained tokens</mtext></mrow></munder>
+      <msub><mi>w</mi><mi>t</mi></msub><mspace width="0.2em"/><mi>log</mi><mspace width="0.15em"/>
+      <msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>∣</mo><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo stretchy="false">)</mo>
+    </mrow></math>
+  </div>
+  <div class="prose keep">
+    {{text:claim-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Four stages, one sum · whose tokens are in it, who sets w<sub>t</sub></span></div>
+    <div class="panel-body"><div id="fig-stages"></div></div>
+  </div>
+  <div class="prose keep">
+    {{text:claim-p2}}
+  </div>
+
+  <div class="panel stagetab-panel">
+    <div class="panel-head"><span>The stage table · one row per checkpoint, a row per block</span><span class="mono">OLMo 2 1B · greedy · the first 160 tokens</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-refusal"><span class="q">{{inline:bet-refusal}}</span></div>
+      <div class="scroll-x"><table class="results stagetab" id="stagetab-0"></table></div>
+      
+    </div>
+    <div class="panel-note" id="stagetab-note-0"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 01 SFT -->
+<section id="sft">
+  <p class="eyebrow">Block 01 · supervised fine-tuning</p>
+  <h2>The same loss, with a mask</h2>
+  <div class="prose">
+    {{text:sft-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>One dialogue of the SFT mixture · which tokens carry the loss?</span><span class="mono" id="mask-count">0 marked</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-mask"><span class="q">{{inline:bet-mask}}</span></div>
+      <div class="pieces" id="mask-tokens"></div>
+      <div class="btnrow" style="margin-top:12px"><button class="primary" id="btn-mask-reveal">Reveal the mask</button>
+        <span class="fig-states" id="mask-mode" hidden><button data-m="on" class="sel">loss on the answer</button><button data-m="off">loss on every token</button></span>
+        <span class="mono" id="mask-score" style="margin-left:auto"></span></div>
+    </div>
+    <div class="panel-note" id="mask-note" hidden></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>SFT · the loss and the gradient</span><span class="fig-states" id="flow-sft-st"><button data-m="fwd" class="sel">forward: where the loss comes from</button><button data-m="bwd">backward: where the gradient goes</button></span></div>
+    <div class="panel-body"><div id="flow-sft"></div>
+      <div class="flow-w" id="flow-sft-w"></div></div>
+    <div class="panel-note">{{inline:flow-sft}}</div>
+  </div>
+
+  <h3>The same thing with a library</h3>
+  <div class="prose">
+    {{text:trl-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>TRL · SFTTrainer, the notebook's cell</span><span class="mono">{{inline:trl-note}}</span></div>
+    <div class="panel-body">
+      <div class="two stacked">
+        <pre class="code" id="code-trl"></pre>
+        <div class="fstack" id="trl-cards">
+          <div class="row"><span class="n">mask</span><div><span class="fx" data-f="mask"><b>prompt → completion</b></span> <span class="say">the loss goes on the completion only: the picture above, every <code>-100</code> of <code>sft_example</code>.</span></div></div>
+          <div class="row"><span class="n">cut</span><div><span class="fx" data-f="cut"><b>max_length = 512</b></span> <span class="say"><code>sft_example</code>'s <code>[:max_len]</code>: a dialogue longer than that loses its tail — and a prompt longer than that carries no loss at all.</span></div></div>
+          <div class="row"><span class="n">step</span><div><span class="fx" data-f="step"><b>8 × 2 = 16 dialogues</b></span> <span class="say">one optimiser step; the gradient is accumulated over two micro-batches, because the logits are batch × width × 49 152 floats.</span></div></div>
+          <div class="row"><span class="n">loop</span><div><span class="fx" data-f="loop"><b>AdamW · linear decay · clip 1.0</b></span> <span class="say"><code>train_sft</code>'s defaults are TRL's defaults: nothing in the loop is special to SFT.</span></div></div>
+          <div class="row"><span class="n">batch</span><div><span class="fx" data-f="batch"><b>group_by_length</b></span> <span class="say">batches of similar length, so the width is near the mean, not the max — the picture below.</span></div></div>
+          <div class="row"><span class="n">check</span><div><span class="fx" data-f="check"><b>the same labels</b></span> <span class="say">the trainer's <code>labels</code> for dialogue 0 equal ours — the library did what the fifteen lines did.</span></div></div>
+        </div>
+      </div>
+      <div id="fig-collate" style="margin-top:16px"></div>
+    </div>
+    <div class="panel-note" id="collate-note"></div>
+  </div>
+
+
+  <div class="panel stagetab-panel">
+    <div class="panel-head"><span>The stage table · + SFT</span><span class="mono">OLMo 2 1B · greedy · the first 160 tokens</span></div>
+    <div class="panel-body">
+      
+      <div class="scroll-x"><table class="results stagetab" id="stagetab-1"></table></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-stagetab-1">Add the SFT checkpoint</button></div>
+    </div>
+    <div class="panel-note" id="stagetab-note-1" hidden></div>
+  </div>
+</section>
+
+<!-- ============================================================ 02 preferences -->
+<section id="pref">
+  <p class="eyebrow">Block 02 · preferences</p>
+  <h2>From votes to Bradley–Terry to DPO</h2>
+  <div class="prose">
+    {{text:pref-p1}}
+  </div>
+
+  <h3>Label it yourself</h3>
+  <div class="prose">
+    {{text:label-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>One prompt, four answers · the room votes</span><span class="mono" id="label-src"></span></div>
+    <div class="panel-body">
+      <div class="prose keep" style="margin-bottom:12px"><p class="uf-prompt" id="uf-prompt"></p></div>
+      <div class="uf-grid" id="uf-answers"></div>
+      <div class="uf-votes" id="uf-votes"></div>
+      <div class="stat-row" id="agree-out" style="margin-top:14px"></div>
+    </div>
+    <div class="panel-note" id="agree-note"></div>
+  </div>
+
+  <h3>Bradley–Terry, a step at a time</h3>
+  <div class="prose">
+    {{text:bt-p1}}
+  </div>
+  <div class="formula"><span class="fn">Bradley &amp; Terry (1952)</span>
+    <math display="block"><mrow><mi>P</mi><mo stretchy="false">(</mo><mi>A</mi><mo>≻</mo><mi>B</mi><mo stretchy="false">)</mo><mo>=</mo><mi>σ</mi><mo stretchy="false">(</mo><msub><mi>r</mi><mi>A</mi></msub><mo>−</mo><msub><mi>r</mi><mi>B</mi></msub><mo stretchy="false">)</mo><mo>,</mo><mspace width="1.6em"/>
+      <mi>ℒ</mi><mo>=</mo><mo>−</mo><munder><mo>∑</mo><mrow><mtext>votes</mtext></mrow></munder><mi>log</mi><mspace width="0.15em"/><mi>σ</mi><mo stretchy="false">(</mo><msub><mi>r</mi><mtext>winner</mtext></msub><mo>−</mo><msub><mi>r</mi><mtext>loser</mtext></msub><mo stretchy="false">)</mo></mrow></math>
+  </div>
+  <div class="prose">
+    {{text:bt-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Fit the scores to the votes · one MM step per click</span><span class="ck" id="bt-check"></span></div>
+    <div class="panel-body">
+      <div class="btnrow"><button class="primary" id="btn-bt-step">Step</button><button id="btn-bt-run">Run to convergence</button><button id="btn-bt-reset">Reset</button><span class="mono" id="bt-step-line" style="margin-left:auto"></span></div>
+      <div class="bt-grid" style="margin-top:12px">
+        <div id="bt-scores"></div>
+        <div id="bt-matrix"></div>
+      </div>
+      <div class="formula" style="margin:14px 0 0"><span class="fn">one step of Hunter's (2004) MM iteration, with p = exp(r)</span>
+        <math display="block"><mrow><msub><mi>p</mi><mi>i</mi></msub><mo>←</mo><mfrac><msub><mi>W</mi><mi>i</mi></msub><mrow><munder><mo>∑</mo><mrow><mi>j</mi><mo>≠</mo><mi>i</mi></mrow></munder><mfrac><msub><mi>n</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><msub><mi>p</mi><mi>i</mi></msub><mo>+</mo><msub><mi>p</mi><mi>j</mi></msub></mrow></mfrac></mrow></mfrac><mo>,</mo><mspace width="1.2em"/>
+          <msub><mi>W</mi><mi>i</mi></msub><mtext> = wins of i,</mtext><mspace width="0.6em"/><msub><mi>n</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mtext> = votes on the pair (i, j)</mtext></mrow></math>
+      </div>
+      <div class="btnrow" style="margin-top:12px"><button class="primary" id="btn-bt-reveal">Reveal the judge and the models</button></div>
+    </div>
+    <div class="panel-note" id="bt-note" hidden></div>
+  </div>
+
+  <h3>The reward model, PPO — and what DPO removed</h3>
+  <div class="prose">
+    {{text:rm-p1}}
+  </div>
+  <div class="formula"><span class="fn">RLHF's objective (Ouyang et al. 2022)</span>
+    <math display="block"><mrow><munder><mi>max</mi><mi>π</mi></munder><mspace width="0.4em"/><msub><mi>𝔼</mi><mrow><mi>y</mi><mo>∼</mo><mi>π</mi></mrow></msub><mo stretchy="false">[</mo><mi>r</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo><mo>−</mo><mi>β</mi><mspace width="0.2em"/><mtext>KL</mtext><mo stretchy="false">(</mo><mi>π</mi><mo stretchy="false">(</mo><mo>·</mo><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mo>∥</mo><msub><mi>π</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><mo>·</mo><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></math>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>What each method keeps in memory, and what moves</span><span class="fig-states" id="roles-states"></span></div>
+    <div class="panel-body"><div id="fig-roles"></div></div>
+    <div class="panel-note" id="roles-note">{{inline:roles-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The reward model · trained on the pairs, then frozen</span><span class="fig-states" id="flow-rm-st"><button data-m="fwd" class="sel">forward: where the loss comes from</button><button data-m="bwd">backward: where the gradient goes</button></span></div>
+    <div class="panel-body"><div id="flow-rm"></div></div>
+    <div class="panel-note">{{inline:flow-rm}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>PPO · the loss and the gradient</span><span class="fig-states" id="flow-ppo-st"><button data-m="fwd" class="sel">forward: where the loss comes from</button><button data-m="bwd">backward: where the gradient goes</button></span></div>
+    <div class="panel-body"><div id="flow-ppo"></div></div>
+    <div class="panel-note">{{inline:flow-ppo}}</div>
+  </div>
+
+  <div class="prose">
+    {{text:dpo-p1}}
+  </div>
+  <div class="formula"><span class="fn">Rafailov et al. (2023) · the reward read off the policy, and the loss</span>
+    <math display="block"><mrow><mi>r</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mo>=</mo><mi>β</mi><mspace width="0.15em"/><mi>log</mi><mfrac><mrow><msup><mi>π</mi><mo>*</mo></msup><mo stretchy="false">(</mo><mi>y</mi><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mi>π</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><mi>y</mi><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>+</mo><mi>β</mi><mspace width="0.15em"/><mi>log</mi><mspace width="0.15em"/><mi>Z</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></math>
+    <math display="block"><mrow><msub><mi>ℒ</mi><mtext>DPO</mtext></msub><mo>=</mo><mo>−</mo><mi>log</mi><mspace width="0.15em"/><mi>σ</mi><mrow><mo>(</mo><mi>β</mi><mrow><mo>[</mo>
+      <munder><mrow><mi>log</mi><mfrac><mrow><mi>π</mi><mo stretchy="false">(</mo><msub><mi>y</mi><mi>c</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mi>π</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>c</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac></mrow><mtext style="font-size:.72em">how much more likely the chosen answer became</mtext></munder>
+      <mo>−</mo>
+      <munder><mrow><mi>log</mi><mfrac><mrow><mi>π</mi><mo stretchy="false">(</mo><msub><mi>y</mi><mi>r</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mi>π</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>r</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac></mrow><mtext style="font-size:.72em">the same for the rejected one</mtext></munder>
+      <mo>]</mo></mrow><mo>)</mo></mrow></mrow></math>
+  </div>
+  <div class="prose">
+    {{text:dpo-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>DPO · the loss and the gradient</span><span class="fig-states" id="flow-dpo-st"><button data-m="fwd" class="sel">forward: where the loss comes from</button><button data-m="bwd">backward: where the gradient goes</button></span></div>
+    <div class="panel-body"><div id="flow-dpo"></div>
+      <div class="flow-w" id="flow-dpo-w"></div></div>
+    <div class="panel-note">{{inline:flow-dpo}}</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>The DPO loss, by hand</span><span class="ck" id="dpo-check"></span></div>
+    <div class="panel-body">
+      <div class="fig-states" id="dpo-presets" style="margin-bottom:10px"><button data-m="b" class="sel">(b) chosen up, rejected down</button><button data-m="c">(c) both down</button><button data-m="init">π = π<sub>ref</sub></button></div>
+      <div class="sliders" id="dpo-sliders"></div>
+      <div class="est" id="dpo-out"></div>
+      <div id="fig-dpo-bars" style="margin-top:12px"></div>
+    </div>
+    <div class="panel-note">{{inline:calc-p1}}</div>
+  </div>
+  <div class="prose">
+    {{text:calc-ln}}
+  </div>
+
+  <h3>The implicit reward of a real checkpoint</h3>
+  <div class="prose">
+    {{text:pairs-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>1 000 pairs of OLMo's DPO data · Δ log π against the SFT reference</span><span class="ck" id="pairs-check"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-pairs"><span class="q">{{inline:bet-pairs}}</span></div>
+      <div class="reveal-wrap"><div class="veil">1 000 pairs are behind this veil</div>
+        <div id="pairs-out" hidden>
+          <div class="btnrow" style="margin-bottom:8px"><span class="fig-states" id="pairs-stage"><button data-m="DPO" class="sel">DPO</button><button data-m="RLVR">RLVR</button></span><span class="mono" style="font-size:13px;margin-left:10px">source</span><select id="pairs-source" style="width:auto"></select></div>
+          <div class="att"><div id="fig-pairs"></div><div class="stat-row" id="pairs-stats" style="flex-direction:column;gap:14px"></div></div>
+        </div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-pairs-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="pairs-note" hidden></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The same pairs, split by who wrote them</span></div>
+    <div class="panel-body"><div id="fig-onoff"></div></div>
+    <div class="panel-note" id="policy-note"></div>
+  </div>
+  <div class="prose">
+    {{text:length-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Length · the pairs, and the model after DPO</span></div>
+    <div class="panel-body"><div id="fig-length"></div></div>
+    <div class="panel-note" id="length-note"></div>
+  </div>
+
+  <div class="panel stagetab-panel">
+    <div class="panel-head"><span>The stage table · + DPO</span><span class="mono">OLMo 2 1B · greedy · the first 160 tokens</span></div>
+    <div class="panel-body">
+      
+      <div class="scroll-x"><table class="results stagetab" id="stagetab-2"></table></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-stagetab-2">Add the DPO checkpoint</button></div>
+    </div>
+    <div class="panel-note" id="stagetab-note-2" hidden></div>
+  </div>
+</section>
+
+<!-- ============================================================ 03 RLVR -->
+<section id="rlvr">
+  <p class="eyebrow">Block 03 · RL with a verifier</p>
+  <h2>The checker is the reward model</h2>
+  <div class="prose">
+    {{text:rlvr-p1}}
+  </div>
+  <h3>GRPO: the group is the baseline</h3>
+  <div class="prose">
+    {{text:grpo-p1}}
+  </div>
+  <div class="formula"><span class="fn">Shao et al. (2024)</span>
+    <math display="block"><mrow><msub><mi>A</mi><mi>i</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>r</mi><mi>i</mi></msub><mo>−</mo><mtext>mean</mtext><mo stretchy="false">(</mo><msub><mi>r</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>r</mi><mi>G</mi></msub><mo stretchy="false">)</mo></mrow><mrow><mtext>std</mtext><mo stretchy="false">(</mo><msub><mi>r</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>r</mi><mi>G</mi></msub><mo stretchy="false">)</mo></mrow></mfrac><mo>,</mo><mspace width="1.4em"/>
+      <msub><mi>w</mi><mi>t</mi></msub><mo>=</mo><msub><mi>A</mi><mi>i</mi></msub><mtext> for every token of answer i</mtext></mrow></math>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>One prompt, eight samples, a checker · the advantages</span><span class="ck" id="grpo-check"></span></div>
+    <div class="panel-body">
+      <div class="bet"><span class="q">{{inline:grpo-bet}}</span></div>
+      <div id="fig-grpo"></div>
+      <div class="btnrow" style="margin-top:8px"><span class="mono" style="font-size:13px">presets</span><span class="fig-states" id="grpo-presets"><button data-m="mixed" class="sel">3 of 8</button><button data-m="one right">1 of 8</button><button data-m="all right">8 of 8</button><button data-m="all wrong">0 of 8</button></span></div>
+    </div>
+    <div class="panel-note" id="grpo-note"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>GRPO · the loss and the gradient</span><span class="fig-states" id="flow-grpo-st"><button data-m="fwd" class="sel">forward: where the loss comes from</button><button data-m="bwd">backward: where the gradient goes</button></span></div>
+    <div class="panel-body"><div id="flow-grpo"></div>
+      <div class="flow-w" id="flow-grpo-w"></div></div>
+    <div class="panel-note">{{inline:flow-grpo}}</div>
+  </div>
+
+  <h3>The checker</h3>
+  <div class="prose">
+    {{text:checker-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The notebook's <code>final_number</code> and <code>reward</code>, in the browser · gold = 4</span><span class="ck" id="checker-check"></span></div>
+    <div class="panel-body">
+      <div class="two stacked">
+        <pre class="code" id="code-checker"></pre>
+        <div>
+          <div class="io"><div><label class="field">type an answer</label><input type="text" id="checker-in" value="Subtract 2 from both sides: n = 6 - 2 = 4. So the value of n is 4." style="width:100%"></div><div class="out" id="checker-out"></div></div>
+          <table class="results" id="checker-table" style="margin-top:12px"></table>
+        </div>
+      </div>
+      <div class="sliders" style="margin-top:14px"><div><label class="field">weight of the format reward <b id="fmt-w-v">0.1</b></label><input type="range" id="fmt-w" min="0" max="1" step="0.05" value="0.1"></div></div>
+      <table class="results" id="fmt-table"></table>
+    </div>
+    <div class="panel-note">{{inline:checker-note}}</div>
+  </div>
+
+  <h3>Which prompts teach</h3>
+  <div class="prose">
+    {{text:teach-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Sixteen prompts, a group of G samples each · which ones carry a gradient?</span><span class="ck" id="teach-check"></span></div>
+    <div class="panel-body">
+      <div class="sliders">
+        <div><label class="field">p · how often the model solves the prompt <b id="teach-p-v">0.10</b></label><input type="range" id="teach-p" min="0.01" max="0.99" step="0.01" value="0.10"></div>
+        <div><label class="field">G · samples per prompt <b id="teach-g-v">8</b></label><input type="range" id="teach-g" min="0" max="3" step="1" value="1"></div>
+      </div>
+      <div class="btnrow" style="margin-bottom:8px"><button id="btn-teach-redraw">Draw again</button></div>
+      <div class="att"><div id="fig-teach"></div><div class="est" id="teach-out"></div></div>
+    </div>
+    <div class="panel-note">{{inline:teach-sim-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>GSM8K, measured · how many of the 32 samples were right, per problem</span><span class="fig-states" id="teach-stage"><button data-m="base" class="sel">base</button><button data-m="SFT">SFT</button><button data-m="RLVR">RLVR</button></span></div>
+    <div class="panel-body"><div id="fig-teach-hist"></div></div>
+    <div class="panel-note" id="teach-note"></div>
+  </div>
+
+  <h3>Sharper, or smarter? pass@k</h3>
+  <div class="prose">
+    {{text:passk-p1}}
+  </div>
+  <div class="formula"><span class="fn">Chen et al. (2021) · unbiased from n samples with c right</span>
+    <math display="block"><mrow><mtext>pass@</mtext><mi>k</mi><mo>=</mo><mn>1</mn><mo>−</mo><mfrac><mrow><mo>(</mo><mtable><mtr><mtd><mi>n</mi><mo>−</mo><mi>c</mi></mtd></mtr><mtr><mtd><mi>k</mi></mtd></mtr></mtable><mo>)</mo></mrow><mrow><mo>(</mo><mtable><mtr><mtd><mi>n</mi></mtd></mtr><mtr><mtd><mi>k</mi></mtd></mtr></mtable><mo>)</mo></mrow></mfrac></mrow></math>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>GSM8K · <span id="passk-meta"></span></span><span class="ck" id="passk-check"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-passk"><span class="q">{{inline:bet-passk}}</span></div>
+      <div class="reveal-wrap"><div class="veil">three curves are behind this veil</div>
+        <div id="passk-out" hidden>
+          <div class="att"><div id="fig-passk"></div><div><div class="sliders"><div><label class="field">k <b id="passk-k-v">1</b></label><input type="range" id="passk-k" min="0" max="5" step="1" value="0"></div></div><div class="est" id="passk-vals"></div><div id="passk-hist" style="margin-top:10px"></div></div></div>
+        </div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-passk-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="passk-note" hidden></div>
+  </div>
+
+  <h3>Thinking is written tokens</h3>
+  <div class="prose">
+    {{text:think-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Qwen3-0.6B · <span id="think-meta"></span></span><span class="fig-states" id="think-mode"><button data-m="thinking" class="sel">thinking</button><button data-m="no thinking">no thinking</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-think"><span class="q">{{inline:bet-think}}</span></div>
+      <div class="reveal-wrap"><div class="veil">two hundred problems, two templates</div>
+        <div id="think-out" hidden>
+          <div id="fig-template" style="margin-bottom:10px"></div>
+          <div class="att"><div id="fig-think"></div><div class="est" id="think-stats"></div></div>
+          <details class="codenote" style="margin-top:12px"><summary><span class="k">one answer</span><span class="libs">the first problem's trace, as written</span></summary><pre class="report" id="think-trace" style="white-space:pre-wrap;max-height:380px;overflow:auto"></pre></details>
+        </div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-think-reveal">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="think-note" hidden></div>
+  </div>
+
+  <div class="panel stagetab-panel">
+    <div class="panel-head"><span>The stage table · + RLVR, the released model</span><span class="mono">OLMo 2 1B · greedy · the first 160 tokens</span></div>
+    <div class="panel-body">
+      
+      <div class="scroll-x"><table class="results stagetab" id="stagetab-3"></table></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-stagetab-3">Add the RLVR checkpoint</button></div>
+    </div>
+    <div class="panel-note" id="stagetab-note-3" hidden></div>
+  </div>
+</section>
+
+<!-- ============================================================ 04 recipes -->
+<section id="recipes">
+  <p class="eyebrow">Block 04 · recipes</p>
+  <h2>How the 2025–2026 recipes look whole</h2>
+  <h3>On-policy, off-policy</h3>
+  <div class="prose">
+    {{text:policy-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Where the tokens in the sum come from</span><span class="fig-states" id="policy-states"></span></div>
+    <div class="panel-body"><div id="fig-policy"></div></div>
+    <div class="panel-note" id="policy-fig-note"></div>
+  </div>
+  <div class="prose">
+    {{text:policy-p2}}
+  </div>
+
+  <h3>The recipes</h3>
+  <div class="prose">
+    {{text:recipes-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Everyone does the same thing in a different order</span><span class="fig-states" id="recipes-mode"><button data-m="type" class="sel">colour: type of stage</button><button data-m="who">colour: who writes the tokens</button></span></div>
+    <div class="panel-body"><div id="fig-recipes"></div></div>
+    <div class="panel-note">{{inline:recipes-note}}</div>
+  </div>
+  <div class="prose">
+    {{text:r1-p1}}
+  </div>
+  <h3>Distillation</h3>
+  <div class="prose">
+    {{text:distill-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Three things a teacher can give</span></div>
+    <div class="panel-body tight">{{text:distill-table}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Distillation · the loss and the gradient</span><span class="fig-states" id="flow-distill-st"><button data-m="fwd" class="sel">forward: where the loss comes from</button><button data-m="bwd">backward: where the gradient goes</button></span></div>
+    <div class="panel-body"><div id="flow-distill"></div></div>
+    <div class="panel-note">{{inline:flow-distill}}</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>What a verified-teacher filter keeps · 1 − (1 − p)<sup>K</sup></span></div>
+    <div class="panel-body">
+      <div class="att"><div id="fig-filter"></div><div><div class="sliders"><div><label class="field">K · teacher solutions per problem <b id="filter-k-v">4</b></label><input type="range" id="filter-k" min="1" max="16" step="1" value="4"></div></div><div class="est" id="filter-out"></div></div></div>
+    </div>
+    <div class="panel-note" id="filter-note"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 05 end -->
+<section id="end">
+  <p class="eyebrow">Block 05 · the two questions from the top</p>
+  <h2>Five things that transfer</h2>
+  <div class="prose keep">
+    {{text:end-p1}}
+  </div>
+  <div class="prose keep">
+    {{text:end-p2}}
+  </div>
+  <h3>References</h3>
+  <div class="prose footnote">
+    {{text:end-refs}}
+  </div>
+</section>
+
+</div>
+</main>
+</div>

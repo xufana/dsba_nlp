@@ -1,0 +1,181 @@
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Lecture 8<br>From Next Token to Assistant · check yourself</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-btns">
+    <button id="btn-reset" title="Forget every answer on this page">Reset answers</button>
+    <button id="btn-theme" title="Light / dark">Theme</button>
+  </div>
+  <div class="quiz-progress" id="quiz-progress"></div>
+  <div class="rail-foot">
+    <a class="back" href="week08_demo.html">← the seminar demo</a>
+    <div style="margin-top:10px">{{inline:rail-note}}</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>From next token to assistant,<br>as questions</h1>
+  <p class="lede">{{inline:lede}}</p>
+  <div class="prose">{{text:intro-p1}}</div>
+</section>
+
+<!-- ============================================================ what -->
+<section id="what">
+  <p class="eyebrow">Block 00 · the goal</p>
+  <h2>What alignment is</h2>
+  <div class="prose">{{text:what-p1}}{{text:what-p2}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Post-training, stage by stage</span><span>what says which answer is good</span></div>
+    <div class="panel-body"><div data-fig="pipeline"></div></div>
+    <div class="panel-note">{{inline:pipeline-caption}}</div>
+  </div>
+  {{quiz:q-where-from}}
+  <div class="prose">{{text:what-p3}}</div>
+  {{quiz:q-new-fact}}
+</section>
+
+<!-- ============================================================= sft -->
+<section id="sft">
+  <p class="eyebrow">Block 01 · "write this"</p>
+  <h2>Supervised fine-tuning</h2>
+  <div class="prose">{{text:sft-p1}}</div>
+  {{quiz:q-sft-mask}}
+  <div class="prose">{{text:sft-p2}}</div>
+  {{quiz:q-sft-faults}}
+</section>
+
+<!-- ============================================================ rlhf -->
+<section id="rlhf">
+  <p class="eyebrow">Block 02 · "this one is better"</p>
+  <h2>RLHF, RLAIF and Constitutional AI</h2>
+  <div class="prose">{{text:rlhf-p1}}</div>
+  <div class="formula"><span class="fn">The reward model · Bradley &amp; Terry (1952)</span>
+    <math display="block"><mrow><mi>P</mi><mo stretchy="false">(</mo><msub><mi>y</mi><mi>w</mi></msub><mo>≻</mo><msub><mi>y</mi><mi>l</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mi>σ</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><msub><mi>y</mi><mi>w</mi></msub><mo stretchy="false">)</mo><mo>−</mo><mi>r</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><msub><mi>y</mi><mi>l</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></math>
+  </div>
+  <div class="prose">{{text:rlhf-p2}}</div>
+  <div class="formula"><span class="fn">RL with a KL penalty · Ouyang et al. (2022)</span>
+    <math display="block"><mrow><munder><mi>max</mi><mi>π</mi></munder><mspace width="0.4em"/><msub><mi>𝔼</mi><mrow><mi>y</mi><mo>∼</mo><mi>π</mi></mrow></msub><mo stretchy="false">[</mo><mi>r</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo><mo>−</mo><mi>β</mi><mspace width="0.2em"/><mtext>KL</mtext><mo stretchy="false">(</mo><mi>π</mi><mo>∥</mo><msub><mi>π</mi><mtext>ref</mtext></msub><mo stretchy="false">)</mo></mrow></math>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>What PPO keeps in memory</span><span>four models of the policy's size</span></div>
+    <div class="panel-body"><div data-fig="rlhf"></div></div>
+    <div class="panel-note">{{inline:rlhf-caption}}</div>
+  </div>
+  {{quiz:q-rlhf-trained}}
+  {{quiz:q-beta}}
+  <div class="prose">{{text:rlhf-p3}}</div>
+  {{quiz:q-hack}}
+  <div class="prose">{{text:cai-p1}}</div>
+  {{quiz:q-cai}}
+</section>
+
+<!-- ============================================================= dpo -->
+<section id="dpo">
+  <p class="eyebrow">Block 03 · RL without RL</p>
+  <h2>DPO and its family</h2>
+  <div class="prose">{{text:dpo-p1}}</div>
+  <div class="formula"><span class="fn">Rafailov et al. (2023)</span>
+    <math display="block"><mrow><msub><mi>ℒ</mi><mtext>DPO</mtext></msub><mo>=</mo><mo>−</mo><mi>log</mi><mspace width="0.15em"/><mi>σ</mi><mrow><mo>(</mo><mi>β</mi><mspace width="0.1em"/><mi>log</mi><mfrac><mrow><msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>w</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mi>π</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>w</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>−</mo><mi>β</mi><mspace width="0.1em"/><mi>log</mi><mfrac><mrow><msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>l</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mi>π</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>l</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>)</mo></mrow></mrow></math>
+  </div>
+  <div class="prose">{{text:dpo-p2}}</div>
+  {{quiz:q-dpo-models}}
+  {{quiz:q-dpo-noref}}
+  <div class="prose">{{text:dpo-p3}}</div>
+  {{quiz:q-dpo-family}}
+  <div class="prose">{{text:dpo-p4}}</div>
+  {{quiz:q-both-down}}
+</section>
+
+<!-- ============================================================ grpo -->
+<section id="grpo">
+  <p class="eyebrow">Block 04 · "right" or "wrong"</p>
+  <h2>RLVR and GRPO: RL on verifiable rewards</h2>
+  <div class="prose">{{text:grpo-p1}}</div>
+  <div class="formula"><span class="fn">The advantage in GRPO · Shao et al. (2024)</span>
+    <math display="block"><mrow><msub><mi>A</mi><mi>i</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>r</mi><mi>i</mi></msub><mo>−</mo><mtext>mean</mtext><mo stretchy="false">(</mo><msub><mi>r</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>r</mi><mi>G</mi></msub><mo stretchy="false">)</mo></mrow><mrow><mtext>std</mtext><mo stretchy="false">(</mo><msub><mi>r</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>r</mi><mi>G</mi></msub><mo stretchy="false">)</mo></mrow></mfrac></mrow></math>
+  </div>
+  <div class="prose">{{text:grpo-p2}}</div>
+  {{quiz:q-grpo-solved}}
+  <div class="prose">{{text:grpo-p3}}</div>
+  {{quiz:q-grpo-overfit}}
+  <div class="prose">{{text:grpo-p4}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>A group of 8 with binary rewards · k answers right</span><span>computed</span></div>
+    <div class="panel-body tight"><div data-fig="grpo-std"></div></div>
+    <div class="panel-note">{{inline:grpo-std-caption}}</div>
+  </div>
+  <div class="prose">{{text:grpo-p5}}</div>
+  {{quiz:q-passk}}
+  {{quiz:q-flat}}
+</section>
+
+<!-- ========================================================== policy -->
+<section id="policy">
+  <p class="eyebrow">Block 05 · whose answers</p>
+  <h2>On-policy and off-policy</h2>
+  <div class="prose">{{text:pol-p1}}{{text:pol-p2}}</div>
+  <div class="formula"><span class="fn">The objective, and the same expectation over another policy's samples</span>
+    <math display="block"><mrow><mi>J</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>𝔼</mi><mrow><mi>y</mi><mo>∼</mo><msub><mi>π</mi><mi>θ</mi></msub></mrow></msub><mo stretchy="false">[</mo><mi>r</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo><mo>=</mo><msub><mi>𝔼</mi><mrow><mi>y</mi><mo>∼</mo><mi>μ</mi></mrow></msub><mrow><mo>[</mo><mfrac><mrow><msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><mi>y</mi><mo stretchy="false">)</mo></mrow><mrow><mi>μ</mi><mo stretchy="false">(</mo><mi>y</mi><mo stretchy="false">)</mo></mrow></mfrac><mspace width="0.2em"/><mi>r</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mo>]</mo></mrow></mrow></math>
+    <math display="block"><mrow><mfrac><mrow><msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><mi>y</mi><mo stretchy="false">)</mo></mrow><mrow><mi>μ</mi><mo stretchy="false">(</mo><mi>y</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>=</mo><munderover><mo>∏</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><mfrac><mrow><msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>∣</mo><mi>x</mi><mo>,</mo><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo stretchy="false">)</mo></mrow><mrow><mi>μ</mi><mo stretchy="false">(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>∣</mo><mi>x</mi><mo>,</mo><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo stretchy="false">)</mo></mrow></mfrac></mrow></math>
+  </div>
+  <div class="prose">{{text:pol-p3}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Importance weights of whole answers · by length</span><span>computed</span></div>
+    <div class="panel-body tight"><div data-fig="is-weights"></div></div>
+    <div class="panel-note">{{inline:is-caption}}</div>
+  </div>
+  <div class="prose">{{text:pol-p4}}</div>
+  {{quiz:q-pol-sort}}
+  {{quiz:q-ppo-clip}}
+  <div class="prose">{{text:pol-p5}}</div>
+  {{quiz:q-gpt4-pairs}}
+</section>
+
+<!-- ========================================================== agents -->
+<section id="agents">
+  <p class="eyebrow">Block 06 · the environment joins in</p>
+  <h2>Training agents and tool calling</h2>
+  <div class="prose">{{text:ag-p1}}</div>
+  {{quiz:q-ag-mask}}
+  <div class="prose">{{text:ag-p2}}</div>
+  {{quiz:q-ag-verify}}
+  <div class="prose">{{text:ag-p3}}</div>
+  {{quiz:q-ag-rl}}
+  {{quiz:q-ag-inject}}
+</section>
+
+<!-- ======================================================== problems -->
+<section id="problems">
+  <p class="eyebrow">Block 07 · what every method shares</p>
+  <h2>The fence, the shared problems, and the pipeline in practice</h2>
+  <div class="prose">{{text:inf-p1}}{{text:prob-p1}}</div>
+  {{quiz:q-prob-sort}}
+  {{quiz:q-shallow}}
+  <div class="prose">{{text:practice-p1}}</div>
+</section>
+
+<!-- ========================================================== design -->
+<section id="design">
+  <p class="eyebrow">Block 08 · system design</p>
+  <h2>Design it</h2>
+  <div class="prose">{{text:design-p1}}</div>
+  {{quiz:q-design}}
+</section>
+
+<!-- ========================================================= sources -->
+<section id="sources">
+  <p class="eyebrow">Sources</p>
+  <div class="prose sources">{{text:sources}}</div>
+</section>
+
+</div>
+</main>
+</div>

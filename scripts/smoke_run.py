@@ -40,7 +40,7 @@ PATCHES = {
         ("N_DEMO = 200 ", "N_DEMO = 40 "),
         ("!python precompute.py", "pass  # !python precompute.py"),
     ],
-    "week07_training_alignment": [
+    "week08_training_alignment": [
         *[(f'"{hub}"', f'"{{SMOKE}}/tiny_{local}"') for hub, local in [
             ("allenai/OLMo-2-0425-1B", "olmo_2_0425_1b"), ("allenai/OLMo-2-0425-1B-SFT", "olmo_2_0425_1b_sft"),
             ("allenai/OLMo-2-0425-1B-DPO", "olmo_2_0425_1b_dpo"), ("allenai/OLMo-2-0425-1B-Instruct", "olmo_2_0425_1b_instruct"),

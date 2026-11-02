@@ -1,0 +1,1385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lecture 2 · Check yourself</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* The design system of the seminar pages, shared by every week (scripts/build_demo.py puts it in <style>).
+   A week adds its own rules in demo/week.css, appended after this file. */
+:root {
+  color-scheme: light;
+  --ground:        #f7f6f2;
+  --panel:         #fdfdfc;
+  --panel-sunk:    #f1efe9;
+  --ink:           #14161a;
+  --ink-2:         #55595f;
+  --ink-3:         #8b8e92;
+  --rule:          #dcdad3;
+  --rule-strong:   #bab7ad;
+  --cls-0: #2a78d6; --cls-1: #eb6834; --cls-2: #1baf7a; --cls-3: #4a3aa7;
+  --good:  #0ca30c; --bad: #d03b3b;
+  --seq-1: #5598e7; --seq-2: #3987e5; --seq-3: #2a78d6; --seq-4: #256abf; --seq-5: #104281;
+  --shadow: 0 1px 2px rgba(20,22,26,.05), 0 8px 24px -16px rgba(20,22,26,.28);
+
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground:      #131413;
+    --panel:       #1b1c1b;
+    --panel-sunk:  #232422;
+    --ink:         #f0efe9;
+    --ink-2:       #a8a79f;
+    --ink-3:       #7b7a73;
+    --rule:        #31322e;
+    --rule-strong: #4c4d47;
+    --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+    --good: #0ca30c; --bad: #d03b3b;
+    --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground:      #131413;
+  --panel:       #1b1c1b;
+  --panel-sunk:  #232422;
+  --ink:         #f0efe9;
+  --ink-2:       #a8a79f;
+  --ink-3:       #7b7a73;
+  --rule:        #31322e;
+  --rule-strong: #4c4d47;
+  --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+  --good: #0ca30c; --bad: #d03b3b;
+  --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 20.1px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+
+/* ---------------------------------------------------------------- shell */
+.shell { display: grid; grid-template-columns: 278px minmax(0, 1fr); gap: 0; }
+.rail {
+  position: sticky; top: 0; align-self: start; height: 100vh;
+  border-right: 1px solid var(--rule);
+  padding: 26px 18px 18px 26px;
+  display: flex; flex-direction: column; gap: 18px;
+  overflow-y: auto;
+}
+.rail-mark {
+  font-family: var(--mono); font-size: 14px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.rail-eq { font-family: var(--display); font-size: 17.7px; font-weight: 700; line-height: 1.3; }
+.rail nav { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
+.rail nav a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: baseline;
+  padding: 4px 6px 4px 0; text-decoration: none; color: var(--ink-2);
+  font-family: var(--display); font-size: 16.4px; line-height: 1.32;
+  border-radius: 3px;
+}
+.rail nav a span:first-child {
+  font-family: var(--mono); font-size: 13.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.rail nav a:hover { color: var(--ink); background: var(--panel-sunk); }
+.rail nav a.on { color: var(--ink); font-weight: 700; }
+.rail nav a.on span:first-child { color: var(--ink); }
+.rail-foot { margin-top: auto; font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.6; }
+.rail-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+main { padding: 0 0 140px; min-width: 0; }
+.wrap { max-width: 1160px; padding: 0 48px; margin: 0 auto; }
+section { padding: 64px 0 8px; scroll-margin-top: 20px; }
+.prose { max-width: none; }
+.prose p { margin: 0 0 1.05em; }
+.prose p + p { margin-top: -.15em; }
+
+/* --------------------------------------------------------------- type */
+h1 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(41px, 6.04vw, 72.9px); line-height: .98; letter-spacing: -.025em;
+  margin: 0 0 22px; text-wrap: balance;
+}
+h2 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(27.5px, 3.19vw, 37.8px); line-height: 1.08; letter-spacing: -.018em;
+  margin: 0 0 14px; text-wrap: balance;
+}
+h3 {
+  font-family: var(--display); font-weight: 700; font-size: 20.6px;
+  letter-spacing: -.008em; margin: 34px 0 10px;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 14px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px;
+}
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.lede { font-size: 23.5px; line-height: 1.52; color: var(--ink-2); max-width: none; }
+.prose strong { font-weight: 600; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.prose code { background: var(--panel-sunk); padding: .1em .34em; border-radius: 3px; }
+a { color: inherit; text-underline-offset: 2px; text-decoration-color: var(--rule-strong); }
+
+/* -------------------------------------------------------------- panels */
+.panel {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 4px; box-shadow: var(--shadow);
+  margin: 22px 0 26px; overflow: hidden;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 11px 16px; border-bottom: 1px solid var(--rule);
+  background: var(--panel-sunk);
+  font-family: var(--mono); font-size: 14px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-2); flex-wrap: wrap;
+}
+.panel-body { padding: 18px 16px; }
+.panel-body.tight { padding: 12px 16px; }
+.panel-note {
+  padding: 12px 16px; border-top: 1px solid var(--rule); background: var(--panel-sunk);
+  font-size: 17.7px; color: var(--ink-2); line-height: 1.55;
+}
+.scroll-x { overflow-x: auto; }
+
+/* ------------------------------------------------------------- controls */
+button, .btn {
+  font-family: var(--display); font-size: 16.4px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px;
+  padding: 6px 12px; cursor: pointer; line-height: 1.35;
+  transition: background .12s ease, border-color .12s ease;
+}
+button:hover { background: var(--panel-sunk); border-color: var(--ink-3); }
+button[disabled] { opacity: .42; cursor: not-allowed; }
+button.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+button.primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
+button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.btnrow { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+input[type="text"], textarea, select {
+  font-family: var(--mono); font-size: 16.4px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px; padding: 8px 10px;
+  width: 100%;
+}
+input[type="range"] { accent-color: var(--ink); width: 100%; }
+label.field { display: block; font-family: var(--mono); font-size: 14px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+
+/* ---------------------------------------------------------------- data */
+table { border-collapse: collapse; width: 100%; font-size: 16.4px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--mono); font-size: 15.4px; }
+th.data-th { text-transform: none; letter-spacing: 0; font-size: 14.5px; color: var(--ink-2); }
+tr:last-child td { border-bottom: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 14.5px; letter-spacing: .02em;
+  padding: 2px 8px; border-radius: 2px; border: 1px solid var(--rule-strong);
+  white-space: nowrap;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.c0 { background: var(--cls-0); } .c1 { background: var(--cls-1); }
+.c2 { background: var(--cls-2); } .c3 { background: var(--cls-3); }
+.t0 { color: var(--cls-0); } .t1 { color: var(--cls-1); }
+.t2 { color: var(--cls-2); } .t3 { color: var(--cls-3); }
+
+.stat-row { display: flex; gap: 34px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .v { font-family: var(--display); font-weight: 700; font-size: 32.5px;
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); }
+
+.reveal-wrap { position: relative; }
+.veil {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 26px 16px; background: var(--panel-sunk);
+  border: 1px dashed var(--rule-strong); border-radius: 3px;
+  font-family: var(--mono); font-size: 15.4px; color: var(--ink-2);
+  text-align: center; flex-wrap: wrap;
+}
+[hidden] { display: none !important; }
+
+.tok {
+  display: inline-block; font-family: var(--mono); font-size: 15.4px;
+  padding: 1px 6px; margin: 2px 3px 2px 0; border-radius: 2px;
+  background: var(--panel-sunk); border: 1px solid var(--rule);
+}
+.tok.diff { border-color: var(--ink-3); background: var(--panel); font-weight: 500; }
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+
+svg { display: block; max-width: 100%; }
+svg text { font-family: var(--mono); fill: var(--ink-2); }
+.axis line, .axis path { stroke: var(--rule); }
+.gridline { stroke: var(--rule); stroke-dasharray: 2 3; }
+
+.tooltip {
+  position: fixed; pointer-events: none; z-index: 50; opacity: 0;
+  background: var(--panel); border: 1px solid var(--rule-strong);
+  border-radius: 3px; box-shadow: var(--shadow); padding: 7px 10px;
+  font-family: var(--mono); font-size: 14.5px; line-height: 1.5; color: var(--ink);
+  transition: opacity .1s ease; max-width: 280px;
+}
+
+.footnote { font-size: 17.2px; color: var(--ink-2); max-width: none; }
+
+/* library pointers: a quiet line of names, with the actual call one click away */
+.codenote { margin: 16px 0 0; border-top: 1px solid var(--rule); padding-top: 9px; }
+.codenote > summary {
+  cursor: pointer; list-style: none; display: flex; gap: 9px;
+  align-items: baseline; flex-wrap: wrap; padding: 2px 0;
+}
+.codenote > summary::-webkit-details-marker { display: none; }
+.codenote > summary::before {
+  content: "+"; font-family: var(--mono); font-size: 15px; color: var(--ink-3);
+  width: 9px; flex: none;
+}
+.codenote[open] > summary::before { content: "−"; }
+.codenote > summary:hover .libs, .codenote[open] > summary .libs { color: var(--ink); }
+.codenote .k {
+  font-family: var(--mono); font-size: 13px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3); flex: none;
+}
+.codenote .libs {
+  font-family: var(--mono); font-size: 15px; line-height: 1.55; color: var(--ink-2);
+  transition: color .12s ease;
+}
+.codenote pre {
+  margin: 11px 0 0; padding: 13px 15px; background: var(--panel-sunk);
+  border-radius: 3px; font-family: var(--mono); font-size: 15.4px; line-height: 1.8;
+  white-space: pre-wrap; word-break: break-word; color: var(--ink);
+}
+.codenote .why { font-size: 16.4px; color: var(--ink-2); line-height: 1.55; margin-top: 10px; }
+.codenote .why code { font-family: var(--mono); font-size: 15.4px; }
+.kbd {
+  font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; color: var(--ink-2);
+}
+
+/* ------------------------------------------------------- week 2 additions */
+.michael { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); }
+.michael figcaption { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-top: 8px; line-height: 1.5; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+
+/* a bet: pick one option, then reveal */
+.bet { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 12px; }
+.bet .q { font-family: var(--body); font-size: 17.5px; font-weight: 600; color: var(--ink); flex-basis: 100%; line-height: 1.4; }
+.bet button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.bet button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.bet button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.bet .verdict { font-family: var(--mono); font-size: 15px; margin-left: 6px; }
+.bet .verdict.ok { color: var(--good); } .bet .verdict.no { color: var(--bad); }
+
+/* generated text */
+.gen { font-size: 19.5px; line-height: 1.75; margin: 0 0 12px; }
+.gen .t { padding: 1px 1px; border-radius: 2px; white-space: pre-wrap; }
+.gen .copied { background: color-mix(in srgb, var(--cls-1) 22%, transparent); border-bottom: 2px solid var(--cls-1); }
+.gen .dead { color: var(--bad); font-family: var(--mono); }
+.gen .prompt { color: var(--ink-3); }
+.gen-list { display: flex; flex-direction: column; gap: 10px; }
+.gen-list .gen { padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; margin: 0; }
+
+.merge-row { display: grid; grid-template-columns: 54px 1fr 110px; gap: 10px; font-family: var(--mono); font-size: 15px; padding: 3px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.merge-row .n { color: var(--ink-3); } .merge-row .c { text-align: right; color: var(--ink-2); }
+.merge-row .p { display: flex; gap: 6px; align-items: center; }
+.merge-row .p .tok { margin: 0; }
+.merge-row .tok.new { border-color: var(--ink); font-weight: 600; }
+.eow { color: var(--cls-1); }
+
+.pbar { display: grid; grid-template-columns: 150px 1fr 64px; gap: 10px; align-items: center; font-family: var(--mono); font-size: 14.5px; padding: 2px 0; }
+.pbar .lab { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pbar .bar { height: 14px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pbar .bar i { display: block; height: 100%; background: var(--cls-0); }
+.pbar.cut .bar i { background: var(--rule-strong); } .pbar.cut .lab { color: var(--ink-3); }
+.pbar .v { color: var(--ink-2); }
+
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 18px; margin: 12px 0; }
+.sliders label.field { display: flex; justify-content: space-between; }
+.sliders label.field b { color: var(--ink); font-weight: 500; }
+.sliders .off { opacity: .4; }
+
+.tr-row { display: grid; grid-template-columns: 64px 1fr; gap: 8px 14px; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 18.5px; line-height: 1.5; }
+.tr-row .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.tr-row .bleu { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-left: 8px; }
+.tr-row:last-child { border-bottom: none; }
+.nowrap { white-space: nowrap; }
+.busy { opacity: .55; pointer-events: none; }
+
+/* formulas: native MathML, kept outside .prose so they survive presentation mode */
+math { font-family: "STIX Two Math", "Latin Modern Math", "Cambria Math", "Times New Roman", serif; }
+.prose math { font-size: 1.05em; }
+.formula {
+  margin: 12px 0 22px; padding: 14px 20px 12px; background: var(--panel-sunk);
+  border-left: 3px solid var(--rule-strong); border-radius: 3px; overflow-x: auto;
+}
+.formula .fn {
+  display: block; font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px;
+}
+.formula math { font-size: 1.25em; margin: 6px 0; }
+.formula math + math { margin-top: 10px; }
+.formula mtext { font-family: var(--body); font-size: .82em; color: var(--ink-2); }
+body.present .formula { margin-top: 10px; }
+
+/* the one-screen recipe */
+.recipe { padding: 4px 16px 6px; }
+.recipe .step { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--rule); }
+.recipe .step:first-child { border-top: none; }
+.recipe .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.recipe .k b { display: block; font-family: var(--display); font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1; margin-bottom: 4px; }
+.recipe pre { margin: 0; font-family: var(--mono); font-size: 14.5px; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--ink); }
+.recipe .c { color: var(--ink-3); }
+
+/* --------------------------------------------------- presentation mode */
+body.present .prose:not(.keep) { display: none; }
+body.present .footnote { display: none; }
+body.present section { min-height: 100vh; padding-top: 40px; }
+body.present .panel { margin-top: 14px; }
+body.present .lede { display: none; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; border-right: none;
+    border-bottom: 1px solid var(--rule); padding: 18px 20px; }
+  .rail nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .wrap { padding: 0 20px; }
+  body { font-size: 18.6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+/* ------------------------------------------------------- week 3 additions */
+/* code next to the formula it implements: hover a line, the term lights up (and back) */
+.two { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .two { grid-template-columns: 1fr; } }
+/* wide code: the formulas go below it, as a row of cards */
+.two.stacked { grid-template-columns: 1fr; }
+.two.stacked .fstack { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 6px 22px; }
+.two.stacked .fstack .row { border-top: none; border-left: 2px solid var(--rule); padding: 4px 0 4px 12px; grid-template-columns: 1fr; gap: 2px; }
+.two.stacked .fstack .row .n { white-space: nowrap; }
+.hm svg rect.flat { stroke: none; }
+#masks-out > div { display: flex; flex-direction: column; justify-content: flex-end; }
+#masks-out .hm-title { min-height: 2.8em; }
+.temp-table td:first-child { white-space: nowrap; }
+pre.code { margin: 0; padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; white-space: normal; overflow-x: auto; color: var(--ink); counter-reset: ln; }
+pre.code .ln { display: block; white-space: pre; min-height: 1.5em; padding: 0 8px 0 40px; margin: 0 -8px; position: relative; border-radius: 2px; transition: background .12s ease; }
+pre.code .ln::before { counter-increment: ln; content: counter(ln); position: absolute; left: 8px; width: 24px; text-align: right; color: var(--ink-3); font-size: 12.5px; top: 1px; }
+pre.code .ln[data-f] { cursor: default; }
+pre.code .ln.hi, .fstack .fx.hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .c { color: var(--ink-3); }
+pre.code .kw { color: var(--cls-3); }
+.fstack .fx { padding: 2px 6px; border-radius: 3px; transition: background .12s ease; }
+.fstack .fx[data-f] { cursor: default; }
+.fstack .fx.dim { opacity: .35; }
+.fstack .row { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--rule); }
+.fstack .row:first-child { border-top: none; }
+.fstack .row .n { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .08em; }
+.fstack .row .say { font-size: 16.4px; color: var(--ink-2); line-height: 1.5; margin-top: 2px; }
+.fstack math { font-size: 1.1em; }
+.fstack .row > div { min-width: 0; overflow-x: auto; }
+.two:not(.stacked) .fstack math { font-size: 1em; }
+.two:not(.stacked) .fstack math[display="block"] { display: inline-block; margin: 2px 0; }
+.fstack .fx.hi math { color: var(--ink); }
+
+/* a redrawn schematic and its credit line */
+.fig { margin: 8px 0 0; }
+.figcap { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.5; margin: 8px 0 2px; }
+.figcap a { color: var(--ink-2); }
+
+/* attention heatmaps */
+.hm-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.hm-title { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.hm svg rect.cell { stroke: var(--panel); stroke-width: .6; }
+.hm svg rect.cell:hover { stroke: var(--ink); stroke-width: 1.5; }
+.headgrid { display: grid; grid-template-columns: 40px repeat(8, minmax(0, 1fr)); gap: 4px; align-items: center; }
+.headgrid .lab { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); text-align: center; }
+.headgrid svg { cursor: pointer; border: 1px solid var(--rule); border-radius: 2px; background: var(--panel); }
+.headgrid svg.on { outline: 2px solid var(--cls-1); }
+
+/* the score table */
+.scores td math { font-size: 1.1em; }
+.scores td:first-child { font-weight: 600; font-family: var(--display); }
+
+/* live text-in → text-out panels */
+.io { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.io .out { font-family: var(--mono); font-size: 22px; letter-spacing: .04em; padding: 8px 12px; background: var(--panel-sunk); border-radius: 3px; min-height: 46px; }
+.io .out.ok { border-left: 3px solid var(--good); } .io .out.no { border-left: 3px solid var(--bad); }
+.small-note { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); margin-top: 6px; }
+.toggle { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 3px; overflow: hidden; }
+.toggle button { border: none; border-radius: 0; }
+.toggle button.sel { background: var(--ink); color: var(--ground); }
+.ck { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.ck b { color: var(--good); font-weight: 500; } .ck b.no { color: var(--bad); }
+.results th.data-th, .results td { font-size: 15.4px; }
+.results tr.hl td { background: color-mix(in srgb, var(--cls-0) 10%, transparent); }
+
+/* ------------------------------------------------------- week 4 additions */
+/* token strips: WordPiece pieces, with the continuation marker and special tokens coloured */
+.pieces { display: flex; flex-wrap: wrap; gap: 4px 3px; align-items: center; line-height: 1.3; }
+.pieces .tok { margin: 0; }
+.pieces .tok.cont { border-color: color-mix(in srgb, var(--cls-1) 60%, var(--rule)); background: color-mix(in srgb, var(--cls-1) 10%, var(--panel)); }
+.pieces .tok.sp { border-color: var(--ink-3); color: var(--ink-2); font-weight: 600; }
+.pieces .tok.unk { border-color: var(--bad); color: var(--bad); font-weight: 600; }
+.pieces .tok.eow { color: var(--cls-1); }
+.pieces .tok.seg1 { background: color-mix(in srgb, var(--cls-2) 12%, var(--panel)); }
+.pieces .tok.mk { background: color-mix(in srgb, var(--cls-3) 22%, var(--panel)); border-color: var(--cls-3); }
+.pieces .tok.rnd { background: color-mix(in srgb, var(--cls-1) 22%, var(--panel)); border-color: var(--cls-1); }
+.pieces .tok.keep { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.pieces .tok.ans { background: color-mix(in srgb, var(--good) 22%, var(--panel)); border-color: var(--good); font-weight: 600; }
+.pieces .tok.ent { font-weight: 600; }
+.pieces .tok.dim { opacity: .45; }
+.pieces .tok.word { border-style: dashed; }
+.pieces .gap { flex-basis: 100%; height: 0; }
+.pieces .lab { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin-right: 6px; letter-spacing: .06em; text-transform: uppercase; }
+/* the merge stepper */
+.merge-row.wp { grid-template-columns: 54px 1fr 190px; }
+.merge-row .c small { color: var(--ink-3); }
+.merge-list { max-height: 330px; overflow-y: auto; }
+.merge-row.now { background: color-mix(in srgb, var(--cls-1) 12%, transparent); }
+/* the two encoders side by side */
+.enc-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.enc-row .k { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.enc-row:last-child { border-bottom: none; }
+.enc-row.diff .k { color: var(--cls-1); }
+/* segmentation lattice rows */
+.seg-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.seg-row .p { font-family: var(--mono); font-size: 14.5px; text-align: right; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.seg-row.best .p { color: var(--ink); font-weight: 600; }
+.seg-row:last-child { border-bottom: none; }
+/* a small legend line */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin: 8px 0 0; align-items: center; }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; border: 1px solid var(--rule-strong); }
+/* zero-shot label pickers */
+.zs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 14px; }
+.zs-grid label.field b { color: var(--ink); }
+.zs-grid select { width: 100%; }
+.conf { border-collapse: collapse; font-family: var(--mono); font-size: 14px; }
+.conf td, .conf th { padding: 4px 9px; text-align: right; border-bottom: none; }
+.conf th { font-size: 12.5px; }
+.conf td.hit { background: color-mix(in srgb, var(--good) 18%, transparent); }
+.conf td.miss { color: var(--ink-3); }
+/* the head figure toggle and the task tables */
+.task-table td:first-child { font-weight: 600; font-family: var(--display); white-space: nowrap; }
+.task-table td { vertical-align: top; font-size: 15.4px; }
+.task-table code { white-space: nowrap; }
+/* a load report */
+pre.report { margin: 0; font-family: var(--mono); font-size: 13.5px; line-height: 1.55; white-space: pre; overflow-x: auto; color: var(--ink-2); padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; }
+pre.report .miss { color: var(--bad); font-weight: 600; } pre.report .unex { color: var(--ink-3); }
+/* the dial */
+.dial { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .dial { grid-template-columns: 1fr; } }
+.dial .knob { display: flex; gap: 6px; flex-wrap: wrap; }
+.dial .knob button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the MLM variants, under a toggle */
+details.variants { margin: 12px 0 0; }
+details.variants > summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 18px; padding: 8px 0; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+details.variants > summary::-webkit-details-marker { display: none; }
+details.variants > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.variants[open] > summary::before { content: "−"; }
+.variant { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: center; padding: 14px 0; border-top: 1px solid var(--rule); }
+@media (max-width: 1000px) { .variant { grid-template-columns: 1fr; } }
+.variant .say { font-size: 17px; line-height: 1.55; color: var(--ink-2); }
+.variant .say b { color: var(--ink); }
+/* NER entity chips */
+.ent-line { font-size: 18.5px; line-height: 2.1; margin: 0 0 8px; }
+.ent { padding: 2px 6px; border-radius: 3px; border-bottom: 2px solid; white-space: nowrap; }
+.ent i { font-family: var(--mono); font-style: normal; font-size: 11.5px; letter-spacing: .06em; margin-left: 5px; opacity: .8; }
+.ent.PER { background: color-mix(in srgb, var(--cls-0) 16%, transparent); border-color: var(--cls-0); }
+.ent.ORG { background: color-mix(in srgb, var(--cls-1) 16%, transparent); border-color: var(--cls-1); }
+.ent.LOC { background: color-mix(in srgb, var(--cls-2) 16%, transparent); border-color: var(--cls-2); }
+.ent.MISC { background: color-mix(in srgb, var(--cls-3) 16%, transparent); border-color: var(--cls-3); }
+.ent.wrong { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* alignment table */
+.align { font-family: var(--mono); font-size: 14.5px; border-collapse: collapse; }
+.align td, .align th { padding: 3px 10px; }
+.align td.ign { color: var(--ink-3); }
+.align tr.cont td:first-child { color: var(--cls-1); }
+/* QA */
+.ctx { font-size: 18px; line-height: 1.7; }
+.ctx mark { background: color-mix(in srgb, var(--good) 28%, transparent); color: inherit; padding: 1px 2px; border-radius: 2px; }
+.ctx mark.gold { background: none; box-shadow: inset 0 -2px 0 var(--cls-0); }
+.ctx .q { color: var(--ink-3); }
+.window { border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; margin: 8px 0; }
+.window .wh { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+.window .wh b { color: var(--ink); font-weight: 500; }
+.qa-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px 14px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; align-items: baseline; }
+.qa-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: block; }
+.qa-row:last-child { border-bottom: none; }
+.qa-row .ok { color: var(--good); } .qa-row .no { color: var(--bad); }
+
+/* ------------------------------------------------ week 4, second pass (2026-09-30) */
+/* a schematic with states: the buttons switch what the same picture highlights */
+.fig-states { display: flex; gap: 6px; flex-wrap: wrap; }
+.fig-states button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the variants footnote: three small pictures, each with its paragraph */
+.variant .fig svg { max-width: 560px; }
+/* clickable tokens (the MLM picker): the chosen one is outlined */
+.pieces .tok.pick { cursor: pointer; }
+.pieces .tok.pick:hover { border-color: var(--ink); }
+.pieces .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* the scoreboard in the rail: rows light up as reveals happen */
+.score { margin-top: 12px; border-top: 1px solid var(--rule); padding-top: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+.score .row { display: grid; grid-template-columns: 1fr 52px; gap: 6px; padding: 2px 0; line-height: 1.35; align-items: baseline; }
+.score .row.off { opacity: .38; }
+.score .row.on { color: var(--ink); }
+.score .row.line { color: var(--bad); border-bottom: 1px dashed var(--bad); margin-bottom: 3px; }
+.score .row .v { text-align: right; font-variant-numeric: tabular-nums; }
+.score .row.pass .v { color: var(--good); font-weight: 600; }
+.score .t { letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+/* the results table sorters */
+.sorters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.sorters button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* a bare figure caption line under a schematic */
+.figline { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin: 6px 0 0; line-height: 1.5; }
+/* two-column figure + code */
+.fig-code { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+/* the QA score rows: hover a token to read both scores */
+.qa-pick { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.qa-pick button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.qa-pick button.noans { border-style: dashed; }
+
+/* ------------------------------------------------------- week 5 additions */
+/* the two tables, growing: a row that has just been written */
+.results tr.new td, .costs tr.new td { animation: rowin .9s ease; }
+@keyframes rowin { from { background: color-mix(in srgb, var(--cls-1) 30%, transparent); } to { background: transparent; } }
+.costs td, .costs th { font-size: 14.5px; }
+.costs td.mono { font-size: 13.5px; }
+/* the logit-lens strip: one column per layer, five guesses each */
+.lens { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); gap: 4px; overflow-x: auto; }
+.lens .col { display: flex; flex-direction: column; gap: 2px; }
+.lens .col .h { font-family: var(--mono); font-size: 12px; color: var(--ink-3); text-align: center; letter-spacing: .06em; padding-bottom: 3px; border-bottom: 1px solid var(--rule); margin-bottom: 2px; }
+.lens .g { font-family: var(--mono); font-size: 13px; padding: 1px 5px; border-radius: 2px; white-space: pre; overflow: hidden; text-overflow: ellipsis; background: var(--panel-sunk); }
+.lens .g.gold { background: color-mix(in srgb, var(--good) 28%, transparent); font-weight: 600; }
+.lens .g.same { box-shadow: inset 0 0 0 1px var(--cls-1); }
+.lens .g i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+.tokrow { display: flex; flex-wrap: wrap; gap: 3px; margin: 8px 0; }
+.tokrow .tok { cursor: pointer; margin: 0; }
+.tokrow .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* attention: the heatmap and its controls */
+.att { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .att { grid-template-columns: 1fr; } }
+.att canvas { width: 100%; image-rendering: pixelated; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+.att .hm-box { position: relative; }
+.att .ax { font-family: var(--mono); font-size: 12px; color: var(--ink-3); display: flex; justify-content: space-between; }
+/* RoPE dials */
+.dials { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin: 8px 0 14px; }
+.clocks svg { max-width: 760px; }
+.rope-out { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rope-out .box { padding: 12px 14px; background: var(--panel-sunk); border-radius: 3px; }
+.rope-out .box .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.rope-out .box .v { font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; transition: color .15s; }
+.rope-out .box.moved .v { color: var(--bad); } .rope-out .box.still .v { color: var(--good); }
+/* the KV stepper */
+.stepper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.stepper .cnt { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.stepper .cnt b { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* the verbalizer builder */
+.vb { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; }
+@media (max-width: 900px) { .vb { grid-template-columns: repeat(2, 1fr); } }
+.vb .cls { border-top: 3px solid; padding-top: 6px; }
+.vb .cls.c0 { border-color: var(--cls-0); background: none; } .vb .cls.c1 { border-color: var(--cls-1); background: none; }
+.vb .cls.c2 { border-color: var(--cls-2); background: none; } .vb .cls.c3 { border-color: var(--cls-3); background: none; }
+.vb .cls .h { font-family: var(--display); font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.vb .words { display: flex; flex-wrap: wrap; gap: 4px; }
+.vb .words button { font-family: var(--mono); font-size: 13px; padding: 2px 7px; }
+.vb .words button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.vb .words button i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 3px; }
+.vb .words button.on i { color: var(--ground); opacity: .7; }
+.vb-acc { display: flex; gap: 30px; align-items: baseline; flex-wrap: wrap; margin-top: 12px; }
+/* the design card as a form */
+.card { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px 16px; align-items: center; }
+.card .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.card select, .card input { width: auto; min-width: 200px; }
+.card .row-btns button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.card-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.card-tabs button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.est { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+.est .stat .v { font-size: 26px; }
+/* label-it-yourself over words */
+.words-pick { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: flex-end; }
+.words-pick .w { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.words-pick .w .s { font-family: var(--mono); font-size: 14px; }
+.words-pick .w select { font-size: 12.5px; padding: 2px 4px; width: auto; }
+.words-pick .w.hit select { border-color: var(--good); } .words-pick .w.miss select { border-color: var(--bad); }
+.words-pick .w .g { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+.words-pick .w.unx .s { text-decoration: underline dotted var(--bad); }
+/* unexpressible words in a typed sentence */
+.wl { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.wl .tok.unx { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+.wl .tok i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+/* per-row bets over a table */
+table.rowbet td.b { white-space: nowrap; }
+table.rowbet td.b button { font-size: 13px; padding: 2px 8px; }
+table.rowbet td.b button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.rowbet td.b button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.rowbet td.b button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.rowbet td.zero { color: var(--bad); font-weight: 600; }
+/* horizontal bar pairs for the breakdowns */
+.pair { display: grid; grid-template-columns: 90px 1fr 1fr 150px; gap: 8px; align-items: center; font-family: var(--mono); font-size: 13.5px; padding: 2px 0; }
+.pair .lab { text-align: right; color: var(--ink-2); }
+.pair .bar { height: 12px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pair .bar i { display: block; height: 100%; }
+.pair .bar.e i { background: var(--cls-0); } .pair .bar.d i { background: var(--cls-1); }
+.pair .n { color: var(--ink-3); }
+.pair.hl .lab { color: var(--bad); font-weight: 600; }
+/* generated text against gold: dropped words */
+.diffline { font-size: 17px; line-height: 1.8; }
+.diffline .drop { color: var(--bad); text-decoration: line-through; }
+.diffline .chg { background: color-mix(in srgb, var(--cls-1) 24%, transparent); border-radius: 2px; }
+/* NER writer */
+.ner-write textarea { min-height: 64px; }
+.ner-parse { margin-top: 8px; }
+.ent.inv { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* QA */
+.ctx mark.pred { background: color-mix(in srgb, var(--good) 28%, transparent); }
+.ctx .nosub { color: var(--bad); font-weight: 600; }
+.order-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; }
+.order-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.order-row:last-child { border-bottom: none; }
+/* lightning round */
+.lr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.lr:last-child { border-bottom: none; }
+.lr .pick { display: flex; gap: 4px; flex-wrap: wrap; }
+.lr .pick button { font-family: var(--mono); font-size: 13px; padding: 2px 8px; }
+.lr .pick button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.lr .pick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.lr .pick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.lr .ans { grid-column: 1 / -1; font-size: 16px; color: var(--ink-2); line-height: 1.5; }
+/* the course table */
+.course td:first-child { font-family: var(--mono); }
+.course tr.now td { background: color-mix(in srgb, var(--cls-1) 10%, transparent); font-weight: 600; }
+.big-num { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: -.03em; line-height: 1; }
+
+/* ------------------------------------------------------- week 6 additions */
+/* the meme, kept: an image with a caption beside it */
+.michael { display: grid; grid-template-columns: minmax(0, .9fr) minmax(280px, 1.1fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; max-width: 452px; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+.michael figcaption { font-family: var(--body); font-size: 17.7px; color: var(--ink-2); line-height: 1.55; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+/* pick three changes */
+.picklist { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.picklist button { font-size: 15px; padding: 4px 11px; }
+.picklist button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.picklist button.yes { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.picklist button.no { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.picklist button .why { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+/* the N–D plane */
+.plane-wrap { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .plane-wrap { grid-template-columns: 1fr; } }
+.plane-models { display: flex; flex-direction: column; gap: 6px; }
+.plane-models button { text-align: left; font-size: 14.5px; display: flex; justify-content: space-between; gap: 8px; }
+.plane-models button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.plane-models button .st { font-family: var(--mono); font-size: 12px; opacity: .7; }
+#plane svg { max-width: 760px; cursor: crosshair; }
+#plane svg.done { cursor: default; }
+/* the bill table */
+table.bill td, table.bill th { font-size: 14px; white-space: nowrap; }
+table.bill td:first-child { font-weight: 600; font-family: var(--display); }
+/* passports as a diff */
+.pp-row { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 6px 14px; padding: 6px 0; border-bottom: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; align-items: baseline; }
+.pp-row:last-child { border-bottom: none; }
+.pp-row .k { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pp-row.head { font-family: var(--display); font-weight: 700; font-size: 16px; }
+.pp-row.diff { background: color-mix(in srgb, var(--cls-1) 9%, transparent); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 3px; }
+.pp-row.diff .k { color: var(--cls-1); }
+.pp-row .sec { font-size: 11.5px; color: var(--ink-3); margin-left: 6px; }
+/* norm grid and rope grid: controls beside the picture */
+.norm-grid, .rope-grid { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .norm-grid, .rope-grid { grid-template-columns: 1fr; } }
+#fig-norm svg { max-width: 620px; } #fig-rope-matrix svg { max-width: 560px; display: block; margin: 0 auto; }
+#fig-rope-coords svg, #fig-slow svg, #fig-gqa svg, #fig-ffn svg, #fig-stack svg, #fig-prenorm svg, #fig-regimes svg, #fig-queue svg, #fig-roundtrip svg, #fig-moe svg, #fig-scatter svg, #fig-linear svg, #fig-masks svg { max-width: 920px; display: block; }
+#ffn-curves svg, #ffn-gate svg, #scaling-chart svg, #steps-chart svg, #tpp-chart svg, #serving-chart svg, #decode-chart svg, #xover-chart svg, #lin-chart svg { max-width: 640px; }
+/* order-the-models bet */
+.orderpick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+.orderpick button { font-size: 15px; }
+.orderpick button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.orderpick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.orderpick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.orderpick button i { font-style: normal; font-family: var(--mono); font-size: 11.5px; margin-right: 6px; opacity: .7; }
+.orderpick .arrow { color: var(--ink-3); }
+/* heatmap cells for the per-class table */
+.conf td.v { font-variant-numeric: tabular-nums; }
+/* small inline stat row */
+.est .stat .v small { font-size: 13px; font-weight: 400; color: var(--ink-3); margin-left: 4px; }
+.small-note { font-family: var(--mono); font-size: 13px; color: var(--ink-3); line-height: 1.5; margin-top: 8px; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 18px; margin-bottom: 10px; }
+.bet .q input { vertical-align: middle; }
+#bpb-out .pbar { grid-template-columns: 190px 1fr 70px; }
+#bpb-out .pbar .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prose.footnote ul { padding-left: 1.2em; line-height: 1.6; }  /* reference lists */
+
+/* ------------------------------------------------- lecture pages (demo_base/quiz.js) */
+/* one question: number + kind, the question, the answering UI, the answer (hidden until committed) */
+.qz { border-top: 1px solid var(--rule); padding: 22px 0 26px; }
+.qz:last-of-type { border-bottom: 1px solid var(--rule); }
+.qz-head { display: flex; gap: 12px; align-items: baseline; font-family: var(--mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.qz-n { font-weight: 500; color: var(--ink-2); }
+.qz.done .qz-n::after { content: " ✓"; color: var(--good); }
+.qz-q { font-family: var(--display); font-size: 21.5px; font-weight: 600; line-height: 1.35; color: var(--ink); margin-bottom: 12px; }
+.qz-q p { margin: 0 0 .55em; } .qz-q p:last-child { margin-bottom: 0; }
+.qz-q code { font-size: .82em; font-weight: 500; background: var(--panel-sunk); padding: .05em .3em; border-radius: 3px; }
+.qz-q [data-fig] { margin: 14px 0 10px; }
+.qz-q [data-fig] svg, .qz-a [data-fig] svg, .panel [data-fig] svg { width: 100%; max-width: 820px; height: auto; display: block; margin: 0 auto; }
+.qz-q table { font-family: var(--body); font-weight: 400; font-size: 16.4px; margin: 10px 0; width: auto; }
+.qz-ui { margin: 0 0 6px; }
+.qz-row { margin-top: 10px; min-height: 28px; }
+.qz-verdict { font-family: var(--mono); font-size: 15px; color: var(--ink-2); }
+.qz-verdict.ok { color: var(--good); } .qz-verdict.no { color: var(--bad); }
+.qz-opts button.missed { border-style: dashed; border-color: var(--good); }
+.qz-opts button[disabled] { opacity: 1; cursor: default; }
+.qz-opts button[disabled]:not(.right):not(.wrong):not(.missed) { opacity: .5; }
+/* clickable parts of a figure: lecture.js draws a rect.hit as the last child of every [data-pick] group */
+svg rect.hit { fill: transparent; stroke: none; }  /* a figure drawn outside a question: its click targets stay invisible */
+.qz-pickable { cursor: pointer; }
+.qz-pickable rect.hit { fill: transparent; stroke: transparent; stroke-width: 2; stroke-dasharray: 4 3; transition: stroke .12s ease; }
+.qz-pickable:hover rect.hit { stroke: var(--ink-3); }
+.qz-pickable.pick rect.hit { stroke: var(--ink); stroke-dasharray: none; fill: color-mix(in srgb, var(--ink) 8%, transparent); }
+.qz-pickable.right rect.hit { stroke: var(--good); stroke-dasharray: none; fill: color-mix(in srgb, var(--good) 12%, transparent); }
+.qz-pickable.wrong rect.hit { stroke: var(--bad); stroke-dasharray: none; fill: color-mix(in srgb, var(--bad) 12%, transparent); }
+.qz-pickable.missed rect.hit { stroke: var(--good); }
+/* sort: one row per item, the bins as buttons */
+table.qz-sort td { padding: 7px 10px 7px 0; vertical-align: top; }
+table.qz-sort td.qz-item { font-size: 17.5px; width: 38%; }
+table.qz-sort td.qz-bins { display: flex; flex-wrap: wrap; gap: 5px 6px; }
+table.qz-sort td.qz-bins button { font-size: 14.5px; padding: 3px 10px; }
+table.qz-sort button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.qz-sort button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.qz-sort button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.qz-sort button.ans { border-color: var(--good); border-style: dashed; }
+table.qz-sort button[disabled] { opacity: 1; cursor: default; }
+table.qz-sort button[disabled]:not(.right):not(.wrong):not(.ans) { opacity: .45; }
+.qz-count { font-size: 14px; color: var(--ink-3); }
+/* fill: inputs inline in the question */
+input.qz-blank { width: auto; display: inline-block; font-size: .85em; padding: 1px 8px; margin: 0 2px; text-align: center; vertical-align: baseline; border-radius: 3px; }
+input.qz-blank.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+input.qz-blank.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); text-decoration: line-through; color: var(--ink-3); }
+.qz-exp { font-family: var(--mono); font-size: .8em; color: var(--good); margin: 0 6px 0 2px; font-weight: 500; }
+/* write: a textarea, then a checklist */
+textarea.qz-text { font-family: var(--body); font-size: 17.5px; line-height: 1.5; min-height: 80px; resize: vertical; }
+.qz-ticks { margin-top: 14px; display: flex; flex-direction: column; gap: 5px; }
+.qz-ticks-k { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px; }
+.qz-ticks label { display: flex; gap: 10px; align-items: baseline; font-size: 17.2px; line-height: 1.45; cursor: pointer; }
+.qz-ticks input { accent-color: var(--ink); flex: none; }
+/* the answer */
+.qz-a { margin-top: 16px; padding: 14px 18px 14px 18px; background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--ink); border-radius: 4px; font-size: 18.6px; line-height: 1.62; }
+.qz-a p { margin: 0 0 .75em; } .qz-a p:last-child { margin-bottom: 0; }
+.qz-a ul, .qz-a ol { margin: 0 0 .75em; padding-left: 1.3em; }
+.qz-a code { background: var(--panel-sunk); padding: .08em .32em; border-radius: 3px; font-size: .86em; }
+.qz-a table { font-size: 16px; margin: 8px 0 12px; width: auto; }
+.qz-a [data-fig] { margin: 10px 0 12px; }
+.qz-miss { color: var(--ink-2); font-size: 17.2px; line-height: 1.55; border-top: 1px dashed var(--rule); padding-top: 10px; margin-top: .9em !important; }
+.qz-miss b { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--ink-3); margin-right: 8px; }
+.qz-nofig { font-family: var(--mono); font-size: 14px; color: var(--bad); padding: 8px 0; }
+/* optional depth under a toggle; its questions do not count toward the page's progress */
+details.optional { margin: 20px 0 0; border: 1px dashed var(--rule-strong); border-radius: 4px; padding: 0 18px; }
+details.optional > summary { cursor: pointer; list-style: none; display: flex; gap: 10px; align-items: baseline; padding: 12px 0; font-family: var(--display); font-weight: 600; font-size: 18px; }
+details.optional > summary::-webkit-details-marker { display: none; }
+details.optional > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.optional[open] > summary::before { content: "−"; }
+details.optional > summary .optional-count { margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--ink-3); font-weight: 400; }
+details.optional > .prose { padding-top: 4px; }
+details.optional .qz:last-of-type { border-bottom: none; }
+.rail .quiz-progress { font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin-top: 8px; }
+.rail a.back { display: inline-block; margin-top: 8px; font-family: var(--display); font-size: 16px; color: var(--ink-2); }
+.sources { font-size: 17.2px; color: var(--ink-2); }
+.sources ul { padding-left: 1.2em; line-height: 1.6; }
+@media (max-width: 760px) {
+  .qz-q { font-size: 19px; }
+  table.qz-sort td.qz-item { width: 100%; display: block; padding-bottom: 2px; }
+  table.qz-sort td.qz-bins { display: flex; padding-top: 0; }
+  table.qz-sort tr { display: block; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+}
+</style>
+<meta name="quiz-store" content="week02_lecture">
+
+</head>
+<body>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Lecture 2<br>Language Modelling · check yourself</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-btns">
+    <button id="btn-reset" title="Forget every answer on this page">Reset answers</button>
+    <button id="btn-theme" title="Light / dark">Theme</button>
+  </div>
+  <div class="quiz-progress" id="quiz-progress"></div>
+  <div class="rail-foot">
+    <a class="back" href="week02_demo.html">← the seminar demo</a>
+    <div style="margin-top:10px">Answer first, then open.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>Language modelling,<br>as questions</h1>
+  <p class="lede">Seminar 2 built the left factor of <math><mi mathvariant="normal">generator</mi><mo>=</mo><mi>P</mi><mo>(</mo><mi mathvariant="normal">next</mi><mo>|</mo><mi mathvariant="normal">prefix</mi><mo>)</mo><mo>×</mo><mtext>decoding rule</mtext></math> three ways and the right factor six. This page is the theory of the same week, as questions: what a language model is, what task it solves at every position, why counting hits a ceiling, what a decoding rule changes. Commit before you open.</p>
+  <div class="prose"><p>Each block explains first and asks second. The examples come from two corpora: 124 000 Russian jokes for language modelling, and German–English image captions for translation. Your answers stay in this browser.</p></div>
+</section>
+
+<!-- ============================================================== lm -->
+<section id="lm">
+  <p class="eyebrow">Block 00 · the definition</p>
+  <h2>What a language model is</h2>
+  <div class="prose"><p>A <strong>language model</strong> is a probability distribution over strings. That is the whole definition — nothing about neural networks, nothing about generation. Given a sequence of tokens <math><msub><mi>w</mi><mn>1</mn></msub><mo>…</mo><msub><mi>w</mi><mi>T</mi></msub></math>, it assigns a number <math><mi>P</mi><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mi>T</mi></msub><mo>)</mo></math>, and the numbers over all possible sequences sum to one.</p></div>
+  <div class="qz" data-q="q-lm-sort"></div>
+  <div class="prose"><p>Nobody can estimate <math><mi>P</mi><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mi>T</mi></msub><mo>)</mo></math> directly: the number of possible 30-token sentences over an 8 000-token vocabulary is <math><msup><mn>8000</mn><mn>30</mn></msup></math>. So the first move — Shannon's, in 1948 — is the chain rule: <math><mi>P</mi><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mi>T</mi></msub><mo>)</mo><mo>=</mo><msub><mo>∏</mo><mi>t</mi></msub><mi>P</mi><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>-</mo><mn>1</mn></mrow></msub><mo>)</mo></math>, the probability of a text as a product of the probabilities of each next token given everything before it.</p></div>
+  <div class="qz" data-q="q-chain"></div>
+</section>
+
+<!-- ============================================================ task -->
+<section id="task">
+  <p class="eyebrow">Block 01 · the task</p>
+  <h2>The task at one position</h2>
+  <div class="prose"><p>Every position is a classification problem with <math><mo>|</mo><mi>V</mi><mo>|</mo><mo>=</mo><mn>8</mn><mo>,</mo><mn>000</mn></math> classes: given the state, predict the next piece. The input at step <math><mi>t</mi></math> is the token <math><msub><mi>w</mi><mi>t</mi></msub></math>; the target is <math><msub><mi>w</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub></math>. So the model's input sequence is the joke with <code>[BOS]</code> in front, the target sequence is the same joke shifted left by one with <code>[EOS]</code> at the end.</p></div>
+  <div class="qz" data-q="q-shift"></div>
+  <div class="qz" data-q="q-task-type"></div>
+  <div class="prose"><p>One forward pass over a text therefore trains every position at once. Two tokens are added around the text: <code>[BOS]</code> in front, so that the first real token also has something to be predicted from, and <code>[EOS]</code> at the end, so that the model learns when a text stops — without it, it could never stop generating. Texts have different lengths and a tensor does not, so a batch is padded with <code>[PAD]</code> to its longest text.</p></div>
+  <div class="qz" data-q="q-positions"></div>
+  <div class="qz" data-q="q-pad"></div>
+</section>
+
+<!-- ============================================================= ppl -->
+<section id="ppl">
+  <p class="eyebrow">Block 02 · the metric</p>
+  <h2>A number for the model, and the number that lies</h2>
+  <div class="prose"><p>Looking at samples is not a metric. The metric for a language model is how much probability it assigns to text it has not seen, and by convention we report it as <strong>perplexity</strong>: <math><mi mathvariant="normal">PPL</mi><mo>=</mo><mi mathvariant="normal">exp</mi><mo>(</mo><mo>-</mo><mfrac><mn>1</mn><mi>T</mi></mfrac><munder><mo>∑</mo><mi>t</mi></munder><mi mathvariant="normal">log</mi><mi>P</mi><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>)</mo><mo>)</mo></math>. Lower is better.</p></div>
+  <div class="qz" data-q="q-ppl-mean"></div>
+  <div class="qz" data-q="q-ppl-loss"></div>
+  <div class="prose"><p>A count model estimates every probability as a ratio of counts. That leaves the question of what it does with a continuation it has never counted — and on held-out text such continuations are not rare, because the number of possible n-grams grows exponentially with <math><mi>n</mi></math> while a corpus grows linearly. The problem is called <strong>sparsity</strong>.</p></div>
+  <div class="qz" data-q="q-ppl-inf"></div>
+  <div class="qz" data-q="q-ppl-sparsity"></div>
+  <div class="prose"><p>Perplexity is an average <em>per token</em>, so it depends on what a token is. The same text cut into words and cut into subword pieces has a different number of tokens and a different difficulty per token. To compare models with different tokenizers, the same negative log-likelihood is divided by the number of <em>characters</em> instead — <strong>bits per character</strong> — because characters do not depend on the tokenizer.</p></div>
+  <div class="qz" data-q="q-ppl-compare"></div>
+</section>
+
+<!-- =========================================================== ngram -->
+<section id="ngram">
+  <p class="eyebrow">Block 03 · counting</p>
+  <h2>Counting, and its ceiling</h2>
+  <div class="prose"><p>The chain rule needs <math><mi>P</mi><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>-</mo><mn>1</mn></mrow></msub><mo>)</mo></math>, a distribution conditioned on the <em>entire</em> prefix. Nobody has counts for entire prefixes. So the second move is an approximation, the <strong>Markov assumption</strong>: only the last <math><mi>n</mi><mo>−</mo><mn>1</mn></math> tokens matter. This is a lie, and a useful one — with <math><mi>n</mi><mo>=</mo><mn>3</mn></math> the model needs counts of triples, and triples we have.</p></div>
+  <div class="qz" data-q="q-ngram-params"></div>
+  <div class="qz" data-q="q-fivegram"></div>
+  <div class="prose"><p>The fix for sparsity is to stop trusting raw counts. <strong>Add-δ</strong> (Laplace) smoothing pretends that every possible continuation was seen δ extra times. <strong>Interpolation</strong> mixes the trigram estimate with the bigram and the unigram, so that when the long context was never seen, the short one still speaks. <strong>Kneser–Ney</strong> also changes what the lower-order model counts, and was the state of the art for twenty years.</p></div>
+  <div class="qz" data-q="q-smooth"></div>
+</section>
+
+<!-- ============================================================= rnn -->
+<section id="rnn">
+  <p class="eyebrow">Block 04 · learning</p>
+  <h2>Learning instead of counting</h2>
+  <div class="prose"><p>Counting has a ceiling and we just hit it. The reason is not the amount of data; it is that a count-based model treats every prefix as an unrelated symbol. <em>Штирлиц открыл</em> and <em>Мюллер открыл</em> share nothing — even though whatever follows one probably follows the other. The <strong>recurrent</strong> network drops the window: instead of looking at the last <math><mi>n</mi><mo>−</mo><mn>1</mn></math> tokens, it maintains a state vector <math><msub><mi>h</mi><mi>t</mi></msub></math> that is updated once per token and is supposed to summarise <em>everything so far</em>: <math><msub><mi>h</mi><mi>t</mi></msub><mo>=</mo><mi>f</mi><mo>(</mo><msub><mi>h</mi><mrow><mi>t</mi><mo>-</mo><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>x</mi><mi>t</mi></msub><mo>)</mo></math>, <math><mi>P</mi><mo>(</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>|</mo><msub><mi>w</mi><mrow><mo>≤</mo><mi>t</mi></mrow></msub><mo>)</mo><mo>=</mo><mi mathvariant="normal">softmax</mi><mo>(</mo><mi>W</mi><msub><mi>h</mi><mi>t</mi></msub><mo>)</mo></math>.</p></div>
+  <div class="qz" data-q="q-rnn-h"></div>
+  <div class="qz" data-q="q-rnn-shared"></div>
+  <div class="prose"><p>Why should a network do better than counting? Because of embeddings. Bengio et al. (2003) built the first neural language model by concatenating the embeddings of the last <math><mi>n</mi><mo>−</mo><mn>1</mn></math> words and putting a network on top — the same Markov assumption, but now <em>cat</em> and <em>dog</em> share statistics through their vectors. The recurrent network keeps that and drops the window.</p></div>
+  <div class="qz" data-q="q-rnn-why"></div>
+  <div class="prose"><p>Everything so far generates text from nothing but a prefix. The moment you want to generate text <em>from an input</em> — translate a sentence, summarise a document, answer a question — you need one more idea: condition the language model on a second sequence. The <strong>encoder–decoder</strong> (Sutskever et al. 2014; Cho et al. 2014) does it in the most direct way: one network reads the input into a vector, a second one generates from it.</p></div>
+  <div class="qz" data-q="q-rnn-s2s"></div>
+  <div class="qz" data-q="q-bottleneck"></div>
+  <div class="prose"><p>Training a decoder has one choice the architecture does not make for you: what it reads as its previous token during training — the reference translation, or its own guess.</p></div>
+  <div class="qz" data-q="q-tf"></div>
+  <details class="optional">
+    <summary>Optional · why the plain RNN loses: gradients through time <span class="optional-count"></span></summary>
+    <div class="prose footnote"><p>The reason the plain RNN is living on borrowed time. Not NLP — it is the arithmetic of the recurrence — but it is the reason the LSTM exists, and the reason one training trick survived into every transformer.</p></div>
+    <div class="qz" data-q="q-grad"></div>
+    <div class="qz" data-q="q-lstm"></div>
+    <div class="prose footnote"><p>Two practical consequences: how to read a small gap between the cells on a real corpus, and the one training trick from the RNN era that every transformer still uses.</p></div>
+    <div class="qz" data-q="q-close"></div>
+    <div class="qz" data-q="q-clip"></div>
+  </details>
+</section>
+
+<!-- ========================================================== decode -->
+<section id="decode">
+  <p class="eyebrow">Block 05 · the right factor</p>
+  <h2>The decoding rule</h2>
+  <div class="prose"><p>We have a model that, given a prefix, returns a distribution over 8 000 next tokens. Everything below operates on a single vector of logits for one position; each rule is a small function that turns that vector into a chosen token id. Whatever the model, the interface is the same, which is why the code that generates from a 6M-parameter LSTM is byte-for-byte the code that drives a 400B-parameter LLM.</p><p>The rules come in a few kinds. <strong>Greedy</strong> takes the most probable token every time; <strong>sampling</strong> draws from the distribution as the model gives it. <strong>Temperature</strong> divides the logits by <math><mi>T</mi></math> before the softmax: <math><mi>T</mi><mo>&lt;</mo><mn>1</mn></math> sharpens the distribution, <math><mi>T</mi><mo>&gt;</mo><mn>1</mn></math> flattens it, <math><mi>T</mi><mo>→</mo><mn>0</mn></math> is greedy. <strong>Truncation</strong> cuts the tail off before sampling: top-k keeps the <math><mi>k</mi></math> most probable tokens, top-p (nucleus) the smallest set whose probabilities sum to <math><mi>p</mi></math>, min-p every token at least <math><msub><mi>p</mi><mrow><mi>m</mi><mi>i</mi><mi>n</mi></mrow></msub></math> times as probable as the top one. A <strong>repetition penalty</strong> lowers the logits of tokens already used. <strong>Beam search</strong> is different in kind: it keeps the <math><mi>b</mi></math> most probable <em>sequences</em> and extends all of them.</p></div>
+  <div class="qz" data-q="q-decode-sort"></div>
+  <div class="qz" data-q="q-greedy"></div>
+  <div class="prose"><p>The tail of the distribution — thousands of tokens with tiny probability each — is where incoherence comes from, and truncation cuts it off. The rules differ in how they decide where the tail starts.</p></div>
+  <div class="qz" data-q="q-topp"></div>
+  <div class="prose"><p>Why is the most probable text not the best text? Holtzman et al. (2020) answered with one picture: take a real text and, at every position, ask the model what probability it gave to the token that actually came next; then do the same for the model's own greedy continuation, and compare the two curves.</p></div>
+  <div class="qz" data-q="q-holtz"></div>
+  <div class="qz" data-q="q-beam"></div>
+</section>
+
+<!-- ========================================================== design -->
+<section id="design">
+  <p class="eyebrow">Block 06 · system design</p>
+  <h2>Design it</h2>
+  <div class="prose"><p>One system, end to end, with this week's tools. There is no single right design; there is a short list of things a right design cannot skip.</p></div>
+  <div class="qz" data-q="q-design"></div>
+</section>
+
+<!-- ========================================================= sources -->
+<section id="sources">
+  <p class="eyebrow">Sources</p>
+  <div class="prose sources"><ul>
+<li>Shannon (1948). <a href="https://doi.org/10.1002/j.1538-7305.1948.tb01338.x"><em>A Mathematical Theory of Communication.</em></a> Bell System Technical Journal 27.</li>
+<li>Jelinek, Mercer (1980). <em>Interpolated estimation of Markov source parameters from sparse data.</em> Pattern Recognition in Practice. Not online.</li>
+<li>Kneser, Ney (1995). <a href="https://doi.org/10.1109/ICASSP.1995.479394"><em>Improved backing-off for m-gram language modeling.</em></a> ICASSP 1995.</li>
+<li>Sennrich, Haddow, Birch (2016). <a href="https://arxiv.org/abs/1508.07909"><em>Neural Machine Translation of Rare Words with Subword Units.</em></a> ACL 2016.</li>
+<li>Bengio et al. (2003). <a href="https://www.jmlr.org/papers/v3/bengio03a.html"><em>A Neural Probabilistic Language Model.</em></a> JMLR 3.</li>
+<li>Elman (1990). <a href="https://doi.org/10.1207/s15516709cog1402_1"><em>Finding Structure in Time.</em></a> Cognitive Science 14.</li>
+<li>Mikolov et al. (2010). <a href="https://www.fit.vutbr.cz/research/groups/speech/publi/2010/mikolov_interspeech2010_IS100722.pdf"><em>Recurrent neural network based language model.</em></a> Interspeech 2010.</li>
+<li>Hochreiter, Schmidhuber (1997). <a href="https://doi.org/10.1162/neco.1997.9.8.1735"><em>Long Short-Term Memory.</em></a> Neural Computation 9(8).</li>
+<li>Cho et al. (2014). <a href="https://arxiv.org/abs/1406.1078"><em>Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation.</em></a> EMNLP 2014.</li>
+<li>Bengio, Simard, Frasconi (1994). <a href="https://doi.org/10.1109/72.279181"><em>Learning Long-Term Dependencies with Gradient Descent is Difficult.</em></a> IEEE Transactions on Neural Networks 5(2).</li>
+<li>Pascanu, Mikolov, Bengio (2013). <a href="https://arxiv.org/abs/1211.5063"><em>On the difficulty of training recurrent neural networks.</em></a> ICML 2013.</li>
+<li>Sutskever, Vinyals, Le (2014). <a href="https://arxiv.org/abs/1409.3215"><em>Sequence to Sequence Learning with Neural Networks.</em></a> NeurIPS 2014.</li>
+<li>Bahdanau, Cho, Bengio (2015). <a href="https://arxiv.org/abs/1409.0473"><em>Neural Machine Translation by Jointly Learning to Align and Translate.</em></a> ICLR 2015.</li>
+<li>Ranzato et al. (2016). <a href="https://arxiv.org/abs/1511.06732"><em>Sequence Level Training with Recurrent Neural Networks.</em></a> ICLR 2016.</li>
+<li>Papineni et al. (2002). <a href="https://aclanthology.org/P02-1040/"><em>BLEU: a Method for Automatic Evaluation of Machine Translation.</em></a> ACL 2002.</li>
+<li>Fan, Lewis, Dauphin (2018). <a href="https://arxiv.org/abs/1805.04833"><em>Hierarchical Neural Story Generation.</em></a> ACL 2018.</li>
+<li>Holtzman et al. (2020). <a href="https://arxiv.org/abs/1904.09751"><em>The Curious Case of Neural Text Degeneration.</em></a> ICLR 2020.</li>
+<li>Keskar et al. (2019). <a href="https://arxiv.org/abs/1909.05858"><em>CTRL: A Conditional Transformer Language Model for Controllable Generation.</em></a> arXiv:1909.05858.</li>
+<li>Nguyen et al. (2024). <a href="https://arxiv.org/abs/2407.01082"><em>Turning Up the Heat: Min-p Sampling for Creative and Coherent LLM Outputs.</em></a> arXiv:2407.01082.</li>
+<li>Wu et al. (2016). <a href="https://arxiv.org/abs/1609.08144"><em>Google's Neural Machine Translation System: Bridging the Gap between Human and Machine Translation.</em></a> arXiv:1609.08144.</li>
+</ul></div>
+</section>
+
+</div>
+</main>
+</div>
+
+<div hidden id="text-chunks">
+<template data-text="topics"><ul>
+<li>a language model and the chain rule</li>
+<li>next-token prediction as classification</li>
+<li>perplexity and bits per character</li>
+<li>n-grams and smoothing</li>
+<li>RNN, LSTM and the encoder–decoder</li>
+<li>decoding: greedy, temperature, top-k / top-p, beam search</li>
+</ul></template>
+</div>
+<script type="application/json" id="quiz-data">
+{"q-lm-sort":{"key":"q-lm-sort","type":"sort","q":"<p>Which of these is a language model, in that sense?<\/p>","a":"<p>Three of them assign a probability to any string by the chain rule: the counter, the LSTM and GPT-2 differ only in how <math><mi>P<\/mi><mo>(<\/mo><msub><mi>w<\/mi><mi>t<\/mi><\/msub><mo>|<\/mo><msub><mi>w<\/mi><mrow><mo>&lt;<\/mo><mi>t<\/mi><\/mrow><\/msub><mo>)<\/mo><\/math> is computed. The classifier models <math><mi>P<\/mi><mo>(<\/mo><mi mathvariant=\"normal\">label<\/mi><mo>|<\/mo><mi mathvariant=\"normal\">text<\/mi><mo>)<\/mo><\/math> — the text is on the wrong side of the bar. word2vec models <math><mi>P<\/mi><mo>(<\/mo><mi mathvariant=\"normal\">context<\/mi><mo>|<\/mo><mi mathvariant=\"normal\">word<\/mi><mo>)<\/mo><\/math>, one pair at a time; it never multiplies anything into a probability of a sentence. Search ranks documents; it has no distribution over strings at all.<\/p>\n<p>BERT is the honest &quot;it depends&quot;. It is trained as a <em>masked<\/em> language model — <math><mi>P<\/mi><mo>(<\/mo><msub><mi>w<\/mi><mi>i<\/mi><\/msub><mo>|<\/mo><mtext>everything else<\/mtext><mo>)<\/mo><\/math> with both sides visible — and those conditionals do not chain into a joint <math><mi>P<\/mi><mo>(<\/mo><msub><mi>w<\/mi><mn>1<\/mn><\/msub><mo>…<\/mo><msub><mi>w<\/mi><mi>T<\/mi><\/msub><mo>)<\/mo><\/math>. It is a language model by name and by training signal, and not a distribution over strings you can sample from. Both bins are defensible; what is not defensible is &quot;it generates text&quot;.<\/p>","miss":"if word2vec went in: it is trained like a tiny language model with a two-word window, which is exactly why the confusion exists. The difference is that nobody ever asks it for the probability of a sentence.","bins":["a language model","not a language model"],"items":[{"label":"a bigram counter over 124 000 jokes","bins":["a language model"]},{"label":"an LSTM trained to predict the next BPE piece","bins":["a language model"]},{"label":"GPT-2","bins":["a language model"]},{"label":"tf-idf and logistic regression over headlines","bins":["not a language model"]},{"label":"word2vec","bins":["not a language model"]},{"label":"a web search engine","bins":["not a language model"]},{"label":"BERT","bins":["a language model","not a language model"]}],"n":1},"q-chain":{"key":"q-chain","type":"pick","q":"<p>What did the chain rule buy?<\/p>","a":"<p>It is an identity; nothing is lost and nothing is approximated. What changes is the question: from a joint over all strings to one conditional per position — and <em>that<\/em> question a model can answer one step at a time, which is why every language model since is a different way to approximate the right-hand side. Shrinking the context to the last few tokens is the <em>next<\/em> move, the Markov assumption, and that one is a lie — a useful one.<\/p>","miss":"if &quot;an approximation&quot;: you are thinking of the Markov assumption. The chain rule is exact; the n-gram model is what you get after you also truncate the condition.","opts":[{"k":"o0","label":"it turns &quot;how likely is this text&quot; into &quot;how likely is the next token, given everything so far&quot; — a question a model can answer one step at a time — and loses nothing","right":true},{"k":"o1","label":"it makes the model smaller: only the last few tokens are kept","right":false},{"k":"o2","label":"it is an approximation that happens to work well in practice","right":false},{"k":"o3","label":"it makes the probabilities of all sentences sum to one","right":false}],"multi":false,"n":2},"q-shift":{"key":"q-shift","type":"point","q":"<p>Input and targets for one short joke. Click the token the model is trained to predict at position 2, where the input is <code>открыл<\/code>.<\/p>\n<div data-fig=\"shift\"><\/div>","a":"<p><code>дверь<\/code>: at every position the label is the <em>next<\/em> input token, so the target row is the input row shifted left by one, with <code>[EOS]<\/code> filling the last slot. That shift is the whole trick that makes one forward pass over a joke of 30 tokens into 31 classification problems trained in parallel — and the first thing to get wrong in a data pipeline. In <code>transformers<\/code> the model does the shift internally when you pass <code>labels = input_ids<\/code>; shift once more yourself and the model learns to predict the token <em>after<\/em> the next one.<\/p>","miss":"if you clicked <code>открыл<\/code>: that is the input at position 2, not its target. The model never predicts what it was just given.","opts":[{"k":"y0","label":"Штирлиц","right":false},{"k":"y1","label":"открыл","right":false},{"k":"y2","label":"дверь","right":true},{"k":"y3","label":"и","right":false},{"k":"y4","label":"[EOS]","right":false}],"multi":false,"n":3},"q-task-type":{"key":"q-task-type","type":"pick","q":"<p>At every position, the model solves<\/p>","a":"<p>The same classifier as for text classification, with a different label: the class is &quot;which of the 8 000 pieces comes next&quot;, the loss is <math><mo>-<\/mo><mi mathvariant=\"normal\">log<\/mi><mi>P<\/mi><mo>(<\/mo><mtext>the piece that did<\/mtext><mo>)<\/mo><\/math>, averaged over positions. That average is the cross-entropy, and <math><mi mathvariant=\"normal\">exp<\/mi><\/math> of it is the perplexity — so <strong>training minimises perplexity directly<\/strong>. Regression onto an id would say piece 4 017 is between 4 016 and 4 018, which means nothing; &quot;continue or stop&quot; is one of the 8 000 classes (<code>[EOS]<\/code>), not a separate head.<\/p>","miss":"if &quot;ranking by similarity&quot;: that is what a nearest-neighbour search over embeddings does. A language model's softmax is conditioned on the <em>prefix<\/em>, not on the current token alone.","opts":[{"k":"o0","label":"an 8 000-way classification — the same softmax and cross-entropy as week 1, with the next token as the label","right":true},{"k":"o1","label":"a regression onto the id of the next token","right":false},{"k":"o2","label":"a binary decision: does the text continue, or stop","right":false},{"k":"o3","label":"a ranking of the vocabulary by similarity to the current token","right":false}],"multi":false,"n":4},"q-positions":{"key":"q-positions","type":"fill","q":"<p>A joke of 30 BPE pieces. The input is <code>[BOS]<\/code> + the 30 pieces, the targets are the 30 pieces + <code>[EOS]<\/code>. One forward pass gives <input class=\"qz-blank\" data-blank=\"n\" size=\"4\" autocomplete=\"off\" spellcheck=\"false\"> classification problems, each with <input class=\"qz-blank\" data-blank=\"k\" size=\"5\" autocomplete=\"off\" spellcheck=\"false\"> classes.<\/p>","a":"<p>31: one per input position, the last one asked to predict <code>[EOS]<\/code> — the model has to learn <em>when a joke ends<\/em>, or it could never stop generating. Each is a softmax over the full 8 000-piece vocabulary; there is no smaller &quot;likely candidates&quot; set, the model scores everything every time. That is where the memory goes: logits of shape batch × length × 8 000, before any backward pass.<\/p>","miss":"if 30: you dropped <code>[EOS]<\/code>. It is an ordinary token to the loss, and the most important one for the output's length.","blanks":[{"id":"n","alts":["31"],"tol":null},{"id":"k","alts":["8000","8 000","|V|","V","vocabulary size","the vocabulary size"],"tol":null}],"n":5},"q-pad":{"key":"q-pad","type":"pick","q":"<p>Jokes have different lengths, a tensor does not, so the batch is padded with <code>[PAD]<\/code>. What goes wrong if the loss does <em>not<\/em> ignore the padded positions?<\/p>","a":"<p>It learns the easiest pattern in the data: after <code>[EOS]<\/code>, pad; after pad, pad. Those positions are a large share of a padded batch, they are predicted almost perfectly, and they pull the average loss down, so the perplexity you report is flattered by a token that never appears in real text. <code>ignore_index = PAD<\/code> in the loss removes them from the sum and from the normalisation — <em>if<\/em> the padding id is the one you told it. Nothing errors either way, which is exactly the problem.<\/p>","miss":"if &quot;just another token&quot;: it is to the model. It is not to the metric, and the metric is what you will compare models by.","opts":[{"k":"o0","label":"the model learns to predict <code>[PAD]<\/code> after <code>[EOS]<\/code> with near-certainty — easy, worthless — and the perplexity looks better than it is","right":true},{"k":"o1","label":"the loss becomes NaN","right":false},{"k":"nothing","label":"<code>[PAD]<\/code> is just another token","right":false},{"k":"o3","label":"the model cannot stop generating","right":false}],"multi":false,"n":6},"q-ppl-mean":{"key":"q-ppl-mean","type":"pick","q":"<p>A model has test perplexity 60. That means<\/p>","a":"<p>If the model were uniformly unsure between <math><mi>k<\/mi><\/math> tokens at every step, its perplexity would be exactly <math><mi>k<\/mi><\/math>. So 60 reads as &quot;as confused as a 60-way coin toss, on average&quot; — a geometric average, so a few very confident positions and a few hopeless ones can land there too. The cross-entropy is <math><mi mathvariant=\"normal\">log<\/mi><mn>60<\/mn><\/math>, about 4.1 nats; the hit rate is a different quantity altogether, and a model can have a low perplexity while rarely putting the true token first.<\/p>","miss":"if &quot;one time in 60&quot;: that would be true only if the model were literally uniform over 60 candidates. It is the intuition behind the name, not a fact about accuracy.","opts":[{"k":"o0","label":"on average it is as unsure as if it were choosing among 60 equally likely tokens — the effective branching factor of the text under the model","right":true},{"k":"o1","label":"it picks the right token about one time in 60","right":false},{"k":"o2","label":"its cross-entropy loss is 60","right":false},{"k":"o3","label":"it predicts 60% of the tokens correctly","right":false}],"multi":false,"n":7},"q-ppl-inf":{"key":"q-ppl-inf","type":"pick","q":"<p>A trigram model, counts only, no smoothing. Its perplexity on 5 000 held-out jokes is<\/p>","a":"<p>Not a large number: infinity. <math><mi mathvariant=\"normal\">log<\/mi><mn>0<\/mn><mo>=<\/mo><mo>-<\/mo><mi>∞<\/mi><\/math> in the sum, once, and the average is <math><mo>-<\/mo><mi>∞<\/mi><\/math>. How often does it happen? On 2 million words of Russian jokes, {sparsity_w3_pct} of held-out trigrams had never occurred in training; at <math><mi>n<\/mi><mo>=<\/mo><mn>5<\/mn><\/math>, {sparsity_w5_pct}. Ten times more data would move these points a little and not change the shape, because the number of possible n-grams grows exponentially with <math><mi>n<\/mi><\/math> and the corpus grows linearly. The problem has a name, sparsity, and every smoothing method exists because of this one number.<\/p>","miss":"if &quot;in the thousands&quot;: that is the perplexity <em>after<\/em> smoothing. The textbook jumps straight there and skips the infinity that motivated it.","opts":[{"k":"o0","label":"infinity — one unseen trigram anywhere gives <math><mi>P<\/mi><mo>=<\/mo><mn>0<\/mn><\/math> for that token, and the whole test set is impossible","right":true},{"k":"o1","label":"about the vocabulary size","right":false},{"k":"o2","label":"about the training perplexity, a bit worse","right":false},{"k":"o3","label":"a large number, in the thousands","right":false}],"multi":false,"n":9},"q-ppl-sparsity":{"key":"q-ppl-sparsity","type":"fill","q":"<p>Before smoothing, how sparse is it? Train a word trigram model on 2 million words of jokes. Roughly <input class=\"qz-blank\" data-blank=\"s3\" size=\"13\" autocomplete=\"off\" spellcheck=\"false\">% of the held-out <em>trigrams<\/em> were never seen in training (give or take ten points).<\/p>","a":"<p>{sparsity_w3_pct} — nearly three quarters. At <math><mi>n<\/mi><mo>=<\/mo><mn>2<\/mn><\/math> it is {sparsity_w2_pct}, at <math><mi>n<\/mi><mo>=<\/mo><mn>5<\/mn><\/math> it is {sparsity_w5_pct}: almost everything. On BPE pieces the per-token numbers are a little lower, because shorter units are shared more, but the shape is identical: the tokenizer changed the units, not the problem. And it starts before any n-gram — roughly half of the word <em>types<\/em> in the training set occur exactly once ({hapax_pct}), so their next-word estimate is a single coin flip.<\/p>","miss":"if you guessed a few percent: that is the unigram OOV rate, the number from week 1. If you guessed a third: that is the bigram number. Every extra token in the window multiplies the number of things that can be new.","blanks":[{"id":"s3","alts":["@sparsity_w3"],"tol":10.0}],"n":10},"q-ppl-compare":{"key":"q-ppl-compare","type":"pick","q":"<p>Two trigram models on the same jokes and the same test set — one over words, one over BPE pieces. The BPE model's per-token perplexity is several times lower ({bpe_trigram_ppl} against {word_trigram_ppl}). Is it the better model?<\/p>","a":"<p>It is the same algorithm on the same text; what changed is <strong>what a token is<\/strong>. Half the time the next piece is the obvious end of the current word, so per-token perplexity drops for free — and it drops for nothing. Perplexity is comparable only under the same tokenizer and test set. The fix is to charge the model per <em>character<\/em> instead — bits per character — because characters do not depend on the tokenizer; and even that is fair only when both models account for the same string. A word tokenizer that throws away spaces and punctuation — one character in five — is never charged for them, and its bits per character come out flatteringly low.<\/p>","miss":"if &quot;yes, lower is better&quot;: that is the sentence this block exists to break. Perplexity is a property of a model, a tokenizer and a test set together; change one and the number changes.","opts":[{"k":"o0","label":"cannot say from this — predicting a subword piece is an easier task, and per-token perplexity rewards you for cutting the text finer","right":true},{"k":"yes","label":"lower perplexity is better, that is the metric","right":false},{"k":"no","label":"the word model is better, words carry the meaning","right":false},{"k":"o3","label":"yes, provided both saw the same training text","right":false}],"multi":false,"n":11},"q-ppl-loss":{"key":"q-ppl-loss","type":"fill","q":"<p>The training loss of a neural language model is the cross-entropy. Perplexity is <input class=\"qz-blank\" data-blank=\"f\" size=\"4\" autocomplete=\"off\" spellcheck=\"false\"> of it.<\/p>","a":"<p><math><mi mathvariant=\"normal\">PPL<\/mi><mo>=<\/mo><mi mathvariant=\"normal\">exp<\/mi><mo>(<\/mo><mtext>cross-entropy<\/mtext><mo>)<\/mo><\/math>, when the loss is in nats, as PyTorch's <code>CrossEntropyLoss<\/code> is; <math><msup><mn>2<\/mn><mtext>bits<\/mtext><\/msup><\/math> if you measured in bits. Nothing else: the loss curve you watch during training <em>is<\/em> the log of the perplexity curve, and a model that minimises one minimises the other. That is also why the number you get from <code>loss.exp()<\/code> on the validation set is the same quantity the n-gram table reported, and why the two could share one results table.<\/p>","miss":"if &quot;the logarithm&quot;: the other direction. Cross-entropy is the log; perplexity undoes it so that the number reads as a count of choices.","blanks":[{"id":"f","alts":["exp","e^","the exponential","exponential","e to the power","exponent","2^ if in bits"],"tol":null}],"n":8},"q-ngram-params":{"key":"q-ngram-params","type":"fill","q":"<p>A vocabulary of 8 000 pieces. A bigram table has up to <input class=\"qz-blank\" data-blank=\"b\" size=\"11\" autocomplete=\"off\" spellcheck=\"false\"> cells, a trigram table up to <input class=\"qz-blank\" data-blank=\"t\" size=\"16\" autocomplete=\"off\" spellcheck=\"false\">.<\/p>","a":"<p><math><mo>|<\/mo><mi>V<\/mi><msup><mo>|<\/mo><mn>2<\/mn><\/msup><\/math> = 64 million and <math><mo>|<\/mo><mi>V<\/mi><msup><mo>|<\/mo><mn>3<\/mn><\/msup><\/math> = 512 billion possible cells, against 2 million tokens of training text. Almost every cell stays empty, and that is the sparsity plot in a different form: the table grows exponentially with <math><mi>n<\/mi><\/math> and the data does not. In practice the model stores only the n-grams it saw — under a million for a trigram model on 2 million words — which is also why counting is fast and why it cannot generalise: an empty cell has no neighbours.<\/p>","miss":"if <math><mo>|<\/mo><mi>V<\/mi><mo>|<\/mo><mo>×<\/mo><mi>n<\/mi><\/math>: that is the size of an <em>embedding<\/em> table, one row per word. The n-gram table is indexed by the whole prefix, so it multiplies.","blanks":[{"id":"b","alts":["64 000 000","64000000","6.4e7","V²","V^2","V**2","8000²","8000^2","64M","64 million"],"tol":null},{"id":"t","alts":["512 000 000 000","5.12e11","V³","V^3","V**3","8000³","8000^3","512 billion","512G","512 000 000 000"],"tol":null}],"n":12},"q-fivegram":{"key":"q-fivegram","type":"pick","q":"<p>Trigram samples read as coherent for three words, then nonsense. The 5-gram samples read <em>much<\/em> better. What is happening?<\/p>","a":"<p>Memorised, not learned. Sample from a 5-gram model trained on 2 million words of jokes and {copied5_pct} of what it writes is a training joke, copied; for the trigram it is {copied3_pct}. With 2 million words there are almost no 4-word prefixes that occurred twice, so the next-word distribution after most of them has one entry, and the model walks through a stored joke. This is the n-gram dilemma in one experiment: small <math><mi>n<\/mi><\/math>, coherent for three words then nonsense; large <math><mi>n<\/mi><\/math>, coherent because it is quoting. There is no setting in between where it generalises, because counting has no notion that two prefixes are similar. Neural models exist to fix exactly that.<\/p>","miss":"if &quot;more context, better model&quot;: that is true only with the data to fill the context. The 5-gram, even interpolated, did not beat the trigram on perplexity either — the extra orders are almost all counts of one.","opts":[{"k":"o0","label":"it is reciting: almost no 4-word prefix was seen more than once, so the &quot;distribution&quot; is a single option and sampling is table lookup","right":true},{"k":"o1","label":"it generalises better because it sees more context","right":false},{"k":"o2","label":"it has learned the structure of a joke","right":false},{"k":"o3","label":"the trigram was undertrained; the 5-gram just needs more epochs","right":false}],"multi":false,"n":13},"q-smooth":{"key":"q-smooth","type":"pick","q":"<p>Every smoothing method does the same thing. Which?<\/p>","a":"<p>Stop assigning zero: move mass from the seen to the unseen. The methods differ in how much and how cleverly. Add-<math><mi>δ<\/mi><\/math> pretends every continuation was seen <math><mi>δ<\/mi><\/math> extra times — and with <math><mi>δ<\/mi><mo>=<\/mo><mn>1<\/mn><\/math> and a 200 000-word vocabulary a prefix seen ten times gets two hundred thousand imaginary observations added to its total, so an add-1 trigram on the jokes ({add1_3gram_ppl} perplexity) comes out <em>worse than the unigram<\/em> ({unigram_ppl}). Interpolation falls back to the bigram and the unigram when the trigram is unreliable, and won. Kneser–Ney also changes <em>what<\/em> the lower-order model counts — in how many contexts a word appears, not how often — and was the state of the art for twenty years.<\/p>","miss":"if &quot;add-1 is the standard&quot;: the textbook constant is the wrong one on any realistic vocabulary. The smoothing constant is a hyperparameter, and 0.01 beat 1 by an order of magnitude here.","opts":[{"k":"o0","label":"takes a little probability mass away from the n-grams that were seen and spreads it over the ones that were not","right":true},{"k":"o1","label":"adds more training data","right":false},{"k":"o2","label":"lowers <math><mi>n<\/mi><\/math> until every prefix has been seen","right":false},{"k":"o3","label":"removes rare words from the vocabulary","right":false}],"multi":false,"n":14},"q-rnn-h":{"key":"q-rnn-h","type":"pick","q":"<p>What is <math><msub><mi>h<\/mi><mi>t<\/mi><\/msub><\/math>, for the task?<\/p>","a":"<p>The condition of the conditional. The n-gram model conditioned on the last two tokens because those were the only prefix it could index; the RNN conditions on <math><msub><mi>h<\/mi><mi>t<\/mi><\/msub><\/math>, 256 numbers that are a function of every token so far. Same chain rule, same next-token prediction — the context is unbounded in principle, and in practice bounded by how much 256 numbers can hold and how far a gradient can travel. The distribution is one matrix multiply away, <math><mi mathvariant=\"normal\">softmax<\/mi><mo>(<\/mo><mi>W<\/mi><msub><mi>h<\/mi><mi>t<\/mi><\/msub><mo>)<\/mo><\/math>; the embedding of the current token is one of the two inputs to the update, not the state.<\/p>","miss":"if &quot;a copy of the tokens&quot;: it cannot be — the size is fixed and the prefix is not. It is a <em>compression<\/em> of the prefix, and what the compression keeps is learned from the loss.","opts":[{"k":"o0","label":"a fixed-size summary of the whole prefix — the thing the next-token softmax reads; the role the <math><mi>n<\/mi><mo>−<\/mo><mn>1<\/mn><\/math> window played, without the window","right":true},{"k":"o1","label":"the embedding of the current token","right":false},{"k":"o2","label":"the probability distribution over the next token","right":false},{"k":"o3","label":"a copy of the tokens seen so far","right":false}],"multi":false,"n":15},"q-rnn-shared":{"key":"q-rnn-shared","type":"point","q":"<p>The same network, unrolled over four steps. Click what is the same at every step.<\/p>\n<div data-fig=\"rnn-unrolled\"><\/div>","a":"<p>The weights: one <math><mi>f<\/mi><\/math> — one embedding table, one recurrent cell, one output matrix — applied at every position. That is what makes the length free: a joke of 30 pieces and one of 300 go through the same parameters, and a prefix of any length ends in a state of the same size. It is also why the gradient has to travel <em>back through time<\/em>: the same matrix is multiplied in at every step, so the loss at the last token reaches the first through a chain of those multiplications — which is the subject of the optional block below.<\/p>","miss":"if the states: each <math><msub><mi>h<\/mi><mi>t<\/mi><\/msub><\/math> is a different vector — same <em>shape<\/em>, different numbers. Sharing is about parameters, not activations.","opts":[{"k":"x","label":"the inputs","right":false},{"k":"h","label":"the states","right":false},{"k":"f","label":"the update and the output matrix","right":true},{"k":"y","label":"the predicted distributions","right":false}],"multi":false,"n":16},"q-rnn-why":{"key":"q-rnn-why","type":"pick","q":"<p>Why can the network generalise where counting could not?<\/p>","a":"<p>Through similarity. Last week's embeddings put <em>Штирлиц<\/em> and <em>Мюллер<\/em> near each other; the shared update then maps the two prefixes to nearby states, and the output layer, which never saw one of them, still produces a sensible distribution. Counting has no notion that two prefixes are alike; every cell is its own island. That, not the parameter count, is the mechanism — and it is why the RNN writes jokes that are <em>not in the corpus<\/em> while the 5-gram recited. Perplexity does not always show that difference: at a small scale a well-smoothed trigram can match a small network. The neural win arrives with data and size, and so does the habit of running the strong simple baseline first.<\/p>","miss":"if &quot;reads the whole text at once&quot;: that is next week's model. The RNN reads strictly left to right, one token per step.","opts":[{"k":"o0","label":"prefixes become vectors, and similar prefixes — <em>Штирлиц открыл<\/em>, <em>Мюллер открыл<\/em> — get similar states through shared embeddings and weights, so what is learned about one transfers to the other","right":true},{"k":"o1","label":"it has more parameters than the count table","right":false},{"k":"o2","label":"it reads the whole text at once","right":false},{"k":"o3","label":"it is trained for more epochs","right":false}],"multi":false,"n":17},"q-rnn-s2s":{"key":"q-rnn-s2s","type":"pick","q":"<p>An encoder–decoder (seq2seq) for translation is<\/p>","a":"<p>One RNN, the encoder, reads the German and boils it down to a fixed-size vector. A second RNN, the decoder, is a language model exactly like the one above, except its <math><msub><mi>h<\/mi><mn>0<\/mn><\/msub><\/math> is that vector. So the decoder generates English, but it starts from a summary of the German: same chain rule, same next-token prediction, same decoding rules — one extra input. The bidirectional reading is a detail of the <em>encoder<\/em>, and a real one; the two languages do get separate tokenizers; but the architecture is &quot;a conditioned language model&quot;, and that is all translation, summarisation and dialogue ever were.<\/p>","miss":"if &quot;two language models&quot;: the encoder is not a language model — it predicts nothing, it only produces the state. Only the decoder has a softmax.","opts":[{"k":"o0","label":"the same language model, with its initial state set to a summary of the source sentence instead of zeros","right":true},{"k":"o1","label":"two language models, one per language, trained together","right":false},{"k":"o2","label":"a language model with a vocabulary that covers both languages","right":false},{"k":"o3","label":"an RNN that reads the input twice, forwards and backwards","right":false}],"multi":false,"n":18},"q-bottleneck":{"key":"q-bottleneck","type":"pick","q":"<p>Everything the decoder knows about the German has to pass through the encoder's final state — 256 numbers, whether the caption has three words or twenty. What happens to translation quality (BLEU) as the source sentence gets longer, and what does a wider state change?<\/p>","a":"<p>On German–English captions with a 256-number state, BLEU falls from {bleu_short} on the shortest sentences to {bleu_long} on the longest — the longer the German, the more has to squeeze through the same 256 numbers. Widening 64 → 128 → 256 raised BLEU at every length and did not remove the slope: you can buy your way <em>partly<\/em> out with dimensions, not all the way, because the failure is the architecture, not the size. The translations show the fingerprint: the nouns survive, the details do not — <em>a man in a red shirt<\/em> becomes <em>a man in a blue shirt<\/em>. Bahdanau et al. (2015) opens with exactly this decay and proposes to let the decoder look back at <em>all<\/em> encoder states; that flattens the curve, and it is next week.<\/p>","miss":"if &quot;only the narrowest drops&quot;: the opposite — the 64-wide line was flat because it was near the floor at every length. You need a model good enough to have something to lose.","opts":[{"k":"o0","label":"BLEU falls as the source gets longer, at every width; a wider state lifts the whole line, but the slope stays — the failure is architectural","right":true},{"k":"o1","label":"flat lines: the bottleneck is a textbook story, not a measurable one","right":false},{"k":"o2","label":"BLEU rises with length, because longer sentences give more context","right":false},{"k":"o3","label":"only the narrowest model drops; at 256 the problem is gone","right":false}],"multi":false,"n":19},"q-tf":{"key":"q-tf","type":"pick","q":"<p>Teacher forcing. During training, the decoder's input at step <math><mi>t<\/mi><\/math> is<\/p>","a":"<p>The gold prefix, always. That is what makes training fast and stable: every position is an independent next-token classification with a guaranteed-correct prefix, and the whole target trains in parallel. At generation there is no gold prefix, the decoder feeds on its own output, and the first wrong token produces a prefix it never saw in training — the error compounds down the sequence. Scheduled sampling and sequence-level training were proposed for this; in practice attention and transformers reduced the drift enough that the field mostly stopped worrying.<\/p>","miss":"if &quot;its own prediction&quot;: that is what you would do at test time, and doing it during training makes every step depend on the previous one — slow, and unstable early on, when the predictions are noise.","opts":[{"k":"o0","label":"the gold token <math><mi>t<\/mi><mo>−<\/mo><mn>1<\/mn><\/math>, whatever the decoder predicted; at generation time it is the decoder's own previous output — a mismatch called exposure bias","right":true},{"k":"o1","label":"its own previous prediction, as at generation time","right":false},{"k":"o2","label":"the encoder's state, again","right":false},{"k":"o3","label":"a random token, for regularisation","right":false}],"multi":false,"n":20},"q-grad":{"key":"q-grad","type":"pick","q":"<p>To learn that the beginning of a joke matters for its end, the gradient of the loss at the last token has to reach the first token. On the way it is<\/p>","a":"<p>A product. Thirty factors, each the Jacobian of one update; a plain <math><mi mathvariant=\"normal\">tanh<\/mi><\/math> recurrence does both — vanish and explode — depending on the weights (Bengio et al. 1994; Pascanu et al. 2013). Measured on jokes, averaged over fifty of them: 40 steps back, the plain RNN's gradient is about {rnn_decay} times smaller than at the last position; the LSTM's, about {lstm_decay} times. Whatever happened at the start of the joke, the loss at the end cannot teach the plain RNN anything about it.<\/p>","miss":"if &quot;one matrix, unchanged&quot;: it <em>is<\/em> one matrix — multiplied in thirty times. One matrix applied repeatedly is exactly how you get a power, and powers either vanish or blow up.","opts":[{"k":"o0","label":"multiplied by the Jacobian <math><mo>∂<\/mo><msub><mi>h<\/mi><mi>t<\/mi><\/msub><mo>/<\/mo><mo>∂<\/mo><msub><mi>h<\/mi><mrow><mi>t<\/mi><mo>-<\/mo><mn>1<\/mn><\/mrow><\/msub><\/math> at every step — thirty steps, thirty multiplications; a typical factor below one and it vanishes, above one and it explodes","right":true},{"k":"o1","label":"passed through one matrix, the same at every step, so it arrives unchanged","right":false},{"k":"o2","label":"routed through the embedding table","right":false},{"k":"o3","label":"averaged over the positions, so it arrives diluted but intact","right":false}],"multi":false,"n":21},"q-lstm":{"key":"q-lstm","type":"pick","q":"<p>What the LSTM changes:<\/p>","a":"<p>Addition instead of multiplication along the time axis. The forget gate can sit near one, and then <math><mo>∂<\/mo><msub><mi>c<\/mi><mi>t<\/mi><\/msub><mo>/<\/mo><mo>∂<\/mo><msub><mi>c<\/mi><mrow><mi>t<\/mi><mo>-<\/mo><mn>1<\/mn><\/mrow><\/msub><\/math> is near one too: the gradient travels through the cell state without passing a weight matrix at each step. That is the whole trick, and it is measurable — the decay above. The gates cost 4× the recurrent parameters, cheap next to the 8 000-way output layer, and GRU gets the same effect with three gates instead of four and lands in the same place in practice.<\/p>","miss":"if &quot;bigger state&quot;: compare them at the same state size and the difference stays. What changed is the <em>path<\/em> the gradient takes, not the size of the state.","opts":[{"k":"o0","label":"its cell state has an <em>additive<\/em> path through time, <math><msub><mi>c<\/mi><mi>t<\/mi><\/msub><mo>=<\/mo><msub><mi>f<\/mi><mi>t<\/mi><\/msub><mo>⊙<\/mo><msub><mi>c<\/mi><mrow><mi>t<\/mi><mo>-<\/mo><mn>1<\/mn><\/mrow><\/msub><mo>+<\/mo><msub><mi>i<\/mi><mi>t<\/mi><\/msub><mo>⊙<\/mo><msub><mover><mi>c<\/mi><mo>~<\/mo><\/mover><mi>t<\/mi><\/msub><\/math>, so the gradient can pass through the forget gate unchanged instead of being multiplied by a weight matrix at every step","right":true},{"k":"o1","label":"it has more layers","right":false},{"k":"o2","label":"its state is bigger, so it can hold more","right":false},{"k":"o3","label":"it uses a different softmax","right":false}],"multi":false,"n":22},"q-close":{"key":"q-close","type":"pick","q":"<p>On a corpus of short texts — jokes — a plain RNN, an LSTM and a GRU land close in perplexity. Does that make them equivalent?<\/p>","a":"<p>The close perplexities did not mean the cells are equivalent; they meant the corpus did not demand long memory. The gradient plot shows the plain RNN's blindness is real; the perplexity shows that on <em>short<\/em> jokes it costs little. The moment the task needs a dependency thirty steps back — a longer text, a matching bracket, an agreement across a clause — the plain RNN cannot learn it at all, while the LSTM still can. Pick the cheapest only after you have checked what the data asks of the memory.<\/p>","miss":"if &quot;interchangeable&quot;: that is the conclusion of someone who ran one benchmark. A tie on one corpus is a fact about the corpus.","opts":[{"k":"o0","label":"no — jokes are short and the dependencies that pick the next piece are mostly local, so this corpus did not test the thing the cells differ on","right":true},{"k":"yes","label":"on this task they are interchangeable, pick the cheapest","right":false},{"k":"o2","label":"no — the LSTM would win with more epochs","right":false},{"k":"o3","label":"yes, and the gradient plot is therefore irrelevant","right":false}],"multi":false,"n":23},"q-clip":{"key":"q-clip","type":"pick","q":"<p>Gradient clipping, <code>clip_grad_norm_<\/code>, fixes<\/p>","a":"<p>The explosion side. Every few dozen steps one batch produces a gradient ten or a hundred times larger than usual — one exploding path through the recurrence — and a single such step at a normal learning rate can wreck the weights. Clipping rescales it and costs nothing. It does not help the vanishing side, which is what the gates are for; and it is in every transformer training loop today for the same reason it was in every RNN loop.<\/p>","miss":"if &quot;vanishing&quot;: clipping only ever makes a gradient <em>smaller<\/em>. It cannot restore one that arrived as zero.","opts":[{"k":"o0","label":"the occasional exploding batch: any gradient above a threshold is rescaled to the threshold — a trick from the RNN era that survived into transformer training unchanged","right":true},{"k":"o1","label":"vanishing gradients","right":false},{"k":"o2","label":"overfitting","right":false},{"k":"o3","label":"slow convergence on long sequences","right":false}],"multi":false,"n":24},"q-decode-sort":{"key":"q-decode-sort","type":"sort","q":"<p>Each knob does one of four things to the next-token distribution. Which?<\/p>","a":"<p>Temperature divides the logits before the softmax: <math><mi>T<\/mi><mo>&lt;<\/mo><mn>1<\/mn><\/math> sharpens, <math><mi>T<\/mi><mo>&gt;<\/mo><mn>1<\/mn><\/math> flattens, and the <em>whole<\/em> distribution moves — it cannot keep the sensible middle and delete the absurd tail, because raising <math><mi>T<\/mi><\/math> to explore the middle fattens the tail too. The repetition penalty also reshapes, by dividing the logits of tokens already emitted. Top-k, top-p and min-p <em>cut<\/em> instead: zero everything outside a set, renormalise, then sample; they differ only in how the set is chosen. The seed changes nothing about the model or the sampler, only which draw you get. Greedy is the limit <math><mi>T<\/mi><mo>→<\/mo><mn>0<\/mn><\/math> — all mass on the argmax — and also simply &quot;always take the top one&quot;; both readings are right. Beam search is the odd one out: it does not pick a token from one distribution, it keeps the <math><mi>b<\/mi><\/math> best <em>sequences<\/em> and extends all of them.<\/p>","miss":"if top-p went into &quot;reshapes&quot;: after the cut the kept tokens are renormalised but keep their <em>ratios<\/em>. Temperature changes the ratios; truncation changes the support.","bins":["reshapes it","truncates it, then renormalises","changes which sample you draw, not the distribution","searches over sequences, not tokens"],"items":[{"label":"temperature","bins":["reshapes it"]},{"label":"top-k","bins":["truncates it, then renormalises"]},{"label":"top-p (nucleus)","bins":["truncates it, then renormalises"]},{"label":"min-p","bins":["truncates it, then renormalises"]},{"label":"repetition penalty","bins":["reshapes it"]},{"label":"the random seed","bins":["changes which sample you draw, not the distribution"]},{"label":"greedy (<math><mi>T<\/mi><mo>→<\/mo><mn>0<\/mn><\/math>)","bins":["reshapes it","changes which sample you draw, not the distribution"]},{"label":"beam search","bins":["searches over sequences, not tokens"]}],"n":25},"q-greedy":{"key":"q-greedy","type":"pick","q":"<p>Greedy and pure sampling sit at the two extremes. One of them loops, the other drifts. Which is which?<\/p>","a":"<p>Greedy maximises the probability of each <em>step<\/em>, and that walks it into the safe, high-probability, low-information phrases that are fine everywhere and mean nothing — and once two of them chain into a cycle there is no randomness to break it. On a small LSTM trained on jokes, greedy text has the highest average log-probability per token ({greedy_lp}) of all decoding rules and the worst repetition: {greedy_rep_pct} of its tokens repeat one from the last twenty. Pure sampling puts the model's own small probabilities on thousands of tokens; their <em>sum<\/em> is large, so a derailing token arrives, and the next token is conditioned on nonsense. Every rule in between is an attempt to sit between the two failures.<\/p>","miss":"if greedy drifts: deterministic text cannot drift, it can only repeat. Drift needs a draw that went wrong.","opts":[{"k":"o0","label":"greedy loops — it is deterministic, so once it enters a cycle it cannot leave; pure sampling drifts — the long tail's total mass is large, so an unlikely token comes eventually and the prefix is now nonsense","right":true},{"k":"o1","label":"greedy drifts, sampling loops","right":false},{"k":"o2","label":"both loop","right":false},{"k":"o3","label":"both drift","right":false}],"multi":false,"n":26},"q-topp":{"key":"q-topp","type":"pick","q":"<p>Why did top-p replace top-k as the default?<\/p>","a":"<p>Adaptivity. Nucleus keeps the smallest set whose probability sums to <math><mi>p<\/mi><\/math>: three tokens when the model is confident, two hundred when it is not. Top-k keeps <math><mi>k<\/mi><\/math> either way — on the confident step <math><mi>k<\/mi><mo>=<\/mo><mn>10<\/mn><\/math> is already reaching into noise, on the uncertain one it is choking the model. Min-p is the newer, even simpler version of the same idea: keep every token at least <math><msub><mi>p<\/mi><mrow><mi>m<\/mi><mi>i<\/mi><mi>n<\/mi><\/mrow><\/msub><\/math> times as likely as the top one; it adapts like nucleus with one multiply and holds up better at high temperature.<\/p>","miss":"if &quot;faster&quot;: the cumulative sum needs a sort; top-k needs a partial one. Speed is not why.","opts":[{"k":"o0","label":"the number of plausible tokens changes per step — a handful after <em>Заходит мужик в<\/em>, hundreds after a comma — and a fixed <math><mi>k<\/mi><\/math> is too tight in the first case and too loose in the second","right":true},{"k":"o1","label":"top-p is faster to compute","right":false},{"k":"o2","label":"top-k cannot be combined with temperature","right":false},{"k":"o3","label":"top-p never cuts a token the model wanted","right":false}],"multi":false,"n":27},"q-holtz":{"key":"q-holtz","type":"pick","q":"<p>Take a real joke and, at every position, ask the model what probability it assigned to the token that actually came next. Do the same for the model's own greedy continuation. The two curves:<\/p>","a":"<p>This is Holtzman et al.'s plot, and it is the picture that reframed decoding. Real language constantly includes tokens the model found unlikely — a surprising word is what makes a sentence worth reading — while the greedy continuation only ever emits what it was already sure of, which is precisely why it reads as bland and loops. &quot;Natural language does not maximise probability&quot; is the one-sentence version, and the fix is not a better model: it is a decoding rule that puts the jaggedness back on purpose. That is what sampling with truncation does, and it is why the objective you <em>train<\/em> on (probability) is not the objective you <em>decode<\/em> for (readable text).<\/p>","miss":"if &quot;the model has learned it&quot;: the perplexity of human text is never 1, and a model that assigned 1 to every real token would have memorised the test set.","opts":[{"k":"o0","label":"the human text is jagged — it keeps using tokens the model found unlikely; the greedy text is a flat line near 1","right":true},{"k":"o1","label":"both are jagged, the human one slightly more","right":false},{"k":"o2","label":"the human text is flat near 1 — the model has learned it","right":false},{"k":"o3","label":"the greedy text is jagged, because errors compound","right":false}],"multi":false,"n":28},"q-beam":{"key":"q-beam","type":"pick","q":"<p>Beam search raised BLEU on the translation task ({bleu_greedy} → {bleu_beam5} with a beam of 5) and would have made the jokes worse. Why does the same algorithm get opposite verdicts?<\/p>","a":"<p>Because the <em>task<\/em> changed, not the decoder. Beam search keeps the <math><mi>b<\/mi><\/math> most probable partial outputs and so recovers from a locally bad token that leads somewhere globally good — a far better approximation of <math><mi mathvariant=\"normal\">argmax<\/mi><mi>P<\/mi><mo>(<\/mo><mi mathvariant=\"normal\">sequence<\/mi><mo>)<\/mo><\/math> than greedy. For translation the output is largely determined by the input and the highest-probability sequence is what you want. For open-ended generation the most probable text is the worst text to show a human, so a better maximiser produces blander, more loop-prone output. Even in translation the gain flattens: wider beams spend the extra probability on shorter, safer translations — the same likelihood trap, milder.<\/p>","miss":"if &quot;slower&quot;: true and irrelevant. It would be worse on the jokes at any speed.","opts":[{"k":"o0","label":"it approximates the most probable <em>sequence<\/em>; translation has a right answer for probability to track, open-ended text does not — the most probable joke is the blandest","right":true},{"k":"o1","label":"beam search is slower, and jokes are generated interactively","right":false},{"k":"o2","label":"jokes are shorter than translations","right":false},{"k":"o3","label":"it needs a bilingual model","right":false}],"multi":false,"n":29},"q-design":{"key":"q-design","type":"write","q":"<p>A messenger wants next-word suggestions above the keyboard: Russian, on the phone itself, no server, under 50 ms per keystroke, a few megabytes of model. Sketch it: what the model is, what unit it predicts, how it picks the suggestions, how you measure success, and what breaks first.<\/p>","a":"<p><strong>What it is.<\/strong> A language model — <math><mi>P<\/mi><mo>(<\/mo><mtext>next token<\/mtext><mo>|<\/mo><mi mathvariant=\"normal\">prefix<\/mi><mo>)<\/mo><\/math> — and a decision rule on top. The budget rules out anything large: a smoothed n-gram model is kilobytes per thousand n-grams and answers in microseconds, a small GRU or LSTM at a few megabytes answers in milliseconds on a phone. Start with the count model and make the network earn its place.<\/p>\n<p><strong>What unit.<\/strong> The user wants to see a <em>word<\/em>, so the suggestion layer works in words; but a word vocabulary for Russian is enormous and half of it is seen once — the Zipf tail, five surface forms per noun. Predict in subwords (a small BPE vocabulary) and roll suggestions up to word boundaries; or predict words with a hard vocabulary cap and accept that the model is blind outside it. Either way the softmax over the vocabulary is the expensive step, in time and in memory, and the vocabulary size is a product decision, not a modelling one.<\/p>\n<p><strong>How it picks.<\/strong> Not sampling: the user wants the three most likely words, every time, the same way. Not beam search either: there is no sequence to optimise, one token ahead is the product. Take the top of one distribution, drop pieces that do not complete a word, show three. Temperature and nucleus are for generation; this is ranking.<\/p>\n<p><strong>How you measure.<\/strong> Perplexity during development — it is the training loss and it tells you whether a change helped the model. It is not the product's metric: the product's metric is <em>acceptance<\/em>, how often a suggestion is tapped, and keystrokes saved per message. A model with better perplexity can still suggest words nobody wants to tap, and the ranking of three candidates is what the user sees, not the whole distribution.<\/p>\n<p><strong>What breaks first.<\/strong> Names — of contacts, places, products — and the user's own slang: all of them out of vocabulary, all of them the most-typed words on a given phone. The fix is a per-user layer: a small personal n-gram count or a cache of the user's own words, mixed into the model's distribution — interpolation again, between a global model and a personal one. Then the keyboard's language switching, then the prefix after a correction, where the context the model saw is not the text that is there.<\/p>","miss":"if the design is &quot;a small GPT&quot;: it may end there. It cannot start there under 50 ms on a phone, and the thing it would have to beat — a smoothed trigram with a personal cache — is a few lines of code and a few seconds of training.","check":["the model is a language model: <math><mi>P<\/mi><mo>(<\/mo><mi mathvariant=\"normal\">next<\/mi><mo>|<\/mo><mi mathvariant=\"normal\">prefix<\/mi><mo>)<\/mo><\/math> — small, not an LLM; a count model or a small recurrent one fits the budget","the unit is a trade: words are what the user wants to see, but a word vocabulary over Russian is huge and full of unseen forms; subwords fix the OOV and complicate &quot;show a word&quot;","decoding is neither sampling nor beam: the top few of one distribution, deterministic, filtered to whole words","perplexity is for development; the product metric is acceptance — how often a suggestion is tapped, and how many keystrokes it saved","personal names, slang and new words break first; a per-user vocabulary or an on-device update is the fix","latency and memory bound everything: the softmax over the vocabulary is the expensive step"],"n":30}}
+</script>
+<script type="application/json" id="lecture-data">
+{"corpus":{"nTokens":2029416,"nTypes":134454,"hapax":63261,"medianChars":101.0},"ngramFirst":{"copied3":0.3,"copied5":0.9},"sparsity":{"n":[1,2,3,4,5],"words":[0.029403433850444482,0.38054514554645286,0.715694178141886,0.8381013595956075,0.8692587589332403],"bpe":[0.0,0.1042896703067036,0.4069294227609709,0.6595317298593332,0.7904047001178512]},"smoothingWords":[{"model":"1-gram","n":1,"delta":0.01,"interp":false,"ppl":4398.2727586515675},{"model":"2-gram, add-1","n":2,"delta":1.0,"interp":false,"ppl":21528.83092269448},{"model":"2-gram, add-0.01","n":2,"delta":0.01,"interp":false,"ppl":5843.08849455429},{"model":"3-gram, add-1","n":3,"delta":1.0,"interp":false,"ppl":51970.63856155966},{"model":"3-gram, add-0.01","n":3,"delta":0.01,"interp":false,"ppl":27980.12943162083},{"model":"2-gram, interpolated","n":2,"delta":0.01,"interp":true,"ppl":2203.5022590464055},{"model":"3-gram, interpolated","n":3,"delta":0.01,"interp":true,"ppl":3109.10312109451},{"model":"5-gram, interpolated","n":5,"delta":0.01,"interp":true,"ppl":7062.414135067642}],"smoothingBpe":[{"model":"2-gram, interpolated","n":2,"ppl":200.74655885345874},{"model":"3-gram, interpolated","n":3,"ppl":210.93390927553233},{"model":"5-gram, interpolated","n":5,"ppl":469.0060205153348}],"results":[{"model":"3-gram, interpolated","tokens":"words","ppl":3109.1,"bpc":1.918,"params":"622,154 counts","trainS":null,"note":"count-based"},{"model":"3-gram, interpolated","tokens":"BPE 8k","ppl":210.9,"bpc":2.396,"params":"865,574 counts","trainS":null,"note":"count-based"},{"model":"LSTM, 8k jokes x 2 ep (live)","tokens":"BPE 8k","ppl":492.8,"bpc":2.776,"params":"4.6M","trainS":19,"note":""},{"model":"RNN, 12k jokes x 3 ep","tokens":"BPE 8k","ppl":256.8,"bpc":2.484,"params":"4.2M","trainS":123,"note":"precomputed"},{"model":"GRU, 12k jokes x 3 ep","tokens":"BPE 8k","ppl":252.3,"bpc":2.476,"params":"4.5M","trainS":139,"note":"precomputed"},{"model":"LSTM, 12k jokes x 3 ep","tokens":"BPE 8k","ppl":309.5,"bpc":2.567,"params":"4.6M","trainS":144,"note":"precomputed"}],"decode":[{"method":"greedy","repetition":0.7710387864823346,"distinct2":0.2459309417328446,"logprob":-2.7801436285334806},{"method":"sampling T=1.0","repetition":0.06886995817950554,"distinct2":0.9874734365980634,"logprob":-6.175132196461659},{"method":"sampling T=0.7","repetition":0.12447764861682516,"distinct2":0.9724488661111469,"logprob":-4.437094189878255},{"method":"top-k=40","repetition":0.12396343065730334,"distinct2":0.9776369828216177,"logprob":-4.000829589664229},{"method":"top-p=0.9","repetition":0.06974877495945295,"distinct2":0.9898018889300869,"logprob":-5.8479616400937475},{"method":"min-p=0.05","repetition":0.11905905416428687,"distinct2":0.9744984932088757,"logprob":-4.287383261346087}],"bleuByLen":{"0-10":18.17,"10-15":15.1,"15-20":11.4,"20-25":9.61,"25-100":8.51},"bleuSweep":{"256":{"0-10":18.17,"10-15":15.1,"15-20":11.4,"20-25":9.61,"25-100":8.51},"64":{"0-10":3.54,"10-15":4.91,"15-20":4.51,"20-25":5.04,"25-100":3.39},"128":{"0-10":9.86,"10-15":9.25,"15-20":6.67,"20-25":6.09,"25-100":4.66}},"beam":{"greedy":13.37725601579878,"beam5":14.524804192462256},"gradTime":{"L":40,"nJokes":50,"cells":{"rnn":[5.457351289805956e-05,8.584647730458528e-05,9.47621010709554e-05,0.00010678156104404479,0.0001266935869352892,0.00012996570148970932,0.0001549693406559527,0.0001702240260783583,0.00018041057046502829,0.00020063720876351,0.00026651733787730336,0.0003315472276881337,0.00041512877214699984,0.0005010868771933019,0.0006201443029567599,0.0006963410414755344,0.0008326286915689707,0.0010345840128138661,0.0013108784332871437,0.0016355239786207676,0.0017707996303215623,0.0020486500579863787,0.0023086080327630043,0.00290243630297482,0.003405689960345626,0.004465532023459673,0.005571429152041674,0.007252322044223547,0.009649045765399933,0.01155909989029169,0.014468175359070301,0.01856965757906437,0.023456377908587456,0.03160324692726135,0.040619395673274994,0.05551370233297348,0.0852612853050232,0.14110474288463593,0.28087347745895386,0.7974422574043274],"gru":[0.009474916383624077,0.04457341134548187,0.013318395242094994,0.010935437865555286,0.007263305597007275,0.00752821983769536,0.008755214512348175,0.007331944536417723,0.007974614389240742,0.006514895707368851,0.007534816861152649,0.006763317622244358,0.007799350656569004,0.007369081489741802,0.007696779444813728,0.00829925574362278,0.00930529274046421,0.008226284757256508,0.008752143010497093,0.01042095571756363,0.007252814248204231,0.007419754285365343,0.0072189318016171455,0.007405663840472698,0.00893555860966444,0.012677027843892574,0.011618401855230331,0.009777718223631382,0.011768004857003689,0.014095652848482132,0.016248485073447227,0.016287457197904587,0.01956801488995552,0.023863641545176506,0.021634399890899658,0.029336756095290184,0.048555146902799606,0.07239550352096558,0.16926583647727966,0.6839954853057861],"lstm":[0.000369871937436983,0.003906748257577419,0.0030792078468948603,0.0035706174094229937,0.0036836855579167604,0.0038510020822286606,0.005173440556973219,0.0028956932947039604,0.00355546991340816,0.004494824912399054,0.005296291317790747,0.004213884938508272,0.005611355882138014,0.004210617393255234,0.003753077704459429,0.004937358666211367,0.004902489483356476,0.00561519106850028,0.007748045492917299,0.00810660794377327,0.005182809662073851,0.006989447865635157,0.004563301336020231,0.005671788472682238,0.004688250832259655,0.006703061051666737,0.00738754216581583,0.005766944494098425,0.011265002191066742,0.007701450958848,0.011564396321773529,0.00906298402696848,0.014024163596332073,0.017005739733576775,0.020773625001311302,0.023161528632044792,0.040383800864219666,0.06522787362337112,0.14384879171848297,0.505526065826416]}},"lstm":{"V":8000,"E":256,"H":256,"params":4630336}}
+</script>
+<script>
+/* Shared by every week's demo.js; scripts/build_demo.py puts this in front of it. */
+
+// TXT("key", {n: 12}) — a text chunk from demo/text/*.md with its {n} placeholders filled; see scripts/demo_text.py
+function TXT(key, vars) {
+  const t = document.querySelector(`template[data-text="${key}"]`);
+  if (!t) throw new Error("no text chunk '" + key + "' — add it to demo/text/");
+  let s = t.innerHTML;
+  if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
+  return s;
+}
+
+// reference lists (demo/text, `## end-refs`): external links open in a new tab
+document.querySelectorAll('.prose.footnote a[href^="http"]').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
+
+/* The questions of a lecture page. scripts/build_demo.py puts this in front of the week's demo/lecture/lecture.js;
+   the questions themselves are parsed from demo/lecture/text/*.md by scripts/quiz_text.py into #quiz-data.
+
+   lecture.js registers what the markdown cannot hold:
+     QUIZ.figs.name = host => { ...draw an SVG into host... }   for every <div data-fig="name"></div> in a question
+                                                                 or an answer; a `point` question's clickable parts
+                                                                 carry data-pick="key" matching its options
+     QUIZ.values.name = 0.631                                     for a fill answer written as `@name`
+   Answers are kept in localStorage per page (meta[name=quiz-store]) so a student can leave and come back;
+   "Reset answers" in the rail clears them. Nothing here depends on the seminar's demo_data. */
+"use strict";
+const QUIZ = { figs: {}, values: {}, data: null, state: null };
+
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const DATA = JSON.parse($("#quiz-data").textContent);
+  const STORE = "quiz:" + (($('meta[name="quiz-store"]') || {}).content || location.pathname);
+  const load = () => { try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { return {}; } };
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* private window: answers live until reload */ } };
+  let state = load();
+  QUIZ.data = DATA; QUIZ.state = () => state;
+
+  /* ------------------------------------------------------------- figures */
+  function drawFigs(root) {
+    $$("[data-fig]", root).forEach(h => {
+      if (h.dataset.drawn) return;
+      const f = QUIZ.figs[h.dataset.fig];
+      if (f) { f(h); h.dataset.drawn = "1"; }
+      else h.innerHTML = `<div class="qz-nofig">figure “${esc(h.dataset.fig)}” is not drawn in lecture.js</div>`;
+    });
+  }
+
+  /* -------------------------------------------------------------- answers */
+  const norm = s => String(s).toLowerCase().replace(/[×*]/g, "x").replace(/\s+/g, " ").replace(/[.,;:]+$/, "").trim();
+  const num = s => { const v = parseFloat(String(s).replace(",", ".").replace(/[^0-9eE+.\-]/g, "")); return isNaN(v) ? null : v; };
+  function expected(alt) {
+    if (alt.startsWith("@")) {
+      const v = QUIZ.values[alt.slice(1)];
+      if (v === undefined) throw new Error(`QUIZ.values.${alt.slice(1)} is not set in lecture.js`);
+      return v;
+    }
+    return alt;
+  }
+  function matches(given, blank) {
+    for (const alt of blank.alts) {
+      const e = expected(alt);
+      const en = typeof e === "number" ? e : num(e);
+      if (en !== null && (blank.tol != null || typeof e === "number" || /^[-+]?[0-9.,eE]+$/.test(String(e).trim()))) {
+        const g = num(given); if (g === null) continue;
+        const dec = (String(e).split(".")[1] || "").length;
+        const tol = Math.max(blank.tol || 0, dec ? 0.5 * Math.pow(10, -dec) : 0, Math.abs(en) * 1e-9);
+        if (Math.abs(g - en) <= tol) return true;
+      } else if (norm(given) === norm(e)) return true;
+    }
+    return false;
+  }
+  const shown = blank => { const e = expected(blank.alts[0]); return typeof e === "number" ? (blank.tol != null ? +e.toFixed(Math.max(0, Math.ceil(-Math.log10(blank.tol)))) : +e.toFixed(3)) : e; };
+
+  /* `{name}` in a question, an option or an answer -> QUIZ.values.name (a number the browser computed), so the
+     markdown holds the sentence and never the number */
+  const fmtv = v => typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(3)) : String(v);
+  const fill = html => html.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? esc(fmtv(QUIZ.values[k])) : m);
+
+  /* ------------------------------------------------------------ rendering */
+  const KIND = {
+    pick: q => q.multi ? "tick all that apply" : "pick one",
+    point: q => q.multi ? "click everything that fits" : "click in the picture",
+    sort: () => "sort into bins", fill: () => "fill in", write: () => "write, then reveal",
+  };
+  const pad = n => String(n).padStart(2, "0");
+
+  function render(q) {
+    const host = $(`.qz[data-q="${q.key}"]`);
+    const st = state[q.key] || (state[q.key] = {});
+    host.dataset.type = q.type;
+    host.classList.toggle("done", !!st.done);
+    host.innerHTML = `<div class="qz-head"><span class="qz-n">${pad(q.n)}</span><span class="qz-kind">${KIND[q.type](q)}</span></div>
+      <div class="qz-q">${fill(q.q)}</div><div class="qz-ui"></div>
+      <div class="qz-a" hidden>${fill(q.a)}${q.miss ? `<p class="qz-miss"><b>if the answer is</b>${fill(q.miss)}</p>` : ""}</div>`;
+    drawFigs(host);
+    UI[q.type](q, host, st);
+    if (st.done) finish(q, host, st, true);
+  }
+
+  function row(extra) { return `<div class="btnrow qz-row">${extra || ""}<span class="qz-verdict"></span></div>`; }
+  const verdict = (host, text, ok) => { const v = $(".qz-verdict", host); v.textContent = text; v.className = "qz-verdict " + (ok === true ? "ok" : ok === false ? "no" : ""); };
+
+  const UI = {
+    pick(q, host, st) { UI.point(q, host, st); },
+    point(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<div class="picklist qz-opts">${q.opts.map(o => `<button data-k="${esc(o.k)}">${fill(o.label)}</button>`).join("")}</div>`
+        + row(q.multi ? `<button class="primary qz-check" disabled>Check</button>` : "");
+      st.sel = st.sel || [];
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      parts.forEach(p => p.classList.add("qz-pickable"));
+      const btns = $$(".qz-opts button", host);
+      const keyOf = el => el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+      const paint = () => {
+        [...btns, ...parts].forEach(el => el.classList.toggle("pick", st.sel.includes(keyOf(el))));
+        const ck = $(".qz-check", host); if (ck) ck.disabled = !st.sel.length;
+      };
+      const choose = k => {
+        if (st.done) return;
+        if (q.multi) { st.sel = st.sel.includes(k) ? st.sel.filter(x => x !== k) : [...st.sel, k]; paint(); save(); }
+        else { st.sel = [k]; finish(q, host, st); }
+      };
+      btns.forEach(b => b.addEventListener("click", () => choose(b.dataset.k)));
+      parts.forEach(p => p.addEventListener("click", () => choose(p.dataset.pick)));
+      const ck = $(".qz-check", host); if (ck) ck.addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    sort(q, host, st) {
+      const ui = $(".qz-ui", host);
+      st.sel = st.sel || {};
+      ui.innerHTML = `<table class="qz-sort"><tbody>${q.items.map((it, i) => `<tr data-i="${i}"><td class="qz-item">${fill(it.label)}</td>
+        <td class="qz-bins">${q.bins.map(b => `<button data-b="${esc(b)}">${esc(b)}</button>`).join("")}</td></tr>`).join("")}</tbody></table>`
+        + row(`<button class="primary qz-check" disabled>Check</button><span class="qz-count mono"></span>`);
+      const paint = () => {
+        $$("tr", ui).forEach(tr => $$("button", tr).forEach(b => b.classList.toggle("pick", st.sel[tr.dataset.i] === b.dataset.b)));
+        const n = Object.keys(st.sel).length;
+        $(".qz-check", host).disabled = n < q.items.length;
+        $(".qz-count", host).textContent = st.done ? "" : `${n} / ${q.items.length} placed`;
+      };
+      ui.addEventListener("click", e => {
+        const b = e.target.closest("button[data-b]"); if (!b || st.done) return;
+        st.sel[b.closest("tr").dataset.i] = b.dataset.b; paint(); save();
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    fill(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = row(`<button class="primary qz-check" disabled>Check</button>`);
+      st.vals = st.vals || {};
+      const inputs = $$("input.qz-blank", host);
+      const paint = () => { $(".qz-check", host).disabled = inputs.some(i => !i.value.trim()); };
+      inputs.forEach(i => {
+        i.value = st.vals[i.dataset.blank] || "";
+        i.addEventListener("input", () => { st.vals[i.dataset.blank] = i.value; paint(); save(); });
+        i.addEventListener("keydown", e => { if (e.key === "Enter" && !$(".qz-check", host).disabled) finish(q, host, st); });
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    write(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<textarea class="qz-text" rows="3" placeholder="Your answer, in a few sentences — then reveal."></textarea>`
+        + row(`<button class="primary qz-check">Reveal</button>`);
+      const ta = $("textarea", ui);
+      ta.value = st.text || "";
+      ta.addEventListener("input", () => { st.text = ta.value; save(); });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+    },
+  };
+
+  function finish(q, host, st, restoring) {
+    st.done = true;
+    host.classList.add("done");
+    const ck = $(".qz-check", host); if (ck) ck.remove();
+    if (q.type === "pick" || q.type === "point") {
+      const right = new Set(q.opts.filter(o => o.right).map(o => o.k));
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      [...$$(".qz-opts button", host), ...parts].forEach(el => {
+        const k = el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+        el.classList.remove("pick");
+        el.classList.toggle("right", right.has(k));
+        el.classList.toggle("wrong", st.sel.includes(k) && !right.has(k));
+        el.classList.toggle("missed", right.has(k) && !st.sel.includes(k));
+        el.disabled = true;
+      });
+      const hit = st.sel.filter(k => right.has(k)).length, wrong = st.sel.length - hit, missed = right.size - hit;
+      if (!q.multi) verdict(host, hit ? "right" : "not quite", !!hit);
+      else verdict(host, wrong + missed === 0 ? "all of them" : `${hit} right · ${wrong} wrong · ${missed} missed`, wrong + missed === 0);
+    } else if (q.type === "sort") {
+      let agree = 0;
+      $$("table.qz-sort tr", host).forEach(tr => {
+        const it = q.items[+tr.dataset.i], chosen = st.sel[tr.dataset.i], ok = it.bins.includes(chosen);
+        agree += ok ? 1 : 0;
+        $$("button", tr).forEach(b => {
+          b.classList.remove("pick"); b.disabled = true;
+          b.classList.toggle("right", b.dataset.b === chosen && ok);
+          b.classList.toggle("wrong", b.dataset.b === chosen && !ok);
+          b.classList.toggle("ans", it.bins.includes(b.dataset.b) && b.dataset.b !== chosen);
+        });
+      });
+      $(".qz-count", host).textContent = "";
+      verdict(host, `${agree} of ${q.items.length} agree with the answer`, agree === q.items.length ? true : agree >= q.items.length * 0.7 ? null : false);
+    } else if (q.type === "fill") {
+      let ok = 0;
+      $$("input.qz-blank", host).forEach(i => {
+        const b = q.blanks.find(x => x.id === i.dataset.blank), good = matches(i.value, b);
+        ok += good ? 1 : 0;
+        i.classList.toggle("right", good); i.classList.toggle("wrong", !good); i.readOnly = true;
+        if (!good && !i.nextElementSibling?.classList.contains("qz-exp")) i.insertAdjacentHTML("afterend", `<span class="qz-exp">${esc(shown(b))}</span>`);
+      });
+      verdict(host, ok === q.blanks.length ? "right" : `${ok} of ${q.blanks.length}`, ok === q.blanks.length);
+    } else if (q.type === "write") {
+      $("textarea", host).readOnly = false;
+      if (q.check.length && !$(".qz-ticks", host)) {
+        st.ticks = st.ticks || [];
+        $(".qz-ui", host).insertAdjacentHTML("beforeend", `<div class="qz-ticks"><div class="qz-ticks-k">tick what your answer had</div>${q.check.map((c, i) =>
+          `<label><input type="checkbox" data-i="${i}" ${st.ticks.includes(i) ? "checked" : ""}> <span>${fill(c)}</span></label>`).join("")}</div>`);
+        $(".qz-ticks", host).addEventListener("change", e => {
+          const i = +e.target.dataset.i; st.ticks = e.target.checked ? [...new Set([...st.ticks, i])] : st.ticks.filter(x => x !== i); save();
+        });
+      }
+    }
+    const a = $(".qz-a", host); a.hidden = false; drawFigs(a);
+    if (!restoring) save();
+    progress();
+  }
+
+  /* ------------------------------------------------------------- progress */
+  const isOptional = host => !!host.closest("details.optional");
+  function progress() {
+    const hosts = $$(".qz"), main = hosts.filter(h => !isOptional(h)), opt = hosts.filter(isOptional);
+    const done = l => l.filter(h => h.classList.contains("done")).length;
+    const el = $("#quiz-progress"); if (!el) return;
+    el.textContent = `answered ${done(main)} / ${main.length}` + (opt.length ? ` · ${done(opt)} / ${opt.length} optional` : "");
+    $$(".optional-count").forEach(c => { const l = $$(".qz", c.closest("details")); c.textContent = `${done(l)} / ${l.length}`; });
+  }
+
+  /* ----------------------------------------------------------------- rail */
+  const nav = $("#nav");
+  if (nav) {
+    const secs = $$("main section").filter(s => s.id && $("h2", s));
+    nav.innerHTML = secs.map((s, i) => `<a href="#${s.id}"><span>${pad(i + 1)}</span><span>${esc($("h2", s).textContent)}</span></a>`).join("");
+    const links = $$("a", nav);
+    const onScroll = () => {
+      const y = window.scrollY + 120; let cur = 0;
+      secs.forEach((s, i) => { if (s.offsetTop <= y) cur = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === cur));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  }
+  const theme = $("#btn-theme");
+  if (theme) theme.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+  const reset = $("#btn-reset");
+  if (reset) {
+    let armed = 0;
+    reset.addEventListener("click", () => {
+      if (Date.now() - armed > 4000) { armed = Date.now(); reset.textContent = "Click again to reset"; setTimeout(() => { reset.textContent = "Reset answers"; }, 4000); return; }
+      QUIZ.reset();
+      reset.textContent = "Reset answers";
+    });
+  }
+  QUIZ.reset = () => { state = {}; save(); $$("[data-fig]").forEach(h => delete h.dataset.drawn); Object.values(DATA).forEach(render); progress(); };
+
+  /* ----------------------------------------------------------------- go */
+  (function fillProse() {   // `{name}` in the page's own prose, text nodes only, so markup and figures are untouched
+    const walker = document.createTreeWalker(document.querySelector("main") || document.body, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walker.nextNode()) if (/\{[a-z][a-z0-9_]*\}/.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+    nodes.forEach(n => { n.nodeValue = n.nodeValue.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? fmtv(QUIZ.values[k]) : m); });
+  })();
+  drawFigs(document);
+  Object.values(DATA).sort((a, b) => a.n - b.n).forEach(render);
+  progress();
+});
+
+/* Lecture 2 — figures and the measured values the questions quote (demo_base/quiz.js renders the questions).
+   #lecture-data is artifacts/lecture_data.json (export_lecture_data.py): a subset of the seminar's demo_data. */
+(function () {
+  const LD = JSON.parse(document.getElementById("lecture-data").textContent);
+  const NS = "http://www.w3.org/2000/svg";
+  const PAINT = { fill: 1, stroke: 1 };
+  function el(tag, attrs, parent, text) {
+    const n = document.createElementNS(NS, tag); let style = "";
+    for (const k in attrs) { const v = attrs[k]; if (PAINT[k] && typeof v === "string" && v.startsWith("var(")) style += `${k}:${v};`; else n.setAttribute(k, v); }
+    if (style) n.setAttribute("style", style);
+    if (text != null) n.textContent = text;
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  const svg = (host, w, h) => el("svg", { viewBox: `0 0 ${w} ${h}`, width: "100%", preserveAspectRatio: "xMidYMid meet" }, host);
+  const txt = (p, x, y, s, a) => el("text", Object.assign({ x, y, "font-size": 12, fill: "var(--ink)" }, a || {}), p, s);
+  const box = (p, x, y, w, h, a) => el("rect", Object.assign({ x, y, width: w, height: h, rx: 3, fill: "var(--panel-sunk)", stroke: "var(--rule-strong)", "stroke-width": 1 }, a || {}), p);
+  const arrow = (p, x1, y1, x2, y2, a) => el("path", Object.assign({ d: `M${x1},${y1} L${x2},${y2}`, stroke: "var(--ink-3)", "stroke-width": 1.2, fill: "none", "marker-end": "url(#lec-arr)" }, a || {}), p);
+  function defs(s) { const d = el("defs", {}, s); const m = el("marker", { id: "lec-arr", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" }, d); el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--ink-3)" }, m); }
+  function pickable(parent, key, x, y, w, h) { const g = el("g", { "data-pick": key }, parent); g.hit = () => el("rect", { class: "hit", x: x - 5, y: y - 5, width: w + 10, height: h + 10, rx: 5 }, g); return g; }
+
+  /* ----------------------------------------------------------------- the measured values the answers quote */
+  const pct = x => (100 * x).toFixed(0) + "%";
+  const sp = LD.sparsity, wi = n => sp.n.indexOf(n);
+  const row = (rows, name) => rows.find(r => r.model === name);
+  const neural = LD.results.filter(r => !/gram/.test(r.model));
+  const g = LD.gradTime.cells;
+  const decay = a => Math.round(a[a.length - 1] / a[0]);
+  const lens = Object.keys(LD.bleuByLen);
+  Object.assign(QUIZ.values, {
+    sparsity_w3: Math.round(100 * sp.words[wi(3)]), sparsity_w3_pct: pct(sp.words[wi(3)]), sparsity_w2_pct: pct(sp.words[wi(2)]), sparsity_w5_pct: pct(sp.words[wi(5)]),
+    hapax_pct: pct(LD.corpus.hapax / LD.corpus.nTypes),
+    copied3_pct: pct(LD.ngramFirst.copied3), copied5_pct: pct(LD.ngramFirst.copied5),
+    add1_3gram_ppl: Math.round(row(LD.smoothingWords, "3-gram, add-1").ppl).toLocaleString("en-US").replace(/,/g, " "),
+    unigram_ppl: Math.round(row(LD.smoothingWords, "1-gram").ppl).toLocaleString("en-US").replace(/,/g, " "),
+    word_trigram_ppl: Math.round(row(LD.smoothingWords, "3-gram, interpolated").ppl).toLocaleString("en-US").replace(/,/g, " "),
+    bpe_trigram_ppl: Math.round(row(LD.smoothingBpe, "3-gram, interpolated").ppl),
+    best_rnn_ppl: Math.round(Math.min(...neural.map(r => r.ppl))),
+    greedy_lp: LD.decode.find(r => r.method === "greedy").logprob.toFixed(2),
+    greedy_rep_pct: pct(LD.decode.find(r => r.method === "greedy").repetition),
+    bleu_short: LD.bleuByLen[lens[0]].toFixed(1), bleu_long: LD.bleuByLen[lens[lens.length - 1]].toFixed(1),
+    bleu_greedy: LD.beam.greedy.toFixed(1), bleu_beam5: LD.beam.beam5.toFixed(1),
+    rnn_decay: decay(g.rnn).toLocaleString("en-US").replace(/,/g, " "), lstm_decay: decay(g.lstm).toLocaleString("en-US").replace(/,/g, " "),
+  });
+
+  /* ----------------------------------------------------------------- input row and shifted targets */
+  QUIZ.figs.shift = host => {
+    const toks = ["[BOS]", "Штирлиц", "открыл", "дверь", "и"], targets = ["Штирлиц", "открыл", "дверь", "и", "[EOS]"];
+    const W = 760, H = 150, s = svg(host, W, H); defs(s);
+    const x0 = 110, cw = 118, gap = 8;
+    txt(s, x0 - 12, 44, "input", { "text-anchor": "end", "font-size": 11, fill: "var(--ink-3)" });
+    txt(s, x0 - 12, 118, "target", { "text-anchor": "end", "font-size": 11, fill: "var(--ink-3)" });
+    toks.forEach((t, i) => {
+      const x = x0 + i * (cw + gap);
+      txt(s, x + cw / 2, 16, "position " + i, { "text-anchor": "middle", "font-size": 10, fill: "var(--ink-3)" });
+      box(s, x, 28, cw, 26, { fill: i === 2 ? "color-mix(in srgb, var(--cls-0) 18%, var(--panel))" : "var(--panel-sunk)", stroke: i === 2 ? "var(--cls-0)" : "var(--rule-strong)" });
+      txt(s, x + cw / 2, 45, t, { "text-anchor": "middle", "font-size": 12.5, "font-family": "var(--mono)" });
+      // the shift: input i+1 is target i
+      if (i + 1 < toks.length) el("path", { d: `M${x + cw + gap + cw / 2},56 C ${x + cw + gap + cw / 2},80 ${x + cw / 2},78 ${x + cw / 2},100`, stroke: "var(--rule-strong)", "stroke-width": 1, fill: "none", "stroke-dasharray": "3 3" }, s);
+      const gp = pickable(s, "y" + i, x, 102, cw, 26);
+      box(gp, x, 102, cw, 26, { fill: "var(--panel)" });
+      txt(gp, x + cw / 2, 119, targets[i], { "text-anchor": "middle", "font-size": 12.5, "font-family": "var(--mono)" });
+      gp.hit();
+    });
+    txt(s, W / 2, H - 6, "one joke, one forward pass: the loss at position t compares softmax(h_t) with target t", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
+  };
+
+  /* ----------------------------------------------------------------- the RNN unrolled, four steps */
+  QUIZ.figs["rnn-unrolled"] = host => {
+    const W = 760, H = 268, s = svg(host, W, H); defs(s);
+    const toks = ["[BOS]", "Штирлиц", "открыл", "дверь"], n = toks.length;
+    const x0 = 120, step = 150, yx = 215, yf = 128, yh = 128, yy = 40;
+    const gx = pickable(s, "x", x0 - 40, yx - 16, (n - 1) * step + 80, 30);
+    const gf = pickable(s, "f", x0 - 40, yf - 22, (n - 1) * step + 80, 44);
+    const gh = pickable(s, "h", x0 + 50, yh - 14, (n - 2) * step + 50, 28);
+    const gy = pickable(s, "y", x0 - 40, yy - 16, (n - 1) * step + 80, 36);
+    // h0
+    txt(s, x0 - 84, yh + 4, "h₀ = 0", { "text-anchor": "middle", "font-size": 11.5, fill: "var(--ink-3)" });
+    arrow(s, x0 - 50, yh, x0 - 42, yh);
+    toks.forEach((t, i) => {
+      const x = x0 + i * step;
+      // input token
+      box(gx, x - 40, yx - 14, 80, 26);
+      txt(gx, x, yx + 3, t, { "text-anchor": "middle", "font-size": 12, "font-family": "var(--mono)" });
+      txt(gx, x, yx + 26, "x" + (i + 1), { "text-anchor": "middle", "font-size": 10, fill: "var(--ink-3)" });
+      arrow(s, x, yx - 16, x, yf + 22);
+      // the cell
+      box(gf, x - 40, yf - 20, 80, 40, { fill: "var(--panel)", stroke: "var(--cls-0)", "stroke-width": 1.4 });
+      txt(gf, x, yf - 2, "f", { "text-anchor": "middle", "font-size": 14, "font-style": "italic" });
+      txt(gf, x, yf + 13, "same weights", { "text-anchor": "middle", "font-size": 8.5, fill: "var(--ink-3)" });
+      // state to the next cell
+      if (i + 1 < n) {
+        arrow(gh, x + 42, yh, x + step - 42, yh);
+        txt(gh, x + step / 2, yh - 8, "h" + (i + 1), { "text-anchor": "middle", "font-size": 11.5 });
+      }
+      // output
+      arrow(s, x, yf - 22, x, yy + 20);
+      txt(s, x + 8, yf - 32, "softmax(W h)", { "font-size": 8.5, fill: "var(--ink-3)" });
+      const bars = [[.1, .6, .2, .3], [.5, .15, .25, .1], [.2, .55, .1, .3], [.15, .2, .5, .1]][i];
+      bars.forEach((p, k) => el("rect", { x: x - 30 + k * 16, y: yy + 12 - 28 * p, width: 12, height: 28 * p, fill: k === [1, 0, 1, 2][i] ? "var(--cls-1)" : "var(--rule-strong)" }, gy));
+      txt(gy, x, yy - 22, "P(w" + (i + 2) + " | prefix)", { "text-anchor": "middle", "font-size": 10.5 });
+    });
+    [gx, gf, gh, gy].forEach(gg => gg.hit());
+    txt(s, W / 2, H - 4, "unrolled over four tokens: one row of inputs, one row of states, one distribution per position", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
+  };
+})();
+
+</script>
+</body>
+</html>
+
+<!-- built from demo/ · sha256:57c2144886f1837c39419e8d74801a752ef1af231bce14cbb40c6e74943601ce -->

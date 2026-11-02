@@ -1,0 +1,23 @@
+[project]
+name = "nlp-dsba-week07"
+version = "0.1.0"
+description = "Week 7 — parameter-efficient fine-tuning: linear probing, LoRA, prompt tuning, LP-FT on GPT-2 and SST-2."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "matplotlib>=3.8",
+    "torch>=2.2",
+    "transformers[torch]>=5.0",
+    "datasets>=5.0.1",
+    "accelerate>=1.1.0",
+    "peft>=0.17",
+    "torchmetrics>=1.4",
+    "seaborn>=0.13",
+    "tqdm>=4.66",
+    "ipykernel>=6.29",
+]
+
+[tool.uv]
+package = false

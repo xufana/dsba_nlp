@@ -1,0 +1,44 @@
+{
+  "steps": [
+    {"name": "sections", "expr": "return ['hero','probe','prompt','adapters','lora','map','bill','end'].map(id=>id+':'+(document.getElementById(id)?document.getElementById(id).getBoundingClientRect().height|0:'MISSING')).join(' ')"},
+    {"name": "filled", "expr": "return ['hero-note','kumar-table','fig-toy','toy-out','fig-prompt','fig-adapter','latency-table','fig-lora','code-lora','code-peft','where-table','sort-pick','fig-map','map-out','bet-speed-q','fit-pick','store-out','board-pick','gpt3-table','score'].map(id=>{const n=document.getElementById(id);return id+':'+(n?n.innerHTML.length:'MISSING')}).filter(x=>/MISSING|:0$/.test(x)).join(' ') || 'all filled'"},
+    {"name": "checks", "expr": "return ['code-check','map-check'].map(id=>id+' = '+(document.getElementById(id)||{textContent:'MISSING'}).textContent.trim()).join(' | ')"},
+    {"name": "map modes", "expr": "const out=[]; for (const m of ['ft','lp','bitfit','adapter','pt','lora']) { document.querySelector('#map-btns [data-m='+m+']').click(); out.push(m+': '+document.querySelector('#map-out .stat .v').textContent+' / '+document.getElementById('map-check').textContent.trim()); } return out.join(' | ')"},
+    {"name": "toy", "expr": "const out=[]; for (const m of ['lp','ft','lpft']) { document.querySelector('#toy-btns [data-m='+m+']').click(); out.push(document.querySelector('#toy-out .toy-row.on').textContent.trim()); } return out.join(' | ')"},
+    {"name": "reveal all", "expr": "const ids=['btn-kumar-reveal','btn-prompt-reveal','btn-latency-reveal','btn-init-reveal','btn-rank-reveal','btn-where-reveal','btn-r-reveal','btn-sort-reveal','btn-speed-reveal','btn-fit-reveal','btn-board-reveal']; const out=[]; for (const id of ids) { const b=document.getElementById(id); if(!b){out.push(id+':MISSING');continue;} b.click(); out.push(id+':'+b.textContent); } return out.join(' ')"},
+    {"name": "notes visible", "expr": "return ['kumar-note','toy-note','prompt-note','latency-note','init-note','rank-note','where-note','r-note','speed-note','fit-note','board-note','store-note'].map(id=>{const n=document.getElementById(id);return id+':'+(n?(n.hidden?'hidden':n.textContent.trim().length):'MISSING')}).join(' ')"},
+    {"name": "notes text", "expr": "return ['kumar-note','prompt-note','latency-note','rank-note','speed-note','fit-note','board-note','store-note'].map(id=>document.getElementById(id).textContent.trim().slice(0,160)).join(' || ')"},
+    {"name": "states", "expr": "for (const m of ['train','merge','init']) document.querySelector('#lora-btns [data-m='+m+']').click(); document.querySelector('#prompt-init [data-m=random]').click(); document.querySelector('#prompt-init [data-m=text]').click(); const r=document.getElementById('rank-r'); r.value=1; r.dispatchEvent(new Event('input')); r.value=4; r.dispatchEvent(new Event('input')); const n=document.getElementById('mem-n'); n.value=3; n.dispatchEvent(new Event('input')); n.value=4; n.dispatchEvent(new Event('input')); return 'ok · score: '+document.getElementById('score').textContent"},
+    {"name": "svg text clipping", "expr": "const bad=[]; document.querySelectorAll('svg').forEach((s,si)=>{ const vb=s.viewBox.baseVal; if(!vb||!vb.width) return; s.querySelectorAll('text').forEach(t=>{ if(t.getAttribute('transform')) return; let b; try{b=t.getBBox();}catch(e){return;} if(b.width===0) return; if(b.x<-1||b.y<-1||b.x+b.width>vb.width+1||b.y+b.height>vb.height+1) bad.push((s.closest('[id]')||{id:'svg'+si}).id+': \"'+t.textContent.slice(0,30)+'\" '+Math.round(b.x)+','+Math.round(b.y)+' '+Math.round(b.width)+'x'+Math.round(b.height)+' in '+vb.width+'x'+vb.height); }); }); return bad.length? bad.slice(0,25).join(' | ') : 'no clipped text'"},
+    {"name": "svg text overlaps", "expr": "const bad=[]; document.querySelectorAll('svg').forEach((s,si)=>{ const ts=Array.from(s.querySelectorAll('text')).filter(t=>!t.getAttribute('transform')&&t.textContent.trim()); const bs=ts.map(t=>{try{return t.getBBox();}catch(e){return null;}}); for(let i=0;i<ts.length;i++) for(let j=i+1;j<ts.length;j++){ const a=bs[i],b=bs[j]; if(!a||!b||!a.width||!b.width) continue; const ox=Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x), oy=Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y); if(ox>3&&oy>3) bad.push((s.closest('[id]')||{id:'svg'+si}).id+': \"'+ts[i].textContent.slice(0,22)+'\" x \"'+ts[j].textContent.slice(0,22)+'\"'); } }); return bad.length? bad.slice(0,25).join(' | ') : 'no overlaps'"},
+    {"name": "perf", "expr": "return performance.getEntriesByType('mark').map(m=>m.name+'@'+Math.round(m.startTime)).join(' ') || Math.round(performance.now())+' ms'"}
+  ],
+  "screens": [
+    {"sel": "#hero", "file": "00_hero.png", "dy": -20},
+    {"sel": "#kumar-out", "file": "01_kumar.png", "dy": -260},
+    {"sel": "#fig-toy", "file": "01_toy.png", "dy": -160},
+    {"sel": "#fig-prompt", "file": "02_prompt.png", "dy": -200},
+    {"sel": "#prompt-out", "file": "02_prompt_out.png", "dy": -220},
+    {"sel": "#fig-adapter", "file": "03_adapter.png", "dy": -80},
+    {"sel": "#latency-out", "file": "03_latency.png", "dy": -200},
+    {"sel": "#fig-lora", "file": "04_lora.png", "dy": -80},
+    {"sel": "#init-chart", "file": "04_init.png", "dy": -200},
+    {"sel": "#fig-rank", "file": "04_rank.png", "dy": -260},
+    {"sel": "#code-lora", "file": "04_code.png", "dy": -60},
+    {"sel": "#where-out", "file": "04_where.png", "dy": -220},
+    {"sel": "#r-out", "file": "04_r.png", "dy": -200},
+    {"sel": "#sort-pick", "file": "05_sort.png", "dy": -160},
+    {"sel": "#fig-map", "file": "05_map.png", "dy": -160},
+    {"sel": "#speed-out", "file": "06_speed.png", "dy": -200},
+    {"sel": "#mem-chart", "file": "06_mem.png", "dy": -320},
+    {"sel": "#store-out", "file": "06_store.png", "dy": -120},
+    {"sel": "#board-chart", "file": "07_board.png", "dy": -300},
+    {"sel": "#curves-chart", "file": "07_curves.png", "dy": -100},
+    {"sel": "#gpt3-table", "file": "07_gpt3.png", "dy": -100}
+  ],
+  "figures": [
+    {"sel": "#fig-lora svg", "file": "lora.png", "expr": "document.querySelector('#lora-btns [data-m=init]').click()"},
+    {"sel": "#fig-prompt svg", "file": "prompt_tuning.png"},
+    {"sel": "#fig-toy svg", "file": "lpft.png", "expr": "for (const m of ['lp','ft','lpft']) document.querySelector('#toy-btns [data-m='+m+']').click()"}
+  ]
+}
