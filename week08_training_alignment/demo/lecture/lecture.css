@@ -1,5 +1,0 @@
-/* lecture 7: the computed tables (GRPO advantages, importance weights) */
-table.lec-grpo { width: auto; }
-table.lec-grpo th { white-space: normal; font-size: 12px; max-width: 150px; }
-table.lec-grpo td { font-size: 15px; padding: 5px 16px 5px 0; }
-table.lec-grpo tr.edge td { background: color-mix(in srgb, var(--cls-1) 10%, transparent); }

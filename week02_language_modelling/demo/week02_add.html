@@ -1,0 +1,1721 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Неделя 2 · Языковая модель и генерация · ADD-2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* The design system of the seminar pages, shared by every week (scripts/build_demo.py puts it in <style>).
+   A week adds its own rules in demo/week.css, appended after this file. */
+:root {
+  color-scheme: light;
+  --ground:        #f7f6f2;
+  --panel:         #fdfdfc;
+  --panel-sunk:    #f1efe9;
+  --ink:           #14161a;
+  --ink-2:         #55595f;
+  --ink-3:         #8b8e92;
+  --rule:          #dcdad3;
+  --rule-strong:   #bab7ad;
+  --cls-0: #2a78d6; --cls-1: #eb6834; --cls-2: #1baf7a; --cls-3: #4a3aa7;
+  --good:  #0ca30c; --bad: #d03b3b;
+  --seq-1: #5598e7; --seq-2: #3987e5; --seq-3: #2a78d6; --seq-4: #256abf; --seq-5: #104281;
+  --shadow: 0 1px 2px rgba(20,22,26,.05), 0 8px 24px -16px rgba(20,22,26,.28);
+
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground:      #131413;
+    --panel:       #1b1c1b;
+    --panel-sunk:  #232422;
+    --ink:         #f0efe9;
+    --ink-2:       #a8a79f;
+    --ink-3:       #7b7a73;
+    --rule:        #31322e;
+    --rule-strong: #4c4d47;
+    --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+    --good: #0ca30c; --bad: #d03b3b;
+    --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground:      #131413;
+  --panel:       #1b1c1b;
+  --panel-sunk:  #232422;
+  --ink:         #f0efe9;
+  --ink-2:       #a8a79f;
+  --ink-3:       #7b7a73;
+  --rule:        #31322e;
+  --rule-strong: #4c4d47;
+  --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+  --good: #0ca30c; --bad: #d03b3b;
+  --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 20.1px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+
+/* ---------------------------------------------------------------- shell */
+.shell { display: grid; grid-template-columns: 278px minmax(0, 1fr); gap: 0; }
+.rail {
+  position: sticky; top: 0; align-self: start; height: 100vh;
+  border-right: 1px solid var(--rule);
+  padding: 26px 18px 18px 26px;
+  display: flex; flex-direction: column; gap: 18px;
+  overflow-y: auto;
+}
+.rail-mark {
+  font-family: var(--mono); font-size: 14px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.rail-eq { font-family: var(--display); font-size: 17.7px; font-weight: 700; line-height: 1.3; }
+.rail nav { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
+.rail nav a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: baseline;
+  padding: 4px 6px 4px 0; text-decoration: none; color: var(--ink-2);
+  font-family: var(--display); font-size: 16.4px; line-height: 1.32;
+  border-radius: 3px;
+}
+.rail nav a span:first-child {
+  font-family: var(--mono); font-size: 13.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.rail nav a:hover { color: var(--ink); background: var(--panel-sunk); }
+.rail nav a.on { color: var(--ink); font-weight: 700; }
+.rail nav a.on span:first-child { color: var(--ink); }
+.rail-foot { margin-top: auto; font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.6; }
+.rail-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+main { padding: 0 0 140px; min-width: 0; }
+.wrap { max-width: 1160px; padding: 0 48px; margin: 0 auto; }
+section { padding: 64px 0 8px; scroll-margin-top: 20px; }
+.prose { max-width: none; }
+.prose p { margin: 0 0 1.05em; }
+.prose p + p { margin-top: -.15em; }
+
+/* --------------------------------------------------------------- type */
+h1 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(41px, 6.04vw, 72.9px); line-height: .98; letter-spacing: -.025em;
+  margin: 0 0 22px; text-wrap: balance;
+}
+h2 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(27.5px, 3.19vw, 37.8px); line-height: 1.08; letter-spacing: -.018em;
+  margin: 0 0 14px; text-wrap: balance;
+}
+h3 {
+  font-family: var(--display); font-weight: 700; font-size: 20.6px;
+  letter-spacing: -.008em; margin: 34px 0 10px;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 14px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px;
+}
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.lede { font-size: 23.5px; line-height: 1.52; color: var(--ink-2); max-width: none; }
+.prose strong { font-weight: 600; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.prose code { background: var(--panel-sunk); padding: .1em .34em; border-radius: 3px; }
+a { color: inherit; text-underline-offset: 2px; text-decoration-color: var(--rule-strong); }
+
+/* -------------------------------------------------------------- panels */
+.panel {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 4px; box-shadow: var(--shadow);
+  margin: 22px 0 26px; overflow: hidden;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 11px 16px; border-bottom: 1px solid var(--rule);
+  background: var(--panel-sunk);
+  font-family: var(--mono); font-size: 14px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-2); flex-wrap: wrap;
+}
+.panel-body { padding: 18px 16px; }
+.panel-body.tight { padding: 12px 16px; }
+.panel-note {
+  padding: 12px 16px; border-top: 1px solid var(--rule); background: var(--panel-sunk);
+  font-size: 17.7px; color: var(--ink-2); line-height: 1.55;
+}
+.scroll-x { overflow-x: auto; }
+
+/* ------------------------------------------------------------- controls */
+button, .btn {
+  font-family: var(--display); font-size: 16.4px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px;
+  padding: 6px 12px; cursor: pointer; line-height: 1.35;
+  transition: background .12s ease, border-color .12s ease;
+}
+button:hover { background: var(--panel-sunk); border-color: var(--ink-3); }
+button[disabled] { opacity: .42; cursor: not-allowed; }
+button.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+button.primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
+button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.btnrow { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+input[type="text"], textarea, select {
+  font-family: var(--mono); font-size: 16.4px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px; padding: 8px 10px;
+  width: 100%;
+}
+input[type="range"] { accent-color: var(--ink); width: 100%; }
+label.field { display: block; font-family: var(--mono); font-size: 14px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+
+/* ---------------------------------------------------------------- data */
+table { border-collapse: collapse; width: 100%; font-size: 16.4px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--mono); font-size: 15.4px; }
+th.data-th { text-transform: none; letter-spacing: 0; font-size: 14.5px; color: var(--ink-2); }
+tr:last-child td { border-bottom: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 14.5px; letter-spacing: .02em;
+  padding: 2px 8px; border-radius: 2px; border: 1px solid var(--rule-strong);
+  white-space: nowrap;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.c0 { background: var(--cls-0); } .c1 { background: var(--cls-1); }
+.c2 { background: var(--cls-2); } .c3 { background: var(--cls-3); }
+.t0 { color: var(--cls-0); } .t1 { color: var(--cls-1); }
+.t2 { color: var(--cls-2); } .t3 { color: var(--cls-3); }
+
+.stat-row { display: flex; gap: 34px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .v { font-family: var(--display); font-weight: 700; font-size: 32.5px;
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); }
+
+.reveal-wrap { position: relative; }
+.veil {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 26px 16px; background: var(--panel-sunk);
+  border: 1px dashed var(--rule-strong); border-radius: 3px;
+  font-family: var(--mono); font-size: 15.4px; color: var(--ink-2);
+  text-align: center; flex-wrap: wrap;
+}
+[hidden] { display: none !important; }
+
+.tok {
+  display: inline-block; font-family: var(--mono); font-size: 15.4px;
+  padding: 1px 6px; margin: 2px 3px 2px 0; border-radius: 2px;
+  background: var(--panel-sunk); border: 1px solid var(--rule);
+}
+.tok.diff { border-color: var(--ink-3); background: var(--panel); font-weight: 500; }
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+
+svg { display: block; max-width: 100%; }
+svg text { font-family: var(--mono); fill: var(--ink-2); }
+.axis line, .axis path { stroke: var(--rule); }
+.gridline { stroke: var(--rule); stroke-dasharray: 2 3; }
+
+.tooltip {
+  position: fixed; pointer-events: none; z-index: 50; opacity: 0;
+  background: var(--panel); border: 1px solid var(--rule-strong);
+  border-radius: 3px; box-shadow: var(--shadow); padding: 7px 10px;
+  font-family: var(--mono); font-size: 14.5px; line-height: 1.5; color: var(--ink);
+  transition: opacity .1s ease; max-width: 280px;
+}
+
+.footnote { font-size: 17.2px; color: var(--ink-2); max-width: none; }
+
+/* library pointers: a quiet line of names, with the actual call one click away */
+.codenote { margin: 16px 0 0; border-top: 1px solid var(--rule); padding-top: 9px; }
+.codenote > summary {
+  cursor: pointer; list-style: none; display: flex; gap: 9px;
+  align-items: baseline; flex-wrap: wrap; padding: 2px 0;
+}
+.codenote > summary::-webkit-details-marker { display: none; }
+.codenote > summary::before {
+  content: "+"; font-family: var(--mono); font-size: 15px; color: var(--ink-3);
+  width: 9px; flex: none;
+}
+.codenote[open] > summary::before { content: "−"; }
+.codenote > summary:hover .libs, .codenote[open] > summary .libs { color: var(--ink); }
+.codenote .k {
+  font-family: var(--mono); font-size: 13px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3); flex: none;
+}
+.codenote .libs {
+  font-family: var(--mono); font-size: 15px; line-height: 1.55; color: var(--ink-2);
+  transition: color .12s ease;
+}
+.codenote pre {
+  margin: 11px 0 0; padding: 13px 15px; background: var(--panel-sunk);
+  border-radius: 3px; font-family: var(--mono); font-size: 15.4px; line-height: 1.8;
+  white-space: pre-wrap; word-break: break-word; color: var(--ink);
+}
+.codenote .why { font-size: 16.4px; color: var(--ink-2); line-height: 1.55; margin-top: 10px; }
+.codenote .why code { font-family: var(--mono); font-size: 15.4px; }
+.kbd {
+  font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; color: var(--ink-2);
+}
+
+/* ------------------------------------------------------- week 2 additions */
+.michael { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); }
+.michael figcaption { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-top: 8px; line-height: 1.5; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+
+/* a bet: pick one option, then reveal */
+.bet { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 12px; }
+.bet .q { font-family: var(--body); font-size: 17.5px; font-weight: 600; color: var(--ink); flex-basis: 100%; line-height: 1.4; }
+.bet button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.bet button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.bet button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.bet .verdict { font-family: var(--mono); font-size: 15px; margin-left: 6px; }
+.bet .verdict.ok { color: var(--good); } .bet .verdict.no { color: var(--bad); }
+
+/* generated text */
+.gen { font-size: 19.5px; line-height: 1.75; margin: 0 0 12px; }
+.gen .t { padding: 1px 1px; border-radius: 2px; white-space: pre-wrap; }
+.gen .copied { background: color-mix(in srgb, var(--cls-1) 22%, transparent); border-bottom: 2px solid var(--cls-1); }
+.gen .dead { color: var(--bad); font-family: var(--mono); }
+.gen .prompt { color: var(--ink-3); }
+.gen-list { display: flex; flex-direction: column; gap: 10px; }
+.gen-list .gen { padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; margin: 0; }
+
+.merge-row { display: grid; grid-template-columns: 54px 1fr 110px; gap: 10px; font-family: var(--mono); font-size: 15px; padding: 3px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.merge-row .n { color: var(--ink-3); } .merge-row .c { text-align: right; color: var(--ink-2); }
+.merge-row .p { display: flex; gap: 6px; align-items: center; }
+.merge-row .p .tok { margin: 0; }
+.merge-row .tok.new { border-color: var(--ink); font-weight: 600; }
+.eow { color: var(--cls-1); }
+
+.pbar { display: grid; grid-template-columns: 150px 1fr 64px; gap: 10px; align-items: center; font-family: var(--mono); font-size: 14.5px; padding: 2px 0; }
+.pbar .lab { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pbar .bar { height: 14px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pbar .bar i { display: block; height: 100%; background: var(--cls-0); }
+.pbar.cut .bar i { background: var(--rule-strong); } .pbar.cut .lab { color: var(--ink-3); }
+.pbar .v { color: var(--ink-2); }
+
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 18px; margin: 12px 0; }
+.sliders label.field { display: flex; justify-content: space-between; }
+.sliders label.field b { color: var(--ink); font-weight: 500; }
+.sliders .off { opacity: .4; }
+
+.tr-row { display: grid; grid-template-columns: 64px 1fr; gap: 8px 14px; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 18.5px; line-height: 1.5; }
+.tr-row .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.tr-row .bleu { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-left: 8px; }
+.tr-row:last-child { border-bottom: none; }
+.nowrap { white-space: nowrap; }
+.busy { opacity: .55; pointer-events: none; }
+
+/* formulas: native MathML, kept outside .prose so they survive presentation mode */
+math { font-family: "STIX Two Math", "Latin Modern Math", "Cambria Math", "Times New Roman", serif; }
+.prose math { font-size: 1.05em; }
+.formula {
+  margin: 12px 0 22px; padding: 14px 20px 12px; background: var(--panel-sunk);
+  border-left: 3px solid var(--rule-strong); border-radius: 3px; overflow-x: auto;
+}
+.formula .fn {
+  display: block; font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px;
+}
+.formula math { font-size: 1.25em; margin: 6px 0; }
+.formula math + math { margin-top: 10px; }
+.formula mtext { font-family: var(--body); font-size: .82em; color: var(--ink-2); }
+body.present .formula { margin-top: 10px; }
+
+/* the one-screen recipe */
+.recipe { padding: 4px 16px 6px; }
+.recipe .step { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--rule); }
+.recipe .step:first-child { border-top: none; }
+.recipe .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.recipe .k b { display: block; font-family: var(--display); font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1; margin-bottom: 4px; }
+.recipe pre { margin: 0; font-family: var(--mono); font-size: 14.5px; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--ink); }
+.recipe .c { color: var(--ink-3); }
+
+/* --------------------------------------------------- presentation mode */
+body.present .prose:not(.keep) { display: none; }
+body.present .footnote { display: none; }
+body.present section { min-height: 100vh; padding-top: 40px; }
+body.present .panel { margin-top: 14px; }
+body.present .lede { display: none; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; border-right: none;
+    border-bottom: 1px solid var(--rule); padding: 18px 20px; }
+  .rail nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .wrap { padding: 0 20px; }
+  body { font-size: 18.6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+/* ------------------------------------------------------- week 3 additions */
+/* code next to the formula it implements: hover a line, the term lights up (and back) */
+.two { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .two { grid-template-columns: 1fr; } }
+/* wide code: the formulas go below it, as a row of cards */
+.two.stacked { grid-template-columns: 1fr; }
+.two.stacked .fstack { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 6px 22px; }
+.two.stacked .fstack .row { border-top: none; border-left: 2px solid var(--rule); padding: 4px 0 4px 12px; grid-template-columns: 1fr; gap: 2px; }
+.two.stacked .fstack .row .n { white-space: nowrap; }
+.hm svg rect.flat { stroke: none; }
+#masks-out > div { display: flex; flex-direction: column; justify-content: flex-end; }
+#masks-out .hm-title { min-height: 2.8em; }
+.temp-table td:first-child { white-space: nowrap; }
+pre.code { margin: 0; padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; white-space: normal; overflow-x: auto; color: var(--ink); counter-reset: ln; }
+pre.code .ln { display: block; white-space: pre; min-height: 1.5em; padding: 0 8px 0 40px; margin: 0 -8px; position: relative; border-radius: 2px; transition: background .12s ease; }
+pre.code .ln::before { counter-increment: ln; content: counter(ln); position: absolute; left: 8px; width: 24px; text-align: right; color: var(--ink-3); font-size: 12.5px; top: 1px; }
+pre.code .ln[data-f] { cursor: default; }
+pre.code .ln.hi, .fstack .fx.hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .c { color: var(--ink-3); }
+pre.code .kw { color: var(--cls-3); }
+.fstack .fx { padding: 2px 6px; border-radius: 3px; transition: background .12s ease; }
+.fstack .fx[data-f] { cursor: default; }
+.fstack .fx.dim { opacity: .35; }
+.fstack .row { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--rule); }
+.fstack .row:first-child { border-top: none; }
+.fstack .row .n { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .08em; }
+.fstack .row .say { font-size: 16.4px; color: var(--ink-2); line-height: 1.5; margin-top: 2px; }
+.fstack math { font-size: 1.1em; }
+.fstack .row > div { min-width: 0; overflow-x: auto; }
+.two:not(.stacked) .fstack math { font-size: 1em; }
+.two:not(.stacked) .fstack math[display="block"] { display: inline-block; margin: 2px 0; }
+.fstack .fx.hi math { color: var(--ink); }
+
+/* a redrawn schematic and its credit line */
+.fig { margin: 8px 0 0; }
+.figcap { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.5; margin: 8px 0 2px; }
+.figcap a { color: var(--ink-2); }
+
+/* attention heatmaps */
+.hm-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.hm-title { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.hm svg rect.cell { stroke: var(--panel); stroke-width: .6; }
+.hm svg rect.cell:hover { stroke: var(--ink); stroke-width: 1.5; }
+.headgrid { display: grid; grid-template-columns: 40px repeat(8, minmax(0, 1fr)); gap: 4px; align-items: center; }
+.headgrid .lab { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); text-align: center; }
+.headgrid svg { cursor: pointer; border: 1px solid var(--rule); border-radius: 2px; background: var(--panel); }
+.headgrid svg.on { outline: 2px solid var(--cls-1); }
+
+/* the score table */
+.scores td math { font-size: 1.1em; }
+.scores td:first-child { font-weight: 600; font-family: var(--display); }
+
+/* live text-in → text-out panels */
+.io { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.io .out { font-family: var(--mono); font-size: 22px; letter-spacing: .04em; padding: 8px 12px; background: var(--panel-sunk); border-radius: 3px; min-height: 46px; }
+.io .out.ok { border-left: 3px solid var(--good); } .io .out.no { border-left: 3px solid var(--bad); }
+.small-note { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); margin-top: 6px; }
+.toggle { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 3px; overflow: hidden; }
+.toggle button { border: none; border-radius: 0; }
+.toggle button.sel { background: var(--ink); color: var(--ground); }
+.ck { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.ck b { color: var(--good); font-weight: 500; } .ck b.no { color: var(--bad); }
+.results th.data-th, .results td { font-size: 15.4px; }
+.results tr.hl td { background: color-mix(in srgb, var(--cls-0) 10%, transparent); }
+
+/* ------------------------------------------------------- week 4 additions */
+/* token strips: WordPiece pieces, with the continuation marker and special tokens coloured */
+.pieces { display: flex; flex-wrap: wrap; gap: 4px 3px; align-items: center; line-height: 1.3; }
+.pieces .tok { margin: 0; }
+.pieces .tok.cont { border-color: color-mix(in srgb, var(--cls-1) 60%, var(--rule)); background: color-mix(in srgb, var(--cls-1) 10%, var(--panel)); }
+.pieces .tok.sp { border-color: var(--ink-3); color: var(--ink-2); font-weight: 600; }
+.pieces .tok.unk { border-color: var(--bad); color: var(--bad); font-weight: 600; }
+.pieces .tok.eow { color: var(--cls-1); }
+.pieces .tok.seg1 { background: color-mix(in srgb, var(--cls-2) 12%, var(--panel)); }
+.pieces .tok.mk { background: color-mix(in srgb, var(--cls-3) 22%, var(--panel)); border-color: var(--cls-3); }
+.pieces .tok.rnd { background: color-mix(in srgb, var(--cls-1) 22%, var(--panel)); border-color: var(--cls-1); }
+.pieces .tok.keep { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.pieces .tok.ans { background: color-mix(in srgb, var(--good) 22%, var(--panel)); border-color: var(--good); font-weight: 600; }
+.pieces .tok.ent { font-weight: 600; }
+.pieces .tok.dim { opacity: .45; }
+.pieces .tok.word { border-style: dashed; }
+.pieces .gap { flex-basis: 100%; height: 0; }
+.pieces .lab { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin-right: 6px; letter-spacing: .06em; text-transform: uppercase; }
+/* the merge stepper */
+.merge-row.wp { grid-template-columns: 54px 1fr 190px; }
+.merge-row .c small { color: var(--ink-3); }
+.merge-list { max-height: 330px; overflow-y: auto; }
+.merge-row.now { background: color-mix(in srgb, var(--cls-1) 12%, transparent); }
+/* the two encoders side by side */
+.enc-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.enc-row .k { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.enc-row:last-child { border-bottom: none; }
+.enc-row.diff .k { color: var(--cls-1); }
+/* segmentation lattice rows */
+.seg-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.seg-row .p { font-family: var(--mono); font-size: 14.5px; text-align: right; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.seg-row.best .p { color: var(--ink); font-weight: 600; }
+.seg-row:last-child { border-bottom: none; }
+/* a small legend line */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin: 8px 0 0; align-items: center; }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; border: 1px solid var(--rule-strong); }
+/* zero-shot label pickers */
+.zs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 14px; }
+.zs-grid label.field b { color: var(--ink); }
+.zs-grid select { width: 100%; }
+.conf { border-collapse: collapse; font-family: var(--mono); font-size: 14px; }
+.conf td, .conf th { padding: 4px 9px; text-align: right; border-bottom: none; }
+.conf th { font-size: 12.5px; }
+.conf td.hit { background: color-mix(in srgb, var(--good) 18%, transparent); }
+.conf td.miss { color: var(--ink-3); }
+/* the head figure toggle and the task tables */
+.task-table td:first-child { font-weight: 600; font-family: var(--display); white-space: nowrap; }
+.task-table td { vertical-align: top; font-size: 15.4px; }
+.task-table code { white-space: nowrap; }
+/* a load report */
+pre.report { margin: 0; font-family: var(--mono); font-size: 13.5px; line-height: 1.55; white-space: pre; overflow-x: auto; color: var(--ink-2); padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; }
+pre.report .miss { color: var(--bad); font-weight: 600; } pre.report .unex { color: var(--ink-3); }
+/* the dial */
+.dial { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .dial { grid-template-columns: 1fr; } }
+.dial .knob { display: flex; gap: 6px; flex-wrap: wrap; }
+.dial .knob button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the MLM variants, under a toggle */
+details.variants { margin: 12px 0 0; }
+details.variants > summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 18px; padding: 8px 0; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+details.variants > summary::-webkit-details-marker { display: none; }
+details.variants > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.variants[open] > summary::before { content: "−"; }
+.variant { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: center; padding: 14px 0; border-top: 1px solid var(--rule); }
+@media (max-width: 1000px) { .variant { grid-template-columns: 1fr; } }
+.variant .say { font-size: 17px; line-height: 1.55; color: var(--ink-2); }
+.variant .say b { color: var(--ink); }
+/* NER entity chips */
+.ent-line { font-size: 18.5px; line-height: 2.1; margin: 0 0 8px; }
+.ent { padding: 2px 6px; border-radius: 3px; border-bottom: 2px solid; white-space: nowrap; }
+.ent i { font-family: var(--mono); font-style: normal; font-size: 11.5px; letter-spacing: .06em; margin-left: 5px; opacity: .8; }
+.ent.PER { background: color-mix(in srgb, var(--cls-0) 16%, transparent); border-color: var(--cls-0); }
+.ent.ORG { background: color-mix(in srgb, var(--cls-1) 16%, transparent); border-color: var(--cls-1); }
+.ent.LOC { background: color-mix(in srgb, var(--cls-2) 16%, transparent); border-color: var(--cls-2); }
+.ent.MISC { background: color-mix(in srgb, var(--cls-3) 16%, transparent); border-color: var(--cls-3); }
+.ent.wrong { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* alignment table */
+.align { font-family: var(--mono); font-size: 14.5px; border-collapse: collapse; }
+.align td, .align th { padding: 3px 10px; }
+.align td.ign { color: var(--ink-3); }
+.align tr.cont td:first-child { color: var(--cls-1); }
+/* QA */
+.ctx { font-size: 18px; line-height: 1.7; }
+.ctx mark { background: color-mix(in srgb, var(--good) 28%, transparent); color: inherit; padding: 1px 2px; border-radius: 2px; }
+.ctx mark.gold { background: none; box-shadow: inset 0 -2px 0 var(--cls-0); }
+.ctx .q { color: var(--ink-3); }
+.window { border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; margin: 8px 0; }
+.window .wh { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+.window .wh b { color: var(--ink); font-weight: 500; }
+.qa-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px 14px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; align-items: baseline; }
+.qa-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: block; }
+.qa-row:last-child { border-bottom: none; }
+.qa-row .ok { color: var(--good); } .qa-row .no { color: var(--bad); }
+
+/* ------------------------------------------------ week 4, second pass (2026-09-30) */
+/* a schematic with states: the buttons switch what the same picture highlights */
+.fig-states { display: flex; gap: 6px; flex-wrap: wrap; }
+.fig-states button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the variants footnote: three small pictures, each with its paragraph */
+.variant .fig svg { max-width: 560px; }
+/* clickable tokens (the MLM picker): the chosen one is outlined */
+.pieces .tok.pick { cursor: pointer; }
+.pieces .tok.pick:hover { border-color: var(--ink); }
+.pieces .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* the scoreboard in the rail: rows light up as reveals happen */
+.score { margin-top: 12px; border-top: 1px solid var(--rule); padding-top: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+.score .row { display: grid; grid-template-columns: 1fr 52px; gap: 6px; padding: 2px 0; line-height: 1.35; align-items: baseline; }
+.score .row.off { opacity: .38; }
+.score .row.on { color: var(--ink); }
+.score .row.line { color: var(--bad); border-bottom: 1px dashed var(--bad); margin-bottom: 3px; }
+.score .row .v { text-align: right; font-variant-numeric: tabular-nums; }
+.score .row.pass .v { color: var(--good); font-weight: 600; }
+.score .t { letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+/* the results table sorters */
+.sorters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.sorters button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* a bare figure caption line under a schematic */
+.figline { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin: 6px 0 0; line-height: 1.5; }
+/* two-column figure + code */
+.fig-code { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+/* the QA score rows: hover a token to read both scores */
+.qa-pick { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.qa-pick button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.qa-pick button.noans { border-style: dashed; }
+
+/* ------------------------------------------------------- week 5 additions */
+/* the two tables, growing: a row that has just been written */
+.results tr.new td, .costs tr.new td { animation: rowin .9s ease; }
+@keyframes rowin { from { background: color-mix(in srgb, var(--cls-1) 30%, transparent); } to { background: transparent; } }
+.costs td, .costs th { font-size: 14.5px; }
+.costs td.mono { font-size: 13.5px; }
+/* the logit-lens strip: one column per layer, five guesses each */
+.lens { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); gap: 4px; overflow-x: auto; }
+.lens .col { display: flex; flex-direction: column; gap: 2px; }
+.lens .col .h { font-family: var(--mono); font-size: 12px; color: var(--ink-3); text-align: center; letter-spacing: .06em; padding-bottom: 3px; border-bottom: 1px solid var(--rule); margin-bottom: 2px; }
+.lens .g { font-family: var(--mono); font-size: 13px; padding: 1px 5px; border-radius: 2px; white-space: pre; overflow: hidden; text-overflow: ellipsis; background: var(--panel-sunk); }
+.lens .g.gold { background: color-mix(in srgb, var(--good) 28%, transparent); font-weight: 600; }
+.lens .g.same { box-shadow: inset 0 0 0 1px var(--cls-1); }
+.lens .g i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+.tokrow { display: flex; flex-wrap: wrap; gap: 3px; margin: 8px 0; }
+.tokrow .tok { cursor: pointer; margin: 0; }
+.tokrow .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* attention: the heatmap and its controls */
+.att { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .att { grid-template-columns: 1fr; } }
+.att canvas { width: 100%; image-rendering: pixelated; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+.att .hm-box { position: relative; }
+.att .ax { font-family: var(--mono); font-size: 12px; color: var(--ink-3); display: flex; justify-content: space-between; }
+/* RoPE dials */
+.dials { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin: 8px 0 14px; }
+.clocks svg { max-width: 760px; }
+.rope-out { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rope-out .box { padding: 12px 14px; background: var(--panel-sunk); border-radius: 3px; }
+.rope-out .box .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.rope-out .box .v { font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; transition: color .15s; }
+.rope-out .box.moved .v { color: var(--bad); } .rope-out .box.still .v { color: var(--good); }
+/* the KV stepper */
+.stepper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.stepper .cnt { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.stepper .cnt b { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* the verbalizer builder */
+.vb { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; }
+@media (max-width: 900px) { .vb { grid-template-columns: repeat(2, 1fr); } }
+.vb .cls { border-top: 3px solid; padding-top: 6px; }
+.vb .cls.c0 { border-color: var(--cls-0); background: none; } .vb .cls.c1 { border-color: var(--cls-1); background: none; }
+.vb .cls.c2 { border-color: var(--cls-2); background: none; } .vb .cls.c3 { border-color: var(--cls-3); background: none; }
+.vb .cls .h { font-family: var(--display); font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.vb .words { display: flex; flex-wrap: wrap; gap: 4px; }
+.vb .words button { font-family: var(--mono); font-size: 13px; padding: 2px 7px; }
+.vb .words button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.vb .words button i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 3px; }
+.vb .words button.on i { color: var(--ground); opacity: .7; }
+.vb-acc { display: flex; gap: 30px; align-items: baseline; flex-wrap: wrap; margin-top: 12px; }
+/* the design card as a form */
+.card { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px 16px; align-items: center; }
+.card .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.card select, .card input { width: auto; min-width: 200px; }
+.card .row-btns button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.card-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.card-tabs button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.est { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+.est .stat .v { font-size: 26px; }
+/* label-it-yourself over words */
+.words-pick { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: flex-end; }
+.words-pick .w { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.words-pick .w .s { font-family: var(--mono); font-size: 14px; }
+.words-pick .w select { font-size: 12.5px; padding: 2px 4px; width: auto; }
+.words-pick .w.hit select { border-color: var(--good); } .words-pick .w.miss select { border-color: var(--bad); }
+.words-pick .w .g { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+.words-pick .w.unx .s { text-decoration: underline dotted var(--bad); }
+/* unexpressible words in a typed sentence */
+.wl { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.wl .tok.unx { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+.wl .tok i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+/* per-row bets over a table */
+table.rowbet td.b { white-space: nowrap; }
+table.rowbet td.b button { font-size: 13px; padding: 2px 8px; }
+table.rowbet td.b button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.rowbet td.b button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.rowbet td.b button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.rowbet td.zero { color: var(--bad); font-weight: 600; }
+/* horizontal bar pairs for the breakdowns */
+.pair { display: grid; grid-template-columns: 90px 1fr 1fr 150px; gap: 8px; align-items: center; font-family: var(--mono); font-size: 13.5px; padding: 2px 0; }
+.pair .lab { text-align: right; color: var(--ink-2); }
+.pair .bar { height: 12px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pair .bar i { display: block; height: 100%; }
+.pair .bar.e i { background: var(--cls-0); } .pair .bar.d i { background: var(--cls-1); }
+.pair .n { color: var(--ink-3); }
+.pair.hl .lab { color: var(--bad); font-weight: 600; }
+/* generated text against gold: dropped words */
+.diffline { font-size: 17px; line-height: 1.8; }
+.diffline .drop { color: var(--bad); text-decoration: line-through; }
+.diffline .chg { background: color-mix(in srgb, var(--cls-1) 24%, transparent); border-radius: 2px; }
+/* NER writer */
+.ner-write textarea { min-height: 64px; }
+.ner-parse { margin-top: 8px; }
+.ent.inv { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* QA */
+.ctx mark.pred { background: color-mix(in srgb, var(--good) 28%, transparent); }
+.ctx .nosub { color: var(--bad); font-weight: 600; }
+.order-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; }
+.order-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.order-row:last-child { border-bottom: none; }
+/* lightning round */
+.lr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.lr:last-child { border-bottom: none; }
+.lr .pick { display: flex; gap: 4px; flex-wrap: wrap; }
+.lr .pick button { font-family: var(--mono); font-size: 13px; padding: 2px 8px; }
+.lr .pick button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.lr .pick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.lr .pick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.lr .ans { grid-column: 1 / -1; font-size: 16px; color: var(--ink-2); line-height: 1.5; }
+/* the course table */
+.course td:first-child { font-family: var(--mono); }
+.course tr.now td { background: color-mix(in srgb, var(--cls-1) 10%, transparent); font-weight: 600; }
+.big-num { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: -.03em; line-height: 1; }
+
+/* ------------------------------------------------------- week 6 additions */
+/* the meme, kept: an image with a caption beside it */
+.michael { display: grid; grid-template-columns: minmax(0, .9fr) minmax(280px, 1.1fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; max-width: 452px; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+.michael figcaption { font-family: var(--body); font-size: 17.7px; color: var(--ink-2); line-height: 1.55; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+/* pick three changes */
+.picklist { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.picklist button { font-size: 15px; padding: 4px 11px; }
+.picklist button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.picklist button.yes { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.picklist button.no { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.picklist button .why { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+/* the N–D plane */
+.plane-wrap { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .plane-wrap { grid-template-columns: 1fr; } }
+.plane-models { display: flex; flex-direction: column; gap: 6px; }
+.plane-models button { text-align: left; font-size: 14.5px; display: flex; justify-content: space-between; gap: 8px; }
+.plane-models button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.plane-models button .st { font-family: var(--mono); font-size: 12px; opacity: .7; }
+#plane svg { max-width: 760px; cursor: crosshair; }
+#plane svg.done { cursor: default; }
+/* the bill table */
+table.bill td, table.bill th { font-size: 14px; white-space: nowrap; }
+table.bill td:first-child { font-weight: 600; font-family: var(--display); }
+/* passports as a diff */
+.pp-row { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 6px 14px; padding: 6px 0; border-bottom: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; align-items: baseline; }
+.pp-row:last-child { border-bottom: none; }
+.pp-row .k { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pp-row.head { font-family: var(--display); font-weight: 700; font-size: 16px; }
+.pp-row.diff { background: color-mix(in srgb, var(--cls-1) 9%, transparent); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 3px; }
+.pp-row.diff .k { color: var(--cls-1); }
+.pp-row .sec { font-size: 11.5px; color: var(--ink-3); margin-left: 6px; }
+/* norm grid and rope grid: controls beside the picture */
+.norm-grid, .rope-grid { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .norm-grid, .rope-grid { grid-template-columns: 1fr; } }
+#fig-norm svg { max-width: 620px; } #fig-rope-matrix svg { max-width: 560px; display: block; margin: 0 auto; }
+#fig-rope-coords svg, #fig-slow svg, #fig-gqa svg, #fig-ffn svg, #fig-stack svg, #fig-prenorm svg, #fig-regimes svg, #fig-queue svg, #fig-roundtrip svg, #fig-moe svg, #fig-scatter svg, #fig-linear svg, #fig-masks svg { max-width: 920px; display: block; }
+#ffn-curves svg, #ffn-gate svg, #scaling-chart svg, #steps-chart svg, #tpp-chart svg, #serving-chart svg, #decode-chart svg, #xover-chart svg, #lin-chart svg { max-width: 640px; }
+/* order-the-models bet */
+.orderpick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+.orderpick button { font-size: 15px; }
+.orderpick button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.orderpick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.orderpick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.orderpick button i { font-style: normal; font-family: var(--mono); font-size: 11.5px; margin-right: 6px; opacity: .7; }
+.orderpick .arrow { color: var(--ink-3); }
+/* heatmap cells for the per-class table */
+.conf td.v { font-variant-numeric: tabular-nums; }
+/* small inline stat row */
+.est .stat .v small { font-size: 13px; font-weight: 400; color: var(--ink-3); margin-left: 4px; }
+.small-note { font-family: var(--mono); font-size: 13px; color: var(--ink-3); line-height: 1.5; margin-top: 8px; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 18px; margin-bottom: 10px; }
+.bet .q input { vertical-align: middle; }
+#bpb-out .pbar { grid-template-columns: 190px 1fr 70px; }
+#bpb-out .pbar .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prose.footnote ul { padding-left: 1.2em; line-height: 1.6; }  /* reference lists */
+
+/* ------------------------------------------------- lecture pages (demo_base/quiz.js) */
+/* one question: number + kind, the question, the answering UI, the answer (hidden until committed) */
+.qz { border-top: 1px solid var(--rule); padding: 22px 0 26px; }
+.qz:last-of-type { border-bottom: 1px solid var(--rule); }
+.qz-head { display: flex; gap: 12px; align-items: baseline; font-family: var(--mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.qz-n { font-weight: 500; color: var(--ink-2); }
+.qz.done .qz-n::after { content: " ✓"; color: var(--good); }
+.qz-q { font-family: var(--display); font-size: 21.5px; font-weight: 600; line-height: 1.35; color: var(--ink); margin-bottom: 12px; }
+.qz-q p { margin: 0 0 .55em; } .qz-q p:last-child { margin-bottom: 0; }
+.qz-q code { font-size: .82em; font-weight: 500; background: var(--panel-sunk); padding: .05em .3em; border-radius: 3px; }
+.qz-q [data-fig] { margin: 14px 0 10px; }
+.qz-q [data-fig] svg, .qz-a [data-fig] svg, .panel [data-fig] svg { width: 100%; max-width: 820px; height: auto; display: block; margin: 0 auto; }
+.qz-q table { font-family: var(--body); font-weight: 400; font-size: 16.4px; margin: 10px 0; width: auto; }
+.qz-ui { margin: 0 0 6px; }
+.qz-row { margin-top: 10px; min-height: 28px; }
+.qz-verdict { font-family: var(--mono); font-size: 15px; color: var(--ink-2); }
+.qz-verdict.ok { color: var(--good); } .qz-verdict.no { color: var(--bad); }
+.qz-opts button.missed { border-style: dashed; border-color: var(--good); }
+.qz-opts button[disabled] { opacity: 1; cursor: default; }
+.qz-opts button[disabled]:not(.right):not(.wrong):not(.missed) { opacity: .5; }
+/* clickable parts of a figure: lecture.js draws a rect.hit as the last child of every [data-pick] group */
+svg rect.hit { fill: transparent; stroke: none; }  /* a figure drawn outside a question: its click targets stay invisible */
+.qz-pickable { cursor: pointer; }
+.qz-pickable rect.hit { fill: transparent; stroke: transparent; stroke-width: 2; stroke-dasharray: 4 3; transition: stroke .12s ease; }
+.qz-pickable:hover rect.hit { stroke: var(--ink-3); }
+.qz-pickable.pick rect.hit { stroke: var(--ink); stroke-dasharray: none; fill: color-mix(in srgb, var(--ink) 8%, transparent); }
+.qz-pickable.right rect.hit { stroke: var(--good); stroke-dasharray: none; fill: color-mix(in srgb, var(--good) 12%, transparent); }
+.qz-pickable.wrong rect.hit { stroke: var(--bad); stroke-dasharray: none; fill: color-mix(in srgb, var(--bad) 12%, transparent); }
+.qz-pickable.missed rect.hit { stroke: var(--good); }
+/* sort: one row per item, the bins as buttons */
+table.qz-sort td { padding: 7px 10px 7px 0; vertical-align: top; }
+table.qz-sort td.qz-item { font-size: 17.5px; width: 38%; }
+table.qz-sort td.qz-bins { display: flex; flex-wrap: wrap; gap: 5px 6px; }
+table.qz-sort td.qz-bins button { font-size: 14.5px; padding: 3px 10px; }
+table.qz-sort button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.qz-sort button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.qz-sort button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.qz-sort button.ans { border-color: var(--good); border-style: dashed; }
+table.qz-sort button[disabled] { opacity: 1; cursor: default; }
+table.qz-sort button[disabled]:not(.right):not(.wrong):not(.ans) { opacity: .45; }
+.qz-count { font-size: 14px; color: var(--ink-3); }
+/* fill: inputs inline in the question */
+input.qz-blank { width: auto; display: inline-block; font-size: .85em; padding: 1px 8px; margin: 0 2px; text-align: center; vertical-align: baseline; border-radius: 3px; }
+input.qz-blank.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+input.qz-blank.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); text-decoration: line-through; color: var(--ink-3); }
+.qz-exp { font-family: var(--mono); font-size: .8em; color: var(--good); margin: 0 6px 0 2px; font-weight: 500; }
+/* write: a textarea, then a checklist */
+textarea.qz-text { font-family: var(--body); font-size: 17.5px; line-height: 1.5; min-height: 80px; resize: vertical; }
+.qz-ticks { margin-top: 14px; display: flex; flex-direction: column; gap: 5px; }
+.qz-ticks-k { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px; }
+.qz-ticks label { display: flex; gap: 10px; align-items: baseline; font-size: 17.2px; line-height: 1.45; cursor: pointer; }
+.qz-ticks input { accent-color: var(--ink); flex: none; }
+/* the answer */
+.qz-a { margin-top: 16px; padding: 14px 18px 14px 18px; background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--ink); border-radius: 4px; font-size: 18.6px; line-height: 1.62; }
+.qz-a p { margin: 0 0 .75em; } .qz-a p:last-child { margin-bottom: 0; }
+.qz-a ul, .qz-a ol { margin: 0 0 .75em; padding-left: 1.3em; }
+.qz-a code { background: var(--panel-sunk); padding: .08em .32em; border-radius: 3px; font-size: .86em; }
+.qz-a table { font-size: 16px; margin: 8px 0 12px; width: auto; }
+.qz-a [data-fig] { margin: 10px 0 12px; }
+.qz-miss { color: var(--ink-2); font-size: 17.2px; line-height: 1.55; border-top: 1px dashed var(--rule); padding-top: 10px; margin-top: .9em !important; }
+.qz-miss b { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--ink-3); margin-right: 8px; }
+.qz-nofig { font-family: var(--mono); font-size: 14px; color: var(--bad); padding: 8px 0; }
+/* optional depth under a toggle; its questions do not count toward the page's progress */
+details.optional { margin: 20px 0 0; border: 1px dashed var(--rule-strong); border-radius: 4px; padding: 0 18px; }
+details.optional > summary { cursor: pointer; list-style: none; display: flex; gap: 10px; align-items: baseline; padding: 12px 0; font-family: var(--display); font-weight: 600; font-size: 18px; }
+details.optional > summary::-webkit-details-marker { display: none; }
+details.optional > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.optional[open] > summary::before { content: "−"; }
+details.optional > summary .optional-count { margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--ink-3); font-weight: 400; }
+details.optional > .prose { padding-top: 4px; }
+details.optional .qz:last-of-type { border-bottom: none; }
+.rail .quiz-progress { font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin-top: 8px; }
+.rail a.back { display: inline-block; margin-top: 8px; font-family: var(--display); font-size: 16px; color: var(--ink-2); }
+.sources { font-size: 17.2px; color: var(--ink-2); }
+.sources ul { padding-left: 1.2em; line-height: 1.6; }
+@media (max-width: 760px) {
+  .qz-q { font-size: 19px; }
+  table.qz-sort td.qz-item { width: 100%; display: block; padding-bottom: 2px; }
+  table.qz-sort td.qz-bins { display: flex; padding-top: 0; }
+  table.qz-sort tr { display: block; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+}
+
+/* --- this week --- */
+/* Связи схем, формул и кода на страницах ADD. */
+[data-link-scope] { margin: 18px 0; }
+[data-link-scope] svg { width: 100%; max-width: 760px; height: auto; display: block; margin: 0 auto; }
+[data-link-scope] svg text { fill: var(--ink); font-family: var(--mono); font-size: 14px; }
+[data-link-scope] svg .caption { fill: var(--ink-2); font-family: var(--body); font-size: 16px; }
+[data-link-scope] svg rect { fill: var(--panel-sunk); stroke: var(--rule-strong); }
+[data-link-scope] svg path, [data-link-scope] svg line { stroke: var(--ink-3); fill: none; }
+[data-link-scope] svg .accent { fill: color-mix(in srgb, var(--cls-0) 15%, var(--panel)); }
+[data-f] { transition: background .12s, fill .12s; }
+svg [data-f] { cursor: pointer; }
+svg [data-f].hi rect, svg rect[data-f].hi { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)); stroke: var(--cls-1); }
+.formula [data-f].hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .ln { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre.code { overflow-x: hidden; }
+.add-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.add-controls label { display: flex; gap: 8px; align-items: center; font-size: 16px; }
+.add-controls output { font-family: var(--mono); }
+.add-result { font-family: var(--mono); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.add-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.add-table td, .add-table th { padding: 8px 10px; border-bottom: 1px solid var(--rule); text-align: left; }
+.add-table button { padding: 3px 8px; }
+.add-links { display: flex; gap: 8px 18px; flex-wrap: wrap; font-size: 16px; }
+.sources { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .add-table td, .add-table th { padding: 6px 3px; font-size: 13px; } }
+svg text[data-f].hi, svg [data-f].hi > text { fill: var(--cls-1); }
+[data-link-scope] svg rect.hit { fill: transparent; stroke: none; }
+.panel-body > [data-fig], .qz-q > [data-link-scope] { overflow-x: auto; }
+@media (max-width: 600px) { [data-link-scope] svg { min-width: 620px; } }
+.add-controls label { white-space: nowrap; }
+#normalization-table { overflow-x: auto; }
+svg.word2vec-diagram [data-f].hi > rect:not(.hit) { stroke: var(--cls-1) !important; stroke-width: 2; }
+svg.word2vec-diagram [data-f].hi > text { fill: var(--cls-1) !important; }
+
+svg [data-f].hi circle { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)) !important; stroke: var(--cls-1) !important; }
+
+
+#ppl-after-link { display: none; }
+#loss:has(.qz[data-q="q-ppl-link"].done) #ppl-after-link { display: block; }
+#ppl-jokes-table { overflow-x: auto; }
+
+
+/* Отдельные выражения центрируются; длинная строка прокручивается внутри блока. */
+.equation { display: flex; overflow-x: auto; padding: 10px 2px; margin: 10px 0; }
+.equation > span { flex: 0 0 auto; margin-inline: auto; }
+.equation math { math-style: normal; font-size: 1.15em; }
+.equation munder, .equation munderover { math-style: normal; }
+.formula .equation math { font-size: 1.15em; margin: 0; }
+.formula p { font-size: 17px; line-height: 1.6; margin: 8px 0 18px; }
+@media (max-width: 600px) { .equation math, .formula .equation math { font-size: 1em; } }
+</style>
+<meta name="quiz-store" content="add2026_week02">
+
+</head>
+<body>
+<div class="shell">
+<aside class="rail">
+<div><div class="rail-mark">NLP @ HSE DSBA · ADD-2026</div><div class="rail-eq">Неделя 2<br>Языковая модель и генерация</div></div>
+<nav id="nav"></nav>
+<div class="rail-btns"><button id="btn-reset">Сбросить ответы</button><button id="btn-theme">Тема</button></div>
+<div class="quiz-progress" id="quiz-progress"></div>
+<div class="rail-foot"><a href="https://xufana.github.io/dsba_nlp/week02/">Семинар autumn-2026</a><br>
+<a href="https://colab.research.google.com/github/xufana/dsba_nlp/blob/autumn-2026/week02_language_modelling/week02_language_modelling.ipynb">Ноутбук в Colab</a><br>
+<a href="https://github.com/xufana/dsba_nlp/blob/autumn-2026/week02_language_modelling/week02_language_modelling.ipynb">Ноутбук на GitHub</a></div>
+</aside>
+<main><div class="wrap">
+<section id="hero"><p class="eyebrow">Author: Daria Andreeva</p><h1>Языковая модель и генерация</h1>
+<p class="lede">Хотим генерировать текст. Приходим к языковому моделированию: учимся оценивать продолжения по уже написанному контексту.</p><div class="prose"><p>На каждой схеме следим за входом, формой массива и смыслом ячейки. Ответьте до открытия разбора. Подробности скрыты; код связан со схемами подсветкой. Полные опыты и ноутбук доступны в autumn-2026.</p></div>
+</section>
+<section id="lm"><p class="eyebrow">блок 01</p><h2>Как научиться генерировать текст?</h2>
+<div class="prose"><p>Хотим сгенерировать текст. Перебирать все возможные предложения неудобно: даже у короткого начала много продолжений. Попробуем писать по одному токену: после «кот» выберем «ест», затем продолжим уже «кот ест». Каждый новый выбор зависит от всего написанного контекста.</p>
+<p><strong>Языковое моделирование</strong> — задача оценивать вероятности последовательностей токенов. Для генерации будем обучать модель предсказывать распределение следующего токена по предыдущим. На одном шаге это <strong>классификация по словарю</strong>: вход — идентификаторы контекста, выход — V вероятностей. Выбранный токен добавляем к контексту и повторяем шаг до EOS.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="generation"></div></div>
+<div class="panel-note"><p>Модель возвращает вероятности; правило декодирования выбирает токен. На следующем шаге префикс уже содержит сделанный выбор. EOS завершает последовательность.</p></div>
+<div class="formula"><div class="equation"><span data-f="distribution"><math><mrow><mi>P</mi><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><msub><mi>w</mi><mn>2</mn></msub><mo>,</mo><msub><mi>w</mi><mn>3</mn></msub><mo>)</mo></mrow><mo>=</mo><mrow><mi>P</mi><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>)</mo></mrow><mo>·</mo><mrow><mi>P</mi><mo>(</mo><msub><mi>w</mi><mn>2</mn></msub><mo>|</mo><msub><mi>w</mi><mn>1</mn></msub><mo>)</mo></mrow><mo>·</mo><mrow><mi>P</mi><mo>(</mo><msub><mi>w</mi><mn>3</mn></msub><mo>|</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><msub><mi>w</mi><mn>2</mn></msub><mo>)</mo></mrow></math></span></div>
+<p>Это <strong>цепное правило вероятностей</strong>, точное равенство: вероятность последовательности раскладывается в произведение условных вероятностей. Здесь каждый токен зависит от всего предыдущего контекста; завершение EOS тоже предсказываем.</p></div>
+<pre class="code"><code><span class="ln">all_logits, _ = model(prefix_ids)</span><span class="ln" data-f="distribution" tabindex="0">logits = all_logits[:, -1, :]</span><span class="ln" data-f="distribution" tabindex="0">probabilities = logits.softmax(dim=-1)</span><span class="ln" data-f="choice" tabindex="0">next_id = probabilities.argmax(dim=-1)</span><span class="ln" data-f="append" tabindex="0">prefix_ids = torch.cat([prefix_ids, next_id[:, <b class="kw">None</b>]], dim=1)</span></code></pre>
+</div>
+<div class="qz" data-q="q-lm"></div>
+<div class="qz" data-q="q-chain"></div>
+<details class="optional"><summary>подробнее</summary><div class="prose"><p>Имена задач зависят от уровня описания. Предсказание одного токена — многоклассовая классификация. Создание целого текста — генерация последовательности. Регрессии по числовым идентификаторам здесь нет: близость номеров токенов ничего не означает.</p>
+<p>Ту же факторизацию используем в переводе, но каждое предсказание дополнительно обусловлено исходным текстом. Предсказание вероятностей и выбор полезного для человека ответа требуют разных проверок.</p></div>
+</details>
+</section>
+<section id="bpe"><p class="eyebrow">блок 02</p><h2>Какие единицы предсказываем?</h2>
+<div class="prose"><p>В первой лекции общий UNK стирал различия неизвестных слов. Попробуем представить новое слово известными частями. Слова дают длинный словарь и много редких форм. Символы дают короткий словарь и длинные последовательности. <strong>BPE</strong> начинает с мелких единиц и последовательно объединяет частые соседние пары. Получается словарь частей слов.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="bpe"></div><div class="add-controls"><button id="bpe-merge">Объединить пару</button><button id="bpe-reset">Сначала</button></div><div id="bpe-result" class="add-result" aria-live="polite"></div></div>
+<div class="panel-note"><p>Нажмите «Объединить пару»: браузер пересчитает частоты соседей и применит одно слияние. Для этого учебного примера каждое слово — отдельная последовательность; через границы слов пары не объединяем.</p></div>
+<pre class="code"><code><span class="ln"><b class="kw">from</b> collections <b class="kw">import</b> Counter</span><span class="ln">pairs = Counter((a, b) <b class="kw">for</b> word <b class="kw">in</b> pieces</span><span class="ln" data-f="pairs" tabindex="0">                <b class="kw">for</b> a, b <b class="kw">in</b> zip(word, word[1:]))</span><span class="ln" data-f="merge" tabindex="0">best = pairs.most_common(1)[0][0]</span></code></pre>
+</div>
+<div class="qz" data-q="q-bpe"></div>
+<div class="qz" data-q="q-vocab"></div>
+<details class="optional"><summary>обучение токенизатора и размер словаря</summary><div class="prose"><p>Обучение BPE выбирает упорядоченные правила слияния. При обработке нового текста применяем готовые правила. Это две разные операции; добавлять новые слияния на тесте нельзя.</p>
+<p>Подсловная токенизация уменьшает проблему новых слов, если их можно составить из базовых единиц. Символьный алфавит может не содержать нового символа; байтовый подход покрывает байты текста, но тоже имеет ограничения обработки. BPE не гарантирует совпадения частей с морфемами.</p>
+<p>Увеличение словаря обычно сокращает последовательности и увеличивает таблицы эмбеддингов и выходной слой. Проверяем длины и стоимость на нужном языке; универсального лучшего размера нет.</p></div>
+</details>
+</section>
+<section id="count"><p class="eyebrow">блок 03</p><h2>Можно ли просто считать?</h2>
+<div class="prose"><p>Цепное правило требует вероятности следующего токена по всему префиксу. Но длинный префикс мог ни разу не встретиться в обучении. Вводим <strong>марковское предположение</strong>: считаем, что достаточно последних n−1 токенов. Получаем <strong>n-граммную языковую модель</strong>. Биграмма видит один предыдущий токен, триграмма — два.</p>
+<p>На схеме весь префикс сокращается до окна контекста; по этому окну находим счётчики продолжений. Условное распределение оцениваем отношением частот.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="markov"></div><div class="formula"><div class="equation"><span><math><mrow><mi>P</mi><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>-</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow><mo>≈</mo><mrow><mi>P</mi><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>|</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>-</mo><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>w</mi><mrow><mi>t</mi><mo>-</mo><mn>1</mn></mrow></msub><mo>)</mo></mrow></math></span></div>
+<p>Для первых позиций дополняем контекст токенами BOS. Ограничение окна — приближение; цепное правило из первого блока остаётся точным.</p></div><div data-fig="counts"></div><div class="add-controls"><label><input id="smooth" type="checkbox"> Сглаживание α = 1</label></div><div id="count-result" class="add-result" aria-live="polite"></div></div>
+<div class="panel-note"><p>Контекст «кот», продолжения из короткого учебного корпуса. Переключайте сглаживание и смотрите, как вероятность перераспределяется между всеми словами словаря. Это точный расчёт по показанным счётчикам.</p></div>
+<div class="formula"><div class="equation"><span data-f="counts"><math><mrow><mi>P</mi><mo>(</mo><mi>w</mi><mo>|</mo><mi>c</mi><mo>)</mo></mrow><mo>=</mo><mfrac><mrow><mi>N</mi><mo>(</mo><mi>c</mi><mo>,</mo><mi>w</mi><mo>)</mo></mrow><mrow><mi>N</mi><mo>(</mo><mi>c</mi><mo>)</mo></mrow></mfrac></math></span></div>
+<p>Отношение числа продолжений w после контекста c к числу наблюдений контекста.</p>
+<div class="equation"><span data-f="smooth"><math><mrow><mi>P</mi><mo>(</mo><mi>w</mi><mo>|</mo><mi>c</mi><mo>)</mo></mrow><mo>=</mo><mfrac><mrow><mrow><mi>N</mi><mo>(</mo><mi>c</mi><mo>,</mo><mi>w</mi><mo>)</mo></mrow><mo>+</mo><mi>α</mi></mrow><mrow><mrow><mi>N</mi><mo>(</mo><mi>c</mi><mo>)</mo></mrow><mo>+</mo><mi>α</mi><mi>V</mi></mrow></mfrac></math></span></div>
+<p>Сглаживание Лапласа: V — размер фиксированного словаря, α &gt; 0.</p></div>
+<pre class="code"><code><span class="ln"><b class="kw">from</b> collections <b class="kw">import</b> Counter, defaultdict</span><span class="ln">counts = defaultdict(Counter)</span><span class="ln"><b class="kw">for</b> left, right <b class="kw">in</b> zip(tokens, tokens[1:]):</span><span class="ln" data-f="counts" tabindex="0">    counts[left][right] += 1</span><span class="ln"></span><span class="ln"><b class="kw">def</b> probability(context, word, alpha=1.0):</span><span class="ln">    row = counts[context]</span><span class="ln" data-f="smooth" tabindex="0">    <b class="kw">return</b> (row[word] + alpha) / (sum(row.values()) + alpha * V)</span></code></pre>
+</div>
+<h3>Что получается при разном n?</h3>
+<div class="prose"><p>Сравните готовые генерации из DSBA: при n = 3 модель учитывает два предыдущих слова, при n = 5 — четыре. Переключайте порядок и смотрите тот же номер примера. Что меняется в связности текста и сколько фрагментов похоже на готовую цитату?</p></div>
+<div class="panel" id="ngram-examples" data-link-scope><div class="panel-body">
+<div class="add-controls"><label>Порядок модели <select id="joke-order"><option value="3">n = 3</option><option value="5">n = 5</option></select></label><button id="joke-next">Другой пример</button></div>
+<div data-fig="ngram-context"></div><div class="prose gen" id="joke-output" aria-live="polite"></div><div class="add-result" id="joke-source"></div>
+</div><div class="panel-note"><p>Выделен самый длинный найденный дословный фрагмент из учебной подвыборки анекдотов. Совпадение проверяем по словам внутри одного анекдота. Более гладкий текст сам по себе не доказывает обобщение: счётная модель может воспроизводить знакомые куски.</p></div></div>
+<div class="qz" data-q="q-zero"></div>
+<div class="qz" data-q="q-context"></div>
+<details class="optional"><summary>невстречавшиеся контексты и ограничения</summary><div class="prose"><p>Невстречавшаяся пара получает нулевую вероятность без сглаживания. При невстречавшемся контексте исходная дробь вообще не определена: нужно отдельно задать поведение. Сглаживание Лапласа даёт распределение и в этом случае. На практике также смешивают модели разных порядков и используют более развитые методы сглаживания.</p>
+<p>Длинный контекст различает больше ситуаций, но каждая встречается реже. Короткие правдоподобные фрагменты генерации ещё не доказывают обобщение: модель может воспроизводить куски корпуса. Счётная модель применима как простой вариант для локальных зависимостей; память под таблицу и новые контексты ограничивают её.</p></div>
+</details>
+</section>
+<section id="loss"><p class="eyebrow">блок 04</p><h2>Как обучать предсказание следующего токена?</h2>
+<div class="prose"><p>При <strong>авторегрессионной генерации</strong> каждый выбранный токен возвращается во вход: BOS → «кот» → «кот спит» → EOS. BOS отмечает начало последовательности, EOS — её завершение. Если вместо «кот» выбрали «пёс», следующий шаг уже продолжает «пёс». Ошибка меняет дальнейший контекст.</p>
+<p>При обучении текст уже известен. <strong>Teacher forcing</strong> подаёт правильный предыдущий токен из этого текста, даже если модель предсказала другой. По каждому правильному префиксу учим модель предсказывать следующий токен. Переключите режим и добавьте ошибку: откуда возьмётся вход следующего шага?</p></div>
+<div class="panel" id="forcing-example" data-link-scope>
+<div class="panel-body"><div class="add-controls"><label>Режим <select id="forcing-mode"><option value="generation">Генерация</option><option value="teacher">Обучение: teacher forcing</option></select></label><button id="forcing-error" aria-pressed="false">Добавить ошибку: «кот» → «пёс»</button></div><div data-fig="autoregression"></div></div>
+<div class="panel-note" id="forcing-note" aria-live="polite"></div>
+</div>
+<div class="qz" data-q="q-teacher"></div>
+<h3>Как собрать тексты разной длины?</h3>
+<div class="prose"><p>Теперь соберём несколько текстов в один пакет. Из каждого текста получаем вход и цель со сдвигом на один токен. Короткие последовательности дополняем <strong>PAD</strong>, чтобы получить прямоугольный массив. Целевые позиции PAD исключаем из функции потерь; EOS учитываем.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="shift"></div></div>
+<div class="panel-note"><p>Вход и цели имеют форму [B, T], оценки классов — [B, T, V]. В ячейке первых двух массивов хранится ID; в ячейке последнего — логит одного токена в одной позиции одного текста.</p></div>
+<pre class="code"><code><span class="ln" data-f="shift" tabindex="0">inputs = batch[:, :-1]</span><span class="ln" data-f="target" tabindex="0">targets = batch[:, 1:]</span><span class="ln" data-f="logits" tabindex="0">logits, _ = model(inputs)</span><span class="ln">loss = F.cross_entropy(</span><span class="ln">    logits.reshape(-1, vocab_size), targets.reshape(-1),</span><span class="ln">    ignore_index=pad_id,</span><span class="ln" data-f="loss" tabindex="0">)</span></code></pre>
+</div>
+<div class="qz" data-q="q-pad"></div>
+<h3>Что означает перплексия?</h3>
+<div class="prose"><p>Функция потерь <strong>L</strong> усредняет штрафы −ln P правильных токенов. <strong>Перплексия (perplexity, PPL)</strong> — обратная геометрически средняя вероятность этих токенов: перемножаем обратные вероятности и берём корень степени M. Обе величины считаем по одним правильным префиксам и целям, без PAD.</p>
+<p>Если вероятность правильного токена в каждой позиции равна 1/k, PPL равна k. Для PPL важна вероятность правильного токена, даже если выбранное моделью слово оказалось другим. Сравните две формулы: какую операцию нужно применить к L, чтобы получить PPL?</p></div>
+<div data-link-scope>
+<div class="formula" id="loss-equations"><div class="equation"><span data-f="loss"><math><mi>L</mi><mo>=</mo><mo>−</mo><mfrac><mn>1</mn><mi>M</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>M</mi></munderover><mspace width="0.15em"/><mi mathvariant="normal">ln</mi><mspace width="0.15em"/><mrow><mi>P</mi><mo>(</mo><msub><mi>y</mi><mi>i</mi></msub><mo>|</mo><msub><mi>c</mi><mi>i</mi></msub><mo>)</mo></mrow></math></span></div>
+<div class="equation"><span data-f="ppl"><math><mi mathvariant="normal">PPL</mi><mo>=</mo><msup><mrow><mo>(</mo><munderover><mo>∏</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>M</mi></munderover><mspace width="0.15em"/><mfrac><mn>1</mn><mrow><mi>P</mi><mo>(</mo><msub><mi>y</mi><mi>i</mi></msub><mo>|</mo><msub><mi>c</mi><mi>i</mi></msub><mo>)</mo></mrow></mfrac><mo>)</mo></mrow><mfrac><mn>1</mn><mi>M</mi></mfrac></msup></math></span></div></div>
+<div class="panel-note"><p><math><mi>M</mi></math> — число целевых позиций без PAD; <math><msub><mi>y</mi><mi>i</mi></msub></math> — правильный токен, <math><msub><mi>c</mi><mi>i</mi></msub></math> — его предыдущий контекст. В loss используем натуральный логарифм. В формуле PPL берём произведение обратных вероятностей и корень степени M.</p></div>
+</div>
+<div class="qz" data-q="q-ppl-link"></div>
+<div id="ppl-after-link">
+<div class="prose"><p>Теперь применим эту связь к трём целевым токенам. Маленькая вероятность даёт большой штраф; усредняем штрафы и вычисляем PPL. Ниже — учебные вероятности, не результаты обученной сети.</p></div>
+<div class="panel" id="ppl-example" data-link-scope>
+<div class="panel-body"><div class="add-controls"><label>P(спит | BOS, кот) <input id="ppl-probability" type="range" min="0.05" max="0.95" step="0.05" value="0.25"><output id="ppl-probability-value">0.25</output></label></div><div data-fig="perplexity"></div><div class="add-result" id="ppl-example-result" aria-live="polite"></div></div>
+<div class="panel-note"><p>Меняем только вероятность правильного слова «спит». Её увеличение уменьшает штраф этого шага и итоговую PPL. В пределе вероятность 1 у каждой цели даёт PPL = 1; низкая PPL сама по себе не гарантирует интересной генерации.</p></div>
+<pre class="code"><code><span class="ln"><b class="kw">from</b> math <b class="kw">import</b> exp, log</span><span class="ln" data-f="token-prob" tabindex="0">correct_probabilities = [0.5, 0.25, 0.5]</span><span class="ln" data-f="token-loss" tabindex="0">penalties = [-log(p) <b class="kw">for</b> p <b class="kw">in</b> correct_probabilities]</span><span class="ln" data-f="loss" tabindex="0">loss = sum(penalties) / len(penalties)</span><span class="ln" data-f="ppl" tabindex="0">perplexity = exp(loss)</span></code></pre>
+</div>
+</div>
+<h3>От чего зависит число?</h3>
+<div class="prose"><p>PPL характеризует <strong>модель на конкретном проверочном тексте при конкретной токенизации</strong>. Число меняется вместе с условиями:</p>
+<ul>
+<li><strong>Корпус:</strong> язык, тема, редкие слова и неожиданные продолжения меняют трудность предсказания. Для одной модели на переписке и анекдотах PPL может различаться.</li>
+<li><strong>Модель и обучение:</strong> параметры, обучающие тексты и число шагов влияют на распределение вероятностей.</li>
+<li><strong>Токенизация:</strong> слово и часть слова — разные единицы усреднения. Их per-token PPL напрямую не сравниваем.</li>
+</ul>
+<p>При одинаковых условиях меньшая PPL означает лучшее предсказание отложенного текста. Связность, юмор и полезность генерации проверяем отдельно; универсального порога «хорошей PPL» нет.</p></div>
+<div class="panel" data-link-scope><div class="panel-body"><div data-fig="ppl-dependencies"></div></div></div>
+<div class="qz" data-q="q-ppl"></div>
+<h3>А на анекдотах?</h3>
+<div class="prose"><p>На русских анекдотах DSBA значения PPL у небольших рекуррентных моделей — <strong>сотни</strong>. Ниже результаты на одном тестовом наборе с одним токенизатором; устройство RNN, GRU и LSTM разберём в следующем блоке.</p></div>
+<div class="panel" id="ppl-jokes"><div class="panel-body"><div class="prose" id="ppl-jokes-conditions"></div><div id="ppl-jokes-table"></div></div><div class="panel-note"><p>Эти числа описывают конкретные небольшие модели после короткого обучения. По ним нельзя отделить сложность жанра от ограничений модели и обучения. Высокая PPL не равна доле ошибок, а меньшая PPL сама по себе не обещает смешного анекдота.</p></div></div>
+<details class="optional"><summary>что означает perplexity</summary><div class="prose"><p>Cross-entropy сравнивает логиты по всем классам с правильным ID. Для всего проверочного корпуса суммируем отрицательные логарифмы вероятностей и делим на общее число целевых токенов без PAD. После этого берём экспоненту. Простое среднее PPL отдельных батчей даёт другую величину, особенно при разном числе токенов.</p>
+<p>PPL — обратная геометрически средняя вероятность правильного токена. При нулевой вероятности хотя бы одной цели функция потерь и PPL становятся бесконечными. Не интерпретируем PPL буквально как постоянное число равновероятных вариантов на каждом шаге.</p>
+<p>Для прямого сравнения per-token PPL фиксируем токенизатор, тестовые тексты, обработку границ и маску позиций. При разной токенизации меняется единица усреднения. Хорошая PPL не гарантирует полезную или связную генерацию.</p></div>
+</details>
+</section>
+<section id="rnn"><p class="eyebrow">блок 05</p><h2>Как переносить контекст?</h2>
+<div class="prose"><p>Рекуррентная сеть читает токены по порядку. На каждом шаге объединяет новый эмбеддинг с предыдущим скрытым состоянием. Одни и те же параметры используются на всех шагах; по состоянию вычисляем распределение следующего токена.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="rnn-cell"></div><div data-fig="rnn"></div></div>
+<div class="panel-note"><p>Внутри ячейки преобразуем эмбеддинг нового слова и предыдущее состояние, складываем результаты со смещением и применяем tanh. На развёртке читаем «кот» → «ест» → «рыбу»; после каждого слова получаем распределение следующего. Матрицы одни и те же, значения состояний разные.</p>
+<p>Для одного текста эмбеддинг имеет форму [d], состояние — [H], распределение — [V]. Для пакета текстов: эмбеддинги [B, T, d], состояния [B, T, H], логиты [B, T, V].</p></div>
+<div class="formula"><div class="equation"><span data-f="state"><math><msub><mi>h</mi><mi>t</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">tanh</mi><mo>(</mo><msub><mi>W</mi><mi>x</mi></msub><msub><mi>e</mi><mi>t</mi></msub><mo>+</mo><msub><mi>W</mi><mi>h</mi></msub><msub><mi>h</mi><mrow><mi>t</mi><mo>-</mo><mn>1</mn></mrow></msub><mo>+</mo><mi>b</mi><mo>)</mo></mrow></math></span></div>
+<div class="equation"><span data-f="head"><math><msub><mi>z</mi><mi>t</mi></msub><mo>=</mo><msub><mi>W</mi><mi>o</mi></msub><msub><mi>h</mi><mi>t</mi></msub><mo>+</mo><msub><mi>b</mi><mi>o</mi></msub></math></span></div>
+<p>Состояние имеет H координат при любой длине префикса.</p></div>
+<pre class="code"><code><span class="ln"><b class="kw">class</b> LanguageModel(torch.nn.Module):</span><span class="ln">    <b class="kw">def</b> __init__(self, vocab_size, dim, hidden):</span><span class="ln">        super().__init__()</span><span class="ln" data-f="embedding" tabindex="0">        self.embedding = torch.nn.Embedding(vocab_size, dim)</span><span class="ln" data-f="state" tabindex="0">        self.rnn = torch.nn.RNN(dim, hidden, batch_first=<b class="kw">True</b>)</span><span class="ln" data-f="head" tabindex="0">        self.head = torch.nn.Linear(hidden, vocab_size)</span><span class="ln"></span><span class="ln">    <b class="kw">def</b> forward(self, ids, state=<b class="kw">None</b>):</span><span class="ln" data-f="embedding" tabindex="0">        x = self.embedding(ids)</span><span class="ln" data-f="state" tabindex="0">        h, state = self.rnn(x, state)</span><span class="ln" data-f="head" tabindex="0">        <b class="kw">return</b> self.head(h), state</span></code></pre>
+</div>
+<div class="qz" data-q="q-shared"></div>
+<div class="qz" data-q="q-memory"></div>
+<details class="optional"><summary>ограничения памяти и градиенты</summary><div class="prose"><p>Общие параметры позволяют использовать опыт разных контекстов. Вместо отдельного счётчика на каждый префикс модель обучает преобразование состояний. Фиксированное состояние сжимает информацию, поэтому доступ ко всем нужным деталям прошлого не гарантирован.</p>
+<p>При обучении ошибка поздней позиции передаётся через предыдущие состояния. На длинной цепочке градиенты могут затухать или расти. Gradient clipping ограничивает слишком большой градиент; затухание он не исправляет.</p></div>
+</details>
+<div class="prose"><p>LSTM добавляет отдельное состояние памяти и обучаемые ворота: сколько сохранить и сколько записать. GRU смешивает предыдущее и предложенное состояния и управляет использованием прошлого. Ворота помогают обучать зависимости; бесконечной памяти они не дают.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><h3>LSTM</h3><div data-fig="lstm"></div><h3>GRU</h3><div data-fig="gru"></div></div>
+<div class="panel-note"><p>В LSTM верхняя линия переносит память c: f оставляет часть старой памяти, i дозирует новый кандидат g, o управляет выходом h. В GRU отдельной линии c нет: r управляет вкладом прошлого в кандидат, z смешивает кандидат с прежним h.</p>
+<p>σ — сигмоида: каждая координата ворот лежит между 0 и 1. Кружок × означает покоординатное умножение, + — сложение. У ворот σ — свои обучаемые матрицы и смещения для hₜ₋₁ и eₜ; у кандидата g в LSTM тоже. В GRU преобразования для кандидата показаны отдельными блоками. tanh на линии c применяется прямо к памяти.</p></div>
+<pre class="code"><code><span class="ln" data-f="lstm" tabindex="0">lstm = torch.nn.LSTM(dim, hidden, batch_first=<b class="kw">True</b>)</span><span class="ln">h, (last_h, last_c) = lstm(x)</span><span class="ln" data-f="gru" tabindex="0">gru = torch.nn.GRU(dim, hidden, batch_first=<b class="kw">True</b>)</span><span class="ln">h, last_h = gru(x)</span></code></pre>
+</div>
+</section>
+<section id="decode"><p class="eyebrow">блок 06</p><h2>Как выбрать следующий токен?</h2>
+<div class="prose"><p><strong>Greedy</strong> берёт самый вероятный токен. <strong>Sampling</strong> выбирает случайно согласно распределению. Температура делит логиты до softmax: при T &lt; 1 распределение острее, при T &gt; 1 — ровнее. Top-k оставляет k кандидатов; top-p — минимальное число кандидатов, суммарная вероятность которых достигает p.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="decoding"></div><div class="add-controls"><label>T <input id="temperature" type="range" min="0.2" max="2" step="0.1" value="1"><output id="temperature-value">1</output></label><label>top-p <input id="top-p" type="range" min="0.1" max="1" step="0.05" value="0.9"><output id="top-p-value">0.9</output></label></div><div id="decode-result" class="add-result" aria-live="polite"></div></div>
+<div class="panel-note"><p>Учебные логиты фиксированы. Меняем температуру и top-p, затем пересчитываем вероятности и оставленное множество. После отсечения снова нормируем. Серые столбики — исходное распределение после температуры, цветные — распределение для выбора.</p></div>
+<pre class="code"><code><span class="ln" data-f="temperature" tabindex="0">probabilities = (logits / temperature).softmax(dim=-1)</span><span class="ln">values, ids = probabilities.sort(descending=<b class="kw">True</b>)</span><span class="ln" data-f="truncate" tabindex="0">keep = values.cumsum(dim=-1) - values &lt; top_p</span><span class="ln">filtered = values * keep</span><span class="ln" data-f="renorm" tabindex="0">filtered = filtered / filtered.sum(dim=-1, keepdim=<b class="kw">True</b>)</span><span class="ln" data-f="choice" tabindex="0">choice = torch.multinomial(filtered, 1)</span><span class="ln">next_id = ids.gather(-1, choice)</span></code></pre>
+</div>
+<div class="qz" data-q="q-decode"></div>
+<div class="qz" data-q="q-quality"></div>
+<details class="optional"><summary>свойства правил и дополнительные настройки</summary><div class="prose"><p>Температура меняет отношения вероятностей. Отсечение сохраняет отношения между оставленными кандидатами и убирает остальных. Seed определяет случайный выбор при фиксированных условиях; сам по себе распределение не меняет.</p>
+<p>Greedy максимизирует вероятность текущего шага. Это не гарантирует ни самую вероятную последовательность, ни лучший текст. Повторы и бессвязные продолжения возможны при разных правилах: проверяем конкретную модель, префиксы и настройки.</p>
+<p>Min-p оставляет токены относительно вероятности самого вероятного. Repetition penalty меняет оценки уже использованных токенов; способ изменения должен учитывать знак логита. Эти настройки можно исследовать в полном семинаре.</p></div>
+</details>
+<div class="prose"><p>Сохранённый опыт с одной LSTM на анекдотах: правила декодирования меняются, модель фиксирована. Доля повторов считается по окну предыдущих токенов; сама по себе она не измеряет связность или полезность. Примеры ниже — сохранённые генерации, не ответы модели в браузере.</p></div>
+<div class="panel"><div class="panel-body" id="decode-measured"></div></div></section>
+<section id="translate"><p class="eyebrow">блок 07</p><h2>Как поставить задачу перевода?</h2>
+<div class="prose"><p>В переводе генерируем текст с условием на исходную последовательность. Encoder читает исходный текст, decoder предсказывает перевод по представлению источника и уже известному префиксу перевода. Словари источника и перевода могут различаться.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="translation"></div><div class="add-controls"><button id="teacher-toggle">Показать вход при генерации</button></div></div>
+<div class="panel-note"><p>Применяем teacher forcing из блока 4 к переводу: при обучении вход decoder — эталонный перевод со сдвигом, при генерации — выбранные слова. Переключатель меняет этот вход. Всё представление источника здесь передаётся через последнее состояние encoder.</p></div>
+<pre class="code"><code><span class="ln" data-f="encode" tabindex="0">_, encoder_state = encoder(source_embeddings)</span><span class="ln" data-f="teacher" tabindex="0">outputs, _ = decoder(target_embeddings[:, :-1], encoder_state)</span><span class="ln" data-f="decode" tabindex="0">logits = head(outputs)</span><span class="ln">loss = F.cross_entropy(logits.reshape(-1, target_vocab_size),</span><span class="ln">                       target_ids[:, 1:].reshape(-1),</span><span class="ln">                       ignore_index=pad_id)</span></code></pre>
+</div>
+<details class="optional"><summary>ограничение состояния и BLEU</summary><div class="prose"><p>Трудность длинного источника проверяем по качеству в разрезе длин, а не выводим из одной формы тензора. Attention позволяет decoder обращаться к состояниям encoder на разных позициях; его разберём дальше.</p>
+<p>BLEU сопоставляет n-граммы перевода и эталона с поправкой на длину. Это полезная агрегированная проверка, но один допустимый перевод может отличаться от эталона. Нужны примеры ошибок и проверка сохранения смысла.</p></div>
+</details>
+<div class="prose"><p>Beam search сохраняет несколько лучших частичных последовательностей и расширяет их на каждом шаге. Он приближает поиск вероятной последовательности. Большая ширина поиска не гарантирует лучшего перевода; важны завершение и учёт длины.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="beam"></div></div>
+<div class="panel-note"><p>Учебное дерево: greedy выбирает ветвь A по первому шагу, но после продолжения путь через B оказывается вероятнее. Вероятности последовательностей — произведения вероятностей на рёбрах. Beam ширины два удерживает обе первые ветви.</p></div>
+</div>
+<div class="qz" data-q="q-beam"></div>
+</section>
+<section id="design"><p class="eyebrow">блок 08</p><h2>Спроектируем систему</h2>
+<div class="prose"><p>Теперь выбираем модель и правило решения под конкретный продукт.</p></div>
+<div class="qz" data-q="q-design"></div>
+</section>
+<section id="sources"><p class="eyebrow">блок 09</p><h2>Источники</h2>
+<h3>References</h3><div class="prose footnote sources"><ul>
+<li>Sennrich, Haddow, Birch (2016). <a href="https://aclanthology.org/P16-1162/"><em>Neural Machine Translation of Rare Words with Subword Units.</em></a> ACL. — BPE для перевода.</li>
+<li>Bengio et al. (2003). <a href="https://www.jmlr.org/papers/v3/bengio03a.html"><em>A Neural Probabilistic Language Model.</em></a> JMLR.</li>
+<li>Hochreiter, Schmidhuber (1997). <a href="https://doi.org/10.1162/neco.1997.9.8.1735"><em>Long Short-Term Memory.</em></a> Neural Computation.</li>
+<li>Cho et al. (2014). <a href="https://aclanthology.org/D14-1179/"><em>Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation.</em></a> EMNLP. — GRU и encoder–decoder.</li>
+<li>Holtzman et al. (2020). <a href="https://arxiv.org/abs/1904.09751"><em>The Curious Case of Neural Text Degeneration.</em></a> ICLR.</li>
+<li>Papineni et al. (2002). <a href="https://aclanthology.org/P02-1040/"><em>BLEU: a Method for Automatic Evaluation of Machine Translation.</em></a> ACL.</li>
+</ul></div></section>
+</div></main></div>
+
+<div hidden id="text-chunks">
+<template data-text="jokes-source">Пример {index} / {total}. Обучение: {training} анекдотов. Совпадения проверены по подвыборке из {checked}; найденный фрагмент: {copied} слов.</template>
+<template data-text="forcing-generation-note">Стрелка возвращает выбранное моделью слово в контекст следующего шага. При генерации эталонного продолжения нет. На схеме выборы заданы как учебный пример.</template>
+<template data-text="forcing-teacher-note">Стрелка берёт следующий вход из эталонного текста «кот спит». Предсказание сравниваем с правильным следующим токеном; ошибка на первом шаге не подменяет правильный контекст второго. Штраф считаем по вероятности эталонного токена в предсказанном распределении.</template>
+<template data-text="ppl-example-result">Средний штраф L = {loss}. PPL = exp(L) = {ppl}. Вероятность верных токенов усредняем геометрически: {geometric}.</template>
+<template data-text="ppl-jokes-conditions">BPE: {vocab} токенов. Обучение: {train} анекдотов, {epochs} эпохи, размер состояния {hidden}. Проверка: {test} отложенных анекдотов. Обучающие тексты и условия оценки одинаковы для всех строк.</template>
+<template data-text="topics"><ul>
+<li>Языковая модель и генерация</li>
+<li>Подсловная токенизация BPE</li>
+<li>N-граммы и сглаживание</li>
+<li>Обучение и perplexity</li>
+<li>RNN, LSTM и GRU</li>
+<li>Декодирование и перевод</li>
+</ul></template>
+</div>
+<script type="application/json" id="quiz-data">{"q-lm":{"key":"q-lm","type":"pick","q":"<p>На одном шаге модель предсказывает идентификатор следующего токена. Это регрессия, потому что идентификатор — число?<\/p>","a":"<p>Классификация по V вариантам. Выходом модели служат оценки всех классов, а меткой — идентификатор правильного токена.<\/p>","miss":"","opts":[{"k":"o0","label":"да, минимизируем расстояние между номерами","right":false},{"k":"o1","label":"нет, каждый токен — отдельный класс","right":true}],"multi":false,"n":1},"q-chain":{"key":"q-chain","type":"write","q":"<p>Зачем раскладывать вероятность текста в произведение вероятностей токенов? Что нужно уметь вычислять модели?<\/p>","a":"<p>Не нужна таблица всех возможных текстов: достаточно условных распределений на каждом шаге. Их произведение задаёт вероятность конкретной последовательности, включая её завершение.<\/p>","miss":"","check":["условное распределение следующего токена","вероятность каждого продолжения зависит от префикса","одна модель применяется повторно"],"n":2},"q-bpe":{"key":"q-bpe","type":"pick","q":"<p>Слово не встречалось при обучении. Обязательно ли BPE заменит его на UNK?<\/p>","a":"<p>Словарь содержит части. Возможность представить новое слово зависит от базовых единиц и правил конкретного токенизатора.<\/p>","miss":"","opts":[{"k":"o0","label":"да, слово должно быть в словаре целиком","right":false},{"k":"o1","label":"нет, его можно разбить на известные единицы, если базовый алфавит покрывает символы","right":true}],"multi":false,"n":3},"q-vocab":{"key":"q-vocab","type":"write","q":"<p>Увеличили словарь токенизатора. Какие две стороны стоимости модели нужно проверить?<\/p>","a":"<p>Последовательность может стать короче, а число параметров и стоимость вычисления оценок по словарю — вырасти. Смотрим обе стороны на своих текстах.<\/p>","miss":"","check":["длина получившихся последовательностей","размер таблиц и выходного слоя по словарю"],"n":4},"q-zero":{"key":"q-zero","type":"pick","q":"<p>В тестовом тексте встретилось продолжение с вероятностью ноль. Что произойдёт с вероятностью всего текста?<\/p>","a":"<p>Вероятности перемножаются. Нулевой множитель обнуляет вероятность всей последовательности и даёт бесконечный отрицательный логарифм.<\/p>","miss":"","opts":[{"k":"o0","label":"она станет нулевой","right":true},{"k":"o1","label":"обнулится только последний токен","right":false},{"k":"o2","label":"остальные токены компенсируют ноль","right":false}],"multi":false,"n":5},"q-context":{"key":"q-context","type":"write","q":"<p>Почему нельзя гарантированно улучшать модель, просто увеличивая n?<\/p>","a":"<p>Уточняем контекст, но дробим статистику. Нужен баланс между длиной зависимости, объёмом данных и способом сглаживания.<\/p>","miss":"","check":["больше различимых контекстов","меньше наблюдений на каждый контекст","больше невстречавшихся сочетаний на новых текстах"],"n":6},"q-pad":{"key":"q-pad","type":"pick","q":"<p>Что будет, если учитывать PAD при обучении?<\/p>","a":"<p>ID не исключается автоматически из-за своего значения. Маску задаём явно, например через ignore_index, и усредняем по целевым позициям.<\/p>","miss":"","opts":[{"k":"o0","label":"часть функции потерь начнёт поощрять предсказание заполнителя","right":true},{"k":"o1","label":"ничего, нулевые ID автоматически игнорируются","right":false},{"k":"o2","label":"модель перестанет принимать батчи","right":false}],"multi":false,"n":8},"q-ppl":{"key":"q-ppl","type":"pick","q":"<p>Модель на частях слов получила меньшую per-token PPL, чем модель на словах. Достаточно ли этого, чтобы выбрать её?<\/p>","a":"<p>Сначала приводим проверку к сопоставимой единице, например логарифмической вероятности на байт при согласованной обработке текста, и отдельно оцениваем качество нужного применения.<\/p>","miss":"","opts":[{"k":"o0","label":"да, PPL всегда сравнима","right":false},{"k":"o1","label":"нет, единица предсказания различается","right":true}],"multi":false,"n":10},"q-ppl-link":{"key":"q-ppl-link","type":"write","q":"<p>Как связаны L и PPL? Что произойдёт с произведением, если взять его натуральный логарифм?<\/p>","a":"<div class=\"equation\"><span><math><mi mathvariant=\"normal\">ln<\/mi><mspace width=\"0.15em\"/><mi mathvariant=\"normal\">PPL<\/mi><mo>=<\/mo><mo>−<\/mo><mfrac><mn>1<\/mn><mi>M<\/mi><\/mfrac><munderover><mo>∑<\/mo><mrow><mi>i<\/mi><mo>=<\/mo><mn>1<\/mn><\/mrow><mi>M<\/mi><\/munderover><mspace width=\"0.15em\"/><mi mathvariant=\"normal\">ln<\/mi><mspace width=\"0.15em\"/><mrow><mi>P<\/mi><mo>(<\/mo><msub><mi>y<\/mi><mi>i<\/mi><\/msub><mo>|<\/mo><msub><mi>c<\/mi><mi>i<\/mi><\/msub><mo>)<\/mo><\/mrow><mo>=<\/mo><mi>L<\/mi><\/math><\/span><\/div>\n<div class=\"equation\"><span><math><mi mathvariant=\"normal\">PPL<\/mi><mo>=<\/mo><mrow><mi mathvariant=\"normal\">exp<\/mi><mo>(<\/mo><mi>L<\/mi><mo>)<\/mo><\/mrow><\/math><\/span><\/div>\n<p>Минимизация среднего cross-entropy уменьшает и PPL на тех же токенах: это одна оценка в разных шкалах. Здесь L посчитана с натуральным логарифмом.<\/p>","miss":"","check":["логарифм произведения превращается в сумму логарифмов","ln PPL совпадает с L, поэтому PPL = exp(L)"],"n":9},"q-teacher":{"key":"q-teacher","type":"pick","q":"<p>В обучающем тексте после BOS стоит «кот». Модель предсказала «пёс». Что подадим на следующем шаге при teacher forcing?<\/p>","a":"<p>Вход берём из обучающего текста. Предсказание «пёс» получает штраф на первом шаге, а второй шаг учится на правильном префиксе «кот». При генерации выбранный «пёс» стал бы частью следующего входа.<\/p>","miss":"","opts":[{"k":"o0","label":"правильный токен «кот»","right":true},{"k":"o1","label":"выбранный моделью токен «пёс»","right":false},{"k":"o2","label":"PAD, чтобы пропустить ошибку","right":false}],"multi":false,"n":7},"q-shared":{"key":"q-shared","type":"pick","q":"<p>Что одинаково у шагов одной RNN?<\/p>","a":"<p>Параметры общие, данные и состояния меняются. Поэтому модель применима к последовательностям разной длины.<\/p>","miss":"","opts":[{"k":"o0","label":"входной токен и скрытое состояние","right":false},{"k":"o1","label":"обучаемые матрицы преобразований","right":true},{"k":"o2","label":"вероятности продолжений","right":false}],"multi":false,"n":11},"q-memory":{"key":"q-memory","type":"write","q":"<p>В каком смысле h хранит контекст? Можно ли по форме [B, H] заключить, что модель помнит все токены?<\/p>","a":"<p>Состояние зависит от префикса, но форма ничего не обещает о полноте памяти. Проверяем задачи с нужной длиной зависимости и ошибки модели.<\/p>","miss":"","check":["состояние вычислено по предшествующим токенам","размер состояния фиксирован","сохранность нужной информации требует проверки"],"n":12},"q-decode":{"key":"q-decode","type":"sort","q":"<p>Что меняет каждая настройка?<\/p>","a":"<p>Температура перераспределяет массу, отсечение убирает кандидатов, seed выбирает конкретную случайную траекторию. После отсечения оставленные вероятности нормируем.<\/p>","miss":"","bins":["отношения вероятностей","множество кандидатов","случайный выбор"],"items":[{"label":"температура","bins":["отношения вероятностей"]},{"label":"top-k","bins":["множество кандидатов"]},{"label":"top-p","bins":["множество кандидатов"]},{"label":"seed","bins":["случайный выбор"]}],"n":13},"q-quality":{"key":"q-quality","type":"write","q":"<p>Модель хорошо предсказывает настоящие продолжения на тесте. Достаточно ли этого для утверждения, что greedy даст хороший текст?<\/p>","a":"<p>При генерации модель получает собственные продолжения. Ошибки меняют последующий контекст, а локально вероятный выбор может быть неудачным для всей последовательности. Проверяем результат генерации отдельно.<\/p>","miss":"","check":["оценка на настоящих префиксах отличается от генерации на собственных","greedy выбирает локальный максимум","нужны отдельные проверки генерации и требований задачи"],"n":14},"q-beam":{"key":"q-beam","type":"pick","q":"<p>Почему увеличение ширины beam не гарантирует лучшего результата для читателя?<\/p>","a":"<p>Более широкий поиск может лучше найти максимум заданной оценки. Проверка перевода всё равно нужна: вероятность и полезность для человека связаны не идеально.<\/p>","miss":"","opts":[{"k":"o0","label":"поиск оптимизирует оценку модели, которая не совпадает полностью с качеством текста","right":true},{"k":"o1","label":"beam перестаёт использовать модель","right":false},{"k":"o2","label":"beam обязательно выбирает случайный токен","right":false}],"multi":false,"n":15},"q-design":{"key":"q-design","type":"write","q":"<p>Мессенджеру нужны подсказки следующих слов на русском прямо на телефоне. Сеть недоступна, память и время ответа ограничены. Спроектируйте решение.<\/p>","a":"<p>Начнём со сглаженной счётной модели и проверим небольшую GRU на тех же данных. Показываем несколько вероятных полных слов, а не случайную генерацию. PPL используем при разработке; в продукте проверяем, выбирают ли подсказки, сколько нажатий они экономят и укладываются ли в ограничения устройства.<\/p>","miss":"","check":["задача: ранжирование подсказок по префиксу","данные: тексты сообщений с корректным разделением и приватностью","представление: слова или части слов и сборка полного слова","модель: счётная или маленькая рекуррентная","метрика: принятие подсказок, сэкономленные нажатия, задержка и память","что сломается: имена, сленг, переключение языка и новые темы"],"n":16}}</script>
+<script type="application/json" id="add-data">{"decodeTable":{"rows":[{"method":"greedy","repetition":0.7710387864823346,"distinct2":0.2459309417328446},{"method":"sampling T=1.0","repetition":0.06886995817950554,"distinct2":0.9874734365980634},{"method":"sampling T=0.7","repetition":0.12447764861682516,"distinct2":0.9724488661111469},{"method":"top-k=40","repetition":0.12396343065730334,"distinct2":0.9776369828216177},{"method":"top-p=0.9","repetition":0.06974877495945295,"distinct2":0.9898018889300869},{"method":"min-p=0.05","repetition":0.11905905416428687,"distinct2":0.9744984932088757}]},"decodeSamples":{"greedy":["- Я не могу, что у меня есть?- Да, а я не могу, что у меня есть?- Да, а я не могу, что у меня есть?- Да, а я не могу."],"sampling":["Пибайнцияминый Ржевский, вере Ко время рыба маствовать го ФСБ."]},"ngramExamples":{"source":"autumn-2026:week02_language_modelling/artifacts/demo_data.json","sourceCommit":"b0ae71004574029a3bfaa7ca830cdb7b7db39b7a","trainingJokes":40000,"checkedJokes":8000,"samples":{"3":[{"text":"деньги навоз сегодня нет а где глаз","copied":{"start":4,"length":3}},{"text":"встречаются две подруги разговаривают слушай если я пожарю картошечку как ты колька умудрился с велосипеда так упасть руки то помнят пока не нашли в моей сумочке что то с внутренней стороны крышки","copied":{"start":17,"length":5}},{"text":"чтобы быть накормленными и обласкаными потом они считают что в воде не подходит ну он в устной форме докладывает полковнику","copied":{"start":15,"length":3}}],"5":[{"text":"деньги навоз сегодня нет а завтра долгов воз","copied":null},{"text":"встречаются две подруги рассказивают о своей семейной жизни у нас с мужем все хорошо он не пьет не курит не играет на скачках никогда не спорит и не существует","copied":{"start":0,"length":20}},{"text":"чтобы быть поближе к народу власти не обязательно у него красть","copied":null}]}},"pplExamples":{"source":"autumn-2026:week02_language_modelling/artifacts/demo_data.json","sourceCommit":"b0ae71004574029a3bfaa7ca830cdb7b7db39b7a","testJokes":5000,"vocabSize":8000,"rows":[{"model":"RNN","ppl":256.8279310882003,"config":{"emb":256,"hidden":256,"cell":"rnn","epochs":3,"n_train_jokes":12000,"batch_size":128}},{"model":"GRU","ppl":252.3196778500657,"config":{"emb":256,"hidden":256,"cell":"gru","epochs":3,"n_train_jokes":12000,"batch_size":128}},{"model":"LSTM","ppl":309.48142772000386,"config":{"emb":256,"hidden":256,"cell":"lstm","epochs":3,"n_train_jokes":12000,"batch_size":128}}]}}</script>
+<script>
+/* Shared by every week's demo.js; scripts/build_demo.py puts this in front of it. */
+
+// TXT("key", {n: 12}) — a text chunk from demo/text/*.md with its {n} placeholders filled; see scripts/demo_text.py
+function TXT(key, vars) {
+  const t = document.querySelector(`template[data-text="${key}"]`);
+  if (!t) throw new Error("no text chunk '" + key + "' — add it to demo/text/");
+  let s = t.innerHTML;
+  if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
+  return s;
+}
+
+// reference lists (demo/text, `## end-refs`): external links open in a new tab
+document.querySelectorAll('.prose.footnote a[href^="http"]').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
+
+/* The questions of a lecture page. scripts/build_demo.py puts this in front of the week's demo/lecture/lecture.js;
+   the questions themselves are parsed from demo/lecture/text/*.md by scripts/quiz_text.py into #quiz-data.
+
+   lecture.js registers what the markdown cannot hold:
+     QUIZ.figs.name = host => { ...draw an SVG into host... }   for every <div data-fig="name"></div> in a question
+                                                                 or an answer; a `point` question's clickable parts
+                                                                 carry data-pick="key" matching its options
+     QUIZ.values.name = 0.631                                     for a fill answer written as `@name`
+   Answers are kept in localStorage per page (meta[name=quiz-store]) so a student can leave and come back;
+   "Reset answers" in the rail clears them. Nothing here depends on the seminar's demo_data. */
+"use strict";
+const quizRu = document.documentElement.lang === "ru";
+const qt = (en, ru) => quizRu ? ru : en;
+const QUIZ = { figs: {}, values: {}, data: null, state: null };
+
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const DATA = JSON.parse($("#quiz-data").textContent);
+  const STORE = "quiz:" + (($('meta[name="quiz-store"]') || {}).content || location.pathname);
+  const load = () => { try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { return {}; } };
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* private window: answers live until reload */ } };
+  let state = load();
+  QUIZ.data = DATA; QUIZ.state = () => state;
+
+  /* ------------------------------------------------------------- figures */
+  function drawFigs(root) {
+    $$("[data-fig]", root).forEach(h => {
+      if (h.dataset.drawn) return;
+      const f = QUIZ.figs[h.dataset.fig];
+      if (f) { f(h); h.dataset.drawn = "1"; }
+      else h.innerHTML = `<div class="qz-nofig">figure “${esc(h.dataset.fig)}” is not drawn in lecture.js</div>`;
+    });
+  }
+
+  /* -------------------------------------------------------------- answers */
+  const norm = s => String(s).toLowerCase().replace(/[×*]/g, "x").replace(/\s+/g, " ").replace(/[.,;:]+$/, "").trim();
+  const num = s => { const v = parseFloat(String(s).replace(",", ".").replace(/[^0-9eE+.\-]/g, "")); return isNaN(v) ? null : v; };
+  function expected(alt) {
+    if (alt.startsWith("@")) {
+      const v = QUIZ.values[alt.slice(1)];
+      if (v === undefined) throw new Error(`QUIZ.values.${alt.slice(1)} is not set in lecture.js`);
+      return v;
+    }
+    return alt;
+  }
+  function matches(given, blank) {
+    for (const alt of blank.alts) {
+      const e = expected(alt);
+      const en = typeof e === "number" ? e : num(e);
+      if (en !== null && (blank.tol != null || typeof e === "number" || /^[-+]?[0-9.,eE]+$/.test(String(e).trim()))) {
+        const g = num(given); if (g === null) continue;
+        const dec = (String(e).split(".")[1] || "").length;
+        const tol = Math.max(blank.tol || 0, dec ? 0.5 * Math.pow(10, -dec) : 0, Math.abs(en) * 1e-9);
+        if (Math.abs(g - en) <= tol) return true;
+      } else if (norm(given) === norm(e)) return true;
+    }
+    return false;
+  }
+  const shown = blank => { const e = expected(blank.alts[0]); return typeof e === "number" ? (blank.tol != null ? +e.toFixed(Math.max(0, Math.ceil(-Math.log10(blank.tol)))) : +e.toFixed(3)) : e; };
+
+  /* `{name}` in a question, an option or an answer -> QUIZ.values.name (a number the browser computed), so the
+     markdown holds the sentence and never the number */
+  const fmtv = v => typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(3)) : String(v);
+  const fill = html => html.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? esc(fmtv(QUIZ.values[k])) : m);
+
+  /* ------------------------------------------------------------ rendering */
+  const KIND = {
+    pick: q => q.multi ? qt("tick all that apply", "выберите всё подходящее") : qt("pick one", "выберите один ответ"),
+    point: q => q.multi ? qt("click everything that fits", "отметьте части схемы") : qt("click in the picture", "выберите на схеме"),
+    sort: () => qt("sort into bins", "распределите по группам"), fill: () => qt("fill in", "заполните пропуски"), write: () => qt("write, then reveal", "ответьте, затем откройте разбор"),
+  };
+  const pad = n => String(n).padStart(2, "0");
+
+  function render(q) {
+    const host = $(`.qz[data-q="${q.key}"]`);
+    const st = state[q.key] || (state[q.key] = {});
+    host.dataset.type = q.type;
+    host.classList.toggle("done", !!st.done);
+    host.innerHTML = `<div class="qz-head"><span class="qz-n">${pad(q.n)}</span><span class="qz-kind">${KIND[q.type](q)}</span></div>
+      <div class="qz-q">${fill(q.q)}</div><div class="qz-ui"></div>
+      <div class="qz-a" hidden>${fill(q.a)}${q.miss ? `<p class="qz-miss"><b>${qt("if the answer is", "если ответили так:")}</b>${fill(q.miss)}</p>` : ""}</div>`;
+    drawFigs(host);
+    UI[q.type](q, host, st);
+    if (st.done) finish(q, host, st, true);
+  }
+
+  function row(extra) { return `<div class="btnrow qz-row">${extra || ""}<span class="qz-verdict"></span></div>`; }
+  const verdict = (host, text, ok) => { const v = $(".qz-verdict", host); v.textContent = text; v.className = "qz-verdict " + (ok === true ? "ok" : ok === false ? "no" : ""); };
+
+  const UI = {
+    pick(q, host, st) { UI.point(q, host, st); },
+    point(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<div class="picklist qz-opts">${q.opts.map(o => `<button data-k="${esc(o.k)}">${fill(o.label)}</button>`).join("")}</div>`
+        + row(q.multi ? `<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>` : "");
+      st.sel = st.sel || [];
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      parts.forEach(p => p.classList.add("qz-pickable"));
+      const btns = $$(".qz-opts button", host);
+      const keyOf = el => el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+      const paint = () => {
+        [...btns, ...parts].forEach(el => el.classList.toggle("pick", st.sel.includes(keyOf(el))));
+        const ck = $(".qz-check", host); if (ck) ck.disabled = !st.sel.length;
+      };
+      const choose = k => {
+        if (st.done) return;
+        if (q.multi) { st.sel = st.sel.includes(k) ? st.sel.filter(x => x !== k) : [...st.sel, k]; paint(); save(); }
+        else { st.sel = [k]; finish(q, host, st); }
+      };
+      btns.forEach(b => b.addEventListener("click", () => choose(b.dataset.k)));
+      parts.forEach(p => p.addEventListener("click", () => choose(p.dataset.pick)));
+      const ck = $(".qz-check", host); if (ck) ck.addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    sort(q, host, st) {
+      const ui = $(".qz-ui", host);
+      st.sel = st.sel || {};
+      ui.innerHTML = `<table class="qz-sort"><tbody>${q.items.map((it, i) => `<tr data-i="${i}"><td class="qz-item">${fill(it.label)}</td>
+        <td class="qz-bins">${q.bins.map(b => `<button data-b="${esc(b)}">${esc(b)}</button>`).join("")}</td></tr>`).join("")}</tbody></table>`
+        + row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button><span class="qz-count mono"></span>`);
+      const paint = () => {
+        $$("tr", ui).forEach(tr => $$("button", tr).forEach(b => b.classList.toggle("pick", st.sel[tr.dataset.i] === b.dataset.b)));
+        const n = Object.keys(st.sel).length;
+        $(".qz-check", host).disabled = n < q.items.length;
+        $(".qz-count", host).textContent = st.done ? "" : qt(`${n} / ${q.items.length} placed`, `${n} / ${q.items.length} распределено`);
+      };
+      ui.addEventListener("click", e => {
+        const b = e.target.closest("button[data-b]"); if (!b || st.done) return;
+        st.sel[b.closest("tr").dataset.i] = b.dataset.b; paint(); save();
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    fill(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>`);
+      st.vals = st.vals || {};
+      const inputs = $$("input.qz-blank", host);
+      const paint = () => { $(".qz-check", host).disabled = inputs.some(i => !i.value.trim()); };
+      inputs.forEach(i => {
+        i.value = st.vals[i.dataset.blank] || "";
+        i.addEventListener("input", () => { st.vals[i.dataset.blank] = i.value; paint(); save(); });
+        i.addEventListener("keydown", e => { if (e.key === "Enter" && !$(".qz-check", host).disabled) finish(q, host, st); });
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    write(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<textarea class="qz-text" rows="3" placeholder="${qt("Your answer, in a few sentences — then reveal.", "Ваш ответ в нескольких предложениях")}"></textarea>`
+        + row(`<button class="primary qz-check">${qt("Reveal", "Открыть разбор")}</button>`);
+      const ta = $("textarea", ui);
+      ta.value = st.text || "";
+      ta.addEventListener("input", () => { st.text = ta.value; save(); });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+    },
+  };
+
+  function finish(q, host, st, restoring) {
+    st.done = true;
+    host.classList.add("done");
+    const ck = $(".qz-check", host); if (ck) ck.remove();
+    if (q.type === "pick" || q.type === "point") {
+      const right = new Set(q.opts.filter(o => o.right).map(o => o.k));
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      [...$$(".qz-opts button", host), ...parts].forEach(el => {
+        const k = el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+        el.classList.remove("pick");
+        el.classList.toggle("right", right.has(k));
+        el.classList.toggle("wrong", st.sel.includes(k) && !right.has(k));
+        el.classList.toggle("missed", right.has(k) && !st.sel.includes(k));
+        el.disabled = true;
+      });
+      const hit = st.sel.filter(k => right.has(k)).length, wrong = st.sel.length - hit, missed = right.size - hit;
+      if (!q.multi) verdict(host, hit ? qt("right", "верно") : qt("not quite", "не совсем"), !!hit);
+      else verdict(host, wrong + missed === 0 ? qt("all of them", "всё верно") : qt(`${hit} right · ${wrong} wrong · ${missed} missed`, `${hit} верно · ${wrong} ошибочно · ${missed} пропущено`), wrong + missed === 0);
+    } else if (q.type === "sort") {
+      let agree = 0;
+      $$("table.qz-sort tr", host).forEach(tr => {
+        const it = q.items[+tr.dataset.i], chosen = st.sel[tr.dataset.i], ok = it.bins.includes(chosen);
+        agree += ok ? 1 : 0;
+        $$("button", tr).forEach(b => {
+          b.classList.remove("pick"); b.disabled = true;
+          b.classList.toggle("right", b.dataset.b === chosen && ok);
+          b.classList.toggle("wrong", b.dataset.b === chosen && !ok);
+          b.classList.toggle("ans", it.bins.includes(b.dataset.b) && b.dataset.b !== chosen);
+        });
+      });
+      $(".qz-count", host).textContent = "";
+      verdict(host, qt(`${agree} of ${q.items.length} agree with the answer`, `${agree} / ${q.items.length} верно`), agree === q.items.length ? true : agree >= q.items.length * 0.7 ? null : false);
+    } else if (q.type === "fill") {
+      let ok = 0;
+      $$("input.qz-blank", host).forEach(i => {
+        const b = q.blanks.find(x => x.id === i.dataset.blank), good = matches(i.value, b);
+        ok += good ? 1 : 0;
+        i.classList.toggle("right", good); i.classList.toggle("wrong", !good); i.readOnly = true;
+        if (!good && !i.nextElementSibling?.classList.contains("qz-exp")) i.insertAdjacentHTML("afterend", `<span class="qz-exp">${esc(shown(b))}</span>`);
+      });
+      verdict(host, ok === q.blanks.length ? qt("right", "верно") : `${ok} / ${q.blanks.length}`, ok === q.blanks.length);
+    } else if (q.type === "write") {
+      $("textarea", host).readOnly = false;
+      if (q.check.length && !$(".qz-ticks", host)) {
+        st.ticks = st.ticks || [];
+        $(".qz-ui", host).insertAdjacentHTML("beforeend", `<div class="qz-ticks"><div class="qz-ticks-k">${qt("tick what your answer had", "отметьте, что было в вашем ответе")}</div>${q.check.map((c, i) =>
+          `<label><input type="checkbox" data-i="${i}" ${st.ticks.includes(i) ? "checked" : ""}> <span>${fill(c)}</span></label>`).join("")}</div>`);
+        $(".qz-ticks", host).addEventListener("change", e => {
+          const i = +e.target.dataset.i; st.ticks = e.target.checked ? [...new Set([...st.ticks, i])] : st.ticks.filter(x => x !== i); save();
+        });
+      }
+    }
+    const a = $(".qz-a", host); a.hidden = false; drawFigs(a);
+    if (!restoring) save();
+    progress();
+  }
+
+  /* ------------------------------------------------------------- progress */
+  const isOptional = host => !!host.closest("details.optional");
+  function progress() {
+    const hosts = $$(".qz"), main = hosts.filter(h => !isOptional(h)), opt = hosts.filter(isOptional);
+    const done = l => l.filter(h => h.classList.contains("done")).length;
+    const el = $("#quiz-progress"); if (!el) return;
+    el.textContent = qt(`answered ${done(main)} / ${main.length}`, `отвечено ${done(main)} / ${main.length}`) + (opt.length ? qt(` · ${done(opt)} / ${opt.length} optional`, ` · ${done(opt)} / ${opt.length} дополнительно`) : "");
+    $$(".optional-count").forEach(c => { const l = $$(".qz", c.closest("details")); c.textContent = `${done(l)} / ${l.length}`; });
+  }
+
+  /* ----------------------------------------------------------------- rail */
+  const nav = $("#nav");
+  if (nav) {
+    const secs = $$("main section").filter(s => s.id && $("h2", s));
+    nav.innerHTML = secs.map((s, i) => `<a href="#${s.id}"><span>${pad(i + 1)}</span><span>${esc($("h2", s).textContent)}</span></a>`).join("");
+    const links = $$("a", nav);
+    const onScroll = () => {
+      const y = window.scrollY + 120; let cur = 0;
+      secs.forEach((s, i) => { if (s.offsetTop <= y) cur = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === cur));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  }
+  const theme = $("#btn-theme");
+  if (theme) theme.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+  const reset = $("#btn-reset");
+  if (reset) {
+    let armed = 0;
+    reset.addEventListener("click", () => {
+      if (Date.now() - armed > 4000) { armed = Date.now(); reset.textContent = qt("Click again to reset", "Ещё раз для сброса"); setTimeout(() => { reset.textContent = qt("Reset answers", "Сбросить ответы"); }, 4000); return; }
+      QUIZ.reset();
+      reset.textContent = qt("Reset answers", "Сбросить ответы");
+    });
+  }
+  QUIZ.reset = () => { state = {}; save(); $$("[data-fig]").forEach(h => delete h.dataset.drawn); Object.values(DATA).forEach(render); progress(); };
+
+  /* ----------------------------------------------------------------- go */
+  (function fillProse() {   // `{name}` in the page's own prose, text nodes only, so markup and figures are untouched
+    const walker = document.createTreeWalker(document.querySelector("main") || document.body, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walker.nextNode()) if (/\{[a-z][a-z0-9_]*\}/.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+    nodes.forEach(n => { n.nodeValue = n.nodeValue.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? fmtv(QUIZ.values[k]) : m); });
+  })();
+  drawFigs(document);
+  Object.values(DATA).sort((a, b) => a.n - b.n).forEach(render);
+  progress();
+});
+
+/* Схемы и связи со строками кода для страниц ADD. */
+const ADD = {
+  esc: s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
+  svg(content, width=760, height=180, label='Схема') {
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${this.esc(label)}"><defs><marker id="arrow-${++this.serial}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" style="fill:var(--ink-3)"/></marker></defs>${content.replaceAll('MARKER', 'arrow-'+this.serial)}</svg>`;
+  },
+  serial: 0,
+  text(x,y,label,cls='',anchor='middle') {
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" class="${cls}">${this.esc(label)}</text>`;
+  },
+  box(x,y,w,h,lines,key='',pick='') {
+    return `<g ${key?`data-f="${key}" tabindex="0"`:''} ${pick?`data-pick="${pick}"`:''}><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/>${lines.map((line,i)=>this.text(x+w/2,y+h/2+(i-(lines.length-1)/2)*23+5,line)).join('')}${pick?`<rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/>`:''}</g>`;
+  },
+  arrow(x1,y1,x2,y2) { return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#MARKER)"/>`; },
+  flow(items, label='Последовательность преобразований') {
+    const w=760/items.length;
+    return this.svg(items.map((a,i)=>this.box(i*w+6,30,w-30,90,a.lines,a.key,a.pick)+(i<items.length-1?this.arrow((i+1)*w-24,75,(i+1)*w+1,75):'')).join(''),760,150,label);
+  },
+  table(headers, rows) {
+    return '<table class="add-table"><thead><tr>'+headers.map(h=>'<th>'+this.esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(v=>'<td>'+this.esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+  },
+  softmax(values) { const m=Math.max(...values), ex=values.map(v=>Math.exp(v-m)), z=ex.reduce((a,b)=>a+b,0); return ex.map(v=>v/z); },
+  link(scope,key,on) { scope.querySelectorAll('[data-f]').forEach(n=>n.classList.toggle('hi',on && n.dataset.f===key)); },
+};
+for(const event of ['pointerover','focusin']) document.addEventListener(event,e=>{
+  const node=e.target.closest('[data-f]'), scope=node?.closest('[data-link-scope]');
+  if(scope) ADD.link(scope,node.dataset.f,true);
+});
+for(const event of ['pointerout','focusout']) document.addEventListener(event,e=>{
+  const node=e.target.closest('[data-f]'), scope=node?.closest('[data-link-scope]');
+  if(scope) ADD.link(scope,node.dataset.f,false);
+});
+
+/* Учебные распределения и слияния считаются в браузере. */
+const W2 = {
+  initial:['кот','коты','кота','ток'], pieces:[], merges:[], teacher:true,
+  resetBpe() { this.pieces=this.initial.map(w=>[...w]); this.merges=[]; },
+  pairs() {
+    const counts=new Map();
+    for(const word of this.pieces)for(let i=0;i<word.length-1;i++){
+      const key=JSON.stringify([word[i],word[i+1]]);counts.set(key,(counts.get(key)||0)+1);
+    }
+    return [...counts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  },
+  merge() {
+    const best=this.pairs()[0]; if(!best)return;
+    const [a,b]=JSON.parse(best[0]);
+    this.pieces=this.pieces.map(word=>{const result=[];for(let i=0;i<word.length;i++){
+      if(word[i]===a && word[i+1]===b){result.push(a+b);i++;}else result.push(word[i]);
+    }return result;});
+    this.merges.push(`${a} + ${b} → ${a+b}`);
+  },
+  bpe(host) {
+    let s=ADD.text(380,24,'одно слово → последовательность частей','caption');
+    this.pieces.forEach((word,i)=>{
+      s+=ADD.text(50,61+i*43,this.initial[i]);
+      word.forEach((piece,j)=>s+=ADD.box(140+j*120,35+i*43,105,35,[piece],'merge'));
+    });
+    const pair=this.pairs()[0];
+    s+=`<g data-f="pairs" tabindex="0">${ADD.text(380,237,pair?'Частая пара: '+JSON.parse(pair[0]).join(' + ')+'; частота '+pair[1]:'Пар не осталось','caption')}</g>`;
+    host.innerHTML=ADD.svg(s,760,260,'Слияния BPE');
+    const best=this.pairs()[0];
+    const result=document.querySelector('#bpe-result');
+    if(result) result.textContent=`Следующая пара: ${best?JSON.parse(best[0]).join(' + ')+'; частота '+best[1]:'пар не осталось'}. Слияния: ${this.merges.join('; ')||'пока нет'}`;
+    const button=document.querySelector('#bpe-merge');if(button)button.disabled=!best;
+  },
+  counts(smooth=false) {
+    const counts=[2,1,0], a=smooth?1:0, total=3;
+    return counts.map(n=>(n+a)/(total+a*counts.length));
+  },
+  drawCounts(host) {
+    const smooth=!!document.querySelector('#smooth')?.checked, p=this.counts(smooth);
+    let s=ADD.box(10,50,140,75,['контекст','кот'],'counts');
+    ['ест','спит','рыбу'].forEach((word,i)=>{
+      s+=ADD.arrow(155,87,240,45+i*65)+ADD.box(250,20+i*65,180,55,[`${word}: N = ${[2,1,0][i]}`],'counts');
+      s+=ADD.box(480,20+i*65,230,55,[`P = ${p[i].toFixed(3)}`],smooth?'smooth':'counts');
+    });
+    host.innerHTML=ADD.svg(s,760,225,'Счётчики и сглаживание');
+    const result=document.querySelector('#count-result');if(result)result.textContent=`V = 3, сумма вероятностей = ${p.reduce((a,b)=>a+b,0).toFixed(3)}; α = ${smooth?1:0}`;
+  },
+  distribution(t=1,topP=.9) {
+    const p=ADD.softmax([2,1.5,1,0,-1].map(x=>x/t));
+    let before=0;
+    const mask=p.map(v=>{const keep=before<topP;before+=v;return keep;});
+    const mass=p.reduce((s,v,i)=>s+(mask[i]?v:0),0);
+    return {p,mask,filtered:p.map((v,i)=>mask[i]?v/mass:0)};
+  },
+  decoding(host) {
+    const t=+(document.querySelector('#temperature')?.value||1), topP=+(document.querySelector('#top-p')?.value||.9);
+    const d=this.distribution(t,topP), words=['кот','пёс','он','мы','все'];
+    let s=`<g data-f="temperature" tabindex="0">${ADD.text(380,24,'вероятности после температуры · [V]','caption')}</g>`;
+    words.forEach((word,i)=>{
+      const x=70+i*130;
+      s+=`<g data-f="${d.mask[i]?'renorm':'truncate'}" tabindex="0"><rect x="${x}" y="${190-d.p[i]*200}" width="32" height="${d.p[i]*200}"/><rect x="${x+36}" y="${190-d.filtered[i]*200}" width="32" height="${d.filtered[i]*200}" class="accent"/>${ADD.text(x+34,215,word)}${ADD.text(x+34,239,d.filtered[i].toFixed(3))}</g>`;
+    });
+    s+=ADD.box(20,275,210,55,['маска top-p [V]'],'truncate')+ADD.arrow(230,302,270,302);
+    s+=ADD.box(280,275,210,55,['нормировка [V]'],'renorm')+ADD.arrow(490,302,530,302);
+    s+=ADD.box(540,275,200,55,['выбор ID [B]'],'choice');
+    host.innerHTML=ADD.svg(s,760,350,'Декодирование: температура и top-p');
+    const result=document.querySelector('#decode-result');
+    if(result){result.textContent=`Кандидаты: ${words.filter((_,i)=>d.mask[i]).join(', ')}. Сумма после нормировки: ${d.filtered.reduce((a,b)=>a+b,0).toFixed(3)}`;
+      document.querySelector('#temperature-value').textContent=t;
+      document.querySelector('#top-p-value').textContent=topP;}
+    return d;
+  },
+  translation(host) {
+    let s=ADD.text(160,25,'encoder: читает источник','caption')+ADD.text(585,25,'decoder: генерирует перевод','caption');
+    const inputs=this.teacher?['BOS','A','man']:['BOS','The','person'];
+    for(let i=0;i<3;i++){
+      const x=15+i*100;
+      s+=ADD.box(x,170,90,55,['RNN'],'encode');
+      s+=ADD.box(x,280,90,45,[['Ein','Mann','schläft'][i]],'encode')+ADD.arrow(x+45,280,x+45,230);
+      if(i<2)s+=ADD.arrow(x+90,197,x+98,197);
+      const d=435+i*100;
+      s+=ADD.box(d,170,90,55,['RNN'],'decode');
+      s+=ADD.box(d,280,90,45,[inputs[i]],'teacher')+ADD.arrow(d+45,280,d+45,230);
+      s+=ADD.arrow(d+45,170,d+45,130)+ADD.box(d-2,65,94,60,['Linear', 'softmax'],'decode');
+      s+=ADD.text(d+45,52,(this.teacher?['A','man','sleeps']:['The','person','sleeps'])[i]);
+      if(i<2)s+=ADD.arrow(d+90,197,d+98,197);
+    }
+    s+=ADD.arrow(305,197,430,197)+ADD.text(367,150,'последнее h')+ADD.text(367,175,'→ первое h');
+    s+=ADD.text(160,360,'эмбеддинги слов источника','caption');
+    s+=ADD.text(585,360,this.teacher?'вход: эталонный перевод':'вход: выбранные моделью слова','caption');
+    s+=ADD.text(380,410,'весь источник проходит через одно состояние фиксированного размера','caption');
+    host.innerHTML=ADD.svg(s,760,440,'Рекуррентный encoder–decoder: развёртки обеих сетей и передача состояния');
+  },
+};
+W2.resetBpe();
+QUIZ.figs.generation=h=>h.innerHTML=ADD.flow([
+  {lines:['префикс','[B, T]'],key:'append'}, {lines:['модель','[B, V]'],key:'distribution'},
+  {lines:['правило выбора','ID [B]'],key:'choice'}, {lines:['новый префикс','[B, T+1]'],key:'append'},
+],'Шаг генерации');
+QUIZ.figs.markov=h=>{
+  let s=ADD.text(380,24,'триграммная модель: из всего префикса оставляем два слова','caption');
+  s+=ADD.box(20,60,300,55,['сегодня утром кот ест']);
+  s+=ADD.arrow(320,87,380,87)+ADD.box(390,60,160,55,['кот · ест'],'counts');
+  s+=ADD.arrow(550,87,600,87)+ADD.box(610,60,130,55,['P(w | кот, ест)'],'counts');
+  h.innerHTML=ADD.svg(s,760,145,'Марковское предположение: сокращение контекста до последних n−1 слов');
+};
+W2.jokeIndex=1;
+W2.drawJoke=function(){
+  const data=JSON.parse(document.querySelector('#add-data').textContent).ngramExamples;
+  const n=Number(document.querySelector('#joke-order').value);
+  const row=data.samples[n][this.jokeIndex], words=row.text.split(' '), cp=row.copied;
+  const output=document.querySelector('#joke-output');
+  output.innerHTML='<p>'+words.map((word,i)=>cp && i===cp.start?'<span class="t copied">'+ADD.esc(words.slice(i,i+cp.length).join(' '))+'</span>':cp && i>cp.start && i<cp.start+cp.length?'':ADD.esc(word)).filter(Boolean).join(' ')+'</p>';
+  document.querySelector('#joke-source').textContent=TXT('jokes-source',{index:this.jokeIndex+1,total:data.samples[n].length,training:data.trainingJokes,checked:data.checkedJokes,copied:cp?.length||0});
+  const retained=words.slice(0,n-1), rest=words[n-1]||'EOS';
+  const s=ADD.box(15,35,330,60,[retained.join(' '),`контекст: ${n-1} слова`])+ADD.arrow(345,65,420,65)+ADD.box(430,35,310,60,[rest,'следующее выбранное слово']);
+  document.querySelector('[data-fig="ngram-context"]').innerHTML=ADD.svg(s,760,125,`Начало сохранённой генерации при n=${n}`);
+};
+QUIZ.figs['ngram-context']=h=>W2.drawJoke();
+QUIZ.figs.bpe=h=>W2.bpe(h);
+QUIZ.figs.counts=h=>W2.drawCounts(h);
+QUIZ.figs.shift=h=>{
+  const rows=[['вход 1','BOS','кот','спит'],['цель 1','кот','спит','EOS'],['вход 2','BOS','кот','PAD'],['цель 2','кот','EOS','PAD']];
+  let s=ADD.text(380,24,'вход [B, T] → оценки [B, T, V] → цель [B, T]','caption');
+  rows.forEach((row,i)=>{s+=ADD.text(60,67+i*48,row[0]); row.slice(1).forEach((word,j)=>{
+    const x=140+j*155,y=40+i*48;
+    s+=ADD.box(x,y,140,40,[word],i%2?'target':'shift');
+    if(word==='PAD' && i%2)s+=`<path d="M${x+5} ${y+5} L${x+135} ${y+35}"/>`;
+  });});
+  s+=`<g data-f="loss" tabindex="0">${ADD.text(380,268,'цель PAD: исключена из loss → среднее по остальным позициям','caption')}</g>`;
+  s+=ADD.box(105,295,540,55,['логиты одной позиции: [z₁, z₂, …, zᵥ]'],'logits');
+  h.innerHTML=ADD.svg(s,760,370,'Сдвиг целей и маска PAD');
+};
+/* Операции внутри рекуррентных ячеек и пути состояния. */
+const REC = {
+  path(points,key='') {
+    return `<path ${key?`data-f="${key}" tabindex="0"`:''} d="${points}" marker-end="url(#MARKER)"/>`;
+  },
+  op(x,y,label,key='state') {
+    return `<g data-f="${key}" tabindex="0"><circle cx="${x}" cy="${y}" r="17" style="fill:var(--panel-sunk);stroke:var(--rule-strong)"/>${ADD.text(x,y+5,label)}</g>`;
+  },
+};
+QUIZ.figs['rnn-cell']=h=>{
+  let s=ADD.text(380,25,'одна ячейка: как новый токен меняет состояние','caption');
+  s+=ADD.box(20,100,125,50,['hₜ₋₁ [H]'],'state')+ADD.arrow(145,125,185,125);
+  s+=ADD.box(195,100,105,50,['Wₕ hₜ₋₁'],'state')+ADD.arrow(300,125,345,125);
+  s+=REC.op(365,125,'+');
+  s+=ADD.box(310,235,110,50,['Wₓ eₜ'],'state')+ADD.arrow(365,235,365,147);
+  s+=ADD.box(310,320,110,45,['eₜ [d]'],'embedding')+ADD.arrow(365,320,365,290);
+  s+=ADD.box(450,205,70,40,['b'],'state')+REC.path('M485 205 V170 H365 V147');
+  s+=ADD.arrow(382,125,435,125)+ADD.box(445,100,100,50,['tanh'],'state');
+  s+=ADD.arrow(545,125,600,125)+ADD.box(610,100,125,50,['hₜ [H]'],'state');
+  s+=REC.path('M670 100 V55 H80 V100');
+  s+=ADD.text(380,75,'на следующем шаге hₜ становится предыдущим состоянием','caption');
+  h.innerHTML=ADD.svg(s,760,390,'RNN: входная и рекуррентная матрицы, сложение, tanh и обратная связь');
+};
+QUIZ.figs.rnn=h=>{
+  let s=ADD.text(380,25,'та же ячейка, развёрнутая по времени','caption');
+  s+=ADD.box(5,172,65,45,['h₀=0'],'state');
+  for(let i=0;i<3;i++){
+    const x=130+i*225;
+    s+=ADD.box(x,165,140,60,['RNN','одни веса'],'state');
+    s+=ADD.arrow(i?x-85:70,195,x-5,195);
+    s+=ADD.text(x-30,180,i?`h${i}`:'');
+    s+=ADD.box(x,280,140,45,[`e${i+1} [d]`],'embedding')+ADD.arrow(x+70,280,x+70,230);
+    s+=ADD.text(x+70,355,['кот','ест','рыбу'][i]);
+    s+=ADD.arrow(x+70,165,x+70,120)+ADD.box(x-10,60,160,55,[`P(w${i+2}|контекст)`,'Linear → softmax'],'head');
+  }
+  s+=ADD.arrow(720,195,753,195)+ADD.text(737,175,'h₃');
+  s+=ADD.text(380,390,'h₁: «кот» · h₂: «кот ест» · h₃: «кот ест рыбу»','caption');
+  h.innerHTML=ADD.svg(s,760,420,'RNN во времени: эмбеддинги, перенос состояния и вероятности следующих токенов');
+};
+QUIZ.figs.lstm=h=>{
+  let s=ADD.text(380,25,'память c проходит через умножение и сложение','caption');
+  s+=ADD.text(40,88,'cₜ₋₁')+ADD.arrow(70,82,193,82)+REC.op(215,82,'×','lstm');
+  s+=ADD.arrow(232,82,433,82)+REC.op(455,82,'+','lstm')+ADD.arrow(472,82,725,82)+ADD.text(727,60,'cₜ');
+  s+=ADD.box(175,210,80,45,['σ → f'],'lstm')+ADD.arrow(215,210,215,105);
+  s+=ADD.box(295,210,80,45,['σ → i'],'lstm')+ADD.arrow(335,210,335,160)+REC.path('M335 160 H388');
+  s+=ADD.box(415,210,80,45,['tanh → g'],'lstm')+ADD.arrow(455,210,455,160)+REC.path('M455 160 H422');
+  s+=REC.op(405,160,'×','lstm')+REC.path('M405 143 V125 H455 V105');
+  s+=ADD.box(545,210,80,45,['σ → o'],'lstm')+REC.path('M585 210 V185 H643');
+  s+=REC.path('M660 82 V112')+ADD.box(625,118,70,40,['tanh'],'lstm')+ADD.arrow(660,158,660,163)+REC.op(660,185,'×','lstm');
+  s+=REC.path('M660 202 V245 H735')+ADD.text(718,225,'hₜ');
+  s+=ADD.box(20,305,130,45,['hₜ₋₁'],'lstm')+ADD.box(20,365,130,40,['eₜ'],'lstm');
+  s+=REC.path('M150 327 H180 V290 H585');
+  s+=REC.path('M150 385 H180 V290');
+  for(const x of [215,335,455,585])s+=ADD.arrow(x,290,x,260);
+  s+=ADD.text(425,325,'каждый блок ворот имеет свои матрицы и смещение','caption');
+  s+=ADD.text(425,365,'f: сохранить · i: записать · o: прочитать','caption');
+  h.innerHTML=ADD.svg(s,760,430,'LSTM: забывающие, входные и выходные ворота, кандидат и два состояния');
+};
+QUIZ.figs.gru=h=>{
+  let s=ADD.text(380,25,'одно состояние h: смешиваем прошлое и кандидат','caption');
+  s+=ADD.text(40,80,'hₜ₋₁')+ADD.arrow(70,75,553,75)+REC.op(575,75,'×','gru');
+  s+=ADD.arrow(592,75,673,75)+REC.op(695,75,'+','gru')+ADD.arrow(712,75,752,75);
+  s+=ADD.text(735,50,'hₜ');
+  s+=ADD.box(20,185,120,45,['Wₕ hₜ₋₁+bₕ'],'gru')+REC.path('M90 75 V180');
+  s+=ADD.arrow(140,207,183,207)+REC.op(205,207,'×','gru');
+  s+=ADD.box(165,305,80,45,['σ → r'],'gru')+ADD.arrow(205,305,205,230);
+  s+=ADD.arrow(222,207,303,207)+REC.op(325,207,'+','gru');
+  s+=ADD.box(270,305,110,45,['Wₓ eₜ+bₓ'],'gru')+ADD.arrow(325,305,325,230);
+  s+=ADD.arrow(342,207,390,207)+ADD.box(400,185,75,45,['tanh'],'gru');
+  s+=ADD.arrow(475,207,600,207)+REC.op(620,207,'×','gru');
+  s+=REC.path('M637 207 H695 V98');
+  s+=ADD.box(490,305,80,45,['σ → z'],'gru')+REC.path('M530 305 V130 H575 V98');
+  s+=REC.path('M530 265 H620 V280')+ADD.box(580,285,80,40,['1 − z'],'gru')+ADD.arrow(620,285,620,230);
+  s+=ADD.box(20,400,160,45,['hₜ₋₁ и eₜ'],'gru')+REC.path('M180 422 H700 V375 H205');
+  s+=ADD.arrow(205,375,205,355)+ADD.arrow(325,375,325,355)+ADD.arrow(530,375,530,355);
+  s+=ADD.text(380,465,'r: вклад прошлого в кандидат · z: доля прошлого в новом h','caption');
+  h.innerHTML=ADD.svg(s,760,490,'GRU: reset управляет вкладом прошлого в кандидат, update смешивает кандидат и предыдущее состояние');
+};
+QUIZ.figs.decoding=h=>W2.decoding(h);
+QUIZ.figs.translation=h=>W2.translation(h);
+QUIZ.figs.beam=h=>{
+  let s=ADD.box(10,90,100,50,['BOS']);
+  s+=ADD.arrow(110,105,220,45)+ADD.arrow(110,125,220,180);
+  s+=ADD.text(165,54,'0.6')+ADD.text(165,185,'0.4');
+  s+=ADD.box(230,20,120,50,['A'])+ADD.box(230,155,120,50,['B']);
+  s+=ADD.arrow(350,45,475,45)+ADD.text(410,30,'0.5');
+  s+=ADD.arrow(350,180,475,180)+ADD.text(410,165,'0.9');
+  s+=ADD.box(485,20,255,50,['A → EOS: 0.30'])+ADD.box(485,155,255,50,['B → EOS: 0.36']);
+  s+=ADD.text(380,250,'остальные продолжения: после A — 0.5, после B — 0.1','caption');
+  h.innerHTML=ADD.svg(s,760,275,'Greedy и поиск последовательности');
+};
+/* Входы при генерации и teacher forcing; учебный расчёт перплексии. */
+W2.forcingMode='generation';
+W2.forcingError=false;
+W2.forcingSequence=function(){
+  const gold=['кот','спит','EOS'];
+  const chosen=[this.forcingError?'пёс':'кот','спит','EOS'];
+  const previous=this.forcingMode==='teacher'?gold:chosen;
+  return {gold,chosen,contexts:gold.map((_,i)=>['BOS',...previous.slice(0,i)])};
+};
+W2.drawForcing=function(host){
+  const teacher=this.forcingMode==='teacher', data=this.forcingSequence();
+  let s=ADD.text(380,24,teacher?'обучение: следующий вход берём из эталонного текста':'генерация: следующий вход берём из своего выбора','caption');
+  for(let i=0;i<3;i++){
+    const y=60+i*180;
+    s+=ADD.text(35,y+35,String(i+1));
+    s+=ADD.box(75,y,250,60,['вход',data.contexts[i].join(' · ')],'context');
+    s+=ADD.arrow(325,y+30,360,y+30)+ADD.box(365,y,170,60,['P(токен | контекст)','[V]'],'distribution');
+    s+=ADD.arrow(535,y+30,585,y+30)+ADD.box(590,y,145,60,[teacher?'прогноз':'выбор',data.chosen[i]],'choice');
+    if(teacher){
+      s+=ADD.box(590,y+85,145,34,[`эталон: ${data.gold[i]}`],'target');
+      s+=`<path d="M662 ${y+60} V${y+80}" style="stroke:var(--cls-1)" marker-end="url(#MARKER)"/>`;
+      s+=ADD.text(485,y+108,i===0&&this.forcingError?'ошибка → штраф':'сравниваем с целью','caption');
+    }
+    if(i<2){
+      const fromY=teacher?y+119:y+60, turnY=y+140;
+      s+=`<path data-feedback="${teacher?'gold':'chosen'}" d="M${teacher?730:662} ${fromY} V${turnY} H195 V${y+175}" style="stroke:var(--cls-0);stroke-width:2" marker-end="url(#MARKER)"/>`;
+      s+=ADD.text(310,turnY-9,teacher?`во вход: ${data.gold[i]}`:`во вход: ${data.chosen[i]}`,'caption');
+    }
+  }
+  s+=ADD.text(380,575,teacher?'эталонный текст: «кот спит» · EOS учит завершать текст':'выбран EOS → останавливаем генерацию','caption');
+  host.innerHTML=ADD.svg(s,760,605,'Авторегрессионная генерация и teacher forcing: источник токена для следующего входа');
+  document.querySelector('#forcing-note').innerHTML=TXT(teacher?'forcing-teacher-note':'forcing-generation-note');
+  const button=document.querySelector('#forcing-error');
+  button.setAttribute('aria-pressed',String(this.forcingError));
+  button.textContent=this.forcingError?'Убрать ошибку':'Добавить ошибку: «кот» → «пёс»';
+};
+QUIZ.figs.autoregression=h=>W2.drawForcing(h);
+W2.perplexity=function(middle=.25){
+  const probabilities=[.5,middle,.5], penalties=probabilities.map(p=>-Math.log(p));
+  const loss=penalties.reduce((a,b)=>a+b,0)/penalties.length;
+  return {probabilities,penalties,loss,ppl:Math.exp(loss),geometric:Math.exp(-loss)};
+};
+W2.drawPerplexity=function(host){
+  const probability=Number(document.querySelector('#ppl-probability').value), data=this.perplexity(probability);
+  let s=ADD.text(380,25,'teacher forcing на проверочном тексте: читаем P правильной цели','caption');
+  ['кот','спит','EOS'].forEach((word,i)=>{
+    const x=20+i*250, p=data.probabilities[i];
+    s+=ADD.text(x+110,60,word);
+    s+=ADD.box(x,85,220,48,[`P = ${p.toFixed(2)}`],'token-prob');
+    s+=`<g data-f="token-prob" tabindex="0"><rect x="${x}" y="142" width="220" height="12"/><rect class="accent" x="${x}" y="142" width="${220*p}" height="12"/></g>`;
+    s+=ADD.arrow(x+110,165,x+110,190)+ADD.box(x,200,220,48,[`−ln P = ${data.penalties[i].toFixed(3)}`],'token-loss');
+    s+=`<path d="M${x+110} 248 V275 H380 V295" marker-end="url(#MARKER)"/>`;
+  });
+  s+=ADD.box(250,300,260,48,[`среднее L = ${data.loss.toFixed(3)}`],'loss');
+  s+=ADD.arrow(380,348,380,380)+ADD.box(250,390,260,48,[`exp(L) = ${data.ppl.toFixed(3)}`],'ppl');
+  host.innerHTML=ADD.svg(s,760,465,'Перплексия: вероятности правильных токенов, отрицательные логарифмы, среднее и экспонента');
+  document.querySelector('#ppl-probability-value').textContent=probability.toFixed(2);
+  document.querySelector('#ppl-example-result').textContent=TXT('ppl-example-result',{loss:data.loss.toFixed(3),ppl:data.ppl.toFixed(3),geometric:data.geometric.toFixed(3)});
+  document.querySelector('#ppl-example pre [data-f="token-prob"]').textContent=`correct_probabilities = [0.5, ${probability.toFixed(2)}, 0.5]`;
+};
+QUIZ.figs.perplexity=h=>W2.drawPerplexity(h);
+
+QUIZ.figs['ppl-dependencies']=h=>{
+  const inputs=[['проверочный корпус','язык · тема · стиль'],['обучающий корпус','объём · близость темы'],['модель и обучение','параметры · шаги'],['токенизатор','словарь · части слов']];
+  let s='';
+  inputs.forEach((lines,i)=>{
+    const x=10+i*190;
+    s+=ADD.box(x,25,170,80,lines);
+    s+=ADD.arrow(x+85,105,380,190);
+  });
+  s+=ADD.box(235,200,290,65,['PPL','для этих условий']);
+  h.innerHTML=ADD.svg(s,760,290,'Перплексия зависит от модели, обучения, проверочного корпуса и токенизации');
+};
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelector('#forcing-mode').onchange=e=>{W2.forcingMode=e.target.value;W2.drawForcing(document.querySelector('[data-fig="autoregression"]'));};
+  document.querySelector('#forcing-error').onclick=()=>{W2.forcingError=!W2.forcingError;W2.drawForcing(document.querySelector('[data-fig="autoregression"]'));};
+  document.querySelector('#ppl-probability').oninput=()=>W2.drawPerplexity(document.querySelector('[data-fig="perplexity"]'));
+
+  document.querySelector('#bpe-merge').onclick=()=>{W2.merge();W2.bpe(document.querySelector('[data-fig="bpe"]'));};
+  document.querySelector('#bpe-reset').onclick=()=>{W2.resetBpe();W2.bpe(document.querySelector('[data-fig="bpe"]'));};
+  document.querySelector('#smooth').onchange=()=>W2.drawCounts(document.querySelector('[data-fig="counts"]'));
+  for(const id of ['temperature','top-p'])document.getElementById(id).oninput=()=>W2.decoding(document.querySelector('[data-fig="decoding"]'));
+  document.querySelector('#teacher-toggle').onclick=e=>{W2.teacher=!W2.teacher;W2.translation(document.querySelector('[data-fig="translation"]'));e.target.textContent=W2.teacher?'Показать вход при генерации':'Показать вход при обучении';};
+  W2.drawJoke();
+  document.querySelector('#joke-order').onchange=()=>W2.drawJoke();
+  document.querySelector('#joke-next').onclick=()=>{W2.jokeIndex=(W2.jokeIndex+1)%3;W2.drawJoke();};
+  const data=JSON.parse(document.querySelector('#add-data').textContent);
+  const measured=data.pplExamples, config=measured.rows[0].config;
+  document.querySelector('#ppl-jokes-conditions').innerHTML=TXT('ppl-jokes-conditions',{vocab:measured.vocabSize,train:config.n_train_jokes,epochs:config.epochs,hidden:config.hidden,test:measured.testJokes});
+  document.querySelector('#ppl-jokes-table').innerHTML=ADD.table(['Модель','PPL на отложенных анекдотах'],measured.rows.map(row=>[row.model,row.ppl.toFixed(1)]));
+  document.querySelector('#decode-measured').innerHTML=ADD.table(['Правило','Доля повторов','Distinct-2'],data.decodeTable.rows.map(r=>[r.method,(r.repetition*100).toFixed(1)+'%',r.distinct2.toFixed(3)]))
+    + ['greedy','sampling'].filter(k=>data.decodeSamples[k]).map(k=>`<details class="optional"><summary>${ADD.esc(k)}: пример генерации</summary><div class="prose"><p>${ADD.esc(data.decodeSamples[k][0])}</p></div></details>`).join('');
+});
+
+</script>
+</body>
+</html>
+
+<!-- built from demo/ · sha256:b015b70739bc6ea73fd04ff6f134058f777ac9d42c644d3e71803816d239d504 -->

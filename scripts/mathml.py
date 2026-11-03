@@ -4,7 +4,7 @@ r"""Inline formulas for the text chunks: a small LaTeX dialect <-> the MathML th
     $d_{head}$  $x_t^2$       msub / msup / msubsup; braces group into an <mrow>
     $\sqrt{d_k}$  $\frac{x-μ}{σ}$
     $\mathrm{exp}(x)$         upright function name;  $\mathit{PE}$  one italic multi-letter identifier
-    $\text{head}_i$  $\hspace{0.4em}$  $\munder{∑}{i}$  $\mover{h}{~}$
+    $\text{head}_i$  $\hspace{0.4em}$  $\sum_{i=1}^{M}$  $\prod_{i=1}^{M}$  $\mover{h}{~}$
     ${−∞}$                    outer braces wrap the whole formula in one <mrow>
 
 Letters (Latin, Greek, ℝ, ℓ, ∞) are identifiers, digits are numbers, everything else is an operator; the unicode
@@ -98,6 +98,7 @@ class Parser:
             self.i -= 1
             return [("mrow", self.group())]
         if kind == "cmd":
+            if val in ("sum", "prod"): return [("mo", "∑" if val == "sum" else "∏")]
             if val == "mathrm": return [("mi", self.raw_group(), "normal")]
             if val == "mathit": return [("mi", self.raw_group())]
             if val == "text": return [("mtext", self.raw_group())]
@@ -127,6 +128,10 @@ class Parser:
             return base
         if len(base) != 1: raise ValueError("script on a group")
         b = base[0]
+        if b[0] == "mo" and b[1] in ("∑", "∏"):
+            if sub is not None and sup is not None: return [("munderover", [b, sub, sup])]
+            if sub is not None: return [("munder", [b, sub])]
+            return [("mover", [b, sup])]
         if sub is not None and sup is not None: return [("msubsup", [b, sub, sup])]
         if sub is not None: return [("msub", [b, sub])]
         return [("msup", [b, sup])]
@@ -189,7 +194,7 @@ def parse_mathml(src):
         elif tag == "mspace":
             if set(attrs) != {"width"} or not selfclose: return None
             cur.append(("mspace", attrs["width"])); pos = t.end()
-        elif tag in ("mrow", "msub", "msup", "msubsup", "msqrt", "mfrac", "munder", "mover"):
+        elif tag in ("mrow", "msub", "msup", "msubsup", "msqrt", "mfrac", "munder", "mover", "munderover"):
             if attrs: return None
             node = (tag, []); cur.append(node); stack.append((node, cur)); cur = node[1]; pos = t.end()
         else:
@@ -226,6 +231,11 @@ def to_latex(node, script=False):
     if kind == "mfrac": return "\\frac" + arg(node[1][0], True) + arg(node[1][1], True)
     if kind == "munder": return "\\munder" + arg(node[1][0], True) + arg(node[1][1], True)
     if kind == "mover": return "\\mover" + arg(node[1][0], True) + arg(node[1][1], True)
+    if kind == "munderover":
+        operator, lower, upper = node[1]
+        if operator not in (("mo", "∑"), ("mo", "∏")): raise ValueError("unknown large operator")
+        command = "\\sum" if operator[1] == "∑" else "\\prod"
+        return command + "_" + arg(lower, True) + "^" + arg(upper, True)
     if kind == "msub": return base(node[1][0]) + "_" + arg(node[1][1])
     if kind == "msup": return base(node[1][0]) + "^" + arg(node[1][1])
     if kind == "msubsup": return base(node[1][0]) + "_" + arg(node[1][1]) + "^" + arg(node[1][2])

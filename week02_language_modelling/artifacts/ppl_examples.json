@@ -1,0 +1,44 @@
+{
+  "source": "autumn-2026:week02_language_modelling/artifacts/demo_data.json",
+  "sourceCommit": "b0ae71004574029a3bfaa7ca830cdb7b7db39b7a",
+  "testJokes": 5000,
+  "vocabSize": 8000,
+  "rows": [
+    {
+      "model": "RNN",
+      "ppl": 256.8279310882003,
+      "config": {
+        "emb": 256,
+        "hidden": 256,
+        "cell": "rnn",
+        "epochs": 3,
+        "n_train_jokes": 12000,
+        "batch_size": 128
+      }
+    },
+    {
+      "model": "GRU",
+      "ppl": 252.3196778500657,
+      "config": {
+        "emb": 256,
+        "hidden": 256,
+        "cell": "gru",
+        "epochs": 3,
+        "n_train_jokes": 12000,
+        "batch_size": 128
+      }
+    },
+    {
+      "model": "LSTM",
+      "ppl": 309.48142772000386,
+      "config": {
+        "emb": 256,
+        "hidden": 256,
+        "cell": "lstm",
+        "epochs": 3,
+        "n_train_jokes": 12000,
+        "batch_size": 128
+      }
+    }
+  ]
+}

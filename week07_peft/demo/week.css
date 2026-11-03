@@ -1,9 +1,0 @@
-/* week 7 — additions to demo_base/base.css */
-.illus { display: inline-block; font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase;
-  padding: 1px 7px; margin-left: 6px; border: 1px dashed var(--ink-3); border-radius: 4px; color: var(--ink-3); vertical-align: 1px; }
-.toy-grid { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 18px; align-items: start; }
-.toy-grid.wide { grid-template-columns: minmax(0, 520px) minmax(0, 1fr); }
-.toy-grid > div:last-child { display: flex; flex-direction: column; gap: 12px; }
-.toy-row { font-size: 15px; line-height: 1.45; color: var(--ink-2); padding: 6px 10px; border-left: 3px solid var(--rule); }
-.toy-row.on { border-left-color: var(--cls-1); color: var(--ink); }
-@media (max-width: 760px) { .toy-grid, .toy-grid.wide { grid-template-columns: minmax(0, 1fr); } }

@@ -1,0 +1,49 @@
+/* Связи схем, формул и кода на страницах ADD. */
+[data-link-scope] { margin: 18px 0; }
+[data-link-scope] svg { width: 100%; max-width: 760px; height: auto; display: block; margin: 0 auto; }
+[data-link-scope] svg text { fill: var(--ink); font-family: var(--mono); font-size: 14px; }
+[data-link-scope] svg .caption { fill: var(--ink-2); font-family: var(--body); font-size: 16px; }
+[data-link-scope] svg rect { fill: var(--panel-sunk); stroke: var(--rule-strong); }
+[data-link-scope] svg path, [data-link-scope] svg line { stroke: var(--ink-3); fill: none; }
+[data-link-scope] svg .accent { fill: color-mix(in srgb, var(--cls-0) 15%, var(--panel)); }
+[data-f] { transition: background .12s, fill .12s; }
+svg [data-f] { cursor: pointer; }
+svg [data-f].hi rect, svg rect[data-f].hi { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)); stroke: var(--cls-1); }
+.formula [data-f].hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .ln { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre.code { overflow-x: hidden; }
+.add-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.add-controls label { display: flex; gap: 8px; align-items: center; font-size: 16px; }
+.add-controls output { font-family: var(--mono); }
+.add-result { font-family: var(--mono); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.add-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.add-table td, .add-table th { padding: 8px 10px; border-bottom: 1px solid var(--rule); text-align: left; }
+.add-table button { padding: 3px 8px; }
+.add-links { display: flex; gap: 8px 18px; flex-wrap: wrap; font-size: 16px; }
+.sources { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .add-table td, .add-table th { padding: 6px 3px; font-size: 13px; } }
+svg text[data-f].hi, svg [data-f].hi > text { fill: var(--cls-1); }
+[data-link-scope] svg rect.hit { fill: transparent; stroke: none; }
+.panel-body > [data-fig], .qz-q > [data-link-scope] { overflow-x: auto; }
+@media (max-width: 600px) { [data-link-scope] svg { min-width: 620px; } }
+.add-controls label { white-space: nowrap; }
+#normalization-table { overflow-x: auto; }
+svg.word2vec-diagram [data-f].hi > rect:not(.hit) { stroke: var(--cls-1) !important; stroke-width: 2; }
+svg.word2vec-diagram [data-f].hi > text { fill: var(--cls-1) !important; }
+
+svg [data-f].hi circle { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)) !important; stroke: var(--cls-1) !important; }
+
+
+#ppl-after-link { display: none; }
+#loss:has(.qz[data-q="q-ppl-link"].done) #ppl-after-link { display: block; }
+#ppl-jokes-table { overflow-x: auto; }
+
+
+/* Отдельные выражения центрируются; длинная строка прокручивается внутри блока. */
+.equation { display: flex; overflow-x: auto; padding: 10px 2px; margin: 10px 0; }
+.equation > span { flex: 0 0 auto; margin-inline: auto; }
+.equation math { math-style: normal; font-size: 1.15em; }
+.equation munder, .equation munderover { math-style: normal; }
+.formula .equation math { font-size: 1.15em; margin: 0; }
+.formula p { font-size: 17px; line-height: 1.6; margin: 8px 0 18px; }
+@media (max-width: 600px) { .equation math, .formula .equation math { font-size: 1em; } }

@@ -4,7 +4,7 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 
-# Weights and corpora live on the Hugging Face Hub (scripts/hub.py), not in git
+# Локальные веса и корпуса основного курса остаются вне git
 week*/artifacts/*.pt
 week*/artifacts/*.npz
 week*/data/

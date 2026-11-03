@@ -1,0 +1,337 @@
+{
+  "steps": [
+    {
+      "name": "loaded",
+      "expr": "if(document.documentElement.lang!=='ru')throw Error('lang');if(document.querySelectorAll('.qz-nofig').length)throw Error('missing figure'); if(document.body.innerText.includes('{{'))throw Error('placeholder'); if([...document.querySelectorAll('[data-fig]')].some(h=>!h.querySelector('svg')))throw Error('empty diagram');return document.querySelectorAll('.qz').length+' вопросов, '+document.querySelectorAll('svg').length+' SVG';"
+    },
+    {
+      "name": "independent formulas and reveal",
+      "expr": "QUIZ.reset();const after=document.querySelector('#ppl-after-link'),visible=()=>getComputedStyle(after).display!=='none';if(visible())throw Error('demo spoils answer');if(document.querySelector('#loss').innerText.includes('exp('))throw Error('visible exponential before reveal');const equations=document.querySelector('#loss-equations');if(!equations.textContent.includes('∏')||equations.textContent.includes('exp'))throw Error('independent definition');const q=document.querySelector('[data-q=\"q-ppl-link\"]');q.querySelector('textarea').value='логарифм произведения — сумма';q.querySelector('textarea').dispatchEvent(new Event('input'));q.querySelector('.qz-check').click();if(!visible()||!q.querySelector('.qz-a').textContent.includes('exp'))throw Error('missing reveal');const answer=q.querySelector('.qz-a'),sum=answer.querySelector('munderover > mo').getBoundingClientRect(),upper=answer.querySelector('munderover > mi').getBoundingClientRect();if(upper.y>=sum.y)throw Error('answer limits');const mos=[...equations.querySelectorAll('math')[1].querySelectorAll('mo')].filter(n=>['(',')'].includes(n.textContent));const left=mos[0].getBoundingClientRect(),right=mos.at(-1).getBoundingClientRect();if(Math.abs(left.height-right.height)>1)throw Error('mismatched brackets');QUIZ.reset();if(visible())throw Error('reset did not hide demo');return 'product definition shown first; relation and demo revealed after answer; reset hides them';"
+    },
+    {
+      "name": "measured joke perplexities",
+      "expr": "const data=JSON.parse(document.querySelector('#add-data').textContent).pplExamples;const rows=[...document.querySelectorAll('#ppl-jokes-table tbody tr')];if(rows.length!==data.rows.length)throw Error('rows');rows.forEach((tr,i)=>{const cells=[...tr.cells].map(td=>td.textContent);if(cells[0]!==data.rows[i].model||cells[1]!==data.rows[i].ppl.toFixed(1))throw Error('source mismatch');for(const key of ['n_train_jokes','epochs','hidden'])if(data.rows[i].config[key]!==data.rows[0].config[key])throw Error('shared conditions');});const caption=document.querySelector('#ppl-jokes-conditions').textContent;for(const value of [data.testJokes,data.vocabSize,data.rows[0].config.n_train_jokes])if(!caption.includes(String(value)))throw Error('missing conditions');return 'three measured PPL values and evaluation conditions match DSBA artifact';"
+    },
+    {
+      "name": "BPE counts decoding",
+      "expr": "W2.resetBpe();const n=W2.pieces.flat().length;document.querySelector('#bpe-merge').click();if(W2.pieces.flat().length>=n)throw Error('BPE merge');document.querySelector('#bpe-reset').click();if(W2.pieces.flat().length!==n)throw Error('BPE reset');document.querySelector('#smooth').click();if(W2.counts(true).some(p=>p<=0))throw Error('smoothing');for(const t of [.2,1,2])for(const p of [.1,.5,.9,1]){const d=W2.distribution(t,p);if(Math.abs(d.filtered.reduce((a,b)=>a+b,0)-1)>1e-10)throw Error('normalization');const mass=d.p.reduce((s,v,i)=>s+(d.mask[i]?v:0),0);if(mass+1e-10<p)throw Error('nucleus');}const teacher=W2.teacher;document.querySelector('#teacher-toggle').click();if(W2.teacher===teacher)throw Error('teacher');return 'BPE, smoothing, nucleus and teacher forcing work';"
+    },
+    {
+      "name": "ngram examples",
+      "expr": "const d=JSON.parse(document.querySelector('#add-data').textContent).ngramExamples;const select=document.querySelector('#joke-order');for(const n of [3,5]){select.value=n;select.dispatchEvent(new Event('change'));const seen=[];for(let i=0;i<3;i++){const row=d.samples[n][W2.jokeIndex];const text=document.querySelector('#joke-output').textContent;if(text!==row.text)throw Error('sample mismatch');const match=document.querySelector('#joke-output .copied');if(row.copied){const expected=row.text.split(' ').slice(row.copied.start,row.copied.start+row.copied.length).join(' ');if(match?.textContent!==expected)throw Error('copied span');}else if(match)throw Error('invented match');seen.push(text);document.querySelector('#joke-next').click();}if(new Set(seen).size!==3)throw Error('cycle');}select.value=3;select.dispatchEvent(new Event('change'));return 'six source samples, order switch, cycling and verified spans';"
+    },
+    {
+      "name": "autoregression and teacher forcing",
+      "expr": "const select=document.querySelector('#forcing-mode'),error=document.querySelector('#forcing-error');select.value='generation';select.dispatchEvent(new Event('change'));if(W2.forcingError)error.click();const clean=W2.forcingSequence();error.click();const wrong=W2.forcingSequence();if(wrong.contexts[1].join(' ')!=='BOS пёс'||wrong.contexts[2].join(' ')!=='BOS пёс спит')throw Error('generation feedback');if(document.querySelectorAll('[data-feedback=\"chosen\"]').length!==2)throw Error('generation paths');select.value='teacher';select.dispatchEvent(new Event('change'));const forced=W2.forcingSequence();if(forced.chosen[0]!=='пёс'||forced.contexts[1].join(' ')!=='BOS кот'||forced.contexts[2].join(' ')!=='BOS кот спит')throw Error('teacher forcing');if(document.querySelectorAll('[data-feedback=\"gold\"]').length!==2)throw Error('teacher paths');if(!document.querySelector('#forcing-note').textContent.includes('эталонного'))throw Error('teacher explanation');error.click();select.value='generation';select.dispatchEvent(new Event('change'));return 'own choices feed generation; gold tokens feed training after an error';"
+    },
+    {
+      "name": "perplexity against Python",
+      "expr": "const expected=[{\"p\": 0.05, \"loss\": 1.4606755448912938, \"ppl\": 4.308869380063767, \"penalties\": [0.6931471805599453, 2.995732273553991, 0.6931471805599453]}, {\"p\": 0.25, \"loss\": 0.9241962407465937, \"ppl\": 2.519842099789746, \"penalties\": [0.6931471805599453, 1.3862943611198906, 0.6931471805599453]}, {\"p\": 0.5, \"loss\": 0.6931471805599453, \"ppl\": 2.0, \"penalties\": [0.6931471805599453, 0.6931471805599453, 0.6931471805599453]}, {\"p\": 0.95, \"loss\": 0.4791958851691471, \"ppl\": 1.614775415135701, \"penalties\": [0.6931471805599453, 0.05129329438755058, 0.6931471805599453]}];const input=document.querySelector('#ppl-probability');let previous=Infinity;for(const row of expected){input.value=row.p;input.dispatchEvent(new Event('input'));const actual=W2.perplexity(row.p);for(const key of ['loss','ppl'])if(Math.abs(actual[key]-row[key])>1e-12)throw Error(key+' mismatch');actual.penalties.forEach((v,i)=>{if(Math.abs(v-row.penalties[i])>1e-12)throw Error('penalty mismatch');});if(actual.ppl>=previous)throw Error('monotonicity');previous=actual.ppl;if(!document.querySelector('#ppl-example-result').textContent.includes(actual.ppl.toFixed(3)))throw Error('result');if(!document.querySelector('#ppl-example pre').textContent.includes(row.p.toFixed(2)))throw Error('code does not follow control');}if(W2.perplexity(0).ppl!==Infinity)throw Error('zero probability');input.value=.25;input.dispatchEvent(new Event('input'));return 'probabilities, penalties, mean and PPL match displayed Python; zero probability gives infinity';"
+    },
+    {
+      "name": "hover and focus",
+      "expr": "for(const scope of document.querySelectorAll('[data-link-scope]')){for(const line of scope.querySelectorAll('pre [data-f]')){line.dispatchEvent(new Event('focusin',{bubbles:true}));if(!scope.querySelector('svg [data-f=\"'+line.dataset.f+'\"].hi')&&!scope.querySelector('.formula [data-f=\"'+line.dataset.f+'\"].hi'))throw Error('no target '+line.dataset.f);line.dispatchEvent(new Event('focusout',{bubbles:true}));}}return 'all code links work';"
+    },
+    {
+      "name": "answer and persistence",
+      "expr": "for(const q of Object.values(QUIZ.data)){const h=document.querySelector('[data-q=\"'+q.key+'\"]');if(q.type==='pick'||q.type==='point'){for(const o of q.opts.filter(o=>o.right))h.querySelector('[data-k=\"'+o.k+'\"]').click();h.querySelector('.qz-check')?.click();}else if(q.type==='sort'){[...h.querySelectorAll('tr')].forEach((tr,i)=>{[...tr.querySelectorAll('button')].find(b=>b.dataset.b===q.items[i].bins[0]).click();});h.querySelector('.qz-check').click();}else if(q.type==='write'){h.querySelector('textarea').value='проверка';h.querySelector('textarea').dispatchEvent(new Event('input'));h.querySelector('.qz-check').click();}if(!h.classList.contains('done'))throw Error('not finished '+q.key);if(h.querySelector('.qz-verdict.no'))throw Error('wrong grading '+q.key);}const key='quiz:'+document.querySelector('meta[name=\"quiz-store\"]').content;const state=JSON.parse(localStorage.getItem(key));if(Object.values(state).filter(s=>s.done).length!==Object.keys(QUIZ.data).length)throw Error('persistence');return document.querySelector('#quiz-progress').textContent;"
+    },
+    {
+      "name": "reset",
+      "expr": "QUIZ.reset();if(document.querySelector('.qz.done'))throw Error('reset');const p=document.querySelector('[data-pick]');if(p){p.dispatchEvent(new MouseEvent('click',{bubbles:true}));if(!p.closest('.qz').classList.contains('done'))throw Error('point after reset');}return 'reset and point work';"
+    },
+    {
+      "name": "SVG geometry",
+      "expr": "document.querySelectorAll('details').forEach(d=>d.open=true);const bad=[];for(const svg of document.querySelectorAll('svg')){const v=svg.viewBox.baseVal;const ts=[...svg.querySelectorAll('text')];for(let i=0;i<ts.length;i++){const t=ts[i],b=t.getBBox();if(b.x<-.5||b.y<-.5||b.x+b.width>v.width+.5||b.y+b.height>v.height+.5)bad.push('clip '+t.textContent);for(let j=i+1;j<ts.length;j++){const c=ts[j].getBBox();if(b.x<c.x+c.width-1&&c.x<b.x+b.width-1&&b.y<c.y+c.height-1&&c.y<b.y+b.height-1)bad.push('overlap '+t.textContent+' / '+ts[j].textContent);}}}if(bad.length)throw Error(bad.join(' | '));return 'all SVG labels fit';"
+    },
+    {
+      "name": "loss formula layout",
+      "expr": "const host=document.querySelector('#loss-equations');if(host.querySelectorAll('math').length!==2)throw Error('equations');const sum=host.querySelector('munderover > mo').getBoundingClientRect(),upper=host.querySelector('munderover > mi').getBoundingClientRect(),lower=host.querySelector('munderover > mrow').getBoundingClientRect();if(upper.y>=sum.y||lower.y<=sum.y)throw Error('sum limits');for(const limit of [upper,lower])if(Math.abs(limit.x+limit.width/2-sum.x-sum.width/2)>3)throw Error('limit alignment');const formulas=[...host.querySelectorAll('math')].map(n=>n.getBoundingClientRect());if(formulas.some(r=>r.height>130||r.width>500))throw Error('broken math layout');if(formulas[1].top<formulas[0].bottom)throw Error('equation overlap');if(!host.nextElementSibling.textContent.includes('число целевых позиций'))throw Error('symbols');return 'sum limits centred above and below; equations on separate lines; symbols outside';"
+    },
+    {
+      "name": "all equation layouts",
+      "expr": "window.checkEquations=()=>{const failures=[];let count=0;for(const eq of document.querySelectorAll('.equation')){const m=eq.querySelector('math'),r=m.getBoundingClientRect(),p=eq.getBoundingClientRect();if(!r.width||!r.height)continue;count++;if(!Number.isFinite(r.width)||r.height>170)failures.push('dimensions '+m.textContent);if(r.width<=eq.clientWidth-4){if(Math.abs(r.x+r.width/2-p.x-p.width/2)>3)failures.push('not centred '+m.textContent);}else if(r.left<p.left-1||eq.scrollWidth<=eq.clientWidth)failures.push('clipped long formula '+m.textContent);const brackets=[];for(const mo of m.querySelectorAll('mo')){if(mo.textContent==='(')brackets.push(mo);if(mo.textContent===')'){const left=brackets.pop();if(!left||Math.abs(left.getBoundingClientRect().height-mo.getBoundingClientRect().height)>2)failures.push('brackets '+m.textContent);}}if(brackets.length)failures.push('unclosed brackets');for(const op of m.querySelectorAll('mo')){if(!['∑','∏'].includes(op.textContent))continue;const parent=op.parentElement;if(!['munder','munderover'].includes(parent.localName)){failures.push('operator limits '+m.textContent);continue;}const base=op.getBoundingClientRect(),lo=parent.children[1].getBoundingClientRect();if(lo.y<=base.y||Math.abs(lo.x+lo.width/2-base.x-base.width/2)>3)failures.push('lower limit '+m.textContent);if(parent.localName==='munderover'){const up=parent.children[2].getBoundingClientRect();if(up.y>=base.y||Math.abs(up.x+up.width/2-base.x-base.width/2)>3)failures.push('upper limit '+m.textContent);}}}if(document.querySelector('.formula math:not(.equation math)'))failures.push('formula mixed with prose');if(failures.length)throw Error(failures.join(' | '));return count+' equations centred, brackets and limits fit';};document.querySelector('[data-q=\"q-ppl-link\"] .qz-check')?.click();return window.checkEquations();"
+    }
+  ],
+  "screens": [
+    {
+      "sel": "#hero",
+      "file": "add02_hero.png",
+      "expr": "document.querySelectorAll('details').forEach(d=>d.open=false);document.documentElement.setAttribute('data-theme','light')"
+    },
+    {
+      "sel": "#lm",
+      "file": "add02_lm.png",
+      "height": 1450
+    },
+    {
+      "sel": "#bpe",
+      "file": "add02_bpe.png",
+      "height": 1450
+    },
+    {
+      "sel": "#count",
+      "file": "add02_count.png",
+      "height": 1450
+    },
+    {
+      "sel": "#loss",
+      "file": "add02_loss.png",
+      "height": 1450
+    },
+    {
+      "sel": "#rnn",
+      "file": "add02_rnn.png",
+      "height": 1450
+    },
+    {
+      "sel": "#decode",
+      "file": "add02_decode.png",
+      "height": 1450
+    },
+    {
+      "sel": "#translate",
+      "file": "add02_translate.png",
+      "height": 1450
+    },
+    {
+      "sel": "#decode",
+      "file": "add02_mobile.png",
+      "width": 390,
+      "height": 1200
+    },
+    {
+      "sel": "#rnn",
+      "file": "add02_dark.png",
+      "expr": "document.documentElement.setAttribute('data-theme','dark')",
+      "height": 1450
+    },
+    {
+      "sel": "#ngram-examples",
+      "file": "add02_jokes3.png",
+      "height": 900,
+      "expr": "document.documentElement.setAttribute('data-theme','light');W2.jokeIndex=1;document.querySelector('#joke-order').value=3;W2.drawJoke()"
+    },
+    {
+      "sel": "#ngram-examples",
+      "file": "add02_jokes5.png",
+      "height": 900,
+      "expr": "document.querySelector('#joke-order').value=5;W2.drawJoke()"
+    },
+    {
+      "sel": "[data-fig=\"rnn-cell\"]",
+      "file": "add02_cell.png",
+      "height": 900
+    },
+    {
+      "sel": "[data-fig=\"rnn\"]",
+      "file": "add02_unroll.png",
+      "height": 900
+    },
+    {
+      "sel": "[data-fig=\"lstm\"]",
+      "file": "add02_lstm.png",
+      "height": 900
+    },
+    {
+      "sel": "[data-fig=\"gru\"]",
+      "file": "add02_gru.png",
+      "height": 900
+    },
+    {
+      "sel": "#translate .panel",
+      "file": "add02_seq2seq.png",
+      "height": 1100
+    },
+    {
+      "sel": "#translate .panel",
+      "file": "add02_seq2seq_generation.png",
+      "height": 1100,
+      "expr": "document.querySelector('#teacher-toggle').click()"
+    },
+    {
+      "sel": "[data-fig=\"lstm\"]",
+      "file": "add02_lstm_dark.png",
+      "height": 900,
+      "expr": "document.documentElement.setAttribute('data-theme','dark')"
+    },
+    {
+      "sel": "[data-fig=\"lstm\"]",
+      "file": "add02_lstm_mobile.png",
+      "width": 390,
+      "height": 1000,
+      "expr": "document.documentElement.setAttribute('data-theme','light')"
+    },
+    {
+      "sel": "#loss-equations",
+      "file": "add02_loss_formula_light.png",
+      "height": 900,
+      "expr": "document.documentElement.setAttribute('data-theme','light')"
+    },
+    {
+      "sel": "#loss-equations",
+      "file": "add02_loss_formula_dark.png",
+      "height": 900,
+      "expr": "document.documentElement.setAttribute('data-theme','dark')"
+    },
+    {
+      "sel": "#loss-equations",
+      "file": "add02_loss_formula_mobile.png",
+      "width": 390,
+      "height": 900,
+      "expr": "document.documentElement.setAttribute('data-theme','light')"
+    },
+    {
+      "sel": "#forcing-example",
+      "file": "add02_autoregression.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','light');W2.forcingMode='generation';W2.forcingError=true;document.querySelector('#forcing-mode').value='generation';W2.drawForcing(document.querySelector('[data-fig=autoregression]'))"
+    },
+    {
+      "sel": "#forcing-example",
+      "file": "add02_teacher_forcing.png",
+      "height": 1100,
+      "expr": "W2.forcingMode='teacher';document.querySelector('#forcing-mode').value='teacher';W2.drawForcing(document.querySelector('[data-fig=autoregression]'))"
+    },
+    {
+      "sel": "#forcing-example",
+      "file": "add02_teacher_dark.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','dark')"
+    },
+    {
+      "sel": "#ppl-example",
+      "file": "add02_perplexity.png",
+      "height": 1100,
+      "expr": "document.querySelector('[data-q=\"q-ppl-link\"] .qz-check')?.click();document.documentElement.setAttribute('data-theme','light')"
+    },
+    {
+      "sel": "#ppl-example",
+      "file": "add02_perplexity_dark.png",
+      "height": 1100,
+      "expr": "document.querySelector('[data-q=\"q-ppl-link\"] .qz-check')?.click();document.documentElement.setAttribute('data-theme','dark')"
+    },
+    {
+      "sel": "#ppl-example",
+      "file": "add02_perplexity_mobile.png",
+      "width": 390,
+      "height": 1100,
+      "expr": "document.querySelector('[data-q=\"q-ppl-link\"] .qz-check')?.click();document.documentElement.setAttribute('data-theme','light')"
+    },
+    {
+      "sel": "#loss-equations",
+      "file": "add02_ppl_definitions.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','light');QUIZ.reset()"
+    },
+    {
+      "sel": "[data-q=\"q-ppl-link\"]",
+      "file": "add02_ppl_relation.png",
+      "height": 1100,
+      "expr": "document.querySelector('[data-q=\"q-ppl-link\"] .qz-check')?.click()"
+    },
+    {
+      "sel": "#ppl-jokes",
+      "file": "add02_ppl_jokes.png",
+      "height": 900
+    },
+    {
+      "sel": "[data-fig=\"ppl-dependencies\"]",
+      "file": "add02_ppl_dependencies.png",
+      "height": 1100
+    },
+    {
+      "sel": "#loss-equations",
+      "file": "add02_ppl_definitions_dark.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','dark');QUIZ.reset()"
+    },
+    {
+      "sel": "#loss-equations",
+      "file": "add02_ppl_definitions_mobile.png",
+      "width": 390,
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','light')"
+    },
+    {
+      "sel": "#lm .formula",
+      "file": "add02_equation_0_light.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','light');window.checkEquations()"
+    },
+    {
+      "sel": "#count .formula",
+      "file": "add02_equation_1_light.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','light');window.checkEquations()"
+    },
+    {
+      "sel": "#count > .panel > .formula",
+      "file": "add02_equation_2_light.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','light');window.checkEquations()"
+    },
+    {
+      "sel": "#loss-equations",
+      "file": "add02_equation_3_light.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','light');window.checkEquations()"
+    },
+    {
+      "sel": "#rnn .formula",
+      "file": "add02_equation_4_light.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','light');window.checkEquations()"
+    },
+    {
+      "sel": "#lm .formula",
+      "file": "add02_equation_0_dark.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','dark');window.checkEquations()"
+    },
+    {
+      "sel": "#count .formula",
+      "file": "add02_equation_1_dark.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','dark');window.checkEquations()"
+    },
+    {
+      "sel": "#count > .panel > .formula",
+      "file": "add02_equation_2_dark.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','dark');window.checkEquations()"
+    },
+    {
+      "sel": "#loss-equations",
+      "file": "add02_equation_3_dark.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','dark');window.checkEquations()"
+    },
+    {
+      "sel": "#rnn .formula",
+      "file": "add02_equation_4_dark.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','dark');window.checkEquations()"
+    },
+    {
+      "sel": "#lm .formula",
+      "file": "add02_chain_mobile.png",
+      "width": 390,
+      "height": 1000,
+      "expr": "document.documentElement.setAttribute('data-theme','light');window.checkEquations()"
+    },
+    {
+      "sel": "#loss-equations",
+      "file": "add02_equations_mobile.png",
+      "width": 390,
+      "height": 1100,
+      "expr": "window.checkEquations()"
+    },
+    {
+      "sel": "[data-q=\"q-ppl-link\"] .qz-a",
+      "file": "add02_answer_centered.png",
+      "height": 1100,
+      "expr": "document.querySelector('[data-q=\"q-ppl-link\"] .qz-check')?.click();window.checkEquations()"
+    }
+  ]
+}

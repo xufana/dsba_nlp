@@ -1,0 +1,1674 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Неделя 1 · Представления текста · ADD-2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* The design system of the seminar pages, shared by every week (scripts/build_demo.py puts it in <style>).
+   A week adds its own rules in demo/week.css, appended after this file. */
+:root {
+  color-scheme: light;
+  --ground:        #f7f6f2;
+  --panel:         #fdfdfc;
+  --panel-sunk:    #f1efe9;
+  --ink:           #14161a;
+  --ink-2:         #55595f;
+  --ink-3:         #8b8e92;
+  --rule:          #dcdad3;
+  --rule-strong:   #bab7ad;
+  --cls-0: #2a78d6; --cls-1: #eb6834; --cls-2: #1baf7a; --cls-3: #4a3aa7;
+  --good:  #0ca30c; --bad: #d03b3b;
+  --seq-1: #5598e7; --seq-2: #3987e5; --seq-3: #2a78d6; --seq-4: #256abf; --seq-5: #104281;
+  --shadow: 0 1px 2px rgba(20,22,26,.05), 0 8px 24px -16px rgba(20,22,26,.28);
+
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground:      #131413;
+    --panel:       #1b1c1b;
+    --panel-sunk:  #232422;
+    --ink:         #f0efe9;
+    --ink-2:       #a8a79f;
+    --ink-3:       #7b7a73;
+    --rule:        #31322e;
+    --rule-strong: #4c4d47;
+    --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+    --good: #0ca30c; --bad: #d03b3b;
+    --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground:      #131413;
+  --panel:       #1b1c1b;
+  --panel-sunk:  #232422;
+  --ink:         #f0efe9;
+  --ink-2:       #a8a79f;
+  --ink-3:       #7b7a73;
+  --rule:        #31322e;
+  --rule-strong: #4c4d47;
+  --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+  --good: #0ca30c; --bad: #d03b3b;
+  --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 20.1px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+
+/* ---------------------------------------------------------------- shell */
+.shell { display: grid; grid-template-columns: 278px minmax(0, 1fr); gap: 0; }
+.rail {
+  position: sticky; top: 0; align-self: start; height: 100vh;
+  border-right: 1px solid var(--rule);
+  padding: 26px 18px 18px 26px;
+  display: flex; flex-direction: column; gap: 18px;
+  overflow-y: auto;
+}
+.rail-mark {
+  font-family: var(--mono); font-size: 14px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.rail-eq { font-family: var(--display); font-size: 17.7px; font-weight: 700; line-height: 1.3; }
+.rail nav { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
+.rail nav a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: baseline;
+  padding: 4px 6px 4px 0; text-decoration: none; color: var(--ink-2);
+  font-family: var(--display); font-size: 16.4px; line-height: 1.32;
+  border-radius: 3px;
+}
+.rail nav a span:first-child {
+  font-family: var(--mono); font-size: 13.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.rail nav a:hover { color: var(--ink); background: var(--panel-sunk); }
+.rail nav a.on { color: var(--ink); font-weight: 700; }
+.rail nav a.on span:first-child { color: var(--ink); }
+.rail-foot { margin-top: auto; font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.6; }
+.rail-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+main { padding: 0 0 140px; min-width: 0; }
+.wrap { max-width: 1160px; padding: 0 48px; margin: 0 auto; }
+section { padding: 64px 0 8px; scroll-margin-top: 20px; }
+.prose { max-width: none; }
+.prose p { margin: 0 0 1.05em; }
+.prose p + p { margin-top: -.15em; }
+
+/* --------------------------------------------------------------- type */
+h1 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(41px, 6.04vw, 72.9px); line-height: .98; letter-spacing: -.025em;
+  margin: 0 0 22px; text-wrap: balance;
+}
+h2 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(27.5px, 3.19vw, 37.8px); line-height: 1.08; letter-spacing: -.018em;
+  margin: 0 0 14px; text-wrap: balance;
+}
+h3 {
+  font-family: var(--display); font-weight: 700; font-size: 20.6px;
+  letter-spacing: -.008em; margin: 34px 0 10px;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 14px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px;
+}
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.lede { font-size: 23.5px; line-height: 1.52; color: var(--ink-2); max-width: none; }
+.prose strong { font-weight: 600; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.prose code { background: var(--panel-sunk); padding: .1em .34em; border-radius: 3px; }
+a { color: inherit; text-underline-offset: 2px; text-decoration-color: var(--rule-strong); }
+
+/* -------------------------------------------------------------- panels */
+.panel {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 4px; box-shadow: var(--shadow);
+  margin: 22px 0 26px; overflow: hidden;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 11px 16px; border-bottom: 1px solid var(--rule);
+  background: var(--panel-sunk);
+  font-family: var(--mono); font-size: 14px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-2); flex-wrap: wrap;
+}
+.panel-body { padding: 18px 16px; }
+.panel-body.tight { padding: 12px 16px; }
+.panel-note {
+  padding: 12px 16px; border-top: 1px solid var(--rule); background: var(--panel-sunk);
+  font-size: 17.7px; color: var(--ink-2); line-height: 1.55;
+}
+.scroll-x { overflow-x: auto; }
+
+/* ------------------------------------------------------------- controls */
+button, .btn {
+  font-family: var(--display); font-size: 16.4px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px;
+  padding: 6px 12px; cursor: pointer; line-height: 1.35;
+  transition: background .12s ease, border-color .12s ease;
+}
+button:hover { background: var(--panel-sunk); border-color: var(--ink-3); }
+button[disabled] { opacity: .42; cursor: not-allowed; }
+button.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+button.primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
+button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.btnrow { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+input[type="text"], textarea, select {
+  font-family: var(--mono); font-size: 16.4px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px; padding: 8px 10px;
+  width: 100%;
+}
+input[type="range"] { accent-color: var(--ink); width: 100%; }
+label.field { display: block; font-family: var(--mono); font-size: 14px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+
+/* ---------------------------------------------------------------- data */
+table { border-collapse: collapse; width: 100%; font-size: 16.4px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--mono); font-size: 15.4px; }
+th.data-th { text-transform: none; letter-spacing: 0; font-size: 14.5px; color: var(--ink-2); }
+tr:last-child td { border-bottom: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 14.5px; letter-spacing: .02em;
+  padding: 2px 8px; border-radius: 2px; border: 1px solid var(--rule-strong);
+  white-space: nowrap;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.c0 { background: var(--cls-0); } .c1 { background: var(--cls-1); }
+.c2 { background: var(--cls-2); } .c3 { background: var(--cls-3); }
+.t0 { color: var(--cls-0); } .t1 { color: var(--cls-1); }
+.t2 { color: var(--cls-2); } .t3 { color: var(--cls-3); }
+
+.stat-row { display: flex; gap: 34px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .v { font-family: var(--display); font-weight: 700; font-size: 32.5px;
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); }
+
+.reveal-wrap { position: relative; }
+.veil {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 26px 16px; background: var(--panel-sunk);
+  border: 1px dashed var(--rule-strong); border-radius: 3px;
+  font-family: var(--mono); font-size: 15.4px; color: var(--ink-2);
+  text-align: center; flex-wrap: wrap;
+}
+[hidden] { display: none !important; }
+
+.tok {
+  display: inline-block; font-family: var(--mono); font-size: 15.4px;
+  padding: 1px 6px; margin: 2px 3px 2px 0; border-radius: 2px;
+  background: var(--panel-sunk); border: 1px solid var(--rule);
+}
+.tok.diff { border-color: var(--ink-3); background: var(--panel); font-weight: 500; }
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+
+svg { display: block; max-width: 100%; }
+svg text { font-family: var(--mono); fill: var(--ink-2); }
+.axis line, .axis path { stroke: var(--rule); }
+.gridline { stroke: var(--rule); stroke-dasharray: 2 3; }
+
+.tooltip {
+  position: fixed; pointer-events: none; z-index: 50; opacity: 0;
+  background: var(--panel); border: 1px solid var(--rule-strong);
+  border-radius: 3px; box-shadow: var(--shadow); padding: 7px 10px;
+  font-family: var(--mono); font-size: 14.5px; line-height: 1.5; color: var(--ink);
+  transition: opacity .1s ease; max-width: 280px;
+}
+
+.footnote { font-size: 17.2px; color: var(--ink-2); max-width: none; }
+
+/* library pointers: a quiet line of names, with the actual call one click away */
+.codenote { margin: 16px 0 0; border-top: 1px solid var(--rule); padding-top: 9px; }
+.codenote > summary {
+  cursor: pointer; list-style: none; display: flex; gap: 9px;
+  align-items: baseline; flex-wrap: wrap; padding: 2px 0;
+}
+.codenote > summary::-webkit-details-marker { display: none; }
+.codenote > summary::before {
+  content: "+"; font-family: var(--mono); font-size: 15px; color: var(--ink-3);
+  width: 9px; flex: none;
+}
+.codenote[open] > summary::before { content: "−"; }
+.codenote > summary:hover .libs, .codenote[open] > summary .libs { color: var(--ink); }
+.codenote .k {
+  font-family: var(--mono); font-size: 13px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3); flex: none;
+}
+.codenote .libs {
+  font-family: var(--mono); font-size: 15px; line-height: 1.55; color: var(--ink-2);
+  transition: color .12s ease;
+}
+.codenote pre {
+  margin: 11px 0 0; padding: 13px 15px; background: var(--panel-sunk);
+  border-radius: 3px; font-family: var(--mono); font-size: 15.4px; line-height: 1.8;
+  white-space: pre-wrap; word-break: break-word; color: var(--ink);
+}
+.codenote .why { font-size: 16.4px; color: var(--ink-2); line-height: 1.55; margin-top: 10px; }
+.codenote .why code { font-family: var(--mono); font-size: 15.4px; }
+.kbd {
+  font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; color: var(--ink-2);
+}
+
+/* ------------------------------------------------------- week 2 additions */
+.michael { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); }
+.michael figcaption { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-top: 8px; line-height: 1.5; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+
+/* a bet: pick one option, then reveal */
+.bet { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 12px; }
+.bet .q { font-family: var(--body); font-size: 17.5px; font-weight: 600; color: var(--ink); flex-basis: 100%; line-height: 1.4; }
+.bet button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.bet button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.bet button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.bet .verdict { font-family: var(--mono); font-size: 15px; margin-left: 6px; }
+.bet .verdict.ok { color: var(--good); } .bet .verdict.no { color: var(--bad); }
+
+/* generated text */
+.gen { font-size: 19.5px; line-height: 1.75; margin: 0 0 12px; }
+.gen .t { padding: 1px 1px; border-radius: 2px; white-space: pre-wrap; }
+.gen .copied { background: color-mix(in srgb, var(--cls-1) 22%, transparent); border-bottom: 2px solid var(--cls-1); }
+.gen .dead { color: var(--bad); font-family: var(--mono); }
+.gen .prompt { color: var(--ink-3); }
+.gen-list { display: flex; flex-direction: column; gap: 10px; }
+.gen-list .gen { padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; margin: 0; }
+
+.merge-row { display: grid; grid-template-columns: 54px 1fr 110px; gap: 10px; font-family: var(--mono); font-size: 15px; padding: 3px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.merge-row .n { color: var(--ink-3); } .merge-row .c { text-align: right; color: var(--ink-2); }
+.merge-row .p { display: flex; gap: 6px; align-items: center; }
+.merge-row .p .tok { margin: 0; }
+.merge-row .tok.new { border-color: var(--ink); font-weight: 600; }
+.eow { color: var(--cls-1); }
+
+.pbar { display: grid; grid-template-columns: 150px 1fr 64px; gap: 10px; align-items: center; font-family: var(--mono); font-size: 14.5px; padding: 2px 0; }
+.pbar .lab { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pbar .bar { height: 14px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pbar .bar i { display: block; height: 100%; background: var(--cls-0); }
+.pbar.cut .bar i { background: var(--rule-strong); } .pbar.cut .lab { color: var(--ink-3); }
+.pbar .v { color: var(--ink-2); }
+
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 18px; margin: 12px 0; }
+.sliders label.field { display: flex; justify-content: space-between; }
+.sliders label.field b { color: var(--ink); font-weight: 500; }
+.sliders .off { opacity: .4; }
+
+.tr-row { display: grid; grid-template-columns: 64px 1fr; gap: 8px 14px; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 18.5px; line-height: 1.5; }
+.tr-row .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.tr-row .bleu { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-left: 8px; }
+.tr-row:last-child { border-bottom: none; }
+.nowrap { white-space: nowrap; }
+.busy { opacity: .55; pointer-events: none; }
+
+/* formulas: native MathML, kept outside .prose so they survive presentation mode */
+math { font-family: "STIX Two Math", "Latin Modern Math", "Cambria Math", "Times New Roman", serif; }
+.prose math { font-size: 1.05em; }
+.formula {
+  margin: 12px 0 22px; padding: 14px 20px 12px; background: var(--panel-sunk);
+  border-left: 3px solid var(--rule-strong); border-radius: 3px; overflow-x: auto;
+}
+.formula .fn {
+  display: block; font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px;
+}
+.formula math { font-size: 1.25em; margin: 6px 0; }
+.formula math + math { margin-top: 10px; }
+.formula mtext { font-family: var(--body); font-size: .82em; color: var(--ink-2); }
+body.present .formula { margin-top: 10px; }
+
+/* the one-screen recipe */
+.recipe { padding: 4px 16px 6px; }
+.recipe .step { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--rule); }
+.recipe .step:first-child { border-top: none; }
+.recipe .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.recipe .k b { display: block; font-family: var(--display); font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1; margin-bottom: 4px; }
+.recipe pre { margin: 0; font-family: var(--mono); font-size: 14.5px; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--ink); }
+.recipe .c { color: var(--ink-3); }
+
+/* --------------------------------------------------- presentation mode */
+body.present .prose:not(.keep) { display: none; }
+body.present .footnote { display: none; }
+body.present section { min-height: 100vh; padding-top: 40px; }
+body.present .panel { margin-top: 14px; }
+body.present .lede { display: none; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; border-right: none;
+    border-bottom: 1px solid var(--rule); padding: 18px 20px; }
+  .rail nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .wrap { padding: 0 20px; }
+  body { font-size: 18.6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+/* ------------------------------------------------------- week 3 additions */
+/* code next to the formula it implements: hover a line, the term lights up (and back) */
+.two { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .two { grid-template-columns: 1fr; } }
+/* wide code: the formulas go below it, as a row of cards */
+.two.stacked { grid-template-columns: 1fr; }
+.two.stacked .fstack { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 6px 22px; }
+.two.stacked .fstack .row { border-top: none; border-left: 2px solid var(--rule); padding: 4px 0 4px 12px; grid-template-columns: 1fr; gap: 2px; }
+.two.stacked .fstack .row .n { white-space: nowrap; }
+.hm svg rect.flat { stroke: none; }
+#masks-out > div { display: flex; flex-direction: column; justify-content: flex-end; }
+#masks-out .hm-title { min-height: 2.8em; }
+.temp-table td:first-child { white-space: nowrap; }
+pre.code { margin: 0; padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; white-space: normal; overflow-x: auto; color: var(--ink); counter-reset: ln; }
+pre.code .ln { display: block; white-space: pre; min-height: 1.5em; padding: 0 8px 0 40px; margin: 0 -8px; position: relative; border-radius: 2px; transition: background .12s ease; }
+pre.code .ln::before { counter-increment: ln; content: counter(ln); position: absolute; left: 8px; width: 24px; text-align: right; color: var(--ink-3); font-size: 12.5px; top: 1px; }
+pre.code .ln[data-f] { cursor: default; }
+pre.code .ln.hi, .fstack .fx.hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .c { color: var(--ink-3); }
+pre.code .kw { color: var(--cls-3); }
+.fstack .fx { padding: 2px 6px; border-radius: 3px; transition: background .12s ease; }
+.fstack .fx[data-f] { cursor: default; }
+.fstack .fx.dim { opacity: .35; }
+.fstack .row { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--rule); }
+.fstack .row:first-child { border-top: none; }
+.fstack .row .n { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .08em; }
+.fstack .row .say { font-size: 16.4px; color: var(--ink-2); line-height: 1.5; margin-top: 2px; }
+.fstack math { font-size: 1.1em; }
+.fstack .row > div { min-width: 0; overflow-x: auto; }
+.two:not(.stacked) .fstack math { font-size: 1em; }
+.two:not(.stacked) .fstack math[display="block"] { display: inline-block; margin: 2px 0; }
+.fstack .fx.hi math { color: var(--ink); }
+
+/* a redrawn schematic and its credit line */
+.fig { margin: 8px 0 0; }
+.figcap { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.5; margin: 8px 0 2px; }
+.figcap a { color: var(--ink-2); }
+
+/* attention heatmaps */
+.hm-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.hm-title { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.hm svg rect.cell { stroke: var(--panel); stroke-width: .6; }
+.hm svg rect.cell:hover { stroke: var(--ink); stroke-width: 1.5; }
+.headgrid { display: grid; grid-template-columns: 40px repeat(8, minmax(0, 1fr)); gap: 4px; align-items: center; }
+.headgrid .lab { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); text-align: center; }
+.headgrid svg { cursor: pointer; border: 1px solid var(--rule); border-radius: 2px; background: var(--panel); }
+.headgrid svg.on { outline: 2px solid var(--cls-1); }
+
+/* the score table */
+.scores td math { font-size: 1.1em; }
+.scores td:first-child { font-weight: 600; font-family: var(--display); }
+
+/* live text-in → text-out panels */
+.io { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.io .out { font-family: var(--mono); font-size: 22px; letter-spacing: .04em; padding: 8px 12px; background: var(--panel-sunk); border-radius: 3px; min-height: 46px; }
+.io .out.ok { border-left: 3px solid var(--good); } .io .out.no { border-left: 3px solid var(--bad); }
+.small-note { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); margin-top: 6px; }
+.toggle { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 3px; overflow: hidden; }
+.toggle button { border: none; border-radius: 0; }
+.toggle button.sel { background: var(--ink); color: var(--ground); }
+.ck { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.ck b { color: var(--good); font-weight: 500; } .ck b.no { color: var(--bad); }
+.results th.data-th, .results td { font-size: 15.4px; }
+.results tr.hl td { background: color-mix(in srgb, var(--cls-0) 10%, transparent); }
+
+/* ------------------------------------------------------- week 4 additions */
+/* token strips: WordPiece pieces, with the continuation marker and special tokens coloured */
+.pieces { display: flex; flex-wrap: wrap; gap: 4px 3px; align-items: center; line-height: 1.3; }
+.pieces .tok { margin: 0; }
+.pieces .tok.cont { border-color: color-mix(in srgb, var(--cls-1) 60%, var(--rule)); background: color-mix(in srgb, var(--cls-1) 10%, var(--panel)); }
+.pieces .tok.sp { border-color: var(--ink-3); color: var(--ink-2); font-weight: 600; }
+.pieces .tok.unk { border-color: var(--bad); color: var(--bad); font-weight: 600; }
+.pieces .tok.eow { color: var(--cls-1); }
+.pieces .tok.seg1 { background: color-mix(in srgb, var(--cls-2) 12%, var(--panel)); }
+.pieces .tok.mk { background: color-mix(in srgb, var(--cls-3) 22%, var(--panel)); border-color: var(--cls-3); }
+.pieces .tok.rnd { background: color-mix(in srgb, var(--cls-1) 22%, var(--panel)); border-color: var(--cls-1); }
+.pieces .tok.keep { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.pieces .tok.ans { background: color-mix(in srgb, var(--good) 22%, var(--panel)); border-color: var(--good); font-weight: 600; }
+.pieces .tok.ent { font-weight: 600; }
+.pieces .tok.dim { opacity: .45; }
+.pieces .tok.word { border-style: dashed; }
+.pieces .gap { flex-basis: 100%; height: 0; }
+.pieces .lab { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin-right: 6px; letter-spacing: .06em; text-transform: uppercase; }
+/* the merge stepper */
+.merge-row.wp { grid-template-columns: 54px 1fr 190px; }
+.merge-row .c small { color: var(--ink-3); }
+.merge-list { max-height: 330px; overflow-y: auto; }
+.merge-row.now { background: color-mix(in srgb, var(--cls-1) 12%, transparent); }
+/* the two encoders side by side */
+.enc-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.enc-row .k { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.enc-row:last-child { border-bottom: none; }
+.enc-row.diff .k { color: var(--cls-1); }
+/* segmentation lattice rows */
+.seg-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.seg-row .p { font-family: var(--mono); font-size: 14.5px; text-align: right; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.seg-row.best .p { color: var(--ink); font-weight: 600; }
+.seg-row:last-child { border-bottom: none; }
+/* a small legend line */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin: 8px 0 0; align-items: center; }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; border: 1px solid var(--rule-strong); }
+/* zero-shot label pickers */
+.zs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 14px; }
+.zs-grid label.field b { color: var(--ink); }
+.zs-grid select { width: 100%; }
+.conf { border-collapse: collapse; font-family: var(--mono); font-size: 14px; }
+.conf td, .conf th { padding: 4px 9px; text-align: right; border-bottom: none; }
+.conf th { font-size: 12.5px; }
+.conf td.hit { background: color-mix(in srgb, var(--good) 18%, transparent); }
+.conf td.miss { color: var(--ink-3); }
+/* the head figure toggle and the task tables */
+.task-table td:first-child { font-weight: 600; font-family: var(--display); white-space: nowrap; }
+.task-table td { vertical-align: top; font-size: 15.4px; }
+.task-table code { white-space: nowrap; }
+/* a load report */
+pre.report { margin: 0; font-family: var(--mono); font-size: 13.5px; line-height: 1.55; white-space: pre; overflow-x: auto; color: var(--ink-2); padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; }
+pre.report .miss { color: var(--bad); font-weight: 600; } pre.report .unex { color: var(--ink-3); }
+/* the dial */
+.dial { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .dial { grid-template-columns: 1fr; } }
+.dial .knob { display: flex; gap: 6px; flex-wrap: wrap; }
+.dial .knob button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the MLM variants, under a toggle */
+details.variants { margin: 12px 0 0; }
+details.variants > summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 18px; padding: 8px 0; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+details.variants > summary::-webkit-details-marker { display: none; }
+details.variants > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.variants[open] > summary::before { content: "−"; }
+.variant { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: center; padding: 14px 0; border-top: 1px solid var(--rule); }
+@media (max-width: 1000px) { .variant { grid-template-columns: 1fr; } }
+.variant .say { font-size: 17px; line-height: 1.55; color: var(--ink-2); }
+.variant .say b { color: var(--ink); }
+/* NER entity chips */
+.ent-line { font-size: 18.5px; line-height: 2.1; margin: 0 0 8px; }
+.ent { padding: 2px 6px; border-radius: 3px; border-bottom: 2px solid; white-space: nowrap; }
+.ent i { font-family: var(--mono); font-style: normal; font-size: 11.5px; letter-spacing: .06em; margin-left: 5px; opacity: .8; }
+.ent.PER { background: color-mix(in srgb, var(--cls-0) 16%, transparent); border-color: var(--cls-0); }
+.ent.ORG { background: color-mix(in srgb, var(--cls-1) 16%, transparent); border-color: var(--cls-1); }
+.ent.LOC { background: color-mix(in srgb, var(--cls-2) 16%, transparent); border-color: var(--cls-2); }
+.ent.MISC { background: color-mix(in srgb, var(--cls-3) 16%, transparent); border-color: var(--cls-3); }
+.ent.wrong { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* alignment table */
+.align { font-family: var(--mono); font-size: 14.5px; border-collapse: collapse; }
+.align td, .align th { padding: 3px 10px; }
+.align td.ign { color: var(--ink-3); }
+.align tr.cont td:first-child { color: var(--cls-1); }
+/* QA */
+.ctx { font-size: 18px; line-height: 1.7; }
+.ctx mark { background: color-mix(in srgb, var(--good) 28%, transparent); color: inherit; padding: 1px 2px; border-radius: 2px; }
+.ctx mark.gold { background: none; box-shadow: inset 0 -2px 0 var(--cls-0); }
+.ctx .q { color: var(--ink-3); }
+.window { border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; margin: 8px 0; }
+.window .wh { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+.window .wh b { color: var(--ink); font-weight: 500; }
+.qa-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px 14px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; align-items: baseline; }
+.qa-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: block; }
+.qa-row:last-child { border-bottom: none; }
+.qa-row .ok { color: var(--good); } .qa-row .no { color: var(--bad); }
+
+/* ------------------------------------------------ week 4, second pass (2026-09-30) */
+/* a schematic with states: the buttons switch what the same picture highlights */
+.fig-states { display: flex; gap: 6px; flex-wrap: wrap; }
+.fig-states button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the variants footnote: three small pictures, each with its paragraph */
+.variant .fig svg { max-width: 560px; }
+/* clickable tokens (the MLM picker): the chosen one is outlined */
+.pieces .tok.pick { cursor: pointer; }
+.pieces .tok.pick:hover { border-color: var(--ink); }
+.pieces .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* the scoreboard in the rail: rows light up as reveals happen */
+.score { margin-top: 12px; border-top: 1px solid var(--rule); padding-top: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+.score .row { display: grid; grid-template-columns: 1fr 52px; gap: 6px; padding: 2px 0; line-height: 1.35; align-items: baseline; }
+.score .row.off { opacity: .38; }
+.score .row.on { color: var(--ink); }
+.score .row.line { color: var(--bad); border-bottom: 1px dashed var(--bad); margin-bottom: 3px; }
+.score .row .v { text-align: right; font-variant-numeric: tabular-nums; }
+.score .row.pass .v { color: var(--good); font-weight: 600; }
+.score .t { letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+/* the results table sorters */
+.sorters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.sorters button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* a bare figure caption line under a schematic */
+.figline { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin: 6px 0 0; line-height: 1.5; }
+/* two-column figure + code */
+.fig-code { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+/* the QA score rows: hover a token to read both scores */
+.qa-pick { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.qa-pick button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.qa-pick button.noans { border-style: dashed; }
+
+/* ------------------------------------------------------- week 5 additions */
+/* the two tables, growing: a row that has just been written */
+.results tr.new td, .costs tr.new td { animation: rowin .9s ease; }
+@keyframes rowin { from { background: color-mix(in srgb, var(--cls-1) 30%, transparent); } to { background: transparent; } }
+.costs td, .costs th { font-size: 14.5px; }
+.costs td.mono { font-size: 13.5px; }
+/* the logit-lens strip: one column per layer, five guesses each */
+.lens { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); gap: 4px; overflow-x: auto; }
+.lens .col { display: flex; flex-direction: column; gap: 2px; }
+.lens .col .h { font-family: var(--mono); font-size: 12px; color: var(--ink-3); text-align: center; letter-spacing: .06em; padding-bottom: 3px; border-bottom: 1px solid var(--rule); margin-bottom: 2px; }
+.lens .g { font-family: var(--mono); font-size: 13px; padding: 1px 5px; border-radius: 2px; white-space: pre; overflow: hidden; text-overflow: ellipsis; background: var(--panel-sunk); }
+.lens .g.gold { background: color-mix(in srgb, var(--good) 28%, transparent); font-weight: 600; }
+.lens .g.same { box-shadow: inset 0 0 0 1px var(--cls-1); }
+.lens .g i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+.tokrow { display: flex; flex-wrap: wrap; gap: 3px; margin: 8px 0; }
+.tokrow .tok { cursor: pointer; margin: 0; }
+.tokrow .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* attention: the heatmap and its controls */
+.att { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .att { grid-template-columns: 1fr; } }
+.att canvas { width: 100%; image-rendering: pixelated; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+.att .hm-box { position: relative; }
+.att .ax { font-family: var(--mono); font-size: 12px; color: var(--ink-3); display: flex; justify-content: space-between; }
+/* RoPE dials */
+.dials { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin: 8px 0 14px; }
+.clocks svg { max-width: 760px; }
+.rope-out { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rope-out .box { padding: 12px 14px; background: var(--panel-sunk); border-radius: 3px; }
+.rope-out .box .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.rope-out .box .v { font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; transition: color .15s; }
+.rope-out .box.moved .v { color: var(--bad); } .rope-out .box.still .v { color: var(--good); }
+/* the KV stepper */
+.stepper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.stepper .cnt { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.stepper .cnt b { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* the verbalizer builder */
+.vb { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; }
+@media (max-width: 900px) { .vb { grid-template-columns: repeat(2, 1fr); } }
+.vb .cls { border-top: 3px solid; padding-top: 6px; }
+.vb .cls.c0 { border-color: var(--cls-0); background: none; } .vb .cls.c1 { border-color: var(--cls-1); background: none; }
+.vb .cls.c2 { border-color: var(--cls-2); background: none; } .vb .cls.c3 { border-color: var(--cls-3); background: none; }
+.vb .cls .h { font-family: var(--display); font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.vb .words { display: flex; flex-wrap: wrap; gap: 4px; }
+.vb .words button { font-family: var(--mono); font-size: 13px; padding: 2px 7px; }
+.vb .words button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.vb .words button i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 3px; }
+.vb .words button.on i { color: var(--ground); opacity: .7; }
+.vb-acc { display: flex; gap: 30px; align-items: baseline; flex-wrap: wrap; margin-top: 12px; }
+/* the design card as a form */
+.card { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px 16px; align-items: center; }
+.card .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.card select, .card input { width: auto; min-width: 200px; }
+.card .row-btns button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.card-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.card-tabs button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.est { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+.est .stat .v { font-size: 26px; }
+/* label-it-yourself over words */
+.words-pick { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: flex-end; }
+.words-pick .w { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.words-pick .w .s { font-family: var(--mono); font-size: 14px; }
+.words-pick .w select { font-size: 12.5px; padding: 2px 4px; width: auto; }
+.words-pick .w.hit select { border-color: var(--good); } .words-pick .w.miss select { border-color: var(--bad); }
+.words-pick .w .g { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+.words-pick .w.unx .s { text-decoration: underline dotted var(--bad); }
+/* unexpressible words in a typed sentence */
+.wl { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.wl .tok.unx { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+.wl .tok i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+/* per-row bets over a table */
+table.rowbet td.b { white-space: nowrap; }
+table.rowbet td.b button { font-size: 13px; padding: 2px 8px; }
+table.rowbet td.b button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.rowbet td.b button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.rowbet td.b button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.rowbet td.zero { color: var(--bad); font-weight: 600; }
+/* horizontal bar pairs for the breakdowns */
+.pair { display: grid; grid-template-columns: 90px 1fr 1fr 150px; gap: 8px; align-items: center; font-family: var(--mono); font-size: 13.5px; padding: 2px 0; }
+.pair .lab { text-align: right; color: var(--ink-2); }
+.pair .bar { height: 12px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pair .bar i { display: block; height: 100%; }
+.pair .bar.e i { background: var(--cls-0); } .pair .bar.d i { background: var(--cls-1); }
+.pair .n { color: var(--ink-3); }
+.pair.hl .lab { color: var(--bad); font-weight: 600; }
+/* generated text against gold: dropped words */
+.diffline { font-size: 17px; line-height: 1.8; }
+.diffline .drop { color: var(--bad); text-decoration: line-through; }
+.diffline .chg { background: color-mix(in srgb, var(--cls-1) 24%, transparent); border-radius: 2px; }
+/* NER writer */
+.ner-write textarea { min-height: 64px; }
+.ner-parse { margin-top: 8px; }
+.ent.inv { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* QA */
+.ctx mark.pred { background: color-mix(in srgb, var(--good) 28%, transparent); }
+.ctx .nosub { color: var(--bad); font-weight: 600; }
+.order-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; }
+.order-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.order-row:last-child { border-bottom: none; }
+/* lightning round */
+.lr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.lr:last-child { border-bottom: none; }
+.lr .pick { display: flex; gap: 4px; flex-wrap: wrap; }
+.lr .pick button { font-family: var(--mono); font-size: 13px; padding: 2px 8px; }
+.lr .pick button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.lr .pick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.lr .pick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.lr .ans { grid-column: 1 / -1; font-size: 16px; color: var(--ink-2); line-height: 1.5; }
+/* the course table */
+.course td:first-child { font-family: var(--mono); }
+.course tr.now td { background: color-mix(in srgb, var(--cls-1) 10%, transparent); font-weight: 600; }
+.big-num { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: -.03em; line-height: 1; }
+
+/* ------------------------------------------------------- week 6 additions */
+/* the meme, kept: an image with a caption beside it */
+.michael { display: grid; grid-template-columns: minmax(0, .9fr) minmax(280px, 1.1fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; max-width: 452px; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+.michael figcaption { font-family: var(--body); font-size: 17.7px; color: var(--ink-2); line-height: 1.55; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+/* pick three changes */
+.picklist { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.picklist button { font-size: 15px; padding: 4px 11px; }
+.picklist button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.picklist button.yes { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.picklist button.no { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.picklist button .why { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+/* the N–D plane */
+.plane-wrap { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .plane-wrap { grid-template-columns: 1fr; } }
+.plane-models { display: flex; flex-direction: column; gap: 6px; }
+.plane-models button { text-align: left; font-size: 14.5px; display: flex; justify-content: space-between; gap: 8px; }
+.plane-models button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.plane-models button .st { font-family: var(--mono); font-size: 12px; opacity: .7; }
+#plane svg { max-width: 760px; cursor: crosshair; }
+#plane svg.done { cursor: default; }
+/* the bill table */
+table.bill td, table.bill th { font-size: 14px; white-space: nowrap; }
+table.bill td:first-child { font-weight: 600; font-family: var(--display); }
+/* passports as a diff */
+.pp-row { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 6px 14px; padding: 6px 0; border-bottom: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; align-items: baseline; }
+.pp-row:last-child { border-bottom: none; }
+.pp-row .k { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pp-row.head { font-family: var(--display); font-weight: 700; font-size: 16px; }
+.pp-row.diff { background: color-mix(in srgb, var(--cls-1) 9%, transparent); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 3px; }
+.pp-row.diff .k { color: var(--cls-1); }
+.pp-row .sec { font-size: 11.5px; color: var(--ink-3); margin-left: 6px; }
+/* norm grid and rope grid: controls beside the picture */
+.norm-grid, .rope-grid { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .norm-grid, .rope-grid { grid-template-columns: 1fr; } }
+#fig-norm svg { max-width: 620px; } #fig-rope-matrix svg { max-width: 560px; display: block; margin: 0 auto; }
+#fig-rope-coords svg, #fig-slow svg, #fig-gqa svg, #fig-ffn svg, #fig-stack svg, #fig-prenorm svg, #fig-regimes svg, #fig-queue svg, #fig-roundtrip svg, #fig-moe svg, #fig-scatter svg, #fig-linear svg, #fig-masks svg { max-width: 920px; display: block; }
+#ffn-curves svg, #ffn-gate svg, #scaling-chart svg, #steps-chart svg, #tpp-chart svg, #serving-chart svg, #decode-chart svg, #xover-chart svg, #lin-chart svg { max-width: 640px; }
+/* order-the-models bet */
+.orderpick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+.orderpick button { font-size: 15px; }
+.orderpick button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.orderpick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.orderpick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.orderpick button i { font-style: normal; font-family: var(--mono); font-size: 11.5px; margin-right: 6px; opacity: .7; }
+.orderpick .arrow { color: var(--ink-3); }
+/* heatmap cells for the per-class table */
+.conf td.v { font-variant-numeric: tabular-nums; }
+/* small inline stat row */
+.est .stat .v small { font-size: 13px; font-weight: 400; color: var(--ink-3); margin-left: 4px; }
+.small-note { font-family: var(--mono); font-size: 13px; color: var(--ink-3); line-height: 1.5; margin-top: 8px; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 18px; margin-bottom: 10px; }
+.bet .q input { vertical-align: middle; }
+#bpb-out .pbar { grid-template-columns: 190px 1fr 70px; }
+#bpb-out .pbar .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prose.footnote ul { padding-left: 1.2em; line-height: 1.6; }  /* reference lists */
+
+/* ------------------------------------------------- lecture pages (demo_base/quiz.js) */
+/* one question: number + kind, the question, the answering UI, the answer (hidden until committed) */
+.qz { border-top: 1px solid var(--rule); padding: 22px 0 26px; }
+.qz:last-of-type { border-bottom: 1px solid var(--rule); }
+.qz-head { display: flex; gap: 12px; align-items: baseline; font-family: var(--mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.qz-n { font-weight: 500; color: var(--ink-2); }
+.qz.done .qz-n::after { content: " ✓"; color: var(--good); }
+.qz-q { font-family: var(--display); font-size: 21.5px; font-weight: 600; line-height: 1.35; color: var(--ink); margin-bottom: 12px; }
+.qz-q p { margin: 0 0 .55em; } .qz-q p:last-child { margin-bottom: 0; }
+.qz-q code { font-size: .82em; font-weight: 500; background: var(--panel-sunk); padding: .05em .3em; border-radius: 3px; }
+.qz-q [data-fig] { margin: 14px 0 10px; }
+.qz-q [data-fig] svg, .qz-a [data-fig] svg, .panel [data-fig] svg { width: 100%; max-width: 820px; height: auto; display: block; margin: 0 auto; }
+.qz-q table { font-family: var(--body); font-weight: 400; font-size: 16.4px; margin: 10px 0; width: auto; }
+.qz-ui { margin: 0 0 6px; }
+.qz-row { margin-top: 10px; min-height: 28px; }
+.qz-verdict { font-family: var(--mono); font-size: 15px; color: var(--ink-2); }
+.qz-verdict.ok { color: var(--good); } .qz-verdict.no { color: var(--bad); }
+.qz-opts button.missed { border-style: dashed; border-color: var(--good); }
+.qz-opts button[disabled] { opacity: 1; cursor: default; }
+.qz-opts button[disabled]:not(.right):not(.wrong):not(.missed) { opacity: .5; }
+/* clickable parts of a figure: lecture.js draws a rect.hit as the last child of every [data-pick] group */
+svg rect.hit { fill: transparent; stroke: none; }  /* a figure drawn outside a question: its click targets stay invisible */
+.qz-pickable { cursor: pointer; }
+.qz-pickable rect.hit { fill: transparent; stroke: transparent; stroke-width: 2; stroke-dasharray: 4 3; transition: stroke .12s ease; }
+.qz-pickable:hover rect.hit { stroke: var(--ink-3); }
+.qz-pickable.pick rect.hit { stroke: var(--ink); stroke-dasharray: none; fill: color-mix(in srgb, var(--ink) 8%, transparent); }
+.qz-pickable.right rect.hit { stroke: var(--good); stroke-dasharray: none; fill: color-mix(in srgb, var(--good) 12%, transparent); }
+.qz-pickable.wrong rect.hit { stroke: var(--bad); stroke-dasharray: none; fill: color-mix(in srgb, var(--bad) 12%, transparent); }
+.qz-pickable.missed rect.hit { stroke: var(--good); }
+/* sort: one row per item, the bins as buttons */
+table.qz-sort td { padding: 7px 10px 7px 0; vertical-align: top; }
+table.qz-sort td.qz-item { font-size: 17.5px; width: 38%; }
+table.qz-sort td.qz-bins { display: flex; flex-wrap: wrap; gap: 5px 6px; }
+table.qz-sort td.qz-bins button { font-size: 14.5px; padding: 3px 10px; }
+table.qz-sort button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.qz-sort button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.qz-sort button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.qz-sort button.ans { border-color: var(--good); border-style: dashed; }
+table.qz-sort button[disabled] { opacity: 1; cursor: default; }
+table.qz-sort button[disabled]:not(.right):not(.wrong):not(.ans) { opacity: .45; }
+.qz-count { font-size: 14px; color: var(--ink-3); }
+/* fill: inputs inline in the question */
+input.qz-blank { width: auto; display: inline-block; font-size: .85em; padding: 1px 8px; margin: 0 2px; text-align: center; vertical-align: baseline; border-radius: 3px; }
+input.qz-blank.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+input.qz-blank.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); text-decoration: line-through; color: var(--ink-3); }
+.qz-exp { font-family: var(--mono); font-size: .8em; color: var(--good); margin: 0 6px 0 2px; font-weight: 500; }
+/* write: a textarea, then a checklist */
+textarea.qz-text { font-family: var(--body); font-size: 17.5px; line-height: 1.5; min-height: 80px; resize: vertical; }
+.qz-ticks { margin-top: 14px; display: flex; flex-direction: column; gap: 5px; }
+.qz-ticks-k { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px; }
+.qz-ticks label { display: flex; gap: 10px; align-items: baseline; font-size: 17.2px; line-height: 1.45; cursor: pointer; }
+.qz-ticks input { accent-color: var(--ink); flex: none; }
+/* the answer */
+.qz-a { margin-top: 16px; padding: 14px 18px 14px 18px; background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--ink); border-radius: 4px; font-size: 18.6px; line-height: 1.62; }
+.qz-a p { margin: 0 0 .75em; } .qz-a p:last-child { margin-bottom: 0; }
+.qz-a ul, .qz-a ol { margin: 0 0 .75em; padding-left: 1.3em; }
+.qz-a code { background: var(--panel-sunk); padding: .08em .32em; border-radius: 3px; font-size: .86em; }
+.qz-a table { font-size: 16px; margin: 8px 0 12px; width: auto; }
+.qz-a [data-fig] { margin: 10px 0 12px; }
+.qz-miss { color: var(--ink-2); font-size: 17.2px; line-height: 1.55; border-top: 1px dashed var(--rule); padding-top: 10px; margin-top: .9em !important; }
+.qz-miss b { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--ink-3); margin-right: 8px; }
+.qz-nofig { font-family: var(--mono); font-size: 14px; color: var(--bad); padding: 8px 0; }
+/* optional depth under a toggle; its questions do not count toward the page's progress */
+details.optional { margin: 20px 0 0; border: 1px dashed var(--rule-strong); border-radius: 4px; padding: 0 18px; }
+details.optional > summary { cursor: pointer; list-style: none; display: flex; gap: 10px; align-items: baseline; padding: 12px 0; font-family: var(--display); font-weight: 600; font-size: 18px; }
+details.optional > summary::-webkit-details-marker { display: none; }
+details.optional > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.optional[open] > summary::before { content: "−"; }
+details.optional > summary .optional-count { margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--ink-3); font-weight: 400; }
+details.optional > .prose { padding-top: 4px; }
+details.optional .qz:last-of-type { border-bottom: none; }
+.rail .quiz-progress { font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin-top: 8px; }
+.rail a.back { display: inline-block; margin-top: 8px; font-family: var(--display); font-size: 16px; color: var(--ink-2); }
+.sources { font-size: 17.2px; color: var(--ink-2); }
+.sources ul { padding-left: 1.2em; line-height: 1.6; }
+@media (max-width: 760px) {
+  .qz-q { font-size: 19px; }
+  table.qz-sort td.qz-item { width: 100%; display: block; padding-bottom: 2px; }
+  table.qz-sort td.qz-bins { display: flex; padding-top: 0; }
+  table.qz-sort tr { display: block; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+}
+
+/* --- this week --- */
+/* Связи схем, формул и кода на страницах ADD. */
+[data-link-scope] { margin: 18px 0; }
+[data-link-scope] svg { width: 100%; max-width: 760px; height: auto; display: block; margin: 0 auto; }
+[data-link-scope] svg text { fill: var(--ink); font-family: var(--mono); font-size: 14px; }
+[data-link-scope] svg .caption { fill: var(--ink-2); font-family: var(--body); font-size: 16px; }
+[data-link-scope] svg rect { fill: var(--panel-sunk); stroke: var(--rule-strong); }
+[data-link-scope] svg path, [data-link-scope] svg line { stroke: var(--ink-3); fill: none; }
+[data-link-scope] svg .accent { fill: color-mix(in srgb, var(--cls-0) 15%, var(--panel)); }
+[data-f] { transition: background .12s, fill .12s; }
+svg [data-f] { cursor: pointer; }
+svg [data-f].hi rect, svg rect[data-f].hi { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)); stroke: var(--cls-1); }
+.formula [data-f].hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .ln { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre.code { overflow-x: hidden; }
+.add-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.add-controls label { display: flex; gap: 8px; align-items: center; font-size: 16px; }
+.add-controls output { font-family: var(--mono); }
+.add-result { font-family: var(--mono); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.add-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.add-table td, .add-table th { padding: 8px 10px; border-bottom: 1px solid var(--rule); text-align: left; }
+.add-table button { padding: 3px 8px; }
+.add-links { display: flex; gap: 8px 18px; flex-wrap: wrap; font-size: 16px; }
+.sources { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .add-table td, .add-table th { padding: 6px 3px; font-size: 13px; } }
+svg text[data-f].hi, svg [data-f].hi > text { fill: var(--cls-1); }
+[data-link-scope] svg rect.hit { fill: transparent; stroke: none; }
+.panel-body > [data-fig], .qz-q > [data-link-scope] { overflow-x: auto; }
+@media (max-width: 600px) { [data-link-scope] svg { min-width: 620px; } }
+.add-controls label { white-space: nowrap; }
+#normalization-table { overflow-x: auto; }
+svg.word2vec-diagram [data-f].hi > rect:not(.hit) { stroke: var(--cls-1) !important; stroke-width: 2; }
+svg.word2vec-diagram [data-f].hi > text { fill: var(--cls-1) !important; }
+
+svg [data-f].hi circle { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)) !important; stroke: var(--cls-1) !important; }
+
+
+#ppl-after-link { display: none; }
+#loss:has(.qz[data-q="q-ppl-link"].done) #ppl-after-link { display: block; }
+#ppl-jokes-table { overflow-x: auto; }
+
+
+/* Отдельные выражения центрируются; длинная строка прокручивается внутри блока. */
+.equation { display: flex; overflow-x: auto; padding: 10px 2px; margin: 10px 0; }
+.equation > span { flex: 0 0 auto; margin-inline: auto; }
+.equation math { math-style: normal; font-size: 1.15em; }
+.equation munder, .equation munderover { math-style: normal; }
+.formula .equation math { font-size: 1.15em; margin: 0; }
+.formula p { font-size: 17px; line-height: 1.6; margin: 8px 0 18px; }
+@media (max-width: 600px) { .equation math, .formula .equation math { font-size: 1em; } }
+</style>
+<meta name="quiz-store" content="add2026_week01">
+
+</head>
+<body>
+<div class="shell">
+<aside class="rail">
+<div><div class="rail-mark">NLP @ HSE DSBA · ADD-2026</div><div class="rail-eq">Неделя 1<br>Представления текста</div></div>
+<nav id="nav"></nav>
+<div class="rail-btns"><button id="btn-reset">Сбросить ответы</button><button id="btn-theme">Тема</button></div>
+<div class="quiz-progress" id="quiz-progress"></div>
+<div class="rail-foot"><a href="https://xufana.github.io/dsba_nlp/week01/">Семинар autumn-2026</a><br>
+<a href="https://colab.research.google.com/github/xufana/dsba_nlp/blob/autumn-2026/week01_text_representations/week01_text_representations.ipynb">Ноутбук в Colab</a><br>
+<a href="https://github.com/xufana/dsba_nlp/blob/autumn-2026/week01_text_representations/week01_text_representations.ipynb">Ноутбук на GitHub</a></div>
+</aside>
+<main><div class="wrap">
+<section id="hero"><p class="eyebrow">Author: Daria Andreeva</p><h1>Представления текста</h1>
+<p class="lede">Как превратить текст в признаки, выбрать модель и понять, на чём держится её решение.</p><div class="prose"><p>Сначала ответьте на вопрос, затем откройте разбор. Схемы и код связаны подсветкой: наведите указатель или переведите фокус на строку. Подробности — в раскрывающихся блоках. Практика и ноутбук открываются в курсе autumn-2026.</p></div>
+</section>
+<section id="task"><p class="eyebrow">блок 01</p><h2>Как звучит задача?</h2>
+<div class="prose"><p>Начнём с задачи: по тексту новости выбрать одну тему. Вход — строка, выход — метка из фиксированного списка. Это <strong>классификация</strong>. Если бы предсказывали цену из текста объявления, это была бы <strong>регрессия</strong>: выходом стало бы число.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="task"></div></div>
+<div class="panel-note"><p>Векторизация превращает текст в числа. Модель по этим числам вычисляет оценки классов; правило решения выбирает класс. Размеченные примеры нужны для обучения и проверки.</p></div>
+</div>
+<div class="qz" data-q="q-task"></div>
+<div class="qz" data-q="q-label"></div>
+<details class="optional"><summary>подробнее</summary><div class="prose"><p>Один объект — одна новость, а не отдельное слово. Вероятности классов образуют вектор длины C; выбранная метка — одно значение. Вероятность модели может быть плохо откалибрована: уверенность сама по себе не доказывает правильность.</p>
+<p>В AG News темы заданы авторами датасета. Новость про покупку спортивного клуба может касаться сразу спорта и бизнеса. Ошибка модели и спорная разметка требуют разного разбора.</p></div>
+</details>
+</section>
+<section id="tokens"><p class="eyebrow">блок 02</p><h2>Из строки в токены</h2>
+<div class="prose"><p>Токенизатор разбивает строку на единицы, с которыми работает метод. Это могут быть слова, символы или части слов. Словарь сопоставляет токенам идентификаторы. Номер токена задаёт адрес в таблице; расстояние между номерами не описывает близость значений.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="tokens"></div></div>
+<div class="panel-note"><p>В примере одно и то же правило применяется при обучении и при использовании модели. Разная длина текстов означает разную длину последовательностей токенов.</p></div>
+<pre class="code"><code><span class="ln"><b class="kw">import</b> re</span><span class="ln" data-f="input" tabindex="0">text = &quot;Команда выиграла матч!&quot;</span><span class="ln" data-f="tokens" tabindex="0">tokens = re.findall(r&quot;\w+|[^\w\s]&quot;, text.lower())</span><span class="ln">vocab = {word: i <b class="kw">for</b> i, word <b class="kw">in</b> enumerate(sorted(set(tokens)))}</span><span class="ln" data-f="ids" tabindex="0">ids = [vocab[word] <b class="kw">for</b> word <b class="kw">in</b> tokens]</span></code></pre>
+</div>
+<div class="qz" data-q="q-token"></div>
+<h3>Что делать с новым словом?</h3>
+<div class="prose"><p>Словарь строим на обучающих текстах. В новом тексте встречается слово, которого в словаре нет: это <strong>OOV</strong> (out of vocabulary). Для словарных эмбеддингов можно выделить общий токен <strong>UNK</strong> («неизвестное слово»). «Квокка» и «капибара» тогда получают один ID и один вектор: различить их по этому представлению нельзя.</p></div>
+<div class="panel" id="oov" data-link-scope><div class="panel-body"><div data-fig="oov"></div></div><div class="panel-note"><p>В примере «кот» известен, два новых слова заменяются на UNK. ID — адрес строки в таблице эмбеддингов.</p></div><pre class="code"><code><span class="ln">vocabulary = {&quot;UNK&quot;: 0, &quot;кот&quot;: 1, &quot;спит&quot;: 2}</span><span class="ln">tokens = [&quot;кот&quot;, &quot;квокка&quot;, &quot;капибара&quot;]</span><span class="ln" data-f="unknown" tabindex="0">token_ids = [vocabulary.get(word, vocabulary[&quot;UNK&quot;]) <b class="kw">for</b> word <b class="kw">in</b> tokens]</span><span class="ln"># token_ids: [1, 0, 0]</span></code></pre></div>
+<details class="optional"><summary>как обучается вектор UNK</summary><div class="prose"><p>Строку UNK обучают, заменяя ею часть редких или случайно выбранных слов в обучающих текстах. Одно добавление строки в словарь не учит её полезному значению. Используем тот же словарь и правило обработки при обучении и применении.</p></div></details>
+<div class="prose"><p>В <strong>BoW и TF-IDF</strong> неизвестные слова обычно пропускаются: для них нет столбцов. Если весь текст состоит из неизвестных слов, получим нулевой вектор. В <strong>словарных эмбеддингах</strong> используем UNK или явно пропускаем неизвестные слова.</p>
+<p>Чтобы сохранить больше информации, используем <strong>символьные признаки или части слов</strong>. У fastText вектор нового слова собирается из символьных n-грамм — вернёмся к этому в блоке 6. Во второй лекции разберём BPE: слово превращается в последовательность известных частей, если базовый алфавит покрывает его символы.</p></div>
+<div class="prose"><p>Словоформы можно объединить перед построением словаря. <strong>Лемматизация</strong> приводит слово к начальной форме: «кошки», «кошкой», «кошкам» → «кошка». <strong>Стемминг</strong> отсекает части слова по правилам: те же формы → «кошк». Полученная основа может не быть самостоятельным словом.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="normalization"></div></div>
+<div class="panel-note"><p>В мешке слов разные формы получат общий столбец. Это уменьшает дробление статистики, но может стереть полезные различия. Выбор обработки проверяем на своей задаче.</p></div>
+<pre class="code"><code><span class="ln"><b class="kw">from</b> nltk.stem.snowball <b class="kw">import</b> RussianStemmer</span><span class="ln"><b class="kw">from</b> pymorphy3 <b class="kw">import</b> MorphAnalyzer</span><span class="ln"></span><span class="ln">stemmer = RussianStemmer()</span><span class="ln">morph = MorphAnalyzer()</span><span class="ln"></span><span class="ln"><b class="kw">def</b> normalize(word):</span><span class="ln" data-f="stem" tabindex="0">    stem = stemmer.stem(word)</span><span class="ln" data-f="lemma" tabindex="0">    lemmas = sorted({p.normal_form <b class="kw">for</b> p <b class="kw">in</b> morph.parse(word)})</span><span class="ln">    <b class="kw">return</b> stem, lemmas</span><span class="ln"></span><span class="ln">stem, lemmas = normalize(&quot;кошками&quot;)</span></code></pre>
+</div>
+<div class="prose"><p>Код выше возвращает стем и список возможных лемм. В таблице — результат этого же кода: словоформы, смена основы и неоднозначные слова. Стеммер здесь — <a href="https://www.nltk.org/api/nltk.stem.snowball.html">Snowball из NLTK</a>, леммы получаем через <a href="https://github.com/no-plagiarism/pymorphy3">pymorphy3</a>.</p></div>
+<div class="panel"><div class="panel-body" id="normalization-table"></div></div>
+<details class="optional"><summary>запуск кода и версии библиотек</summary><div class="prose" id="normalization-versions"></div></details>
+<details class="optional"><summary>почему лемм может быть несколько</summary><div class="prose"><p><code>morph.parse(word)</code> разбирает отдельное слово и возвращает несколько вариантов. Берём все разные <code>normal_form</code>, поэтому у «стали» сохраняются «сталь» и «стать». Выбор первого разбора может дать неподходящую лемму: для выбора нужен контекст.</p>
+<p>Одинаковая лемма тоже не гарантирует одинаковое значение: дверные замки и старинные замки имеют начальную форму «замок». Ни стем, ни лемма сами по себе не различают эти значения.</p></div></details>
+<div class="qz" data-q="q-clean"></div>
+<details class="optional"><summary>обработка текста и потери информации</summary><div class="prose"><p>Нижний регистр объединяет «Мир» и «мир». Лемматизация может зависеть от контекста: у «стали» разные начальные формы в «из стали» и «стали читать» — «сталь» и «стать».</p>
+<p>Удаление стоп-слов может убрать отрицание, а удаление пунктуации — часть адреса или названия. Пользу обработки проверяем на своей задаче: одна и та же операция может помочь тематической классификации и испортить анализ тональности. Словарь и все обучаемые преобразования строим на обучающей части.</p></div>
+</details>
+</section>
+<section id="vector"><p class="eyebrow">блок 03</p><h2>Что хранится в векторе?</h2>
+<div class="prose"><p><strong>One-hot</strong> задаёт слову собственную ось: одна единица и остальные нули. У разных слов скалярное произведение равно нулю. <strong>Мешок слов</strong> складывает такие векторы: строка матрицы соответствует документу, столбец — слову словаря, ячейка — числу вхождений.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="onehot"></div></div>
+</div>
+<div class="panel" data-link-scope>
+<div class="formula"><div class="equation"><span data-f="tfidf"><math><mrow><mi mathvariant="normal">tf</mi><mo>(</mo><mi>t</mi><mo>,</mo><mi>d</mi><mo>)</mo></mrow><mo>=</mo><mrow><mi>N</mi><mo>(</mo><mi>t</mi><mo>,</mo><mi>d</mi><mo>)</mo></mrow></math></span></div>
+<p>Число вхождений токена t в документ d.</p>
+<div class="equation"><span data-f="tfidf"><math><mrow><mi mathvariant="normal">idf</mi><mo>(</mo><mi>t</mi><mo>)</mo></mrow><mo>=</mo><mi mathvariant="normal">ln</mi><mspace width="0.15em"/><mfrac><mrow><mn>1</mn><mo>+</mo><mo>|</mo><mi>D</mi><mo>|</mo></mrow><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">df</mi><mo>(</mo><mi>t</mi><mo>)</mo></mrow></mrow></mfrac><mo>+</mo><mn>1</mn></math></span></div>
+<p>D — обучающие документы; df(t) — число документов, содержащих t. Единицы задают сглаживание, используемое в примере и коде.</p>
+<div class="equation"><span data-f="tfidf"><math><msub><mi>u</mi><mrow><mi>d</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>=</mo><mrow><mi>N</mi><mo>(</mo><mi>t</mi><mo>,</mo><mi>d</mi><mo>)</mo></mrow><mo>·</mo><mo>(</mo><mi mathvariant="normal">ln</mi><mspace width="0.15em"/><mfrac><mrow><mn>1</mn><mo>+</mo><mo>|</mo><mi>D</mi><mo>|</mo></mrow><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">df</mi><mo>(</mo><mi>t</mi><mo>)</mo></mrow></mrow></mfrac><mo>+</mo><mn>1</mn><mo>)</mo></math></span></div>
+<p>Вес токена до нормировки.</p>
+<div class="equation"><span data-f="matrix"><math><msub><mi>x</mi><mrow><mi>d</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>=</mo><mfrac><msub><mi>u</mi><mrow><mi>d</mi><mo>,</mo><mi>t</mi></mrow></msub><msqrt><munder><mo>∑</mo><mrow><mi>v</mi><mo>∈</mo><mi>V</mi></mrow></munder><msubsup><mi>u</mi><mrow><mi>d</mi><mo>,</mo><mi>v</mi></mrow><mn>2</mn></msubsup></msqrt></mfrac></math></span></div>
+<p>Значение ячейки после L2-нормировки. V — словарь; в знаменателе длина вектора документа по всем словам словаря. Если все веса нулевые, оставляем нулевой вектор.</p></div>
+<div class="panel-body"><div data-fig="tfidf"></div><div class="add-controls"><button id="repeat-word">Повторить «кот»</button><button id="reverse-words">Переставить слова</button></div><div id="tfidf-trace" class="add-result" aria-live="polite"></div></div>
+<div class="panel-note"><p>Нажмите на ячейку: увидите счётчик, IDF и итоговый вес. Переключатели изменяют первый документ; словарь и IDF остаются обученными на исходных документах. Здесь используем сглаженную формулу sklearn, совпадающую с кодом ниже.</p></div>
+<pre class="code"><code><span class="ln"><b class="kw">from</b> sklearn.feature_extraction.text <b class="kw">import</b> TfidfVectorizer</span><span class="ln" data-f="tfidf" tabindex="0">vectorizer = TfidfVectorizer()</span><span class="ln" data-f="matrix" tabindex="0">X_train = vectorizer.fit_transform(train_texts)</span><span class="ln" data-f="matrix" tabindex="0">X_test = vectorizer.transform(test_texts)</span></code></pre>
+</div>
+<div class="qz" data-q="q-vector"></div>
+<div class="qz" data-q="q-order"></div>
+<details class="optional"><summary>формула IDF, неизвестные слова и n-граммы</summary><div class="prose"><p>В учебной формуле часто используют относительную частоту и IDF без сглаживания. Деление всех частот строки на длину документа сокращается при последующей L2-нормировке.</p>
+<p>Размер X — [B, V]: B документов, V слов словаря. Неизвестное слово не создаёт столбец. Если все слова неизвестны, строка нулевая. Перестановка слов сохраняет мешок; словесные биграммы частично возвращают локальный порядок. Символьные n-граммы позволяют делить признаки между словоформами и опечатками, но увеличивают число признаков.</p></div>
+</details>
+</section>
+<section id="model"><p class="eyebrow">блок 04</p><h2>Как получается класс?</h2>
+<div class="prose"><p>Линейный классификатор умножает признаки на обучаемые веса и добавляет смещение. Для каждого документа получается C оценок; softmax превращает их в распределение по классам. При обучении увеличиваем вероятность правильной темы.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="linear"></div><div id="linear-controls" class="add-controls"><button data-word="0">+ «матч»</button><button data-word="1">+ «акции»</button><button data-word="reset">Сбросить</button></div><div id="linear-result" class="add-result" aria-live="polite"></div></div>
+<div class="panel-note"><p>Ручной пример: признаки «матч» и «акции», классы «спорт» и «бизнес». Нажмите на слово, чтобы изменить его частоту и проследить пересчёт оценок и вероятностей. Веса здесь учебные, обучение на AG News — ниже.</p></div>
+<pre class="code"><code><span class="ln"><b class="kw">import</b> numpy <b class="kw">as</b> np</span><span class="ln" data-f="matrix" tabindex="0">X = np.array([[1., 0.]])</span><span class="ln" data-f="scores" tabindex="0">W = np.array([[2., -1.], [-1., 2.]])</span><span class="ln" data-f="scores" tabindex="0">scores = X @ W</span><span class="ln">exp_scores = np.exp(scores - scores.max(axis=1, keepdims=<b class="kw">True</b>))</span><span class="ln" data-f="prob" tabindex="0">probabilities = exp_scores / exp_scores.sum(axis=1, keepdims=<b class="kw">True</b>)</span><span class="ln" data-f="decision" tabindex="0">predictions = probabilities.argmax(axis=1)</span></code></pre>
+</div>
+<div class="qz" data-q="q-leak"></div>
+<div class="qz" data-q="q-shortcut"></div>
+<details class="optional"><summary>обучение, метрики и проверка ошибок</summary><div class="prose"><p>Короткий код показывает весь путь от текста до вероятностей. Разделение на обучение и тест должно произойти до fit. Pipeline обучает словарь, IDF и классификатор на одной обучающей части; при predict применяет готовые преобразования.</p>
+<p>Accuracy — доля правильных меток. При неравных частотах классов смотрим также precision, recall и F1 по классам. Высокая общая accuracy может скрывать провал на редкой теме. Разбираем тексты ошибок: неоднозначность, новые слова, смена источника и случайные подсказки требуют разных решений.</p></div>
+</details>
+<div class="prose"><p>Результаты сохранённого опыта на AG News: меняем представление, оставляем линейный классификатор. Это англоязычные новости; перенос на русский или другую предметную область требует отдельной проверки. По одной оценке нельзя объявить небольшую разницу устойчивой.</p></div>
+<div class="panel"><div class="panel-body" id="classification-results"></div></div></section>
+<section id="embeddings"><p class="eyebrow">блок 05</p><h2>Откуда берётся эмбеддинг?</h2>
+<div class="prose"><p>Распределительная гипотеза: близкие по употреблению слова встречаются в похожих контекстах. <strong>Skip-Gram</strong> учится по центральному слову предсказывать соседнее. Из обычного текста получаем обучающие пары без ручной разметки.</p>
+<p>Создаём две обучаемые таблицы: <code>word_embeddings</code> хранит входной вектор каждого слова, <code>context_embeddings</code> — его вектор в роли предсказываемого соседа. В коде это два объекта <code>torch.nn.Embedding</code>: сначала они заполнены случайными числами, затем меняются при обучении. После обучения для представления слов берём <code>word_embeddings</code>.</p></div>
+<details class="optional"><summary>общие данные и начальные веса для примеров Word2Vec</summary><div class="prose"><p>В каждом примере сначала выполните общий код: он задаёт небольшой учебный корпус, словарь, пары соседей и начальные веса. Затем запустите код выбранного метода. Корпус здесь нужен для разбора вычислений; для полезных языковых представлений нужны большие данные.</p></div><pre class="code"><code><span class="ln"><b class="kw">import</b> torch</span><span class="ln"></span><span class="ln">torch.manual_seed(7)</span><span class="ln">torch.set_num_threads(1)</span><span class="ln">train_texts = [</span><span class="ln">    &quot;кот ест рыбу&quot;, &quot;пёс ест мясо&quot;, &quot;кошка любит молоко&quot;,</span><span class="ln">    &quot;кот утром ест свежую рыбу&quot;, &quot;банк выдал кредит&quot;,</span><span class="ln">    &quot;компания выпустила акции&quot;, &quot;рынок торгует акциями&quot;,</span><span class="ln">]</span><span class="ln">tokenized_train = [text.split() <b class="kw">for</b> text <b class="kw">in</b> train_texts]</span><span class="ln">vocabulary = {word: i <b class="kw">for</b> i, word <b class="kw">in</b> enumerate(sorted({</span><span class="ln">    word <b class="kw">for</b> text <b class="kw">in</b> tokenized_train <b class="kw">for</b> word <b class="kw">in</b> text</span><span class="ln">}))}</span><span class="ln">pairs = [</span><span class="ln">    (vocabulary[center], vocabulary[neighbor])</span><span class="ln">    <b class="kw">for</b> text <b class="kw">in</b> tokenized_train <b class="kw">for</b> i, center <b class="kw">in</b> enumerate(text)</span><span class="ln">    <b class="kw">for</b> j, neighbor <b class="kw">in</b> enumerate(text) <b class="kw">if</b> 0 &lt; abs(i - j) &lt;= 2</span><span class="ln">]</span><span class="ln">center_ids, context_ids = torch.tensor(pairs).T</span></code></pre><pre class="code"><code><span class="ln">word_embeddings = torch.nn.Embedding(len(vocabulary), 4)</span><span class="ln">context_embeddings = torch.nn.Embedding(len(vocabulary), 4)</span></code></pre></details>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="skip"></div></div>
+<div class="panel-note"><p>Одна обучающая пара: центр «ест», сосед «рыбу». По номеру «ест» выбираем строку входной таблицы. Сравниваем этот вектор с выходными векторами всех слов и получаем вероятности через softmax. Правильный ответ — «рыбу».</p></div>
+<pre class="code"><code><span class="ln">optimizer = torch.optim.Adam(</span><span class="ln">    list(word_embeddings.parameters()) + list(context_embeddings.parameters()),</span><span class="ln">    lr=0.03,</span><span class="ln">)</span><span class="ln"><b class="kw">for</b> step <b class="kw">in</b> range(100):</span><span class="ln" data-f="lookup" tabindex="0">    center_vectors = word_embeddings(center_ids)</span><span class="ln" data-f="context" tabindex="0">    scores = center_vectors @ context_embeddings.weight.T</span><span class="ln" data-f="target" tabindex="0">    loss = torch.nn.functional.cross_entropy(scores, context_ids)</span><span class="ln">    optimizer.zero_grad()</span><span class="ln">    loss.backward()</span><span class="ln">    optimizer.step()</span></code></pre>
+</div>
+<div class="qz" data-q="q-embed"></div>
+<details class="optional"><summary>обучение и применение векторов</summary><div class="prose"><p>На каждой паре считаем функцию потерь и выполняем шаг оптимизатора: он меняет обе таблицы. Векторы слов со сходными контекстами получают сходные обучающие сигналы. Координаты не имеют заранее назначенных смыслов.</p>
+<p>Обучающая задача отличается от будущего применения вектора: для классификации документов ещё нужны представление документа, метки и классификатор.</p></div>
+</details>
+<div class="prose"><p><strong>CBOW</strong> предсказывает центральное слово по соседям. Из <code>word_embeddings</code> берём векторы всех слов контекста и усредняем их. Затем сравниваем средний вектор с выходной таблицей. Порядок соседей при усреднении теряется.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="cbow"></div></div>
+<div class="panel-note"><p>Окно «кот утром <strong>ест</strong> свежую рыбу»: четыре соседа выбирают четыре строки одной входной таблицы. Их среднее предсказывает центр «ест». У CBOW одно окно даёт один обучающий пример; у Skip-Gram каждая пара центра с соседом — отдельный пример.</p></div>
+<pre class="code"><code><span class="ln">cbow_context_ids = torch.tensor([</span><span class="ln">    vocabulary[word] <b class="kw">for</b> word <b class="kw">in</b> [&quot;кот&quot;, &quot;утром&quot;, &quot;свежую&quot;, &quot;рыбу&quot;]</span><span class="ln">])</span><span class="ln">cbow_target = torch.tensor([vocabulary[&quot;ест&quot;]])</span><span class="ln">optimizer = torch.optim.Adam(</span><span class="ln">    list(word_embeddings.parameters()) + list(context_embeddings.parameters()),</span><span class="ln">    lr=0.03,</span><span class="ln">)</span><span class="ln"><b class="kw">for</b> step <b class="kw">in</b> range(100):</span><span class="ln" data-f="lookup" tabindex="0">    vectors = word_embeddings(cbow_context_ids)</span><span class="ln" data-f="average" tabindex="0">    context_mean = vectors.mean(dim=0)</span><span class="ln" data-f="context" tabindex="0">    scores = context_mean @ context_embeddings.weight.T</span><span class="ln" data-f="target" tabindex="0">    loss = torch.nn.functional.cross_entropy(scores[<b class="kw">None</b>, :], cbow_target)</span><span class="ln">    optimizer.zero_grad()</span><span class="ln">    loss.backward()</span><span class="ln">    optimizer.step()</span></code></pre>
+</div>
+<div class="prose"><p><strong>Negative sampling</strong> сокращает число слов, которые оцениваем при обучении. Берём пару из текста — «ест, рыбу» — с меткой 1. К тому же центру подбираем случайные слова из словаря, например «стол» и «бег», с метками 0. Для каждой пары модель учится отличать соседа из текста от случайного слова.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="negative"></div></div>
+<div class="panel-note"><p>Метки заданы при подготовке примеров. Модель вычисляет скалярные произведения векторов — оценки z. Функция потерь сравнивает эти оценки с метками: для настоящей пары повышаем σ(z), для случайных понижаем. Обновляются обе таблицы: <code>word_embeddings</code> и <code>context_embeddings</code>.</p></div>
+<pre class="code"><code><span class="ln">negative_count = 2</span><span class="ln">sampling_probs = torch.full((len(vocabulary),), 1 / len(vocabulary))</span><span class="ln">optimizer = torch.optim.Adam(</span><span class="ln">    list(word_embeddings.parameters()) + list(context_embeddings.parameters()),</span><span class="ln">    lr=0.03,</span><span class="ln">)</span><span class="ln"><b class="kw">for</b> step <b class="kw">in</b> range(100):</span><span class="ln">    negatives = torch.multinomial(</span><span class="ln">        sampling_probs, len(center_ids) * negative_count, replacement=<b class="kw">True</b>,</span><span class="ln" data-f="samples" tabindex="0">    ).reshape(-1, negative_count)</span><span class="ln">    candidates = torch.cat([context_ids[:, <b class="kw">None</b>], negatives], dim=1)</span><span class="ln">    labels = torch.zeros_like(candidates, dtype=torch.float)</span><span class="ln" data-f="labels" tabindex="0">    labels[:, 0] = 1</span><span class="ln" data-f="lookup" tabindex="0">    centers = word_embeddings(center_ids)</span><span class="ln" data-f="context" tabindex="0">    contexts = context_embeddings(candidates)</span><span class="ln" data-f="pair" tabindex="0">    scores = (centers[:, <b class="kw">None</b>, :] * contexts).sum(-1)</span><span class="ln" data-f="target" tabindex="0">    loss = torch.nn.functional.binary_cross_entropy_with_logits(scores, labels)</span><span class="ln">    optimizer.zero_grad()</span><span class="ln">    loss.backward()</span><span class="ln">    optimizer.step()</span></code></pre>
+</div>
+<details class="optional"><summary>откуда берутся случайные слова</summary><div class="prose"><p>В примере случайные слова выбираются из словаря равновероятно; <code>negative_count</code> задаёт их число на одну настоящую пару. <code>torch.multinomial</code> выполняет выбор, <code>candidates</code> объединяет настоящего соседа и случайные слова.</p>
+<p>Случайное слово может оказаться уместным соседом или совпасть со словом из настоящей пары. Метка 0 означает способ получения примера. Сумма sigmoid-оценок по словарю не обязана равняться единице.</p></div></details>
+<div class="qz" data-q="q-negative"></div>
+</section>
+<section id="pool"><p class="eyebrow">блок 06</p><h2>От слов к документу</h2>
+<div class="prose"><p>Для документа нужен один вектор при любом числе слов. Берём векторы из <code>word_embeddings</code>, обученной в предыдущем блоке. Сначала усредняем их. Во второй вкладке дополнительно обучаем матрицу проекции по теме текста.</p></div>
+<details class="optional"><summary>полный код получения векторов слов</summary><div class="prose"><p>Общий код ниже создаёт корпус и словарь, обучает Skip-Gram и сохраняет таблицу <code>word_embeddings</code>. Дальше запускайте код активной вкладки. Все данные и переменные определены в этих блоках.</p></div><pre class="code"><code><span class="ln"><b class="kw">import</b> torch</span><span class="ln"></span><span class="ln">torch.manual_seed(7)</span><span class="ln">torch.set_num_threads(1)</span><span class="ln">train_texts = [</span><span class="ln">    &quot;кот ест рыбу&quot;, &quot;пёс ест мясо&quot;, &quot;кошка любит молоко&quot;,</span><span class="ln">    &quot;кот утром ест свежую рыбу&quot;, &quot;банк выдал кредит&quot;,</span><span class="ln">    &quot;компания выпустила акции&quot;, &quot;рынок торгует акциями&quot;,</span><span class="ln">]</span><span class="ln">tokenized_train = [text.split() <b class="kw">for</b> text <b class="kw">in</b> train_texts]</span><span class="ln">vocabulary = {word: i <b class="kw">for</b> i, word <b class="kw">in</b> enumerate(sorted({</span><span class="ln">    word <b class="kw">for</b> text <b class="kw">in</b> tokenized_train <b class="kw">for</b> word <b class="kw">in</b> text</span><span class="ln">}))}</span><span class="ln">pairs = [</span><span class="ln">    (vocabulary[center], vocabulary[neighbor])</span><span class="ln">    <b class="kw">for</b> text <b class="kw">in</b> tokenized_train <b class="kw">for</b> i, center <b class="kw">in</b> enumerate(text)</span><span class="ln">    <b class="kw">for</b> j, neighbor <b class="kw">in</b> enumerate(text) <b class="kw">if</b> 0 &lt; abs(i - j) &lt;= 2</span><span class="ln">]</span><span class="ln">center_ids, context_ids = torch.tensor(pairs).T</span></code></pre><pre class="code"><code><span class="ln">word_embeddings = torch.nn.Embedding(len(vocabulary), 4)</span><span class="ln">context_embeddings = torch.nn.Embedding(len(vocabulary), 4)</span></code></pre><pre class="code"><code><span class="ln">optimizer = torch.optim.Adam(</span><span class="ln">    list(word_embeddings.parameters()) + list(context_embeddings.parameters()),</span><span class="ln">    lr=0.03,</span><span class="ln">)</span><span class="ln"><b class="kw">for</b> step <b class="kw">in</b> range(100):</span><span class="ln" data-f="lookup" tabindex="0">    center_vectors = word_embeddings(center_ids)</span><span class="ln" data-f="context" tabindex="0">    scores = center_vectors @ context_embeddings.weight.T</span><span class="ln" data-f="target" tabindex="0">    loss = torch.nn.functional.cross_entropy(scores, context_ids)</span><span class="ln">    optimizer.zero_grad()</span><span class="ln">    loss.backward()</span><span class="ln">    optimizer.step()</span></code></pre></details>
+<div class="panel" id="document-representation">
+<div class="panel-body"><div class="card-tabs" role="tablist" aria-label="Вектор документа">
+<button id="tab-mean" role="tab" aria-selected="true" aria-controls="pane-mean" class="sel" tabindex="0">Усреднение</button>
+<button id="tab-projection" role="tab" aria-selected="false" aria-controls="pane-projection" tabindex="-1">Проекция через обучаемую матрицу</button>
+</div></div>
+<div id="pane-mean" role="tabpanel" aria-labelledby="tab-mean" data-link-scope>
+<div class="panel-body"><div data-fig="pool"></div></div>
+<div class="panel-note"><p>Усредняем каждую координату по словам. Из таблицы [T, d] получаем вектор [d]. Перестановка слов и повторение всего текста сохраняют результат.</p></div>
+<pre class="code"><code><span class="ln">tokens = &quot;кот ест рыбу&quot;.split()</span><span class="ln">token_ids = torch.tensor([vocabulary[word] <b class="kw">for</b> word <b class="kw">in</b> tokens])</span><span class="ln" data-f="lookup" tabindex="0">word_vectors = word_embeddings(token_ids).detach()</span><span class="ln" data-f="pool" tabindex="0">document_vector = word_vectors.mean(dim=0)</span></code></pre>
+</div>
+<div id="pane-projection" role="tabpanel" aria-labelledby="tab-projection" data-link-scope hidden>
+<div class="panel-body"><div data-fig="projection"></div></div>
+<div class="panel-note"><p>Средний вектор умножаем на обучаемую матрицу и добавляем смещение. В примере размерность меняется с d на h. Матрица учится вместе с классификатором по меткам 0 — «животные», 1 — «экономика»; векторы слов фиксируем. Порядок слов по-прежнему потерян.</p></div>
+<pre class="code"><code><span class="ln">train_vectors = torch.stack([</span><span class="ln">    word_embeddings(torch.tensor([vocabulary[word] <b class="kw">for</b> word <b class="kw">in</b> text])).mean(dim=0)</span><span class="ln">    <b class="kw">for</b> text <b class="kw">in</b> tokenized_train</span><span class="ln" data-f="pool" tabindex="0">]).detach()</span><span class="ln">labels = torch.tensor([0, 0, 0, 0, 1, 1, 1])</span><span class="ln" data-f="projection" tabindex="0">projection = torch.nn.Linear(4, 2)</span><span class="ln">classifier = torch.nn.Linear(2, 2)</span><span class="ln">optimizer = torch.optim.Adam(</span><span class="ln">    list(projection.parameters()) + list(classifier.parameters()), lr=0.03,</span><span class="ln">)</span><span class="ln"><b class="kw">for</b> step <b class="kw">in</b> range(100):</span><span class="ln" data-f="projection" tabindex="0">    document_vectors = projection(train_vectors)</span><span class="ln">    scores = classifier(document_vectors)</span><span class="ln">    loss = torch.nn.functional.cross_entropy(scores, labels)</span><span class="ln">    optimizer.zero_grad()</span><span class="ln">    loss.backward()</span><span class="ln">    optimizer.step()</span><span class="ln" data-f="projection" tabindex="0">document_vector = projection(train_vectors[0]).detach()</span></code></pre>
+<details class="optional"><summary>что здесь обучается</summary><div class="prose"><p>Проекция меняет координаты уже собранного вектора. Сама по себе матрица не сворачивает произвольное число слов в один вектор, поэтому здесь перед ней стоит усреднение. Метки нужны для обучения проекции; для простого усреднения дополнительных меток не требуется.</p></div></details>
+</div>
+</div>
+<div class="qz" data-q="q-pool"></div>
+<details class="optional"><summary>другие способы агрегации и выбор представления</summary><div class="prose"><p>Можно суммировать векторы, брать максимум по координатам или взвешивать среднее по IDF. Эти операции по-разному учитывают частоты и длину; порядок по-прежнему теряется. Сходство документов зависит от того, насколько векторы слов подходят языку и предметной области.</p>
+<p>TF-IDF полезен при сильных лексических подсказках. Усреднённые эмбеддинги позволяют делить информацию между словами с похожими контекстами, но теряют часть различий. Сравниваем оба пути на одном разделении данных, с одинаковой проверкой ошибок.</p></div>
+</details>
+<div class="prose"><p>У <strong>fastText</strong> вектор слова собирается из обучаемых векторов символьных n-грамм и, для известного слова, его собственного вектора. Новое слово получает вектор из известных частей. Это может помочь со словоформами и опечатками; удачное представление значения не гарантировано.</p></div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="fast"></div></div>
+<div class="panel-note"><p>На схеме показана часть символьных триграмм слова с границами. Векторы частей складываются; реализация использует хеш-таблицу. Здесь речь о fastText-эмбеддингах; у библиотеки есть и отдельный режим классификации текстов.</p></div>
+<pre class="code"><code><span class="ln"><b class="kw">from</b> gensim.models <b class="kw">import</b> FastText</span><span class="ln">model = FastText(sentences=tokenized_train, vector_size=4, min_count=1, workers=1, seed=7)</span><span class="ln" data-f="subword" tabindex="0">vector = model.wv[&quot;кошечками&quot;]</span></code></pre>
+</div>
+<div class="qz" data-q="q-oov"></div>
+</section>
+<section id="design"><p class="eyebrow">блок 07</p><h2>Спроектируем систему</h2>
+<div class="prose"><p>Соберём систему целиком: ограничения, данные, представление, модель и проверка.</p></div>
+<div class="qz" data-q="q-design"></div>
+</section>
+<section id="sources"><p class="eyebrow">блок 08</p><h2>Источники</h2>
+<h3>References</h3><div class="prose footnote sources"><ul>
+<li>Zhang, Zhao, LeCun (2015). <a href="https://arxiv.org/abs/1509.01626"><em>Character-level Convolutional Networks for Text Classification.</em></a> NeurIPS. — источник AG News.</li>
+<li>Wang, Manning (2012). <a href="https://aclanthology.org/P12-2018/"><em>Baselines and Bigrams: Simple, Good Sentiment and Topic Classification.</em></a> ACL.</li>
+<li>Mikolov et al. (2013). <a href="https://arxiv.org/abs/1310.4546"><em>Distributed Representations of Words and Phrases and their Compositionality.</em></a> NeurIPS. — skip-gram и negative sampling.</li>
+<li>Bojanowski et al. (2017). <a href="https://aclanthology.org/Q17-1010/"><em>Enriching Word Vectors with Subword Information.</em></a> TACL. — fastText.</li>
+</ul></div></section>
+</div></main></div>
+
+<div hidden id="text-chunks">
+<template data-text="normalization-versions">Результаты вычислены в Python: NLTK {nltk}, pymorphy3 {pymorphy}, словарь {dict}. Код можно запустить после <code>pip install nltk pymorphy3</code>.</template>
+<template data-text="topics"><ul>
+<li>Постановка задачи и разметка</li>
+<li>Токенизация и обработка текста</li>
+<li>Мешок слов и TF-IDF</li>
+<li>Линейная классификация</li>
+<li>Word2vec и fastText</li>
+<li>Вектор документа и проверка ошибок</li>
+</ul></template>
+</div>
+<script type="application/json" id="quiz-data">{"q-task":{"key":"q-task","type":"sort","q":"<p>Какой выход нужен в каждой задаче?<\/p>","a":"<p>Тема — классификация, цена — регрессия, перевод — построение последовательности. Выбор представления и метрики зависит от того, какой выход нужен.<\/p>","miss":"","bins":["класс","число","последовательность"],"items":[{"label":"определить тему новости","bins":["класс"]},{"label":"оценить цену квартиры по объявлению","bins":["число"]},{"label":"перевести новость","bins":["последовательность"]}],"n":1},"q-label":{"key":"q-label","type":"write","q":"<p>Новость: «Компания купила футбольный клуб». Какую тему вы поставите? Что нужно уточнить в инструкции разметчику?<\/p>","a":"<p>По одному тексту подходят и спорт, и бизнес. Нужна общая инструкция: что считать основной темой и допускается ли несколько ответов. Для одной метки и нескольких меток нужны разные постановки задачи.<\/p>","miss":"","check":["перечислить допустимые темы","определить правило для нескольких подходящих тем","решить, можно ли выбрать несколько меток"],"n":2},"q-token":{"key":"q-token","type":"pick","q":"<p>Слово получило идентификатор 7, другое — 8. Что из этого следует?<\/p>","a":"<p>Только адреса. Частоты, сходство и порядок слов в тексте не закодированы разностью идентификаторов.<\/p>","miss":"","opts":[{"k":"o0","label":"значения слов близки","right":false},{"k":"o1","label":"у слов разные адреса в словаре","right":true},{"k":"o2","label":"второе слово встречается чаще","right":false}],"multi":false,"n":3},"q-clean":{"key":"q-clean","type":"write","q":"<p>Что может потеряться при обработке «Мне НЕ понравился Мир»? Какие изменения вы бы проверили отдельно?<\/p>","a":"<p>Нижний регистр стирает различие имени и обычного слова, удаление «не» меняет тональность. Для каждого преобразования сравниваем качество при неизменных данных и модели.<\/p>","miss":"","check":["регистр","отрицание","неоднозначность слова Мир","сравнение каждого изменения на отложенных данных"],"n":4},"q-vector":{"key":"q-vector","type":"pick","q":"<p>В новом тексте девять слов, два отсутствовали при обучении. Какова длина его TF-IDF-вектора?<\/p>","a":"<p>V: столбцы уже определены. Незнакомые слова пропускаются, остальные заполняют существующие столбцы.<\/p>","miss":"","opts":[{"k":"o0","label":"девять","right":false},{"k":"o1","label":"семь","right":false},{"k":"o2","label":"размер обученного словаря V","right":true},{"k":"o3","label":"V плюс два","right":false}],"multi":false,"n":5},"q-order":{"key":"q-order","type":"pick","q":"<p>«мама любит дочь» и «дочь любит мама» содержат одни и те же слова. Различит ли их мешок слов?<\/p>","a":"<p>Частоты совпадают, порядок потерян. Биграммы дадут разные признаки, но сами по себе не обеспечат понимание ролей.<\/p>","miss":"","opts":[{"k":"o0","label":"да, роли участников сохраняются","right":false},{"k":"o1","label":"нет, векторы совпадут","right":true}],"multi":false,"n":6},"q-leak":{"key":"q-leak","type":"pick","q":"<p>Можно ли перед разделением данных обучить TF-IDF на всех текстах, ведь метки при этом не используются?<\/p>","a":"<p>Отложенная выборка должна проверять весь обучаемый путь. Даже преобразование без меток получает информацию о распределении тестовых данных.<\/p>","miss":"","opts":[{"k":"o0","label":"да, утечка бывает только через метки","right":false},{"k":"o1","label":"нет, тест уже повлияет на словарь и IDF","right":true}],"multi":false,"n":7},"q-shortcut":{"key":"q-shortcut","type":"write","q":"<p>Среди сильных признаков темы оказалось название информагентства. Как проверить, помогает ли модель читателю на новостях другого источника?<\/p>","a":"<p>Вес показывает, чем пользуется модель. Проверка на другом источнике и контролируемая замена текста помогают выяснить, насколько решение зависит от этой подсказки.<\/p>","miss":"","check":["проверить распределение источников по темам","сделать проверку на отдельном источнике или периоде","сравнить предсказания при удалении названия источника"],"n":8},"q-embed":{"key":"q-embed","type":"point","q":"<p>Где находится таблица, строку которой используем как эмбеддинг центрального слова?<\/p>\n<div data-link-scope><div data-fig=\"skip-question\"><\/div><\/div>","a":"<p>B — входная таблица <code>word_embeddings<\/code>: одна строка на слово. C — выбранная строка этой таблицы. D — транспонированная таблица <code>context_embeddings<\/code>, с которой сравниваем входной вектор. E — распределение по словам-кандидатам.<\/p>","miss":"","opts":[{"k":"onehot","label":"A","right":false},{"k":"embedding","label":"B","right":true},{"k":"hidden","label":"C","right":false},{"k":"output","label":"D","right":false},{"k":"distribution","label":"E","right":false}],"multi":false,"n":9},"q-negative":{"key":"q-negative","type":"pick","q":"<p>Как звучит обучающая задача при negative sampling?<\/p>","a":"<p>Метка принадлежит паре «центр, контекст». После обучения забираем векторы слов; тема документа не была целью этого обучения.<\/p>","miss":"","opts":[{"k":"o0","label":"определить тему текста","right":false},{"k":"o1","label":"выбрать следующее слово полным softmax","right":false},{"k":"o2","label":"отличить наблюдённую пару от шумовой","right":true}],"multi":false,"n":10},"q-pool":{"key":"q-pool","type":"pick","q":"<p>Что сохраняет усреднение статических эмбеддингов? Отметьте всё подходящее.<\/p>","a":"<p>Фиксированная форма и вклад слов сохраняются. Порядок исчезает; арифметика среднего сама по себе не моделирует область действия отрицания.<\/p>","miss":"","opts":[{"k":"o0","label":"фиксированное число координат","right":true},{"k":"o1","label":"вклад каждого представленного слова","right":true},{"k":"o2","label":"порядок слов","right":false},{"k":"o3","label":"гарантированное понимание отрицания","right":false}],"multi":true,"n":11},"q-oov":{"key":"q-oov","type":"pick","q":"<p>Новая словоформа отсутствовала в обучении fastText. Что можем утверждать?<\/p>","a":"<p>Части позволяют вычислить представление за пределами словаря слов. Это механизм построения вектора, а качество зависит от обучения и самого слова.<\/p>","miss":"","opts":[{"k":"o0","label":"метод обязательно поймёт её значение","right":false},{"k":"o1","label":"можно собрать вектор по символьным частям; полезность проверяем","right":true},{"k":"o2","label":"новый вектор обязательно нулевой","right":false}],"multi":false,"n":12},"q-design":{"key":"q-design","type":"write","q":"<p>Банк распределяет русскоязычные обращения между командами. Есть размеченные обращения и большой архив без меток; ответ нужен на CPU. Предложите решение и способ проверки.<\/p>","a":"<p>Начнём с TF-IDF и линейного классификатора. Разделим обращения по времени и проверим, не попали ли повторы в обе части. Посмотрим качество каждой команды, спорные обращения и задержку. Эмбеддинги проверим на том же разделении. Заранее определим действие для обращений с неизвестной темой.<\/p>","miss":"","check":["задача: одна команда или несколько; правила неоднозначных случаев","данные: разметка, разделение по времени, защита от повторов","представление: TF-IDF или эмбеддинги с обоснованием","модель: обучаемый классификатор","метрика: качество по командам и задержка","что сломается: новые темы, названия и смена распределения"],"n":13}}</script>
+<script type="application/json" id="add-data">{"results":[{"rep":"counts, words 1-1","head":"LogisticRegression","acc":0.9093,"f1":0.9092},{"rep":"tf-idf, words 1-1","head":"LogisticRegression","acc":0.9179,"f1":0.9177},{"rep":"tf-idf, words 1-2","head":"LogisticRegression","acc":0.9195,"f1":0.9193},{"rep":"tf-idf, chars 3-5","head":"LogisticRegression","acc":0.9162,"f1":0.916}],"morphology":{"versions":{"nltk":"3.10.4","pymorphy3":"2.0.6","pymorphy3-dicts-ru":"2.4.417150.4580142"},"rows":[{"word":"кошки","stem":"кошк","lemmas":["кошка"],"case":"словоформа"},{"word":"кошкой","stem":"кошк","lemmas":["кошка"],"case":"словоформа"},{"word":"кошкам","stem":"кошк","lemmas":["кошка"],"case":"словоформа"},{"word":"бегу","stem":"бег","lemmas":["бег","бежать"],"case":"смена основы"},{"word":"бежали","stem":"бежа","lemmas":["бежать"],"case":"смена основы"},{"word":"люди","stem":"люд","lemmas":["человек"],"case":"смена основы"},{"word":"лучше","stem":"лучш","lemmas":["лучше","хороший"],"case":"сравнительная форма"},{"word":"стали","stem":"стал","lemmas":["сталь","стать"],"case":"неоднозначность"},{"word":"пила","stem":"пил","lemmas":["пил","пила","пить"],"case":"неоднозначность"},{"word":"замки","stem":"замк","lemmas":["замок"],"case":"омонимы с одной леммой"}]},"pooling":{"tokens":["кот","ест","рыбу"],"word_vectors":[[-3.47301983833313,0.024456383660435677,-0.32999616861343384,-0.4953947961330414],[-1.324478030204773,0.7507996559143066,0.04559734836220741,0.43077972531318665],[-0.24745303392410278,1.5226753950119019,-2.389286756515503,-2.224336624145508]],"mean":[-1.6816502809524536,0.765977144241333,-0.8912284970283508,-0.7629838585853577],"projection":{"weight":[[-1.1878877878189087,-1.0003077983856201],[-0.22571423649787903,-0.3310491144657135],[-0.2226574867963791,0.7133090496063232],[0.49940910935401917,1.1091846227645874]],"bias":[1.0280689001083374,-0.17256252467632294],"output":[2.6701865196228027,-0.22598199546337128]},"versions":{"torch":"2.14.1"}}}</script>
+<script>
+/* Shared by every week's demo.js; scripts/build_demo.py puts this in front of it. */
+
+// TXT("key", {n: 12}) — a text chunk from demo/text/*.md with its {n} placeholders filled; see scripts/demo_text.py
+function TXT(key, vars) {
+  const t = document.querySelector(`template[data-text="${key}"]`);
+  if (!t) throw new Error("no text chunk '" + key + "' — add it to demo/text/");
+  let s = t.innerHTML;
+  if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
+  return s;
+}
+
+// reference lists (demo/text, `## end-refs`): external links open in a new tab
+document.querySelectorAll('.prose.footnote a[href^="http"]').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
+
+/* The questions of a lecture page. scripts/build_demo.py puts this in front of the week's demo/lecture/lecture.js;
+   the questions themselves are parsed from demo/lecture/text/*.md by scripts/quiz_text.py into #quiz-data.
+
+   lecture.js registers what the markdown cannot hold:
+     QUIZ.figs.name = host => { ...draw an SVG into host... }   for every <div data-fig="name"></div> in a question
+                                                                 or an answer; a `point` question's clickable parts
+                                                                 carry data-pick="key" matching its options
+     QUIZ.values.name = 0.631                                     for a fill answer written as `@name`
+   Answers are kept in localStorage per page (meta[name=quiz-store]) so a student can leave and come back;
+   "Reset answers" in the rail clears them. Nothing here depends on the seminar's demo_data. */
+"use strict";
+const quizRu = document.documentElement.lang === "ru";
+const qt = (en, ru) => quizRu ? ru : en;
+const QUIZ = { figs: {}, values: {}, data: null, state: null };
+
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const DATA = JSON.parse($("#quiz-data").textContent);
+  const STORE = "quiz:" + (($('meta[name="quiz-store"]') || {}).content || location.pathname);
+  const load = () => { try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { return {}; } };
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* private window: answers live until reload */ } };
+  let state = load();
+  QUIZ.data = DATA; QUIZ.state = () => state;
+
+  /* ------------------------------------------------------------- figures */
+  function drawFigs(root) {
+    $$("[data-fig]", root).forEach(h => {
+      if (h.dataset.drawn) return;
+      const f = QUIZ.figs[h.dataset.fig];
+      if (f) { f(h); h.dataset.drawn = "1"; }
+      else h.innerHTML = `<div class="qz-nofig">figure “${esc(h.dataset.fig)}” is not drawn in lecture.js</div>`;
+    });
+  }
+
+  /* -------------------------------------------------------------- answers */
+  const norm = s => String(s).toLowerCase().replace(/[×*]/g, "x").replace(/\s+/g, " ").replace(/[.,;:]+$/, "").trim();
+  const num = s => { const v = parseFloat(String(s).replace(",", ".").replace(/[^0-9eE+.\-]/g, "")); return isNaN(v) ? null : v; };
+  function expected(alt) {
+    if (alt.startsWith("@")) {
+      const v = QUIZ.values[alt.slice(1)];
+      if (v === undefined) throw new Error(`QUIZ.values.${alt.slice(1)} is not set in lecture.js`);
+      return v;
+    }
+    return alt;
+  }
+  function matches(given, blank) {
+    for (const alt of blank.alts) {
+      const e = expected(alt);
+      const en = typeof e === "number" ? e : num(e);
+      if (en !== null && (blank.tol != null || typeof e === "number" || /^[-+]?[0-9.,eE]+$/.test(String(e).trim()))) {
+        const g = num(given); if (g === null) continue;
+        const dec = (String(e).split(".")[1] || "").length;
+        const tol = Math.max(blank.tol || 0, dec ? 0.5 * Math.pow(10, -dec) : 0, Math.abs(en) * 1e-9);
+        if (Math.abs(g - en) <= tol) return true;
+      } else if (norm(given) === norm(e)) return true;
+    }
+    return false;
+  }
+  const shown = blank => { const e = expected(blank.alts[0]); return typeof e === "number" ? (blank.tol != null ? +e.toFixed(Math.max(0, Math.ceil(-Math.log10(blank.tol)))) : +e.toFixed(3)) : e; };
+
+  /* `{name}` in a question, an option or an answer -> QUIZ.values.name (a number the browser computed), so the
+     markdown holds the sentence and never the number */
+  const fmtv = v => typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(3)) : String(v);
+  const fill = html => html.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? esc(fmtv(QUIZ.values[k])) : m);
+
+  /* ------------------------------------------------------------ rendering */
+  const KIND = {
+    pick: q => q.multi ? qt("tick all that apply", "выберите всё подходящее") : qt("pick one", "выберите один ответ"),
+    point: q => q.multi ? qt("click everything that fits", "отметьте части схемы") : qt("click in the picture", "выберите на схеме"),
+    sort: () => qt("sort into bins", "распределите по группам"), fill: () => qt("fill in", "заполните пропуски"), write: () => qt("write, then reveal", "ответьте, затем откройте разбор"),
+  };
+  const pad = n => String(n).padStart(2, "0");
+
+  function render(q) {
+    const host = $(`.qz[data-q="${q.key}"]`);
+    const st = state[q.key] || (state[q.key] = {});
+    host.dataset.type = q.type;
+    host.classList.toggle("done", !!st.done);
+    host.innerHTML = `<div class="qz-head"><span class="qz-n">${pad(q.n)}</span><span class="qz-kind">${KIND[q.type](q)}</span></div>
+      <div class="qz-q">${fill(q.q)}</div><div class="qz-ui"></div>
+      <div class="qz-a" hidden>${fill(q.a)}${q.miss ? `<p class="qz-miss"><b>${qt("if the answer is", "если ответили так:")}</b>${fill(q.miss)}</p>` : ""}</div>`;
+    drawFigs(host);
+    UI[q.type](q, host, st);
+    if (st.done) finish(q, host, st, true);
+  }
+
+  function row(extra) { return `<div class="btnrow qz-row">${extra || ""}<span class="qz-verdict"></span></div>`; }
+  const verdict = (host, text, ok) => { const v = $(".qz-verdict", host); v.textContent = text; v.className = "qz-verdict " + (ok === true ? "ok" : ok === false ? "no" : ""); };
+
+  const UI = {
+    pick(q, host, st) { UI.point(q, host, st); },
+    point(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<div class="picklist qz-opts">${q.opts.map(o => `<button data-k="${esc(o.k)}">${fill(o.label)}</button>`).join("")}</div>`
+        + row(q.multi ? `<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>` : "");
+      st.sel = st.sel || [];
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      parts.forEach(p => p.classList.add("qz-pickable"));
+      const btns = $$(".qz-opts button", host);
+      const keyOf = el => el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+      const paint = () => {
+        [...btns, ...parts].forEach(el => el.classList.toggle("pick", st.sel.includes(keyOf(el))));
+        const ck = $(".qz-check", host); if (ck) ck.disabled = !st.sel.length;
+      };
+      const choose = k => {
+        if (st.done) return;
+        if (q.multi) { st.sel = st.sel.includes(k) ? st.sel.filter(x => x !== k) : [...st.sel, k]; paint(); save(); }
+        else { st.sel = [k]; finish(q, host, st); }
+      };
+      btns.forEach(b => b.addEventListener("click", () => choose(b.dataset.k)));
+      parts.forEach(p => p.addEventListener("click", () => choose(p.dataset.pick)));
+      const ck = $(".qz-check", host); if (ck) ck.addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    sort(q, host, st) {
+      const ui = $(".qz-ui", host);
+      st.sel = st.sel || {};
+      ui.innerHTML = `<table class="qz-sort"><tbody>${q.items.map((it, i) => `<tr data-i="${i}"><td class="qz-item">${fill(it.label)}</td>
+        <td class="qz-bins">${q.bins.map(b => `<button data-b="${esc(b)}">${esc(b)}</button>`).join("")}</td></tr>`).join("")}</tbody></table>`
+        + row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button><span class="qz-count mono"></span>`);
+      const paint = () => {
+        $$("tr", ui).forEach(tr => $$("button", tr).forEach(b => b.classList.toggle("pick", st.sel[tr.dataset.i] === b.dataset.b)));
+        const n = Object.keys(st.sel).length;
+        $(".qz-check", host).disabled = n < q.items.length;
+        $(".qz-count", host).textContent = st.done ? "" : qt(`${n} / ${q.items.length} placed`, `${n} / ${q.items.length} распределено`);
+      };
+      ui.addEventListener("click", e => {
+        const b = e.target.closest("button[data-b]"); if (!b || st.done) return;
+        st.sel[b.closest("tr").dataset.i] = b.dataset.b; paint(); save();
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    fill(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>`);
+      st.vals = st.vals || {};
+      const inputs = $$("input.qz-blank", host);
+      const paint = () => { $(".qz-check", host).disabled = inputs.some(i => !i.value.trim()); };
+      inputs.forEach(i => {
+        i.value = st.vals[i.dataset.blank] || "";
+        i.addEventListener("input", () => { st.vals[i.dataset.blank] = i.value; paint(); save(); });
+        i.addEventListener("keydown", e => { if (e.key === "Enter" && !$(".qz-check", host).disabled) finish(q, host, st); });
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    write(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<textarea class="qz-text" rows="3" placeholder="${qt("Your answer, in a few sentences — then reveal.", "Ваш ответ в нескольких предложениях")}"></textarea>`
+        + row(`<button class="primary qz-check">${qt("Reveal", "Открыть разбор")}</button>`);
+      const ta = $("textarea", ui);
+      ta.value = st.text || "";
+      ta.addEventListener("input", () => { st.text = ta.value; save(); });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+    },
+  };
+
+  function finish(q, host, st, restoring) {
+    st.done = true;
+    host.classList.add("done");
+    const ck = $(".qz-check", host); if (ck) ck.remove();
+    if (q.type === "pick" || q.type === "point") {
+      const right = new Set(q.opts.filter(o => o.right).map(o => o.k));
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      [...$$(".qz-opts button", host), ...parts].forEach(el => {
+        const k = el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+        el.classList.remove("pick");
+        el.classList.toggle("right", right.has(k));
+        el.classList.toggle("wrong", st.sel.includes(k) && !right.has(k));
+        el.classList.toggle("missed", right.has(k) && !st.sel.includes(k));
+        el.disabled = true;
+      });
+      const hit = st.sel.filter(k => right.has(k)).length, wrong = st.sel.length - hit, missed = right.size - hit;
+      if (!q.multi) verdict(host, hit ? qt("right", "верно") : qt("not quite", "не совсем"), !!hit);
+      else verdict(host, wrong + missed === 0 ? qt("all of them", "всё верно") : qt(`${hit} right · ${wrong} wrong · ${missed} missed`, `${hit} верно · ${wrong} ошибочно · ${missed} пропущено`), wrong + missed === 0);
+    } else if (q.type === "sort") {
+      let agree = 0;
+      $$("table.qz-sort tr", host).forEach(tr => {
+        const it = q.items[+tr.dataset.i], chosen = st.sel[tr.dataset.i], ok = it.bins.includes(chosen);
+        agree += ok ? 1 : 0;
+        $$("button", tr).forEach(b => {
+          b.classList.remove("pick"); b.disabled = true;
+          b.classList.toggle("right", b.dataset.b === chosen && ok);
+          b.classList.toggle("wrong", b.dataset.b === chosen && !ok);
+          b.classList.toggle("ans", it.bins.includes(b.dataset.b) && b.dataset.b !== chosen);
+        });
+      });
+      $(".qz-count", host).textContent = "";
+      verdict(host, qt(`${agree} of ${q.items.length} agree with the answer`, `${agree} / ${q.items.length} верно`), agree === q.items.length ? true : agree >= q.items.length * 0.7 ? null : false);
+    } else if (q.type === "fill") {
+      let ok = 0;
+      $$("input.qz-blank", host).forEach(i => {
+        const b = q.blanks.find(x => x.id === i.dataset.blank), good = matches(i.value, b);
+        ok += good ? 1 : 0;
+        i.classList.toggle("right", good); i.classList.toggle("wrong", !good); i.readOnly = true;
+        if (!good && !i.nextElementSibling?.classList.contains("qz-exp")) i.insertAdjacentHTML("afterend", `<span class="qz-exp">${esc(shown(b))}</span>`);
+      });
+      verdict(host, ok === q.blanks.length ? qt("right", "верно") : `${ok} / ${q.blanks.length}`, ok === q.blanks.length);
+    } else if (q.type === "write") {
+      $("textarea", host).readOnly = false;
+      if (q.check.length && !$(".qz-ticks", host)) {
+        st.ticks = st.ticks || [];
+        $(".qz-ui", host).insertAdjacentHTML("beforeend", `<div class="qz-ticks"><div class="qz-ticks-k">${qt("tick what your answer had", "отметьте, что было в вашем ответе")}</div>${q.check.map((c, i) =>
+          `<label><input type="checkbox" data-i="${i}" ${st.ticks.includes(i) ? "checked" : ""}> <span>${fill(c)}</span></label>`).join("")}</div>`);
+        $(".qz-ticks", host).addEventListener("change", e => {
+          const i = +e.target.dataset.i; st.ticks = e.target.checked ? [...new Set([...st.ticks, i])] : st.ticks.filter(x => x !== i); save();
+        });
+      }
+    }
+    const a = $(".qz-a", host); a.hidden = false; drawFigs(a);
+    if (!restoring) save();
+    progress();
+  }
+
+  /* ------------------------------------------------------------- progress */
+  const isOptional = host => !!host.closest("details.optional");
+  function progress() {
+    const hosts = $$(".qz"), main = hosts.filter(h => !isOptional(h)), opt = hosts.filter(isOptional);
+    const done = l => l.filter(h => h.classList.contains("done")).length;
+    const el = $("#quiz-progress"); if (!el) return;
+    el.textContent = qt(`answered ${done(main)} / ${main.length}`, `отвечено ${done(main)} / ${main.length}`) + (opt.length ? qt(` · ${done(opt)} / ${opt.length} optional`, ` · ${done(opt)} / ${opt.length} дополнительно`) : "");
+    $$(".optional-count").forEach(c => { const l = $$(".qz", c.closest("details")); c.textContent = `${done(l)} / ${l.length}`; });
+  }
+
+  /* ----------------------------------------------------------------- rail */
+  const nav = $("#nav");
+  if (nav) {
+    const secs = $$("main section").filter(s => s.id && $("h2", s));
+    nav.innerHTML = secs.map((s, i) => `<a href="#${s.id}"><span>${pad(i + 1)}</span><span>${esc($("h2", s).textContent)}</span></a>`).join("");
+    const links = $$("a", nav);
+    const onScroll = () => {
+      const y = window.scrollY + 120; let cur = 0;
+      secs.forEach((s, i) => { if (s.offsetTop <= y) cur = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === cur));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  }
+  const theme = $("#btn-theme");
+  if (theme) theme.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+  const reset = $("#btn-reset");
+  if (reset) {
+    let armed = 0;
+    reset.addEventListener("click", () => {
+      if (Date.now() - armed > 4000) { armed = Date.now(); reset.textContent = qt("Click again to reset", "Ещё раз для сброса"); setTimeout(() => { reset.textContent = qt("Reset answers", "Сбросить ответы"); }, 4000); return; }
+      QUIZ.reset();
+      reset.textContent = qt("Reset answers", "Сбросить ответы");
+    });
+  }
+  QUIZ.reset = () => { state = {}; save(); $$("[data-fig]").forEach(h => delete h.dataset.drawn); Object.values(DATA).forEach(render); progress(); };
+
+  /* ----------------------------------------------------------------- go */
+  (function fillProse() {   // `{name}` in the page's own prose, text nodes only, so markup and figures are untouched
+    const walker = document.createTreeWalker(document.querySelector("main") || document.body, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walker.nextNode()) if (/\{[a-z][a-z0-9_]*\}/.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+    nodes.forEach(n => { n.nodeValue = n.nodeValue.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? fmtv(QUIZ.values[k]) : m); });
+  })();
+  drawFigs(document);
+  Object.values(DATA).sort((a, b) => a.n - b.n).forEach(render);
+  progress();
+});
+
+/* Схемы и связи со строками кода для страниц ADD. */
+const ADD = {
+  esc: s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
+  svg(content, width=760, height=180, label='Схема') {
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${this.esc(label)}"><defs><marker id="arrow-${++this.serial}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" style="fill:var(--ink-3)"/></marker></defs>${content.replaceAll('MARKER', 'arrow-'+this.serial)}</svg>`;
+  },
+  serial: 0,
+  text(x,y,label,cls='',anchor='middle') {
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" class="${cls}">${this.esc(label)}</text>`;
+  },
+  box(x,y,w,h,lines,key='',pick='') {
+    return `<g ${key?`data-f="${key}" tabindex="0"`:''} ${pick?`data-pick="${pick}"`:''}><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/>${lines.map((line,i)=>this.text(x+w/2,y+h/2+(i-(lines.length-1)/2)*23+5,line)).join('')}${pick?`<rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/>`:''}</g>`;
+  },
+  arrow(x1,y1,x2,y2) { return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#MARKER)"/>`; },
+  flow(items, label='Последовательность преобразований') {
+    const w=760/items.length;
+    return this.svg(items.map((a,i)=>this.box(i*w+6,30,w-30,90,a.lines,a.key,a.pick)+(i<items.length-1?this.arrow((i+1)*w-24,75,(i+1)*w+1,75):'')).join(''),760,150,label);
+  },
+  table(headers, rows) {
+    return '<table class="add-table"><thead><tr>'+headers.map(h=>'<th>'+this.esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(v=>'<td>'+this.esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+  },
+  softmax(values) { const m=Math.max(...values), ex=values.map(v=>Math.exp(v-m)), z=ex.reduce((a,b)=>a+b,0); return ex.map(v=>v/z); },
+  link(scope,key,on) { scope.querySelectorAll('[data-f]').forEach(n=>n.classList.toggle('hi',on && n.dataset.f===key)); },
+};
+for(const event of ['pointerover','focusin']) document.addEventListener(event,e=>{
+  const node=e.target.closest('[data-f]'), scope=node?.closest('[data-link-scope]');
+  if(scope) ADD.link(scope,node.dataset.f,true);
+});
+for(const event of ['pointerout','focusout']) document.addEventListener(event,e=>{
+  const node=e.target.closest('[data-f]'), scope=node?.closest('[data-link-scope]');
+  if(scope) ADD.link(scope,node.dataset.f,false);
+});
+
+/* Учебные расчёты выполняются в браузере, измерения читаются из артефакта. */
+const W1 = {
+  docs: ['кот ест рыбу', 'кот спит', 'рыбу ест пёс'], repeat:false, reverse:false,
+  tfidf() {
+    const train=this.docs.map(d=>d.split(' '));
+    const vocab=[...new Set(train.flat())].sort();
+    const idf=vocab.map(w=>Math.log((1+train.length)/(1+train.filter(d=>d.includes(w)).length))+1);
+    const docs=train.map(d=>[...d]);
+    if(this.repeat) docs[0].push('кот');
+    if(this.reverse) docs[0].reverse();
+    const counts=docs.map(d=>vocab.map(w=>d.filter(t=>t===w).length));
+    const raw=counts.map(row=>row.map((n,j)=>n*idf[j]));
+    const values=raw.map(row=>{const norm=Math.hypot(...row); return row.map(v=>norm?v/norm:0);});
+    return {docs,vocab,idf,counts,raw,values};
+  },
+  matrix(host) {
+    const d=this.tfidf(), left=180, top=63, cw=100, rh=46;
+    let s=ADD.text(12,25,'документы × словарь · [B, V]','caption','start');
+    d.vocab.forEach((w,j)=>s+=ADD.text(left+j*cw+cw/2,50,w));
+    d.docs.forEach((doc,i)=>{
+      s+=ADD.text(12,top+i*rh+29,doc.join(' '),'caption','start');
+      d.values[i].forEach((v,j)=>s+=`<g data-cell="${i},${j}" data-f="matrix" tabindex="0" role="button" aria-label="Документ ${i+1}, ${d.vocab[j]}"><rect x="${left+j*cw}" y="${top+i*rh}" width="${cw-4}" height="${rh-4}" class="${v?'accent':''}"/>${ADD.text(left+j*cw+48,top+i*rh+27,v.toFixed(3))}</g>`);
+    });
+    host.innerHTML=ADD.svg(s,760,215,'Матрица TF-IDF');
+    const trace=(i,j)=>{document.querySelector('#tfidf-trace').textContent=`${d.vocab[j]}: TF = ${d.counts[i][j]}, IDF = ${d.idf[j].toFixed(3)}, TF × IDF = ${d.raw[i][j].toFixed(3)}, после L2 = ${d.values[i][j].toFixed(3)}`;};
+    const choose=e=>{const cell=e.target.closest('[data-cell]'); if(cell) trace(...cell.dataset.cell.split(',').map(Number));};
+    host.onclick=choose;
+    host.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose(e);}};
+    trace(0,d.vocab.indexOf('кот'));
+  },
+  linearCounts:[1,0],
+  linear(host) {
+    const x=this.linearCounts, weights=[[2,-1],[-1,2]], scores=[x[0]*2-x[1],-x[0]+x[1]*2], p=ADD.softmax(scores);
+    host.innerHTML=ADD.flow([
+      {lines:['матч · акции',`x = [${x.join(', ')}]`],key:'matrix'},
+      {lines:['W = [[2, −1],','     [−1, 2]]'],key:'scores'},
+      {lines:['спорт · бизнес',`z = [${scores.join(', ')}]`],key:'scores'},
+      {lines:p.map((v,i)=>`${i?'бизнес':'спорт'} ${v.toFixed(3)}`),key:'prob'},
+      {lines:['решение',p[0]>=p[1]?'спорт':'бизнес'],key:'decision'},
+    ],'Линейный классификатор');
+    const result=document.querySelector('#linear-result');
+    if(result) result.textContent=`X [1, 2] × W [2, 2] → Z [1, 2]; решение: ${p[0]>=p[1]?'спорт':'бизнес'}${p[0]===p[1]?' (равенство, выбран первый класс)':''}`;
+    return {x,weights,scores,p};
+  },
+};
+QUIZ.figs.task=h=>h.innerHTML=ADD.flow([
+  {lines:['текст новости','строка'],key:'input'}, {lines:['вектор признаков','[V]'],key:'matrix'},
+  {lines:['вероятности','[C]'],key:'prob'}, {lines:['одна тема','метка'],key:'target'},
+]);
+QUIZ.figs.tokens=h=>h.innerHTML=ADD.flow([
+  {lines:['Команда выиграла','матч!'],key:'input'}, {lines:['команда · выиграла','матч · !'],key:'tokens'},
+  {lines:['ID по словарю','[2, 1, 3, 0]'],key:'ids'},
+]);
+QUIZ.figs.normalization=h=>{
+  let s=ADD.box(10,75,225,70,['кошки · кошкой','кошкам']);
+  s+=ADD.arrow(235,100,300,50)+ADD.arrow(235,120,300,180);
+  s+=ADD.box(310,20,215,60,['лемматизация'],'lemma');
+  s+=ADD.arrow(525,50,570,50)+ADD.box(580,20,165,60,['кошка'],'lemma');
+  s+=ADD.box(310,150,215,60,['стемминг'],'stem');
+  s+=ADD.arrow(525,180,570,180)+ADD.box(580,150,165,60,['кошк'],'stem');
+  h.innerHTML=ADD.svg(s,760,235,'Лемматизация и стемминг словоформ');
+};
+QUIZ.figs.onehot=h=>{
+  let s=ADD.text(380,24,'one-hot: одно слово → одна ось','caption');
+  ['кот','пёс','рыба'].forEach((word,i)=>{s+=ADD.text(120,65+i*40,word); for(let j=0;j<3;j++) s+=ADD.box(220+j*110,40+i*40,100,35,[i===j?'1':'0']);});
+  h.innerHTML=ADD.svg(s,760,175,'One-hot трёх слов');
+};
+QUIZ.figs.tfidf=h=>W1.matrix(h);
+QUIZ.figs.linear=h=>W1.linear(h);
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  let serial = 0;
+  function el(tag, attrs, parent, text) {
+    const node = document.createElementNS(NS, tag);
+    for (const [key, value] of Object.entries(attrs)) {
+      if (["fill", "stroke"].includes(key)) node.style[key] = value;
+      else if (key === "font-size") node.style.fontSize = value + "px";
+      else node.setAttribute(key, value);
+    }
+    if (text != null) node.textContent = text;
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+  const svg = (host, w, h) => {
+    host.replaceChildren();
+    return el("svg", {viewBox: `0 0 ${w} ${h}`, class: "word2vec-diagram", role: "img", "aria-label": host.dataset.fig === "cbow" ? "CBOW: контекст предсказывает центр" : "Skip-Gram: центр предсказывает соседа"}, host);
+  };
+  const txt = (p,x,y,s,a) => el("text", {x,y,"font-size":12,fill:"var(--ink)",...a},p,s);
+  const box = (p,x,y,w,h,a) => el("rect",{x,y,width:w,height:h,rx:3,fill:"var(--panel-sunk)",stroke:"var(--rule-strong)",...a},p);
+  function arrow(p,x1,y1,x2,y2) {
+    const root = p.tagName === "svg" ? p : p.ownerSVGElement;
+    return el("path",{d:`M${x1},${y1} L${x2},${y2}`,stroke:"var(--ink-3)","stroke-width":1.2,fill:"none","marker-end":`url(#${root.dataset.arrow})`},p);
+  }
+  function defs(s) {
+    s.dataset.arrow = "w2v-arrow-" + ++serial;
+    const d = el("defs",{},s);
+    const marker = el("marker",{id:s.dataset.arrow,viewBox:"0 0 10 10",refX:9,refY:5,markerWidth:7,markerHeight:7,orient:"auto"},d);
+    el("path",{d:"M0,0 L10,5 L0,10 z",fill:"var(--ink-3)"},marker);
+  }
+  function pickable(parent,key,x,y,w,h) {
+    const field = {embedding:"lookup",hidden:"lookup",output:"context",distribution:"target",ctx:"lookup"}[key];
+    const g = el("g",{"data-pick":key,...(field?{"data-f":field,tabindex:0}:{})},parent);
+    g.hit = () => el("rect",{class:"hit",x:x-5,y:y-5,width:w+10,height:h+10,rx:5},g);
+    return g;
+  }
+  const title = (g, L, x, y, label, letter, a) => L
+    ? txt(g, x, y, label, Object.assign({ "text-anchor": "middle", "font-size": 13 }, a || {}))
+    : txt(g, x, y, letter, Object.assign({ "text-anchor": "middle", "font-size": 16, "font-weight": 700, fill: "var(--cls-3)" }, a || {}));
+  const note = (g, L, x, y, t, a) => L ? txt(g, x, y, t, Object.assign({ "text-anchor": "middle", "font-size": 10, fill: "var(--ink-3)" }, a || {})) : null;
+
+  function skipgram(host, L) {
+    const W = 760, H = L ? 250 : 220, s = svg(host, W, H); defs(s);
+    const top = 40, Vh = 150, d = 56;
+    let g = pickable(s, "onehot", 44, top, 18, Vh);
+    for (let k = 0; k < 15; k++) el("rect", { x: 44, y: top + k * 10, width: 18, height: 9, fill: k === 6 ? "var(--cls-0)" : "var(--panel-sunk)", stroke: "var(--rule)", "stroke-width": .5 }, g);
+    title(g, L, 53, top - 14, "x", "A"); note(g, L, 53, top + Vh + 16, "one-hot · |V|");
+    if (L) txt(g, 66, top + 67, "ест = 1", { "font-size": 9.5, fill: "var(--cls-0)" });
+    g.hit();
+    arrow(s, 66, top + Vh / 2, 96, top + Vh / 2);
+    g = pickable(s, "embedding", 100, top, d + 30, Vh);
+    box(g, 100, top, d + 30, Vh, { fill: "var(--panel)" });
+    el("rect", { x: 100, y: top + 60, width: d + 30, height: 9, fill: "var(--cls-0)" }, g);
+    title(g, L, 100 + (d + 30) / 2, top - 14, "входные векторы", "B"); note(g, L, 100 + (d + 30) / 2, top + Vh + 16, "строка: слово"); g.hit();
+    arrow(s, 190, top + Vh / 2, 240, top + Vh / 2); note(s, L, 215, top + Vh / 2 - 8, "строка", { "font-size": 9 });
+    g = pickable(s, "hidden", 244, top + Vh / 2 - 9, 86, 18);
+    for (let k = 0; k < 8; k++) el("rect", { x: 244 + k * 11, y: top + Vh / 2 - 9, width: 10, height: 18, fill: "var(--cls-0)", opacity: .35 + .08 * ((k * 5) % 7), stroke: "var(--rule)", "stroke-width": .5 }, g);
+    title(g, L, 287, top + Vh / 2 - 18, "h · d", "C"); note(g, L, 287, top + Vh / 2 + 26, "строка «ест»"); g.hit();
+    arrow(s, 334, top + Vh / 2, 384, top + Vh / 2);
+    g = pickable(s, "output", 388, top + Vh / 2 - 40, 150, 80);
+    box(g, 388, top + Vh / 2 - 40, 150, 80, { fill: "var(--panel)" });
+    el("rect", { x: 388 + 66, y: top + Vh / 2 - 40, width: 9, height: 80, fill: "var(--cls-1)" }, g);
+    title(g, L, 463, top + Vh / 2 - 48, "выходные векторы", "D"); note(g, L, 463, top + Vh / 2 + 56, "столбец: слово");
+    if (L) txt(g, 388 + 71, top + Vh / 2 + 70, "рыбу", { "text-anchor": "middle", "font-size": 9.5, fill: "var(--cls-1)" });
+    g.hit();
+    arrow(s, 542, top + Vh / 2, 590, top + Vh / 2); note(s, L, 566, top + Vh / 2 - 8, "softmax", { "font-size": 9 });
+    g = pickable(s, "distribution", 594, top, 60, Vh);
+    const ps = [.02, .04, .03, .07, .02, .05, .03, .41, .04, .06, .03, .08, .04, .05, .03];
+    ps.forEach((value, k) => { const p = value / ps.reduce((a, b) => a + b, 0); return el("rect", { x: 594, y: top + k * 10, width: 2 + 110 * p, height: 9, fill: k === 7 ? "var(--cls-1)" : "var(--rule-strong)" }, g); });
+    if (L) { txt(g, 594, top - 14, "P(сосед | ест)", { "font-size": 13 }); note(g, L, 594, top + Vh + 16, "V вероятностей; сумма 1", { "text-anchor": "start" }); txt(g, 594 + 50, top + 78, "↑ рыбу", { "font-size": 9.5, fill: "var(--cls-1)" }); }
+    else title(g, L, 624, top - 14, "", "E");
+    g.hit();
+    if (L) txt(s, W / 2, H - 8, "Пара «ест» → «рыбу»: увеличиваем P(рыбу | ест)", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
+  }
+
+  function cbow(host, L) {
+    const W = 760, H = L ? 260 : 230, s = svg(host, W, H); defs(s);
+    const top = 40, Vh = 150, ctx = ["кот", "утром", "свежую", "рыбу"], rows = [18, 52, 92, 124];
+    let g = pickable(s, "ctx", 14, top + 4, 92, 4 * 36 - 10);
+    ctx.forEach((w, i) => { box(g, 14, top + 4 + i * 36, 92, 24); txt(g, 60, top + 21 + i * 36, w, { "text-anchor": "middle", "font-size": 12, "font-family": "var(--mono)" }); });
+    title(g, L, 60, top - 14, "контекст", "A"); g.hit();
+    ctx.forEach((w, i) => arrow(s, 108, top + 16 + i * 36, 146, top + rows[i] + 4));
+    g = pickable(s, "embedding", 150, top, 86, Vh);
+    box(g, 150, top, 86, Vh, { fill: "var(--panel)" });
+    rows.forEach(r => el("rect", { x: 150, y: top + r, width: 86, height: 8, fill: "var(--cls-0)" }, g));
+    title(g, L, 193, top - 14, "входные векторы", "B"); note(g, L, 193, top + Vh + 16, "четыре строки"); g.hit();
+    const cx = 272, cy = top + Vh / 2;
+    rows.forEach(r => el("path", { d: `M236,${top + r + 4} L${cx - 9},${cy}`, stroke: "var(--ink-3)", "stroke-width": 1, fill: "none" }, s));
+    el("circle", { cx, cy, r: 9, fill: "var(--panel)", stroke: "var(--ink-3)" }, s); txt(s, cx, cy + 4, "÷", { "text-anchor": "middle", "font-size": 12 });
+    arrow(s, cx + 10, cy, 300, cy);
+    g = pickable(s, "hidden", 304, cy - 9, 86, 18); g.dataset.f = "average";
+    for (let k = 0; k < 8; k++) el("rect", { x: 304 + k * 11, y: cy - 9, width: 10, height: 18, fill: "var(--cls-0)", opacity: .35 + .08 * ((k * 3) % 7), stroke: "var(--rule)", "stroke-width": .5 }, g);
+    title(g, L, 347, cy - 18, "h · d", "C"); note(g, L, 347, cy + 26, "среднее четырёх строк"); g.hit();
+    arrow(s, 394, cy, 436, cy);
+    g = pickable(s, "output", 440, cy - 40, 140, 80);
+    box(g, 440, cy - 40, 140, 80, { fill: "var(--panel)" });
+    el("rect", { x: 500, y: cy - 40, width: 9, height: 80, fill: "var(--cls-1)" }, g);
+    title(g, L, 510, cy - 48, "выходные векторы", "D");
+    if (L) txt(g, 505, cy + 54, "ест", { "text-anchor": "middle", "font-size": 9.5, fill: "var(--cls-1)" });
+    g.hit();
+    arrow(s, 584, cy, 622, cy); note(s, L, 603, cy - 8, "softmax", { "font-size": 9 });
+    g = pickable(s, "distribution", 626, top, 60, Vh);
+    const ps = [.03, .05, .02, .06, .03, .04, .38, .05, .03, .07, .02, .06, .04, .03, .05];
+    ps.forEach((value, k) => { const p = value / ps.reduce((a, b) => a + b, 0); return el("rect", { x: 626, y: top + k * 10, width: 2 + 110 * p, height: 9, fill: k === 6 ? "var(--cls-1)" : "var(--rule-strong)" }, g); });
+    if (L) { txt(g, 656, top - 14, "P(центр | контекст)", { "text-anchor": "middle", "font-size": 13 }); txt(g, 626 + 46, top + 68, "↑ ест", { "font-size": 9.5, fill: "var(--cls-1)" }); }
+    else title(g, L, 656, top - 14, "", "E");
+    g.hit();
+    if (L) txt(s, W / 2, H - 8, "Одно окно: кот утром ___ свежую рыбу → ест", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
+  }
+
+  QUIZ.figs.skip = h => skipgram(h, true);
+  QUIZ.figs["skip-question"] = h => skipgram(h, false);
+  QUIZ.figs.cbow = h => cbow(h, true);
+})();
+QUIZ.figs.negative=host=>{
+  let s=ADD.text(16,24,'1. Готовим пары и метки','caption','start');
+  s+=ADD.box(16,44,330,65,['текст: кот ест рыбу','сосед «рыбу» → метка 1'],'samples');
+  s+=ADD.box(394,44,350,65,['случайные слова из словаря','«стол», «бег» → метки 0, 0'],'samples');
+  s+=ADD.text(16,150,'2. Вычисляем оценки и сравниваем с метками','caption','start');
+  // Один входной вектор используется во всех трёх парах.
+  s+=ADD.text(105,309,'вектор «ест»');
+  let center='';
+  for(let j=0;j<8;j++)center+=`<rect x="${22+j*21}" y="321" width="19" height="22" class="accent"/>`;
+  s+=`<g data-f="lookup" tabindex="0">${center}</g>`;
+  let candidates=ADD.text(300,187,'векторы кандидатов');
+  ['рыбу','стол','бег'].forEach((word,i)=>{
+    const y=204+i*38;
+    candidates+=ADD.text(212,y+16,word,'','end');
+    for(let j=0;j<8;j++)candidates+=`<rect x="${230+j*17}" y="${y}" width="15" height="22" class="accent"/>`;
+  });
+  s+=`<g data-f="context" tabindex="0">${candidates}</g>`;
+  s+=ADD.arrow(368,252,402,252);
+  s+='<path d="M190 332 L412 332 L412 268" marker-end="url(#MARKER)"/>';
+  s+='<g data-f="pair" tabindex="0"><circle cx="412" cy="252" r="15" style="fill:var(--panel);stroke:var(--ink-3)"/>'+ADD.text(412,257,'·')+'</g>';
+  s+=ADD.arrow(428,252,455,252);
+  s+=ADD.text(500,190,'оценки z');
+  let scores='';
+  ['z₁','z₂','z₃'].forEach((z,i)=>scores+=ADD.box(460,204+i*38,80,28,[z]));
+  s+=`<g data-f="pair" tabindex="0">${scores}</g>`;
+  s+=ADD.box(600,175,140,65,['метки y','[1, 0, 0]'],'labels');
+  s+=ADD.arrow(670,240,670,279);
+  s+='<path d="M542 254 L566 254 L566 312 L598 312" marker-end="url(#MARKER)"/>';
+  s+=ADD.box(600,285,140,60,['сравнение','BCE(z, y)'],'target');
+  s+=ADD.text(380,388,'По ошибкам на парах обновляем входные и выходные векторы','caption');
+  host.innerHTML=ADD.svg(s,760,410,'Negative sampling: подготовка меток и вычисление функции потерь');
+};
+const POOLING_EXAMPLE = JSON.parse(document.querySelector('#add-data').textContent).pooling;
+function drawDocumentMean(host) {
+  const data=POOLING_EXAMPLE, width=data.mean.length;
+  let input=ADD.text(225,26,`векторы Word2Vec · [${data.tokens.length}, ${width}]`,'caption');
+  data.tokens.forEach((word,i)=>{
+    const y=62+i*42;
+    input+=ADD.text(83,y+25,word,'','end');
+    data.word_vectors[i].forEach((value,j)=>input+=ADD.box(100+j*64,y,60,36,[value.toFixed(3)]));
+  });
+  let result=ADD.text(556,74,'среднее по словам','caption');
+  data.mean.forEach((value,j)=>result+=ADD.box(414+j*80,100,75,40,[value.toFixed(3)]));
+  result+=ADD.text(574,185,`вектор документа · [${width}]`,'caption');
+  host.innerHTML=ADD.svg(`<g data-f="lookup" tabindex="0">${input}</g>`+ADD.arrow(360,120,406,120)+`<g data-f="pool" tabindex="0">${result}</g>`,760,225,'Усреднение: конкретные векторы слов и вектор документа');
+}
+function drawDocumentProjection(host) {
+  const data=POOLING_EXAMPLE, projection=data.projection;
+  let input=ADD.text(82,63,`среднее · [${data.mean.length}]`,'caption');
+  data.mean.forEach((v,i)=>input+=ADD.box(24,86+i*36,116,31,[v.toFixed(3)]));
+  let learned=ADD.text(279,41,'обученная матрица','caption')+ADD.text(279,65,`[${projection.weight.length}, ${projection.output.length}]`);
+  projection.weight.forEach((row,i)=>row.forEach((v,j)=>learned+=ADD.box(204+j*84,86+i*36,80,31,[v.toFixed(3)])));
+  learned+=ADD.text(557,300,'смещение','caption','start');
+  learned+=ADD.box(412,265,126,62,projection.bias.map(v=>v.toFixed(3)));
+  let output=ADD.text(650,65,`вектор · [${projection.output.length}]`,'caption');
+  projection.output.forEach((v,i)=>output+=ADD.box(591,109+i*44,119,36,[v.toFixed(3)]));
+  let s=`<g data-f="pool" tabindex="0">${input}</g>`+ADD.arrow(145,153,196,153);
+  s+=`<g data-f="projection" tabindex="0">${learned}</g>`+ADD.arrow(375,153,457,153);
+  s+='<circle cx="475" cy="153" r="16" style="fill:var(--panel);stroke:var(--ink-3)"/>'+ADD.text(475,158,'+');
+  s+=ADD.arrow(475,262,475,173)+ADD.arrow(494,153,583,153);
+  s+=`<g data-f="projection" tabindex="0">${output}</g>`;
+  s+=ADD.text(380,365,'Матрица и смещение обучаются по меткам документов','caption');
+  host.innerHTML=ADD.svg(s,760,390,'Проекция среднего вектора через обученную матрицу');
+}
+QUIZ.figs.pool=drawDocumentMean;
+QUIZ.figs.projection=drawDocumentProjection;
+
+QUIZ.figs.fast=h=>h.innerHTML=ADD.flow([
+  {lines:['<ко · кош · ошк','шки · ки>'],key:'subword'},
+  {lines:['векторы частей','[число частей, d]'],key:'subword'},
+  {lines:['сумма','вектор [d]'],key:'subword'},
+],'Символьные части fastText');
+document.addEventListener('DOMContentLoaded',()=>{
+  const tabs=[...document.querySelectorAll('#document-representation [role="tab"]')];
+  function selectTab(tab,focus=false) {
+    tabs.forEach(button=>{
+      const active=button===tab;
+      button.setAttribute('aria-selected',String(active));
+      button.tabIndex=active?0:-1;
+      button.classList.toggle('sel',active);
+      document.getElementById(button.getAttribute('aria-controls')).hidden=!active;
+    });
+    if(focus)tab.focus();
+  }
+  tabs.forEach((tab,i)=>{
+    tab.addEventListener('click',()=>selectTab(tab));
+    tab.addEventListener('keydown',event=>{
+      if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+      event.preventDefault();
+      const index=event.key==='Home'?0:event.key==='End'?tabs.length-1:(i+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+      selectTab(tabs[index],true);
+    });
+  });
+
+  document.querySelector('#repeat-word').onclick=e=>{W1.repeat=!W1.repeat; e.target.textContent=W1.repeat?'Убрать повтор «кот»':'Повторить «кот»'; W1.matrix(document.querySelector('[data-fig="tfidf"]'));};
+  document.querySelector('#reverse-words').onclick=()=>{W1.reverse=!W1.reverse; W1.matrix(document.querySelector('[data-fig="tfidf"]'));};
+  document.querySelector('#linear-controls').onclick=e=>{const word=e.target.dataset.word; if(word===undefined)return; if(word==='reset')W1.linearCounts=[1,0];else W1.linearCounts[+word]++; W1.linear(document.querySelector('[data-fig="linear"]'));};
+  const data=JSON.parse(document.querySelector('#add-data').textContent);
+  const morphology=data.morphology;
+  document.querySelector('#normalization-table').innerHTML=ADD.table(['Слово','Стем · Snowball','Возможные леммы · pymorphy3','Случай'],morphology.rows.map(r=>[r.word,r.stem,r.lemmas.join(', '),r.case]));
+  document.querySelector('#normalization-versions').innerHTML=TXT('normalization-versions',{nltk:morphology.versions.nltk,pymorphy:morphology.versions.pymorphy3,dict:morphology.versions['pymorphy3-dicts-ru']});
+  const results=data.results.filter(r=>r.head==='LogisticRegression' && (r.rep.startsWith('counts')||r.rep.startsWith('tf-idf')));
+  document.querySelector('#classification-results').innerHTML=ADD.table(['Представление','Accuracy','Macro-F1'],results.map(r=>[r.rep,(r.acc*100).toFixed(2)+'%',r.f1.toFixed(4)]));
+});
+
+QUIZ.figs.oov=h=>{
+  let s=ADD.text(380,25,'фиксированный словарь: UNK → 0 · кот → 1 · спит → 2','caption');
+  ['кот','квокка','капибара'].forEach((word,i)=>{
+    const y=50+i*65;
+    s+=ADD.box(20,y,170,45,[word])+ADD.arrow(190,y+22,280,y+22);
+    s+=ADD.box(290,y,170,45,[i?'UNK → 0':'кот → 1'],'unknown');
+    s+=ADD.arrow(460,y+22,540,y+22)+ADD.box(550,y,190,45,[i?'один вектор UNK':'вектор «кот»'],'unknown');
+  });
+  h.innerHTML=ADD.svg(s,760,255,'OOV: разные неизвестные слова получают общий UNK');
+};
+
+</script>
+</body>
+</html>
+
+<!-- built from demo/ · sha256:e6494e7da77ca3307a0aada11f567e2f3747855ab62a0c697fb22d1645f0e9d4 -->

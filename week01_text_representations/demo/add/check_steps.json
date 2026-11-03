@@ -1,0 +1,162 @@
+{
+  "steps": [
+    {
+      "name": "loaded",
+      "expr": "if(document.documentElement.lang!=='ru')throw Error('lang');if(document.querySelectorAll('.qz-nofig').length)throw Error('missing figure'); if(document.body.innerText.includes('{{'))throw Error('placeholder'); if([...document.querySelectorAll('[data-fig]')].some(h=>!h.querySelector('svg')))throw Error('empty diagram');return document.querySelectorAll('.qz').length+' вопросов, '+document.querySelectorAll('svg').length+' SVG';"
+    },
+    {
+      "name": "morphology table",
+      "expr": "const data=JSON.parse(document.querySelector('#add-data').textContent).morphology;const rows=[...document.querySelectorAll('#normalization-table tbody tr')];if(rows.length!==data.rows.length)throw Error('missing rows');data.rows.forEach((r,i)=>{const cells=[...rows[i].querySelectorAll('td')].map(c=>c.textContent);if(cells[0]!==r.word||cells[1]!==r.stem||cells[2]!==r.lemmas.join(', '))throw Error('morphology '+r.word);});return rows.length+' строк: стемы и все леммы из вычисленного артефакта';"
+    },
+    {
+      "name": "document tabs and projection",
+      "expr": "const d=POOLING_EXAMPLE;const mean=d.mean.map((_,j)=>d.word_vectors.reduce((sum,row)=>sum+row[j],0)/d.tokens.length);if(mean.some((v,j)=>Math.abs(v-d.mean[j])>1e-6))throw Error('mean differs from Python');const projected=d.projection.bias.map((b,j)=>b+mean.reduce((sum,v,i)=>sum+v*d.projection.weight[i][j],0));if(projected.some((v,j)=>Math.abs(v-d.projection.output[j])>1e-5))throw Error('projection differs from Python');document.querySelector('#tab-projection').click();if(!document.querySelector('#pane-mean').hidden||document.querySelector('#pane-projection').hidden)throw Error('tab visibility');document.querySelector('#tab-projection').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true}));if(document.querySelector('#pane-mean').hidden||document.querySelector('#tab-mean').getAttribute('aria-selected')!=='true')throw Error('keyboard');return 'среднее и проекция совпадают с Python; вкладки работают мышью и с клавиатуры';"
+    },
+    {
+      "name": "TFIDF and linear",
+      "expr": "const before=W1.tfidf();document.querySelector('#reverse-words').click();const after=W1.tfidf();if(JSON.stringify(before.values)!==JSON.stringify(after.values))throw Error('order');document.querySelector('#repeat-word').click();const rep=W1.tfidf();const j=rep.vocab.indexOf('кот');if(rep.values[0][j]<=before.values[0][j])throw Error('repeat');document.querySelector('[data-word=\"1\"]').click();const result=W1.linear(document.querySelector('[data-fig=\"linear\"]'));if(Math.abs(result.p[0]-.5)>1e-9)throw Error('linear tie');return JSON.stringify({vocab:before.vocab,idf:before.idf,values:before.values});"
+    },
+    {
+      "name": "hover and focus",
+      "expr": "for(const scope of document.querySelectorAll('[data-link-scope]')){for(const line of scope.querySelectorAll('pre [data-f]')){line.dispatchEvent(new Event('focusin',{bubbles:true}));if(!scope.querySelector('svg [data-f=\"'+line.dataset.f+'\"].hi')&&!scope.querySelector('.formula [data-f=\"'+line.dataset.f+'\"].hi'))throw Error('no target '+line.dataset.f);line.dispatchEvent(new Event('focusout',{bubbles:true}));}}return 'all code links work';"
+    },
+    {
+      "name": "answer and persistence",
+      "expr": "for(const q of Object.values(QUIZ.data)){const h=document.querySelector('[data-q=\"'+q.key+'\"]');if(q.type==='pick'||q.type==='point'){for(const o of q.opts.filter(o=>o.right))h.querySelector('[data-k=\"'+o.k+'\"]').click();h.querySelector('.qz-check')?.click();}else if(q.type==='sort'){[...h.querySelectorAll('tr')].forEach((tr,i)=>{[...tr.querySelectorAll('button')].find(b=>b.dataset.b===q.items[i].bins[0]).click();});h.querySelector('.qz-check').click();}else if(q.type==='write'){h.querySelector('textarea').value='проверка';h.querySelector('textarea').dispatchEvent(new Event('input'));h.querySelector('.qz-check').click();}if(!h.classList.contains('done'))throw Error('not finished '+q.key);if(h.querySelector('.qz-verdict.no'))throw Error('wrong grading '+q.key);}const key='quiz:'+document.querySelector('meta[name=\"quiz-store\"]').content;const state=JSON.parse(localStorage.getItem(key));if(Object.values(state).filter(s=>s.done).length!==Object.keys(QUIZ.data).length)throw Error('persistence');return document.querySelector('#quiz-progress').textContent;"
+    },
+    {
+      "name": "reset",
+      "expr": "QUIZ.reset();if(document.querySelector('.qz.done'))throw Error('reset');const p=document.querySelector('.qz [data-pick]');if(p){p.dispatchEvent(new MouseEvent('click',{bubbles:true}));if(!p.closest('.qz').classList.contains('done'))throw Error('point after reset');}return 'reset and point work';"
+    },
+    {
+      "name": "SVG geometry",
+      "expr": "document.querySelectorAll('details').forEach(d=>d.open=true);const bad=[];for(const svg of document.querySelectorAll('svg')){const v=svg.viewBox.baseVal;const ts=[...svg.querySelectorAll('text')];for(let i=0;i<ts.length;i++){const t=ts[i],b=t.getBBox();if(b.x<-.5||b.y<-.5||b.x+b.width>v.width+.5||b.y+b.height>v.height+.5)bad.push('clip '+t.textContent);for(let j=i+1;j<ts.length;j++){const c=ts[j].getBBox();if(b.x<c.x+c.width-1&&c.x<b.x+b.width-1&&b.y<c.y+c.height-1&&c.y<b.y+b.height-1)bad.push('overlap '+t.textContent+' / '+ts[j].textContent);}}}if(bad.length)throw Error(bad.join(' | '));return 'all SVG labels fit';"
+    },
+    {
+      "name": "all equation layouts",
+      "expr": "window.checkEquations=()=>{const failures=[];let count=0;for(const eq of document.querySelectorAll('.equation')){const m=eq.querySelector('math'),r=m.getBoundingClientRect(),p=eq.getBoundingClientRect();if(!r.width||!r.height)continue;count++;if(!Number.isFinite(r.width)||r.height>170)failures.push('dimensions '+m.textContent);if(r.width<=eq.clientWidth-4){if(Math.abs(r.x+r.width/2-p.x-p.width/2)>3)failures.push('not centred '+m.textContent);}else if(r.left<p.left-1||eq.scrollWidth<=eq.clientWidth)failures.push('clipped long formula '+m.textContent);const brackets=[];for(const mo of m.querySelectorAll('mo')){if(mo.textContent==='(')brackets.push(mo);if(mo.textContent===')'){const left=brackets.pop();if(!left||Math.abs(left.getBoundingClientRect().height-mo.getBoundingClientRect().height)>2)failures.push('brackets '+m.textContent);}}if(brackets.length)failures.push('unclosed brackets');for(const op of m.querySelectorAll('mo')){if(!['∑','∏'].includes(op.textContent))continue;const parent=op.parentElement;if(!['munder','munderover'].includes(parent.localName)){failures.push('operator limits '+m.textContent);continue;}const base=op.getBoundingClientRect(),lo=parent.children[1].getBoundingClientRect();if(lo.y<=base.y||Math.abs(lo.x+lo.width/2-base.x-base.width/2)>3)failures.push('lower limit '+m.textContent);if(parent.localName==='munderover'){const up=parent.children[2].getBoundingClientRect();if(up.y>=base.y||Math.abs(up.x+up.width/2-base.x-base.width/2)>3)failures.push('upper limit '+m.textContent);}}}if(document.querySelector('.formula math:not(.equation math)'))failures.push('formula mixed with prose');if(failures.length)throw Error(failures.join(' | '));return count+' equations centred, brackets and limits fit';};document.querySelector('[data-q=\"q-ppl-link\"] .qz-check')?.click();return window.checkEquations();"
+    }
+  ],
+  "screens": [
+    {
+      "sel": "#hero",
+      "file": "add01_hero.png",
+      "expr": "document.querySelectorAll('details').forEach(d=>d.open=false);document.documentElement.setAttribute('data-theme','light')"
+    },
+    {
+      "sel": "#task",
+      "file": "add01_task.png",
+      "height": 1450
+    },
+    {
+      "sel": "#tokens",
+      "file": "add01_tokens.png",
+      "height": 1450
+    },
+    {
+      "sel": "[data-fig=\"normalization\"]",
+      "file": "add01_normalization.png",
+      "height": 1000,
+      "dy": -140
+    },
+    {
+      "sel": "#normalization-table",
+      "file": "add01_morphology_table.png",
+      "height": 1100,
+      "dy": -60
+    },
+    {
+      "sel": "#vector",
+      "file": "add01_vector.png",
+      "height": 1450
+    },
+    {
+      "sel": "#model",
+      "file": "add01_model.png",
+      "height": 1450
+    },
+    {
+      "sel": "#embeddings",
+      "file": "add01_embeddings.png",
+      "height": 1450
+    },
+    {
+      "sel": "[data-fig=\"skip\"]",
+      "file": "add01_skipgram.png",
+      "height": 1000,
+      "dy": -140
+    },
+    {
+      "sel": "[data-fig=\"cbow\"]",
+      "file": "add01_cbow.png",
+      "height": 1000,
+      "dy": -140
+    },
+    {
+      "sel": "[data-fig=\"negative\"]",
+      "file": "add01_negative.png",
+      "height": 1250,
+      "dy": -170
+    },
+    {
+      "sel": "#pool",
+      "file": "add01_pool.png",
+      "height": 1450
+    },
+    {
+      "sel": "#document-representation",
+      "file": "add01_projection.png",
+      "height": 1450,
+      "expr": "document.querySelector('#tab-projection').click()"
+    },
+    {
+      "sel": "#document-representation",
+      "file": "add01_projection_mobile.png",
+      "width": 390,
+      "height": 1200
+    },
+    {
+      "sel": "#document-representation",
+      "file": "add01_mean.png",
+      "height": 1000,
+      "expr": "document.querySelector('#tab-mean').click()"
+    },
+    {
+      "sel": "#vector",
+      "file": "add01_mobile.png",
+      "width": 390,
+      "height": 1200
+    },
+    {
+      "sel": "#model",
+      "file": "add01_dark.png",
+      "expr": "document.documentElement.setAttribute('data-theme','dark')",
+      "height": 1450
+    },
+    {
+      "sel": "#oov",
+      "file": "add01_oov.png",
+      "height": 1100,
+      "expr": "document.documentElement.setAttribute('data-theme','light')"
+    },
+    {
+      "sel": "#vector .formula",
+      "file": "add01_formulas_light.png",
+      "height": 1300,
+      "expr": "document.documentElement.setAttribute('data-theme','light');window.checkEquations()"
+    },
+    {
+      "sel": "#vector .formula",
+      "file": "add01_formulas_dark.png",
+      "height": 1300,
+      "expr": "document.documentElement.setAttribute('data-theme','dark');window.checkEquations()"
+    },
+    {
+      "sel": "#vector .formula",
+      "file": "add01_formulas_mobile.png",
+      "width": 390,
+      "height": 1300,
+      "expr": "document.documentElement.setAttribute('data-theme','light');window.checkEquations()"
+    }
+  ]
+}

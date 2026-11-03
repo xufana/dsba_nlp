@@ -1,0 +1,153 @@
+<div class="shell">
+<aside class="rail">
+<div><div class="rail-mark">NLP @ HSE DSBA · ADD-2026</div><div class="rail-eq">Неделя 2<br>Языковая модель и генерация</div></div>
+<nav id="nav"></nav>
+<div class="rail-btns"><button id="btn-reset">Сбросить ответы</button><button id="btn-theme">Тема</button></div>
+<div class="quiz-progress" id="quiz-progress"></div>
+<div class="rail-foot"><a href="https://xufana.github.io/dsba_nlp/week02/">Семинар autumn-2026</a><br>
+<a href="https://colab.research.google.com/github/xufana/dsba_nlp/blob/autumn-2026/week02_language_modelling/week02_language_modelling.ipynb">Ноутбук в Colab</a><br>
+<a href="https://github.com/xufana/dsba_nlp/blob/autumn-2026/week02_language_modelling/week02_language_modelling.ipynb">Ноутбук на GitHub</a></div>
+</aside>
+<main><div class="wrap">
+<section id="hero"><p class="eyebrow">Author: Daria Andreeva</p><h1>Языковая модель и генерация</h1>
+<p class="lede">{{inline:lede}}</p><div class="prose">{{text:intro}}</div>
+</section>
+<section id="lm"><p class="eyebrow">блок 01</p><h2>Как научиться генерировать текст?</h2>
+<div class="prose">{{text:lm-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="generation"></div></div>
+<div class="panel-note">{{text:lm-note}}</div>
+<div class="formula">{{text:lm-formula}}</div>
+{{code:lm}}
+</div>
+{{quiz:q-lm}}
+{{quiz:q-chain}}
+<details class="optional"><summary>подробнее</summary><div class="prose">{{text:lm-detail}}</div>
+</details>
+</section>
+<section id="bpe"><p class="eyebrow">блок 02</p><h2>Какие единицы предсказываем?</h2>
+<div class="prose">{{text:bpe-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="bpe"></div><div class="add-controls"><button id="bpe-merge">Объединить пару</button><button id="bpe-reset">Сначала</button></div><div id="bpe-result" class="add-result" aria-live="polite"></div></div>
+<div class="panel-note">{{text:bpe-note}}</div>
+{{code:bpe}}
+</div>
+{{quiz:q-bpe}}
+{{quiz:q-vocab}}
+<details class="optional"><summary>обучение токенизатора и размер словаря</summary><div class="prose">{{text:bpe-detail}}</div>
+</details>
+</section>
+<section id="count"><p class="eyebrow">блок 03</p><h2>Можно ли просто считать?</h2>
+<div class="prose">{{text:count-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="markov"></div><div class="formula">{{text:markov-formula}}</div><div data-fig="counts"></div><div class="add-controls"><label><input id="smooth" type="checkbox"> Сглаживание α = 1</label></div><div id="count-result" class="add-result" aria-live="polite"></div></div>
+<div class="panel-note">{{text:count-note}}</div>
+<div class="formula">{{text:count-formula}}</div>
+{{code:count}}
+</div>
+<h3>Что получается при разном n?</h3>
+<div class="prose">{{text:jokes-intro}}</div>
+<div class="panel" id="ngram-examples" data-link-scope><div class="panel-body">
+<div class="add-controls"><label>Порядок модели <select id="joke-order"><option value="3">n = 3</option><option value="5">n = 5</option></select></label><button id="joke-next">Другой пример</button></div>
+<div data-fig="ngram-context"></div><div class="prose gen" id="joke-output" aria-live="polite"></div><div class="add-result" id="joke-source"></div>
+</div><div class="panel-note">{{text:jokes-note}}</div></div>
+{{quiz:q-zero}}
+{{quiz:q-context}}
+<details class="optional"><summary>невстречавшиеся контексты и ограничения</summary><div class="prose">{{text:count-detail}}</div>
+</details>
+</section>
+<section id="loss"><p class="eyebrow">блок 04</p><h2>Как обучать предсказание следующего токена?</h2>
+<div class="prose">{{text:loss-intro}}</div>
+<div class="panel" id="forcing-example" data-link-scope>
+<div class="panel-body"><div class="add-controls"><label>Режим <select id="forcing-mode"><option value="generation">Генерация</option><option value="teacher">Обучение: teacher forcing</option></select></label><button id="forcing-error" aria-pressed="false">Добавить ошибку: «кот» → «пёс»</button></div><div data-fig="autoregression"></div></div>
+<div class="panel-note" id="forcing-note" aria-live="polite"></div>
+</div>
+{{quiz:q-teacher}}
+<h3>Как собрать тексты разной длины?</h3>
+<div class="prose">{{text:pad-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="shift"></div></div>
+<div class="panel-note">{{text:loss-note}}</div>
+{{code:loss}}
+</div>
+{{quiz:q-pad}}
+<h3>Что означает перплексия?</h3>
+<div class="prose">{{text:ppl-intro}}</div>
+<div data-link-scope>
+<div class="formula" id="loss-equations">{{text:loss-formula}}</div>
+<div class="panel-note">{{text:loss-symbols}}</div>
+</div>
+{{quiz:q-ppl-link}}
+<div id="ppl-after-link">
+<div class="prose">{{text:ppl-computed-intro}}</div>
+<div class="panel" id="ppl-example" data-link-scope>
+<div class="panel-body"><div class="add-controls"><label>P(спит | BOS, кот) <input id="ppl-probability" type="range" min="0.05" max="0.95" step="0.05" value="0.25"><output id="ppl-probability-value">0.25</output></label></div><div data-fig="perplexity"></div><div class="add-result" id="ppl-example-result" aria-live="polite"></div></div>
+<div class="panel-note">{{text:ppl-example-note}}</div>
+{{code:ppl-example}}
+</div>
+</div>
+<h3>От чего зависит число?</h3>
+<div class="prose">{{text:ppl-limits-intro}}</div>
+<div class="panel" data-link-scope><div class="panel-body"><div data-fig="ppl-dependencies"></div></div></div>
+{{quiz:q-ppl}}
+<h3>А на анекдотах?</h3>
+<div class="prose">{{text:ppl-jokes-intro}}</div>
+<div class="panel" id="ppl-jokes"><div class="panel-body"><div class="prose" id="ppl-jokes-conditions"></div><div id="ppl-jokes-table"></div></div><div class="panel-note">{{text:ppl-jokes-note}}</div></div>
+<details class="optional"><summary>что означает perplexity</summary><div class="prose">{{text:loss-detail}}</div>
+</details>
+</section>
+<section id="rnn"><p class="eyebrow">блок 05</p><h2>Как переносить контекст?</h2>
+<div class="prose">{{text:rnn-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="rnn-cell"></div><div data-fig="rnn"></div></div>
+<div class="panel-note">{{text:rnn-note}}</div>
+<div class="formula">{{text:rnn-formula}}</div>
+{{code:rnn}}
+</div>
+{{quiz:q-shared}}
+{{quiz:q-memory}}
+<details class="optional"><summary>ограничения памяти и градиенты</summary><div class="prose">{{text:rnn-detail}}</div>
+</details>
+<div class="prose">{{text:gates-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><h3>LSTM</h3><div data-fig="lstm"></div><h3>GRU</h3><div data-fig="gru"></div></div>
+<div class="panel-note">{{text:gates-note}}</div>
+{{code:gates}}
+</div>
+</section>
+<section id="decode"><p class="eyebrow">блок 06</p><h2>Как выбрать следующий токен?</h2>
+<div class="prose">{{text:decode-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="decoding"></div><div class="add-controls"><label>T <input id="temperature" type="range" min="0.2" max="2" step="0.1" value="1"><output id="temperature-value">1</output></label><label>top-p <input id="top-p" type="range" min="0.1" max="1" step="0.05" value="0.9"><output id="top-p-value">0.9</output></label></div><div id="decode-result" class="add-result" aria-live="polite"></div></div>
+<div class="panel-note">{{text:decode-note}}</div>
+{{code:decode}}
+</div>
+{{quiz:q-decode}}
+{{quiz:q-quality}}
+<details class="optional"><summary>свойства правил и дополнительные настройки</summary><div class="prose">{{text:decode-detail}}</div>
+</details>
+<div class="prose">{{text:measured-intro}}</div>
+<div class="panel"><div class="panel-body" id="decode-measured"></div></div></section>
+<section id="translate"><p class="eyebrow">блок 07</p><h2>Как поставить задачу перевода?</h2>
+<div class="prose">{{text:translate-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="translation"></div><div class="add-controls"><button id="teacher-toggle">Показать вход при генерации</button></div></div>
+<div class="panel-note">{{text:translate-note}}</div>
+{{code:translate}}
+</div>
+<details class="optional"><summary>ограничение состояния и BLEU</summary><div class="prose">{{text:translate-detail}}</div>
+</details>
+<div class="prose">{{text:beam-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="beam"></div></div>
+<div class="panel-note">{{text:beam-note}}</div>
+</div>
+{{quiz:q-beam}}
+</section>
+<section id="design"><p class="eyebrow">блок 08</p><h2>Спроектируем систему</h2>
+<div class="prose">{{text:design-intro}}</div>
+{{quiz:q-design}}
+</section>
+<section id="sources"><p class="eyebrow">блок 09</p><h2>Источники</h2>
+<h3>References</h3><div class="prose footnote sources">{{text:end-refs}}</div></section>
+</div></main></div>

@@ -9,6 +9,8 @@
    Answers are kept in localStorage per page (meta[name=quiz-store]) so a student can leave and come back;
    "Reset answers" in the rail clears them. Nothing here depends on the seminar's demo_data. */
 "use strict";
+const quizRu = document.documentElement.lang === "ru";
+const qt = (en, ru) => quizRu ? ru : en;
 const QUIZ = { figs: {}, values: {}, data: null, state: null };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -65,9 +67,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ------------------------------------------------------------ rendering */
   const KIND = {
-    pick: q => q.multi ? "tick all that apply" : "pick one",
-    point: q => q.multi ? "click everything that fits" : "click in the picture",
-    sort: () => "sort into bins", fill: () => "fill in", write: () => "write, then reveal",
+    pick: q => q.multi ? qt("tick all that apply", "выберите всё подходящее") : qt("pick one", "выберите один ответ"),
+    point: q => q.multi ? qt("click everything that fits", "отметьте части схемы") : qt("click in the picture", "выберите на схеме"),
+    sort: () => qt("sort into bins", "распределите по группам"), fill: () => qt("fill in", "заполните пропуски"), write: () => qt("write, then reveal", "ответьте, затем откройте разбор"),
   };
   const pad = n => String(n).padStart(2, "0");
 
@@ -78,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
     host.classList.toggle("done", !!st.done);
     host.innerHTML = `<div class="qz-head"><span class="qz-n">${pad(q.n)}</span><span class="qz-kind">${KIND[q.type](q)}</span></div>
       <div class="qz-q">${fill(q.q)}</div><div class="qz-ui"></div>
-      <div class="qz-a" hidden>${fill(q.a)}${q.miss ? `<p class="qz-miss"><b>if the answer is</b>${fill(q.miss)}</p>` : ""}</div>`;
+      <div class="qz-a" hidden>${fill(q.a)}${q.miss ? `<p class="qz-miss"><b>${qt("if the answer is", "если ответили так:")}</b>${fill(q.miss)}</p>` : ""}</div>`;
     drawFigs(host);
     UI[q.type](q, host, st);
     if (st.done) finish(q, host, st, true);
@@ -92,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
     point(q, host, st) {
       const ui = $(".qz-ui", host);
       ui.innerHTML = `<div class="picklist qz-opts">${q.opts.map(o => `<button data-k="${esc(o.k)}">${fill(o.label)}</button>`).join("")}</div>`
-        + row(q.multi ? `<button class="primary qz-check" disabled>Check</button>` : "");
+        + row(q.multi ? `<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>` : "");
       st.sel = st.sel || [];
       const parts = $$("[data-pick]", $(".qz-q", host));
       parts.forEach(p => p.classList.add("qz-pickable"));
@@ -117,12 +119,12 @@ document.addEventListener("DOMContentLoaded", () => {
       st.sel = st.sel || {};
       ui.innerHTML = `<table class="qz-sort"><tbody>${q.items.map((it, i) => `<tr data-i="${i}"><td class="qz-item">${fill(it.label)}</td>
         <td class="qz-bins">${q.bins.map(b => `<button data-b="${esc(b)}">${esc(b)}</button>`).join("")}</td></tr>`).join("")}</tbody></table>`
-        + row(`<button class="primary qz-check" disabled>Check</button><span class="qz-count mono"></span>`);
+        + row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button><span class="qz-count mono"></span>`);
       const paint = () => {
         $$("tr", ui).forEach(tr => $$("button", tr).forEach(b => b.classList.toggle("pick", st.sel[tr.dataset.i] === b.dataset.b)));
         const n = Object.keys(st.sel).length;
         $(".qz-check", host).disabled = n < q.items.length;
-        $(".qz-count", host).textContent = st.done ? "" : `${n} / ${q.items.length} placed`;
+        $(".qz-count", host).textContent = st.done ? "" : qt(`${n} / ${q.items.length} placed`, `${n} / ${q.items.length} распределено`);
       };
       ui.addEventListener("click", e => {
         const b = e.target.closest("button[data-b]"); if (!b || st.done) return;
@@ -133,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     fill(q, host, st) {
       const ui = $(".qz-ui", host);
-      ui.innerHTML = row(`<button class="primary qz-check" disabled>Check</button>`);
+      ui.innerHTML = row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>`);
       st.vals = st.vals || {};
       const inputs = $$("input.qz-blank", host);
       const paint = () => { $(".qz-check", host).disabled = inputs.some(i => !i.value.trim()); };
@@ -147,8 +149,8 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     write(q, host, st) {
       const ui = $(".qz-ui", host);
-      ui.innerHTML = `<textarea class="qz-text" rows="3" placeholder="Your answer, in a few sentences — then reveal."></textarea>`
-        + row(`<button class="primary qz-check">Reveal</button>`);
+      ui.innerHTML = `<textarea class="qz-text" rows="3" placeholder="${qt("Your answer, in a few sentences — then reveal.", "Ваш ответ в нескольких предложениях")}"></textarea>`
+        + row(`<button class="primary qz-check">${qt("Reveal", "Открыть разбор")}</button>`);
       const ta = $("textarea", ui);
       ta.value = st.text || "";
       ta.addEventListener("input", () => { st.text = ta.value; save(); });
@@ -172,8 +174,8 @@ document.addEventListener("DOMContentLoaded", () => {
         el.disabled = true;
       });
       const hit = st.sel.filter(k => right.has(k)).length, wrong = st.sel.length - hit, missed = right.size - hit;
-      if (!q.multi) verdict(host, hit ? "right" : "not quite", !!hit);
-      else verdict(host, wrong + missed === 0 ? "all of them" : `${hit} right · ${wrong} wrong · ${missed} missed`, wrong + missed === 0);
+      if (!q.multi) verdict(host, hit ? qt("right", "верно") : qt("not quite", "не совсем"), !!hit);
+      else verdict(host, wrong + missed === 0 ? qt("all of them", "всё верно") : qt(`${hit} right · ${wrong} wrong · ${missed} missed`, `${hit} верно · ${wrong} ошибочно · ${missed} пропущено`), wrong + missed === 0);
     } else if (q.type === "sort") {
       let agree = 0;
       $$("table.qz-sort tr", host).forEach(tr => {
@@ -187,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       });
       $(".qz-count", host).textContent = "";
-      verdict(host, `${agree} of ${q.items.length} agree with the answer`, agree === q.items.length ? true : agree >= q.items.length * 0.7 ? null : false);
+      verdict(host, qt(`${agree} of ${q.items.length} agree with the answer`, `${agree} / ${q.items.length} верно`), agree === q.items.length ? true : agree >= q.items.length * 0.7 ? null : false);
     } else if (q.type === "fill") {
       let ok = 0;
       $$("input.qz-blank", host).forEach(i => {
@@ -196,12 +198,12 @@ document.addEventListener("DOMContentLoaded", () => {
         i.classList.toggle("right", good); i.classList.toggle("wrong", !good); i.readOnly = true;
         if (!good && !i.nextElementSibling?.classList.contains("qz-exp")) i.insertAdjacentHTML("afterend", `<span class="qz-exp">${esc(shown(b))}</span>`);
       });
-      verdict(host, ok === q.blanks.length ? "right" : `${ok} of ${q.blanks.length}`, ok === q.blanks.length);
+      verdict(host, ok === q.blanks.length ? qt("right", "верно") : `${ok} / ${q.blanks.length}`, ok === q.blanks.length);
     } else if (q.type === "write") {
       $("textarea", host).readOnly = false;
       if (q.check.length && !$(".qz-ticks", host)) {
         st.ticks = st.ticks || [];
-        $(".qz-ui", host).insertAdjacentHTML("beforeend", `<div class="qz-ticks"><div class="qz-ticks-k">tick what your answer had</div>${q.check.map((c, i) =>
+        $(".qz-ui", host).insertAdjacentHTML("beforeend", `<div class="qz-ticks"><div class="qz-ticks-k">${qt("tick what your answer had", "отметьте, что было в вашем ответе")}</div>${q.check.map((c, i) =>
           `<label><input type="checkbox" data-i="${i}" ${st.ticks.includes(i) ? "checked" : ""}> <span>${fill(c)}</span></label>`).join("")}</div>`);
         $(".qz-ticks", host).addEventListener("change", e => {
           const i = +e.target.dataset.i; st.ticks = e.target.checked ? [...new Set([...st.ticks, i])] : st.ticks.filter(x => x !== i); save();
@@ -219,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const hosts = $$(".qz"), main = hosts.filter(h => !isOptional(h)), opt = hosts.filter(isOptional);
     const done = l => l.filter(h => h.classList.contains("done")).length;
     const el = $("#quiz-progress"); if (!el) return;
-    el.textContent = `answered ${done(main)} / ${main.length}` + (opt.length ? ` · ${done(opt)} / ${opt.length} optional` : "");
+    el.textContent = qt(`answered ${done(main)} / ${main.length}`, `отвечено ${done(main)} / ${main.length}`) + (opt.length ? qt(` · ${done(opt)} / ${opt.length} optional`, ` · ${done(opt)} / ${opt.length} дополнительно`) : "");
     $$(".optional-count").forEach(c => { const l = $$(".qz", c.closest("details")); c.textContent = `${done(l)} / ${l.length}`; });
   }
 
@@ -246,9 +248,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (reset) {
     let armed = 0;
     reset.addEventListener("click", () => {
-      if (Date.now() - armed > 4000) { armed = Date.now(); reset.textContent = "Click again to reset"; setTimeout(() => { reset.textContent = "Reset answers"; }, 4000); return; }
+      if (Date.now() - armed > 4000) { armed = Date.now(); reset.textContent = qt("Click again to reset", "Ещё раз для сброса"); setTimeout(() => { reset.textContent = qt("Reset answers", "Сбросить ответы"); }, 4000); return; }
       QUIZ.reset();
-      reset.textContent = "Reset answers";
+      reset.textContent = qt("Reset answers", "Сбросить ответы");
     });
   }
   QUIZ.reset = () => { state = {}; save(); $$("[data-fig]").forEach(h => delete h.dataset.drawn); Object.values(DATA).forEach(render); progress(); };

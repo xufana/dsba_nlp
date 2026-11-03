@@ -1,42 +1,74 @@
-# NLP course for HSE DSBA
+# NLP · ADD-2026
 
-This repository contain materials for NLP course for 4th year students of HSE DSBA.
+Русские материалы курса NLP для студентов DSBA НИУ ВШЭ.
 
-## Course Topics
+Автор: [Daria Andreeva](https://t.me/Xufana).
 
-1. Week 1: Text representations. Main tasks: text classification and regression. Context: lecture, [seminar](/week01_text_representations/)
-2. Week 2: Language modelling with RNNs. [seminar](/week02_language_modelling/)
-3. Week 3: Attention and the transformer. [seminar](/week03_attention_transformer/)
-4. Week 4: Pretraining and transfer with encoders. [seminar](/week04_pretraining_transfer/)
-5. Week 5: Decoder-only models. [seminar](/week05_decoder_only/)
-6. Week 6: The bill — scaling laws, the modern block, serving. [seminar](/week06_modern_llm/)
-7. Week 7: Parameter-efficient fine-tuning — linear probing, LP-FT, prompt tuning, adapters, LoRA, and what training fewer parameters saves. [seminar](/week07_peft/)
-8. Week 8: From next token to assistant — pretraining data, SFT, DPO, RL with a verifier, and the cost of fine-tuning. [seminar](/week08_training_alignment/)
+## Материалы
 
-Interactive pages for the seminars: [xufana.github.io/dsba_nlp](https://xufana.github.io/dsba_nlp/).
+* [Неделя 1 — представления текста](week01_text_representations/demo/week01_add.html): постановка задачи, токенизация, TF-IDF, классификация и эмбеддинги.
+* [Неделя 2 — языковая модель и генерация](week02_language_modelling/demo/week02_add.html): BPE, n-граммы, обучение, рекуррентные сети и декодирование.
 
-## How the repository is organised
+[Ноутбуки и полные семинары](https://github.com/xufana/dsba_nlp/tree/autumn-2026) находятся в `autumn-2026`. На каждой странице есть ссылки на семинар и ноутбук нужной недели.
 
-One directory per week. In it: the seminar notebook (the source of everything), `README.md`,
-`precompute.py` (artifacts that take too long for Colab; their JSON is committed to `artifacts/`),
-`export_demo_data.py` (every number the interactive page shows, produced by the notebook's own
-code), and `demo/` — the page's prose in `text/*.md`, its structure in `body.html`, its JS, and
-the built `weekNN_demo.html` that GitHub Pages serves.
+## Редактирование
 
-Weights and corpora are not in git: the notebooks fetch them from the Hugging Face Hub
-(`scripts/hub.py`, dataset repo `xufana/dsba-nlp-artifacts`) on first run.
+В `weekNN_*/demo/add/`: `text/*.md` — текст, вопросы и короткий код; `body.html` — порядок блоков; `lesson.js` — SVG-схемы и расчёты. Метка `# @ключ` связывает строку Python с `data-f="ключ"` на схеме или формуле. Подробности размещаем в `<details class="optional">`.
 
-One `uv` workspace serves every week:
+В `artifacts/demo_data.json` лежат используемые измерения из соответствующих артефактов `autumn-2026`, коммит `b0ae710`: таблица классификации, сравнение декодирования и примеры генерации. Код опытов и исходные данные доступны в той ветке. Учебные расчёты выполняются в браузере.
 
-```
-uv sync --all-packages                                   # one .venv at the root
-uv run python scripts/build_demo.py week06_modern_llm    # demo/weekNN_demo.html from demo/ + artifacts/
-node scripts/check_demo.js week06_modern_llm             # headless-Chrome checks and screenshots -> /tmp/dsba_nlp/
-uv run python scripts/new_week.py 07 slug "Title"        # scaffold a new week
+Общие стили и механика вопросов — в `demo_base/`; сборка и проверка — в `scripts/`. `build_demo.py` и `build_site.py` предоставляют общие функции сборки и шаблон сайта.
+
+## Сборка и проверка
+
+```sh
+uv sync
+uv run python scripts/build_add.py
+uv run python scripts/build_add_site.py
+node scripts/check_demo.js week01_text_representations week01_text_representations/demo/week01_add.html week01_text_representations/demo/add/check_steps.json
+node scripts/check_demo.js week02_language_modelling week02_language_modelling/demo/week02_add.html week02_language_modelling/demo/add/check_steps.json
 ```
 
-## Authors:
+Локальный курс: `/tmp/dsba_nlp/_site/add-2026/index.html`. Проверки и скриншоты: `/tmp/dsba_nlp/weekNN/check_out/`.
 
-* [Gleb Kuzmin](https://t.me/glkuzi)
-* [Daria Andreeva](https://t.me/Xufana)
-* [Fedor Pakhurov](https://t.me/fpakhurov)
+## GitHub Pages
+
+Общий workflow берёт две отдельные копии веток: `autumn-2026` публикуется в корень, `ADD-2026` — в `/add-2026/`. Локально обе версии можно собрать так:
+
+```sh
+uv run python scripts/build_add_site.py /tmp/dsba_nlp/_site --autumn-source /путь/к/отдельной/копии/autumn-2026
+```
+
+Без `--autumn-source` собираются только страницы ADD. Перед первой публикацией ADD файл `.github/workflows/pages.yml` должен совпадать в обеих ветках, чтобы push в любую из них сохранял обе версии сайта.
+
+
+Таблица русской морфологии хранится в `week01_text_representations/artifacts/morphology.json`. Пересчитать её тем же кодом, который показан на странице:
+
+```sh
+uv run --script week01_text_representations/export_morphology.py
+```
+
+Зависимости этого опыта описаны в самом скрипте; uv создаёт отдельное окружение.
+
+
+Векторы и веса для вкладок «От слов к документу» вычисляются из показанного кода:
+
+```sh
+uv run --script week01_text_representations/export_pooling.py
+```
+
+Скрипт сохраняет `artifacts/pooling.json` и выполняет примеры Skip-Gram, CBOW и negative sampling на маленьком учебном корпусе, на CPU.
+
+
+Примеры n-граммной генерации DSBA и проверенные совпадения с подвыборкой корпуса хранятся в `week02_language_modelling/artifacts/ngram_examples.json`. Извлечь их из локальной ветки `autumn-2026`:
+
+```sh
+python3 week02_language_modelling/export_ngram_examples.py
+```
+
+
+Перплексии моделей на анекдотах и условия их обучения извлекаются из артефакта DSBA:
+
+```sh
+python3 week02_language_modelling/export_ppl_examples.py
+```

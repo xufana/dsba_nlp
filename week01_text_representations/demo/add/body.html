@@ -1,0 +1,145 @@
+<div class="shell">
+<aside class="rail">
+<div><div class="rail-mark">NLP @ HSE DSBA · ADD-2026</div><div class="rail-eq">Неделя 1<br>Представления текста</div></div>
+<nav id="nav"></nav>
+<div class="rail-btns"><button id="btn-reset">Сбросить ответы</button><button id="btn-theme">Тема</button></div>
+<div class="quiz-progress" id="quiz-progress"></div>
+<div class="rail-foot"><a href="https://xufana.github.io/dsba_nlp/week01/">Семинар autumn-2026</a><br>
+<a href="https://colab.research.google.com/github/xufana/dsba_nlp/blob/autumn-2026/week01_text_representations/week01_text_representations.ipynb">Ноутбук в Colab</a><br>
+<a href="https://github.com/xufana/dsba_nlp/blob/autumn-2026/week01_text_representations/week01_text_representations.ipynb">Ноутбук на GitHub</a></div>
+</aside>
+<main><div class="wrap">
+<section id="hero"><p class="eyebrow">Author: Daria Andreeva</p><h1>Представления текста</h1>
+<p class="lede">{{inline:lede}}</p><div class="prose">{{text:intro}}</div>
+</section>
+<section id="task"><p class="eyebrow">блок 01</p><h2>Как звучит задача?</h2>
+<div class="prose">{{text:task-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="task"></div></div>
+<div class="panel-note">{{text:task-note}}</div>
+</div>
+{{quiz:q-task}}
+{{quiz:q-label}}
+<details class="optional"><summary>подробнее</summary><div class="prose">{{text:task-detail}}</div>
+</details>
+</section>
+<section id="tokens"><p class="eyebrow">блок 02</p><h2>Из строки в токены</h2>
+<div class="prose">{{text:tokens-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="tokens"></div></div>
+<div class="panel-note">{{text:tokens-note}}</div>
+{{code:tokens}}
+</div>
+{{quiz:q-token}}
+<h3>Что делать с новым словом?</h3>
+<div class="prose">{{text:oov-intro}}</div>
+<div class="panel" id="oov" data-link-scope><div class="panel-body"><div data-fig="oov"></div></div><div class="panel-note">{{text:oov-note}}</div>{{code:oov}}</div>
+<details class="optional"><summary>как обучается вектор UNK</summary><div class="prose">{{text:oov-training}}</div></details>
+<div class="prose">{{text:oov-methods}}</div>
+<div class="prose">{{text:normalization-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="normalization"></div></div>
+<div class="panel-note">{{text:normalization-note}}</div>
+{{code:normalization}}
+</div>
+<div class="prose">{{text:normalization-table-intro}}</div>
+<div class="panel"><div class="panel-body" id="normalization-table"></div></div>
+<details class="optional"><summary>запуск кода и версии библиотек</summary><div class="prose" id="normalization-versions"></div></details>
+<details class="optional"><summary>почему лемм может быть несколько</summary><div class="prose">{{text:normalization-ambiguity}}</div></details>
+{{quiz:q-clean}}
+<details class="optional"><summary>обработка текста и потери информации</summary><div class="prose">{{text:tokens-detail}}</div>
+</details>
+</section>
+<section id="vector"><p class="eyebrow">блок 03</p><h2>Что хранится в векторе?</h2>
+<div class="prose">{{text:vector-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="onehot"></div></div>
+</div>
+<div class="panel" data-link-scope>
+<div class="formula">{{text:vector-formula}}</div>
+<div class="panel-body"><div data-fig="tfidf"></div><div class="add-controls"><button id="repeat-word">Повторить «кот»</button><button id="reverse-words">Переставить слова</button></div><div id="tfidf-trace" class="add-result" aria-live="polite"></div></div>
+<div class="panel-note">{{text:vector-note}}</div>
+{{code:vector}}
+</div>
+{{quiz:q-vector}}
+{{quiz:q-order}}
+<details class="optional"><summary>формула IDF, неизвестные слова и n-граммы</summary><div class="prose">{{text:vector-detail}}</div>
+</details>
+</section>
+<section id="model"><p class="eyebrow">блок 04</p><h2>Как получается класс?</h2>
+<div class="prose">{{text:model-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="linear"></div><div id="linear-controls" class="add-controls"><button data-word="0">+ «матч»</button><button data-word="1">+ «акции»</button><button data-word="reset">Сбросить</button></div><div id="linear-result" class="add-result" aria-live="polite"></div></div>
+<div class="panel-note">{{text:model-note}}</div>
+{{code:linear}}
+</div>
+{{quiz:q-leak}}
+{{quiz:q-shortcut}}
+<details class="optional"><summary>обучение, метрики и проверка ошибок</summary><div class="prose">{{text:model-detail}}</div>
+</details>
+<div class="prose">{{text:results-intro}}</div>
+<div class="panel"><div class="panel-body" id="classification-results"></div></div></section>
+<section id="embeddings"><p class="eyebrow">блок 05</p><h2>Откуда берётся эмбеддинг?</h2>
+<div class="prose">{{text:embeddings-intro}}</div>
+<details class="optional"><summary>общие данные и начальные веса для примеров Word2Vec</summary><div class="prose">{{text:embedding-example-note}}</div>{{code:embedding-data}}{{code:embedding-init}}</details>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="skip"></div></div>
+<div class="panel-note">{{text:embeddings-note}}</div>
+{{code:embeddings}}
+</div>
+{{quiz:q-embed}}
+<details class="optional"><summary>обучение и применение векторов</summary><div class="prose">{{text:embeddings-detail}}</div>
+</details>
+<div class="prose">{{text:cbow-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="cbow"></div></div>
+<div class="panel-note">{{text:cbow-note}}</div>
+{{code:cbow}}
+</div>
+<div class="prose">{{text:neg-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="negative"></div></div>
+<div class="panel-note">{{text:neg-note}}</div>
+{{code:negative}}
+</div>
+<details class="optional"><summary>откуда берутся случайные слова</summary><div class="prose">{{text:neg-detail}}</div></details>
+{{quiz:q-negative}}
+</section>
+<section id="pool"><p class="eyebrow">блок 06</p><h2>От слов к документу</h2>
+<div class="prose">{{text:pool-intro}}</div>
+<details class="optional"><summary>полный код получения векторов слов</summary><div class="prose">{{text:pool-setup}}</div>{{code:embedding-data}}{{code:embedding-init}}{{code:embeddings}}</details>
+<div class="panel" id="document-representation">
+<div class="panel-body"><div class="card-tabs" role="tablist" aria-label="Вектор документа">
+<button id="tab-mean" role="tab" aria-selected="true" aria-controls="pane-mean" class="sel" tabindex="0">Усреднение</button>
+<button id="tab-projection" role="tab" aria-selected="false" aria-controls="pane-projection" tabindex="-1">Проекция через обучаемую матрицу</button>
+</div></div>
+<div id="pane-mean" role="tabpanel" aria-labelledby="tab-mean" data-link-scope>
+<div class="panel-body"><div data-fig="pool"></div></div>
+<div class="panel-note">{{text:pool-note}}</div>
+{{code:pool}}
+</div>
+<div id="pane-projection" role="tabpanel" aria-labelledby="tab-projection" data-link-scope hidden>
+<div class="panel-body"><div data-fig="projection"></div></div>
+<div class="panel-note">{{text:projection-note}}</div>
+{{code:projection}}
+<details class="optional"><summary>что здесь обучается</summary><div class="prose">{{text:projection-detail}}</div></details>
+</div>
+</div>
+{{quiz:q-pool}}
+<details class="optional"><summary>другие способы агрегации и выбор представления</summary><div class="prose">{{text:pool-detail}}</div>
+</details>
+<div class="prose">{{text:fast-intro}}</div>
+<div class="panel" data-link-scope>
+<div class="panel-body"><div data-fig="fast"></div></div>
+<div class="panel-note">{{text:fast-note}}</div>
+{{code:fast}}
+</div>
+{{quiz:q-oov}}
+</section>
+<section id="design"><p class="eyebrow">блок 07</p><h2>Спроектируем систему</h2>
+<div class="prose">{{text:design-intro}}</div>
+{{quiz:q-design}}
+</section>
+<section id="sources"><p class="eyebrow">блок 08</p><h2>Источники</h2>
+<h3>References</h3><div class="prose footnote sources">{{text:end-refs}}</div></section>
+</div></main></div>
