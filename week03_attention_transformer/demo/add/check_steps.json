@@ -1,0 +1,144 @@
+{
+  "steps": [
+    {
+      "name": "loaded",
+      "expr": "if(document.documentElement.lang!=='ru')throw Error('lang');if(document.querySelectorAll('.qz-nofig').length)throw Error('missing figure'); if(document.body.innerText.includes('{{'))throw Error('placeholder'); if([...document.querySelectorAll('[data-fig]')].some(h=>!h.querySelector('svg')))throw Error('empty diagram');return document.querySelectorAll('.qz').length+' вопросов, '+document.querySelectorAll('svg').length+' SVG';"
+    },
+    {
+      "name": "RNN without QKV",
+      "expr": "const section=document.querySelector('#attention');if(/\\b[QKV]\\b/.test(section.innerText+section.querySelector('svg').textContent))throw Error('premature QKV');for(const step of [0,1,2]){document.querySelector('#rnn-step').value=step;redrawAll();const w=W3.weights(step);if(Math.abs(w.reduce((a,b)=>a+b)-1)>1e-12)throw Error('weights');if(!document.querySelector('[data-fig=\"rnn-attention\"] [data-f=\"context\"]').textContent.includes('c'+'₁₂₃'[step]))throw Error('context');}document.querySelector('#rnn-enabled').click();if(document.querySelector('#rnn-result').textContent.includes('Σ')||document.querySelector('[data-fig=\"rnn-attention\"] [data-f=\"context\"]'))throw Error('toggle');document.querySelector('#rnn-enabled').click();document.querySelector('#rnn-step').value=0;for(const v of ['long','short']){document.querySelector('#encdec-length').value=v;redrawAll();}return 'three steps, baseline toggle, both source lengths';"
+    },
+    {
+      "name": "BLEU against sacrebleu",
+      "expr": "const expected={\"copy\": [100.00000000000004, [1.0, 1.0, 1.0, 1.0], 1.0], \"syn\": [0.0, [0.375, 0.14285714285714288, 0.0, 0.0], 1.0], \"order\": [0.0, [1.0, 0.5714285714285715, 0.33333333333333337, 0.0], 1.0], \"neg\": [75.06238537503395, [0.8888888888888888, 0.75, 0.7142857142857143, 0.6666666666666667], 1.0], \"num\": [70.71067811865478, [0.875, 0.7142857142857143, 0.6666666666666667, 0.6], 1.0], \"short\": [54.88116360940266, [1.0, 1.0, 1.0, 1.0], 0.5488116360940264], \"rep\": [0.0, [0.16666666666666669, 0.0, 0.0, 0.0], 0.7165313105737893]};const sel=document.querySelector('#bleu-case');for(const [k,[score,prec,bp]] of Object.entries(expected)){sel.value=k;sel.dispatchEvent(new Event('change'));const c=BLEU.cases.find(x=>x[0]===k);const r=BLEU.score(c[2]);if(Math.abs(r.bleu-score)>1e-9||Math.abs(r.bp-bp)>1e-12)throw Error('bleu '+k);r.rows.forEach((row,n)=>{if(Math.abs(row.p-prec[n])>1e-12)throw Error('p'+(n+1)+' '+k);});if(!document.querySelector('#bleu-result').textContent.includes('BLEU = '+score.toFixed(1)))throw Error('render '+k);}const inp=document.querySelector('#bleu-hyp');inp.value='кошка спит';inp.dispatchEvent(new Event('input'));if(sel.value!=='own'||!document.querySelector('#bleu-result').textContent.includes('нет: перевод короче'))throw Error('own');sel.value='syn';sel.dispatchEvent(new Event('change'));return '7 cases match sacrebleu 2.6.0 (smooth none), own input works';"
+    },
+    {
+      "name": "mask modes",
+      "expr": "for(const mode of ['encoder','causal','cross']){document.querySelector('#mask-mode').value=mode;redrawAll();const t=W3.maskTokens(mode);for(const c of [...document.querySelectorAll('[data-fig=\"mask\"] [data-cell]')]){const [i,j]=c.dataset.cell.split(',').map(Number);if(W3.maskAllowed(mode,i,j)!==(j<3&&(mode!=='causal'||j<=i)))throw Error('mask');document.querySelector('[data-fig=\"mask\"] [data-cell=\"'+i+','+j+'\"]').dispatchEvent(new MouseEvent('click'));if(!document.querySelector('#mask-result').textContent.includes(t.q[i]))throw Error('cell');if(W3.maskQuery!==i)throw Error('query');}const q=document.querySelector('[data-fig=\"mask\"] [data-query=\"0\"]');q.dispatchEvent(new MouseEvent('click'));if(W3.maskQuery!==0)throw Error('token click');}document.querySelector('#mask-mode').value='causal';W3.maskQuery=2;redrawAll();return 'encoder, causal and cross; cells and tokens select the query';"
+    },
+    {
+      "name": "QKV against Python",
+      "expr": "const expected={\"weights\": [[0.4011120926797859, 0.1977758146404282, 0.4011120926797859], [0.24825507825772308, 0.24825507825772308, 0.5034898434845538], [0.28399540974126003, 0.14002924504337802, 0.575975345215362]], \"output\": [[1.401112092679786, 0.5988879073202141], [1.5034898434845538, 0.7517449217422769], [1.575975345215362, 0.71600459025874]]};for(let i=0;i<3;i++){document.querySelector('#query-position').value=i;document.querySelector('#query-position').dispatchEvent(new Event('change'));const actual=W3.example(i);for(const key of ['weights','output'])actual[key].forEach((v,j)=>{if(Math.abs(v-expected[key][i][j])>1e-12)throw Error(key);});if(!document.querySelector('#qkv-result').textContent.includes(actual.output[0].toFixed(3)))throw Error('render');}document.querySelector('#query-position').value=0;redrawAll();return 'three queries, weights and outputs match Python';"
+    },
+    {
+      "name": "hover and focus",
+      "expr": "for(const scope of document.querySelectorAll('[data-link-scope]')){for(const line of scope.querySelectorAll('pre [data-f]')){line.dispatchEvent(new Event('focusin',{bubbles:true}));if(!scope.querySelector('svg [data-f=\"'+line.dataset.f+'\"].hi')&&!scope.querySelector('.formula [data-f=\"'+line.dataset.f+'\"].hi'))throw Error('no target '+line.dataset.f);line.dispatchEvent(new Event('focusout',{bubbles:true}));}}return 'all code links work';"
+    },
+    {
+      "name": "answer and persistence",
+      "expr": "for(const q of Object.values(QUIZ.data)){const h=document.querySelector('[data-q=\"'+q.key+'\"]');if(q.type==='pick'||q.type==='point'){for(const o of q.opts.filter(o=>o.right))h.querySelector('[data-k=\"'+o.k+'\"]').click();h.querySelector('.qz-check')?.click();}else if(q.type==='sort'){[...h.querySelectorAll('tr')].forEach((tr,i)=>{[...tr.querySelectorAll('button')].find(b=>b.dataset.b===q.items[i].bins[0]).click();});h.querySelector('.qz-check').click();}else if(q.type==='write'){h.querySelector('textarea').value='проверка';h.querySelector('textarea').dispatchEvent(new Event('input'));h.querySelector('.qz-check').click();}if(!h.classList.contains('done'))throw Error('not finished '+q.key);if(h.querySelector('.qz-verdict.no'))throw Error('wrong grading '+q.key);}const key='quiz:'+document.querySelector('meta[name=\"quiz-store\"]').content;const state=JSON.parse(localStorage.getItem(key));if(Object.values(state).filter(s=>s.done).length!==Object.keys(QUIZ.data).length)throw Error('persistence');return document.querySelector('#quiz-progress').textContent;"
+    },
+    {
+      "name": "reset",
+      "expr": "QUIZ.reset();if(document.querySelector('.qz.done'))throw Error('reset');return 'reset';"
+    },
+    {
+      "name": "SVG geometry",
+      "expr": "document.querySelectorAll('details').forEach(d=>d.open=true);const bad=[];for(const svg of document.querySelectorAll('svg')){const v=svg.viewBox.baseVal;const ts=[...svg.querySelectorAll('text')];for(let i=0;i<ts.length;i++){const t=ts[i],b=t.getBBox();if(b.x<-.5||b.y<-.5||b.x+b.width>v.width+.5||b.y+b.height>v.height+.5)bad.push('clip '+t.textContent);for(let j=i+1;j<ts.length;j++){const c=ts[j].getBBox();if(b.x<c.x+c.width-1&&c.x<b.x+b.width-1&&b.y<c.y+c.height-1&&c.y<b.y+b.height-1)bad.push('overlap '+t.textContent+' / '+ts[j].textContent);}}}if(bad.length)throw Error(bad.join(' | '));return 'all SVG labels fit';"
+    }
+  ],
+  "screens": [
+    {
+      "sel": "#translation",
+      "file": "add03_translation.png",
+      "height": 1200,
+      "expr": "document.documentElement.dataset.theme='light'"
+    },
+    {
+      "sel": "#quality",
+      "file": "add03_quality.png",
+      "height": 2600,
+      "expr": "document.documentElement.dataset.theme='light'"
+    },
+    {
+      "sel": "#attention",
+      "file": "add03_attention_off.png",
+      "height": 1200,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelector('#rnn-enabled').checked=false;redrawAll()"
+    },
+    {
+      "sel": "#attention",
+      "file": "add03_attention.png",
+      "height": 1200,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelector('#rnn-enabled').checked=true;document.querySelector('#rnn-step').value=1;redrawAll()"
+    },
+    {
+      "sel": "#qkv",
+      "file": "add03_qkv.png",
+      "height": 1900,
+      "expr": "document.documentElement.dataset.theme='light'"
+    },
+    {
+      "sel": "#masks",
+      "file": "add03_masks_cross.png",
+      "height": 1200,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelector('#mask-mode').value='cross';W3.maskQuery=1;redrawAll()"
+    },
+    {
+      "sel": "#masks",
+      "file": "add03_masks.png",
+      "height": 1200,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelector('#mask-mode').value='encoder';W3.maskQuery=1;redrawAll()"
+    },
+    {
+      "sel": "#block",
+      "file": "add03_block.png",
+      "height": 1200,
+      "expr": "document.documentElement.dataset.theme='light'"
+    },
+    {
+      "sel": "#assembly",
+      "file": "add03_assembly.png",
+      "height": 1200,
+      "expr": "document.documentElement.dataset.theme='light'"
+    },
+    {
+      "sel": "#qkv",
+      "file": "add03_dark.png",
+      "height": 1200,
+      "expr": "document.documentElement.dataset.theme='dark'"
+    },
+    {
+      "sel": "#block",
+      "file": "add03_mobile.png",
+      "width": 390,
+      "height": 1100,
+      "expr": "document.documentElement.dataset.theme='light'"
+    }
+  ],
+  "figures": [
+    {
+      "sel": "[data-fig=\"qkv\"]",
+      "file": "qkv.png",
+      "svg": true,
+      "expr": "document.querySelector('#query-position').value=0"
+    },
+    {
+      "sel": "[data-fig=\"attention-matrix\"]",
+      "file": "attention-matrix.png",
+      "svg": true,
+      "expr": "document.querySelector('#query-position').value=0"
+    },
+    {
+      "sel": "[data-fig=\"mask\"]",
+      "file": "mask.png",
+      "svg": true,
+      "expr": "document.querySelector('#mask-mode').value='causal';W3.maskQuery=2"
+    },
+    {
+      "sel": "[data-fig=\"heads\"]",
+      "file": "heads.png",
+      "svg": true
+    },
+    {
+      "sel": "[data-fig=\"block\"]",
+      "file": "block.png",
+      "svg": true
+    },
+    {
+      "sel": "[data-fig=\"assembly\"]",
+      "file": "assembly.png",
+      "svg": true
+    }
+  ]
+}

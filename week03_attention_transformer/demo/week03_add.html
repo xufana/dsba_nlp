@@ -1,0 +1,1641 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Машинный перевод и трансформер · NLP · ADD-2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* The design system of the seminar pages, shared by every week (scripts/build_demo.py puts it in <style>).
+   A week adds its own rules in demo/week.css, appended after this file. */
+:root {
+  color-scheme: light;
+  --ground:        #f7f6f2;
+  --panel:         #fdfdfc;
+  --panel-sunk:    #f1efe9;
+  --ink:           #14161a;
+  --ink-2:         #55595f;
+  --ink-3:         #8b8e92;
+  --rule:          #dcdad3;
+  --rule-strong:   #bab7ad;
+  --cls-0: #2a78d6; --cls-1: #eb6834; --cls-2: #1baf7a; --cls-3: #4a3aa7;
+  --good:  #0ca30c; --bad: #d03b3b;
+  --seq-1: #5598e7; --seq-2: #3987e5; --seq-3: #2a78d6; --seq-4: #256abf; --seq-5: #104281;
+  --shadow: 0 1px 2px rgba(20,22,26,.05), 0 8px 24px -16px rgba(20,22,26,.28);
+
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground:      #131413;
+    --panel:       #1b1c1b;
+    --panel-sunk:  #232422;
+    --ink:         #f0efe9;
+    --ink-2:       #a8a79f;
+    --ink-3:       #7b7a73;
+    --rule:        #31322e;
+    --rule-strong: #4c4d47;
+    --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+    --good: #0ca30c; --bad: #d03b3b;
+    --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground:      #131413;
+  --panel:       #1b1c1b;
+  --panel-sunk:  #232422;
+  --ink:         #f0efe9;
+  --ink-2:       #a8a79f;
+  --ink-3:       #7b7a73;
+  --rule:        #31322e;
+  --rule-strong: #4c4d47;
+  --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+  --good: #0ca30c; --bad: #d03b3b;
+  --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 20.1px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+
+/* ---------------------------------------------------------------- shell */
+.shell { display: grid; grid-template-columns: 278px minmax(0, 1fr); gap: 0; }
+.rail {
+  position: sticky; top: 0; align-self: start; height: 100vh;
+  border-right: 1px solid var(--rule);
+  padding: 26px 18px 18px 26px;
+  display: flex; flex-direction: column; gap: 18px;
+  overflow-y: auto;
+}
+.rail-mark {
+  font-family: var(--mono); font-size: 14px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.rail-eq { font-family: var(--display); font-size: 17.7px; font-weight: 700; line-height: 1.3; }
+.rail nav { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
+.rail nav a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: baseline;
+  padding: 4px 6px 4px 0; text-decoration: none; color: var(--ink-2);
+  font-family: var(--display); font-size: 16.4px; line-height: 1.32;
+  border-radius: 3px;
+}
+.rail nav a span:first-child {
+  font-family: var(--mono); font-size: 13.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.rail nav a:hover { color: var(--ink); background: var(--panel-sunk); }
+.rail nav a.on { color: var(--ink); font-weight: 700; }
+.rail nav a.on span:first-child { color: var(--ink); }
+.rail-foot { margin-top: auto; font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.6; }
+.rail-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+main { padding: 0 0 140px; min-width: 0; }
+.wrap { max-width: 1160px; padding: 0 48px; margin: 0 auto; }
+section { padding: 64px 0 8px; scroll-margin-top: 20px; }
+.prose { max-width: none; }
+.prose p { margin: 0 0 1.05em; }
+.prose p + p { margin-top: -.15em; }
+
+/* --------------------------------------------------------------- type */
+h1 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(41px, 6.04vw, 72.9px); line-height: .98; letter-spacing: -.025em;
+  margin: 0 0 22px; text-wrap: balance;
+}
+h2 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(27.5px, 3.19vw, 37.8px); line-height: 1.08; letter-spacing: -.018em;
+  margin: 0 0 14px; text-wrap: balance;
+}
+h3 {
+  font-family: var(--display); font-weight: 700; font-size: 20.6px;
+  letter-spacing: -.008em; margin: 34px 0 10px;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 14px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px;
+}
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.lede { font-size: 23.5px; line-height: 1.52; color: var(--ink-2); max-width: none; }
+.prose strong { font-weight: 600; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.prose code { background: var(--panel-sunk); padding: .1em .34em; border-radius: 3px; }
+a { color: inherit; text-underline-offset: 2px; text-decoration-color: var(--rule-strong); }
+
+/* -------------------------------------------------------------- panels */
+.panel {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 4px; box-shadow: var(--shadow);
+  margin: 22px 0 26px; overflow: hidden;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 11px 16px; border-bottom: 1px solid var(--rule);
+  background: var(--panel-sunk);
+  font-family: var(--mono); font-size: 14px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-2); flex-wrap: wrap;
+}
+.panel-body { padding: 18px 16px; }
+.panel-body.tight { padding: 12px 16px; }
+.panel-note {
+  padding: 12px 16px; border-top: 1px solid var(--rule); background: var(--panel-sunk);
+  font-size: 17.7px; color: var(--ink-2); line-height: 1.55;
+}
+.scroll-x { overflow-x: auto; }
+
+/* ------------------------------------------------------------- controls */
+button, .btn {
+  font-family: var(--display); font-size: 16.4px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px;
+  padding: 6px 12px; cursor: pointer; line-height: 1.35;
+  transition: background .12s ease, border-color .12s ease;
+}
+button:hover { background: var(--panel-sunk); border-color: var(--ink-3); }
+button[disabled] { opacity: .42; cursor: not-allowed; }
+button.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+button.primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
+button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.btnrow { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+input[type="text"], textarea, select {
+  font-family: var(--mono); font-size: 16.4px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px; padding: 8px 10px;
+  width: 100%;
+}
+input[type="range"] { accent-color: var(--ink); width: 100%; }
+label.field { display: block; font-family: var(--mono); font-size: 14px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+
+/* ---------------------------------------------------------------- data */
+table { border-collapse: collapse; width: 100%; font-size: 16.4px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--mono); font-size: 15.4px; }
+th.data-th { text-transform: none; letter-spacing: 0; font-size: 14.5px; color: var(--ink-2); }
+tr:last-child td { border-bottom: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 14.5px; letter-spacing: .02em;
+  padding: 2px 8px; border-radius: 2px; border: 1px solid var(--rule-strong);
+  white-space: nowrap;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.c0 { background: var(--cls-0); } .c1 { background: var(--cls-1); }
+.c2 { background: var(--cls-2); } .c3 { background: var(--cls-3); }
+.t0 { color: var(--cls-0); } .t1 { color: var(--cls-1); }
+.t2 { color: var(--cls-2); } .t3 { color: var(--cls-3); }
+
+.stat-row { display: flex; gap: 34px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .v { font-family: var(--display); font-weight: 700; font-size: 32.5px;
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); }
+
+.reveal-wrap { position: relative; }
+.veil {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 26px 16px; background: var(--panel-sunk);
+  border: 1px dashed var(--rule-strong); border-radius: 3px;
+  font-family: var(--mono); font-size: 15.4px; color: var(--ink-2);
+  text-align: center; flex-wrap: wrap;
+}
+[hidden] { display: none !important; }
+
+.tok {
+  display: inline-block; font-family: var(--mono); font-size: 15.4px;
+  padding: 1px 6px; margin: 2px 3px 2px 0; border-radius: 2px;
+  background: var(--panel-sunk); border: 1px solid var(--rule);
+}
+.tok.diff { border-color: var(--ink-3); background: var(--panel); font-weight: 500; }
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+
+svg { display: block; max-width: 100%; }
+svg text { font-family: var(--mono); fill: var(--ink-2); }
+.axis line, .axis path { stroke: var(--rule); }
+.gridline { stroke: var(--rule); stroke-dasharray: 2 3; }
+
+.tooltip {
+  position: fixed; pointer-events: none; z-index: 50; opacity: 0;
+  background: var(--panel); border: 1px solid var(--rule-strong);
+  border-radius: 3px; box-shadow: var(--shadow); padding: 7px 10px;
+  font-family: var(--mono); font-size: 14.5px; line-height: 1.5; color: var(--ink);
+  transition: opacity .1s ease; max-width: 280px;
+}
+
+.footnote { font-size: 17.2px; color: var(--ink-2); max-width: none; }
+
+/* library pointers: a quiet line of names, with the actual call one click away */
+.codenote { margin: 16px 0 0; border-top: 1px solid var(--rule); padding-top: 9px; }
+.codenote > summary {
+  cursor: pointer; list-style: none; display: flex; gap: 9px;
+  align-items: baseline; flex-wrap: wrap; padding: 2px 0;
+}
+.codenote > summary::-webkit-details-marker { display: none; }
+.codenote > summary::before {
+  content: "+"; font-family: var(--mono); font-size: 15px; color: var(--ink-3);
+  width: 9px; flex: none;
+}
+.codenote[open] > summary::before { content: "−"; }
+.codenote > summary:hover .libs, .codenote[open] > summary .libs { color: var(--ink); }
+.codenote .k {
+  font-family: var(--mono); font-size: 13px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3); flex: none;
+}
+.codenote .libs {
+  font-family: var(--mono); font-size: 15px; line-height: 1.55; color: var(--ink-2);
+  transition: color .12s ease;
+}
+.codenote pre {
+  margin: 11px 0 0; padding: 13px 15px; background: var(--panel-sunk);
+  border-radius: 3px; font-family: var(--mono); font-size: 15.4px; line-height: 1.8;
+  white-space: pre-wrap; word-break: break-word; color: var(--ink);
+}
+.codenote .why { font-size: 16.4px; color: var(--ink-2); line-height: 1.55; margin-top: 10px; }
+.codenote .why code { font-family: var(--mono); font-size: 15.4px; }
+.kbd {
+  font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; color: var(--ink-2);
+}
+
+/* ------------------------------------------------------- week 2 additions */
+.michael { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); }
+.michael figcaption { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-top: 8px; line-height: 1.5; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+
+/* a bet: pick one option, then reveal */
+.bet { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 12px; }
+.bet .q { font-family: var(--body); font-size: 17.5px; font-weight: 600; color: var(--ink); flex-basis: 100%; line-height: 1.4; }
+.bet button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.bet button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.bet button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.bet .verdict { font-family: var(--mono); font-size: 15px; margin-left: 6px; }
+.bet .verdict.ok { color: var(--good); } .bet .verdict.no { color: var(--bad); }
+
+/* generated text */
+.gen { font-size: 19.5px; line-height: 1.75; margin: 0 0 12px; }
+.gen .t { padding: 1px 1px; border-radius: 2px; white-space: pre-wrap; }
+.gen .copied { background: color-mix(in srgb, var(--cls-1) 22%, transparent); border-bottom: 2px solid var(--cls-1); }
+.gen .dead { color: var(--bad); font-family: var(--mono); }
+.gen .prompt { color: var(--ink-3); }
+.gen-list { display: flex; flex-direction: column; gap: 10px; }
+.gen-list .gen { padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; margin: 0; }
+
+.merge-row { display: grid; grid-template-columns: 54px 1fr 110px; gap: 10px; font-family: var(--mono); font-size: 15px; padding: 3px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.merge-row .n { color: var(--ink-3); } .merge-row .c { text-align: right; color: var(--ink-2); }
+.merge-row .p { display: flex; gap: 6px; align-items: center; }
+.merge-row .p .tok { margin: 0; }
+.merge-row .tok.new { border-color: var(--ink); font-weight: 600; }
+.eow { color: var(--cls-1); }
+
+.pbar { display: grid; grid-template-columns: 150px 1fr 64px; gap: 10px; align-items: center; font-family: var(--mono); font-size: 14.5px; padding: 2px 0; }
+.pbar .lab { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pbar .bar { height: 14px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pbar .bar i { display: block; height: 100%; background: var(--cls-0); }
+.pbar.cut .bar i { background: var(--rule-strong); } .pbar.cut .lab { color: var(--ink-3); }
+.pbar .v { color: var(--ink-2); }
+
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 18px; margin: 12px 0; }
+.sliders label.field { display: flex; justify-content: space-between; }
+.sliders label.field b { color: var(--ink); font-weight: 500; }
+.sliders .off { opacity: .4; }
+
+.tr-row { display: grid; grid-template-columns: 64px 1fr; gap: 8px 14px; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 18.5px; line-height: 1.5; }
+.tr-row .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.tr-row .bleu { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-left: 8px; }
+.tr-row:last-child { border-bottom: none; }
+.nowrap { white-space: nowrap; }
+.busy { opacity: .55; pointer-events: none; }
+
+/* formulas: native MathML, kept outside .prose so they survive presentation mode */
+math { font-family: "STIX Two Math", "Latin Modern Math", "Cambria Math", "Times New Roman", serif; }
+.prose math { font-size: 1.05em; }
+.formula {
+  margin: 12px 0 22px; padding: 14px 20px 12px; background: var(--panel-sunk);
+  border-left: 3px solid var(--rule-strong); border-radius: 3px; overflow-x: auto;
+}
+.formula .fn {
+  display: block; font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px;
+}
+.formula math { font-size: 1.25em; margin: 6px 0; }
+.formula math + math { margin-top: 10px; }
+.formula mtext { font-family: var(--body); font-size: .82em; color: var(--ink-2); }
+body.present .formula { margin-top: 10px; }
+
+/* the one-screen recipe */
+.recipe { padding: 4px 16px 6px; }
+.recipe .step { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--rule); }
+.recipe .step:first-child { border-top: none; }
+.recipe .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.recipe .k b { display: block; font-family: var(--display); font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1; margin-bottom: 4px; }
+.recipe pre { margin: 0; font-family: var(--mono); font-size: 14.5px; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--ink); }
+.recipe .c { color: var(--ink-3); }
+
+/* --------------------------------------------------- presentation mode */
+body.present .prose:not(.keep) { display: none; }
+body.present .footnote { display: none; }
+body.present section { min-height: 100vh; padding-top: 40px; }
+body.present .panel { margin-top: 14px; }
+body.present .lede { display: none; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; border-right: none;
+    border-bottom: 1px solid var(--rule); padding: 18px 20px; }
+  .rail nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .wrap { padding: 0 20px; }
+  body { font-size: 18.6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+/* ------------------------------------------------------- week 3 additions */
+/* code next to the formula it implements: hover a line, the term lights up (and back) */
+.two { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .two { grid-template-columns: 1fr; } }
+/* wide code: the formulas go below it, as a row of cards */
+.two.stacked { grid-template-columns: 1fr; }
+.two.stacked .fstack { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 6px 22px; }
+.two.stacked .fstack .row { border-top: none; border-left: 2px solid var(--rule); padding: 4px 0 4px 12px; grid-template-columns: 1fr; gap: 2px; }
+.two.stacked .fstack .row .n { white-space: nowrap; }
+.hm svg rect.flat { stroke: none; }
+#masks-out > div { display: flex; flex-direction: column; justify-content: flex-end; }
+#masks-out .hm-title { min-height: 2.8em; }
+.temp-table td:first-child { white-space: nowrap; }
+pre.code { margin: 0; padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; white-space: normal; overflow-x: auto; color: var(--ink); counter-reset: ln; }
+pre.code .ln { display: block; white-space: pre; min-height: 1.5em; padding: 0 8px 0 40px; margin: 0 -8px; position: relative; border-radius: 2px; transition: background .12s ease; }
+pre.code .ln::before { counter-increment: ln; content: counter(ln); position: absolute; left: 8px; width: 24px; text-align: right; color: var(--ink-3); font-size: 12.5px; top: 1px; }
+pre.code .ln[data-f] { cursor: default; }
+pre.code .ln.hi, .fstack .fx.hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .c { color: var(--ink-3); }
+pre.code .kw { color: var(--cls-3); }
+.fstack .fx { padding: 2px 6px; border-radius: 3px; transition: background .12s ease; }
+.fstack .fx[data-f] { cursor: default; }
+.fstack .fx.dim { opacity: .35; }
+.fstack .row { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--rule); }
+.fstack .row:first-child { border-top: none; }
+.fstack .row .n { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .08em; }
+.fstack .row .say { font-size: 16.4px; color: var(--ink-2); line-height: 1.5; margin-top: 2px; }
+.fstack math { font-size: 1.1em; }
+.fstack .row > div { min-width: 0; overflow-x: auto; }
+.two:not(.stacked) .fstack math { font-size: 1em; }
+.two:not(.stacked) .fstack math[display="block"] { display: inline-block; margin: 2px 0; }
+.fstack .fx.hi math { color: var(--ink); }
+
+/* a redrawn schematic and its credit line */
+.fig { margin: 8px 0 0; }
+.figcap { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.5; margin: 8px 0 2px; }
+.figcap a { color: var(--ink-2); }
+
+/* attention heatmaps */
+.hm-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.hm-title { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.hm svg rect.cell { stroke: var(--panel); stroke-width: .6; }
+.hm svg rect.cell:hover { stroke: var(--ink); stroke-width: 1.5; }
+.headgrid { display: grid; grid-template-columns: 40px repeat(8, minmax(0, 1fr)); gap: 4px; align-items: center; }
+.headgrid .lab { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); text-align: center; }
+.headgrid svg { cursor: pointer; border: 1px solid var(--rule); border-radius: 2px; background: var(--panel); }
+.headgrid svg.on { outline: 2px solid var(--cls-1); }
+
+/* the score table */
+.scores td math { font-size: 1.1em; }
+.scores td:first-child { font-weight: 600; font-family: var(--display); }
+
+/* live text-in → text-out panels */
+.io { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.io .out { font-family: var(--mono); font-size: 22px; letter-spacing: .04em; padding: 8px 12px; background: var(--panel-sunk); border-radius: 3px; min-height: 46px; }
+.io .out.ok { border-left: 3px solid var(--good); } .io .out.no { border-left: 3px solid var(--bad); }
+.small-note { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); margin-top: 6px; }
+.toggle { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 3px; overflow: hidden; }
+.toggle button { border: none; border-radius: 0; }
+.toggle button.sel { background: var(--ink); color: var(--ground); }
+.ck { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.ck b { color: var(--good); font-weight: 500; } .ck b.no { color: var(--bad); }
+.results th.data-th, .results td { font-size: 15.4px; }
+.results tr.hl td { background: color-mix(in srgb, var(--cls-0) 10%, transparent); }
+
+/* ------------------------------------------------------- week 4 additions */
+/* token strips: WordPiece pieces, with the continuation marker and special tokens coloured */
+.pieces { display: flex; flex-wrap: wrap; gap: 4px 3px; align-items: center; line-height: 1.3; }
+.pieces .tok { margin: 0; }
+.pieces .tok.cont { border-color: color-mix(in srgb, var(--cls-1) 60%, var(--rule)); background: color-mix(in srgb, var(--cls-1) 10%, var(--panel)); }
+.pieces .tok.sp { border-color: var(--ink-3); color: var(--ink-2); font-weight: 600; }
+.pieces .tok.unk { border-color: var(--bad); color: var(--bad); font-weight: 600; }
+.pieces .tok.eow { color: var(--cls-1); }
+.pieces .tok.seg1 { background: color-mix(in srgb, var(--cls-2) 12%, var(--panel)); }
+.pieces .tok.mk { background: color-mix(in srgb, var(--cls-3) 22%, var(--panel)); border-color: var(--cls-3); }
+.pieces .tok.rnd { background: color-mix(in srgb, var(--cls-1) 22%, var(--panel)); border-color: var(--cls-1); }
+.pieces .tok.keep { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.pieces .tok.ans { background: color-mix(in srgb, var(--good) 22%, var(--panel)); border-color: var(--good); font-weight: 600; }
+.pieces .tok.ent { font-weight: 600; }
+.pieces .tok.dim { opacity: .45; }
+.pieces .tok.word { border-style: dashed; }
+.pieces .gap { flex-basis: 100%; height: 0; }
+.pieces .lab { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin-right: 6px; letter-spacing: .06em; text-transform: uppercase; }
+/* the merge stepper */
+.merge-row.wp { grid-template-columns: 54px 1fr 190px; }
+.merge-row .c small { color: var(--ink-3); }
+.merge-list { max-height: 330px; overflow-y: auto; }
+.merge-row.now { background: color-mix(in srgb, var(--cls-1) 12%, transparent); }
+/* the two encoders side by side */
+.enc-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.enc-row .k { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.enc-row:last-child { border-bottom: none; }
+.enc-row.diff .k { color: var(--cls-1); }
+/* segmentation lattice rows */
+.seg-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.seg-row .p { font-family: var(--mono); font-size: 14.5px; text-align: right; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.seg-row.best .p { color: var(--ink); font-weight: 600; }
+.seg-row:last-child { border-bottom: none; }
+/* a small legend line */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin: 8px 0 0; align-items: center; }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; border: 1px solid var(--rule-strong); }
+/* zero-shot label pickers */
+.zs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 14px; }
+.zs-grid label.field b { color: var(--ink); }
+.zs-grid select { width: 100%; }
+.conf { border-collapse: collapse; font-family: var(--mono); font-size: 14px; }
+.conf td, .conf th { padding: 4px 9px; text-align: right; border-bottom: none; }
+.conf th { font-size: 12.5px; }
+.conf td.hit { background: color-mix(in srgb, var(--good) 18%, transparent); }
+.conf td.miss { color: var(--ink-3); }
+/* the head figure toggle and the task tables */
+.task-table td:first-child { font-weight: 600; font-family: var(--display); white-space: nowrap; }
+.task-table td { vertical-align: top; font-size: 15.4px; }
+.task-table code { white-space: nowrap; }
+/* a load report */
+pre.report { margin: 0; font-family: var(--mono); font-size: 13.5px; line-height: 1.55; white-space: pre; overflow-x: auto; color: var(--ink-2); padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; }
+pre.report .miss { color: var(--bad); font-weight: 600; } pre.report .unex { color: var(--ink-3); }
+/* the dial */
+.dial { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .dial { grid-template-columns: 1fr; } }
+.dial .knob { display: flex; gap: 6px; flex-wrap: wrap; }
+.dial .knob button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the MLM variants, under a toggle */
+details.variants { margin: 12px 0 0; }
+details.variants > summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 18px; padding: 8px 0; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+details.variants > summary::-webkit-details-marker { display: none; }
+details.variants > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.variants[open] > summary::before { content: "−"; }
+.variant { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: center; padding: 14px 0; border-top: 1px solid var(--rule); }
+@media (max-width: 1000px) { .variant { grid-template-columns: 1fr; } }
+.variant .say { font-size: 17px; line-height: 1.55; color: var(--ink-2); }
+.variant .say b { color: var(--ink); }
+/* NER entity chips */
+.ent-line { font-size: 18.5px; line-height: 2.1; margin: 0 0 8px; }
+.ent { padding: 2px 6px; border-radius: 3px; border-bottom: 2px solid; white-space: nowrap; }
+.ent i { font-family: var(--mono); font-style: normal; font-size: 11.5px; letter-spacing: .06em; margin-left: 5px; opacity: .8; }
+.ent.PER { background: color-mix(in srgb, var(--cls-0) 16%, transparent); border-color: var(--cls-0); }
+.ent.ORG { background: color-mix(in srgb, var(--cls-1) 16%, transparent); border-color: var(--cls-1); }
+.ent.LOC { background: color-mix(in srgb, var(--cls-2) 16%, transparent); border-color: var(--cls-2); }
+.ent.MISC { background: color-mix(in srgb, var(--cls-3) 16%, transparent); border-color: var(--cls-3); }
+.ent.wrong { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* alignment table */
+.align { font-family: var(--mono); font-size: 14.5px; border-collapse: collapse; }
+.align td, .align th { padding: 3px 10px; }
+.align td.ign { color: var(--ink-3); }
+.align tr.cont td:first-child { color: var(--cls-1); }
+/* QA */
+.ctx { font-size: 18px; line-height: 1.7; }
+.ctx mark { background: color-mix(in srgb, var(--good) 28%, transparent); color: inherit; padding: 1px 2px; border-radius: 2px; }
+.ctx mark.gold { background: none; box-shadow: inset 0 -2px 0 var(--cls-0); }
+.ctx .q { color: var(--ink-3); }
+.window { border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; margin: 8px 0; }
+.window .wh { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+.window .wh b { color: var(--ink); font-weight: 500; }
+.qa-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px 14px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; align-items: baseline; }
+.qa-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: block; }
+.qa-row:last-child { border-bottom: none; }
+.qa-row .ok { color: var(--good); } .qa-row .no { color: var(--bad); }
+
+/* ------------------------------------------------ week 4, second pass (2026-09-30) */
+/* a schematic with states: the buttons switch what the same picture highlights */
+.fig-states { display: flex; gap: 6px; flex-wrap: wrap; }
+.fig-states button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the variants footnote: three small pictures, each with its paragraph */
+.variant .fig svg { max-width: 560px; }
+/* clickable tokens (the MLM picker): the chosen one is outlined */
+.pieces .tok.pick { cursor: pointer; }
+.pieces .tok.pick:hover { border-color: var(--ink); }
+.pieces .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* the scoreboard in the rail: rows light up as reveals happen */
+.score { margin-top: 12px; border-top: 1px solid var(--rule); padding-top: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+.score .row { display: grid; grid-template-columns: 1fr 52px; gap: 6px; padding: 2px 0; line-height: 1.35; align-items: baseline; }
+.score .row.off { opacity: .38; }
+.score .row.on { color: var(--ink); }
+.score .row.line { color: var(--bad); border-bottom: 1px dashed var(--bad); margin-bottom: 3px; }
+.score .row .v { text-align: right; font-variant-numeric: tabular-nums; }
+.score .row.pass .v { color: var(--good); font-weight: 600; }
+.score .t { letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+/* the results table sorters */
+.sorters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.sorters button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* a bare figure caption line under a schematic */
+.figline { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin: 6px 0 0; line-height: 1.5; }
+/* two-column figure + code */
+.fig-code { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+/* the QA score rows: hover a token to read both scores */
+.qa-pick { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.qa-pick button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.qa-pick button.noans { border-style: dashed; }
+
+/* ------------------------------------------------------- week 5 additions */
+/* the two tables, growing: a row that has just been written */
+.results tr.new td, .costs tr.new td { animation: rowin .9s ease; }
+@keyframes rowin { from { background: color-mix(in srgb, var(--cls-1) 30%, transparent); } to { background: transparent; } }
+.costs td, .costs th { font-size: 14.5px; }
+.costs td.mono { font-size: 13.5px; }
+/* the logit-lens strip: one column per layer, five guesses each */
+.lens { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); gap: 4px; overflow-x: auto; }
+.lens .col { display: flex; flex-direction: column; gap: 2px; }
+.lens .col .h { font-family: var(--mono); font-size: 12px; color: var(--ink-3); text-align: center; letter-spacing: .06em; padding-bottom: 3px; border-bottom: 1px solid var(--rule); margin-bottom: 2px; }
+.lens .g { font-family: var(--mono); font-size: 13px; padding: 1px 5px; border-radius: 2px; white-space: pre; overflow: hidden; text-overflow: ellipsis; background: var(--panel-sunk); }
+.lens .g.gold { background: color-mix(in srgb, var(--good) 28%, transparent); font-weight: 600; }
+.lens .g.same { box-shadow: inset 0 0 0 1px var(--cls-1); }
+.lens .g i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+.tokrow { display: flex; flex-wrap: wrap; gap: 3px; margin: 8px 0; }
+.tokrow .tok { cursor: pointer; margin: 0; }
+.tokrow .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* attention: the heatmap and its controls */
+.att { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .att { grid-template-columns: 1fr; } }
+.att canvas { width: 100%; image-rendering: pixelated; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+.att .hm-box { position: relative; }
+.att .ax { font-family: var(--mono); font-size: 12px; color: var(--ink-3); display: flex; justify-content: space-between; }
+/* RoPE dials */
+.dials { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin: 8px 0 14px; }
+.clocks svg { max-width: 760px; }
+.rope-out { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rope-out .box { padding: 12px 14px; background: var(--panel-sunk); border-radius: 3px; }
+.rope-out .box .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.rope-out .box .v { font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; transition: color .15s; }
+.rope-out .box.moved .v { color: var(--bad); } .rope-out .box.still .v { color: var(--good); }
+/* the KV stepper */
+.stepper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.stepper .cnt { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.stepper .cnt b { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* the verbalizer builder */
+.vb { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; }
+@media (max-width: 900px) { .vb { grid-template-columns: repeat(2, 1fr); } }
+.vb .cls { border-top: 3px solid; padding-top: 6px; }
+.vb .cls.c0 { border-color: var(--cls-0); background: none; } .vb .cls.c1 { border-color: var(--cls-1); background: none; }
+.vb .cls.c2 { border-color: var(--cls-2); background: none; } .vb .cls.c3 { border-color: var(--cls-3); background: none; }
+.vb .cls .h { font-family: var(--display); font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.vb .words { display: flex; flex-wrap: wrap; gap: 4px; }
+.vb .words button { font-family: var(--mono); font-size: 13px; padding: 2px 7px; }
+.vb .words button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.vb .words button i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 3px; }
+.vb .words button.on i { color: var(--ground); opacity: .7; }
+.vb-acc { display: flex; gap: 30px; align-items: baseline; flex-wrap: wrap; margin-top: 12px; }
+/* the design card as a form */
+.card { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px 16px; align-items: center; }
+.card .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.card select, .card input { width: auto; min-width: 200px; }
+.card .row-btns button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.card-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.card-tabs button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.est { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+.est .stat .v { font-size: 26px; }
+/* label-it-yourself over words */
+.words-pick { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: flex-end; }
+.words-pick .w { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.words-pick .w .s { font-family: var(--mono); font-size: 14px; }
+.words-pick .w select { font-size: 12.5px; padding: 2px 4px; width: auto; }
+.words-pick .w.hit select { border-color: var(--good); } .words-pick .w.miss select { border-color: var(--bad); }
+.words-pick .w .g { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+.words-pick .w.unx .s { text-decoration: underline dotted var(--bad); }
+/* unexpressible words in a typed sentence */
+.wl { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.wl .tok.unx { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+.wl .tok i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+/* per-row bets over a table */
+table.rowbet td.b { white-space: nowrap; }
+table.rowbet td.b button { font-size: 13px; padding: 2px 8px; }
+table.rowbet td.b button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.rowbet td.b button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.rowbet td.b button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.rowbet td.zero { color: var(--bad); font-weight: 600; }
+/* horizontal bar pairs for the breakdowns */
+.pair { display: grid; grid-template-columns: 90px 1fr 1fr 150px; gap: 8px; align-items: center; font-family: var(--mono); font-size: 13.5px; padding: 2px 0; }
+.pair .lab { text-align: right; color: var(--ink-2); }
+.pair .bar { height: 12px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pair .bar i { display: block; height: 100%; }
+.pair .bar.e i { background: var(--cls-0); } .pair .bar.d i { background: var(--cls-1); }
+.pair .n { color: var(--ink-3); }
+.pair.hl .lab { color: var(--bad); font-weight: 600; }
+/* generated text against gold: dropped words */
+.diffline { font-size: 17px; line-height: 1.8; }
+.diffline .drop { color: var(--bad); text-decoration: line-through; }
+.diffline .chg { background: color-mix(in srgb, var(--cls-1) 24%, transparent); border-radius: 2px; }
+/* NER writer */
+.ner-write textarea { min-height: 64px; }
+.ner-parse { margin-top: 8px; }
+.ent.inv { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* QA */
+.ctx mark.pred { background: color-mix(in srgb, var(--good) 28%, transparent); }
+.ctx .nosub { color: var(--bad); font-weight: 600; }
+.order-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; }
+.order-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.order-row:last-child { border-bottom: none; }
+/* lightning round */
+.lr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.lr:last-child { border-bottom: none; }
+.lr .pick { display: flex; gap: 4px; flex-wrap: wrap; }
+.lr .pick button { font-family: var(--mono); font-size: 13px; padding: 2px 8px; }
+.lr .pick button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.lr .pick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.lr .pick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.lr .ans { grid-column: 1 / -1; font-size: 16px; color: var(--ink-2); line-height: 1.5; }
+/* the course table */
+.course td:first-child { font-family: var(--mono); }
+.course tr.now td { background: color-mix(in srgb, var(--cls-1) 10%, transparent); font-weight: 600; }
+.big-num { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: -.03em; line-height: 1; }
+
+/* ------------------------------------------------------- week 6 additions */
+/* the meme, kept: an image with a caption beside it */
+.michael { display: grid; grid-template-columns: minmax(0, .9fr) minmax(280px, 1.1fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; max-width: 452px; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+.michael figcaption { font-family: var(--body); font-size: 17.7px; color: var(--ink-2); line-height: 1.55; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+/* pick three changes */
+.picklist { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.picklist button { font-size: 15px; padding: 4px 11px; }
+.picklist button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.picklist button.yes { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.picklist button.no { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.picklist button .why { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+/* the N–D plane */
+.plane-wrap { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .plane-wrap { grid-template-columns: 1fr; } }
+.plane-models { display: flex; flex-direction: column; gap: 6px; }
+.plane-models button { text-align: left; font-size: 14.5px; display: flex; justify-content: space-between; gap: 8px; }
+.plane-models button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.plane-models button .st { font-family: var(--mono); font-size: 12px; opacity: .7; }
+#plane svg { max-width: 760px; cursor: crosshair; }
+#plane svg.done { cursor: default; }
+/* the bill table */
+table.bill td, table.bill th { font-size: 14px; white-space: nowrap; }
+table.bill td:first-child { font-weight: 600; font-family: var(--display); }
+/* passports as a diff */
+.pp-row { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 6px 14px; padding: 6px 0; border-bottom: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; align-items: baseline; }
+.pp-row:last-child { border-bottom: none; }
+.pp-row .k { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pp-row.head { font-family: var(--display); font-weight: 700; font-size: 16px; }
+.pp-row.diff { background: color-mix(in srgb, var(--cls-1) 9%, transparent); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 3px; }
+.pp-row.diff .k { color: var(--cls-1); }
+.pp-row .sec { font-size: 11.5px; color: var(--ink-3); margin-left: 6px; }
+/* norm grid and rope grid: controls beside the picture */
+.norm-grid, .rope-grid { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .norm-grid, .rope-grid { grid-template-columns: 1fr; } }
+#fig-norm svg { max-width: 620px; } #fig-rope-matrix svg { max-width: 560px; display: block; margin: 0 auto; }
+#fig-rope-coords svg, #fig-slow svg, #fig-gqa svg, #fig-ffn svg, #fig-stack svg, #fig-prenorm svg, #fig-regimes svg, #fig-queue svg, #fig-roundtrip svg, #fig-moe svg, #fig-scatter svg, #fig-linear svg, #fig-masks svg { max-width: 920px; display: block; }
+#ffn-curves svg, #ffn-gate svg, #scaling-chart svg, #steps-chart svg, #tpp-chart svg, #serving-chart svg, #decode-chart svg, #xover-chart svg, #lin-chart svg { max-width: 640px; }
+/* order-the-models bet */
+.orderpick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+.orderpick button { font-size: 15px; }
+.orderpick button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.orderpick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.orderpick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.orderpick button i { font-style: normal; font-family: var(--mono); font-size: 11.5px; margin-right: 6px; opacity: .7; }
+.orderpick .arrow { color: var(--ink-3); }
+/* heatmap cells for the per-class table */
+.conf td.v { font-variant-numeric: tabular-nums; }
+/* small inline stat row */
+.est .stat .v small { font-size: 13px; font-weight: 400; color: var(--ink-3); margin-left: 4px; }
+.small-note { font-family: var(--mono); font-size: 13px; color: var(--ink-3); line-height: 1.5; margin-top: 8px; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 18px; margin-bottom: 10px; }
+.bet .q input { vertical-align: middle; }
+#bpb-out .pbar { grid-template-columns: 190px 1fr 70px; }
+#bpb-out .pbar .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prose.footnote ul { padding-left: 1.2em; line-height: 1.6; }  /* reference lists */
+
+/* ------------------------------------------------- lecture pages (demo_base/quiz.js) */
+/* one question: number + kind, the question, the answering UI, the answer (hidden until committed) */
+.qz { border-top: 1px solid var(--rule); padding: 22px 0 26px; }
+.qz:last-of-type { border-bottom: 1px solid var(--rule); }
+.qz-head { display: flex; gap: 12px; align-items: baseline; font-family: var(--mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.qz-n { font-weight: 500; color: var(--ink-2); }
+.qz.done .qz-n::after { content: " ✓"; color: var(--good); }
+.qz-q { font-family: var(--display); font-size: 21.5px; font-weight: 600; line-height: 1.35; color: var(--ink); margin-bottom: 12px; }
+.qz-q p { margin: 0 0 .55em; } .qz-q p:last-child { margin-bottom: 0; }
+.qz-q code { font-size: .82em; font-weight: 500; background: var(--panel-sunk); padding: .05em .3em; border-radius: 3px; }
+.qz-q [data-fig] { margin: 14px 0 10px; }
+.qz-q [data-fig] svg, .qz-a [data-fig] svg, .panel [data-fig] svg { width: 100%; max-width: 820px; height: auto; display: block; margin: 0 auto; }
+.qz-q table { font-family: var(--body); font-weight: 400; font-size: 16.4px; margin: 10px 0; width: auto; }
+.qz-ui { margin: 0 0 6px; }
+.qz-row { margin-top: 10px; min-height: 28px; }
+.qz-verdict { font-family: var(--mono); font-size: 15px; color: var(--ink-2); }
+.qz-verdict.ok { color: var(--good); } .qz-verdict.no { color: var(--bad); }
+.qz-opts button.missed { border-style: dashed; border-color: var(--good); }
+.qz-opts button[disabled] { opacity: 1; cursor: default; }
+.qz-opts button[disabled]:not(.right):not(.wrong):not(.missed) { opacity: .5; }
+/* clickable parts of a figure: lecture.js draws a rect.hit as the last child of every [data-pick] group */
+svg rect.hit { fill: transparent; stroke: none; }  /* a figure drawn outside a question: its click targets stay invisible */
+.qz-pickable { cursor: pointer; }
+.qz-pickable rect.hit { fill: transparent; stroke: transparent; stroke-width: 2; stroke-dasharray: 4 3; transition: stroke .12s ease; }
+.qz-pickable:hover rect.hit { stroke: var(--ink-3); }
+.qz-pickable.pick rect.hit { stroke: var(--ink); stroke-dasharray: none; fill: color-mix(in srgb, var(--ink) 8%, transparent); }
+.qz-pickable.right rect.hit { stroke: var(--good); stroke-dasharray: none; fill: color-mix(in srgb, var(--good) 12%, transparent); }
+.qz-pickable.wrong rect.hit { stroke: var(--bad); stroke-dasharray: none; fill: color-mix(in srgb, var(--bad) 12%, transparent); }
+.qz-pickable.missed rect.hit { stroke: var(--good); }
+/* sort: one row per item, the bins as buttons */
+table.qz-sort td { padding: 7px 10px 7px 0; vertical-align: top; }
+table.qz-sort td.qz-item { font-size: 17.5px; width: 38%; }
+table.qz-sort td.qz-bins { display: flex; flex-wrap: wrap; gap: 5px 6px; }
+table.qz-sort td.qz-bins button { font-size: 14.5px; padding: 3px 10px; }
+table.qz-sort button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.qz-sort button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.qz-sort button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.qz-sort button.ans { border-color: var(--good); border-style: dashed; }
+table.qz-sort button[disabled] { opacity: 1; cursor: default; }
+table.qz-sort button[disabled]:not(.right):not(.wrong):not(.ans) { opacity: .45; }
+.qz-count { font-size: 14px; color: var(--ink-3); }
+/* fill: inputs inline in the question */
+input.qz-blank { width: auto; display: inline-block; font-size: .85em; padding: 1px 8px; margin: 0 2px; text-align: center; vertical-align: baseline; border-radius: 3px; }
+input.qz-blank.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+input.qz-blank.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); text-decoration: line-through; color: var(--ink-3); }
+.qz-exp { font-family: var(--mono); font-size: .8em; color: var(--good); margin: 0 6px 0 2px; font-weight: 500; }
+/* write: a textarea, then a checklist */
+textarea.qz-text { font-family: var(--body); font-size: 17.5px; line-height: 1.5; min-height: 80px; resize: vertical; }
+.qz-ticks { margin-top: 14px; display: flex; flex-direction: column; gap: 5px; }
+.qz-ticks-k { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px; }
+.qz-ticks label { display: flex; gap: 10px; align-items: baseline; font-size: 17.2px; line-height: 1.45; cursor: pointer; }
+.qz-ticks input { accent-color: var(--ink); flex: none; }
+/* the answer */
+.qz-a { margin-top: 16px; padding: 14px 18px 14px 18px; background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--ink); border-radius: 4px; font-size: 18.6px; line-height: 1.62; }
+.qz-a p { margin: 0 0 .75em; } .qz-a p:last-child { margin-bottom: 0; }
+.qz-a ul, .qz-a ol { margin: 0 0 .75em; padding-left: 1.3em; }
+.qz-a code { background: var(--panel-sunk); padding: .08em .32em; border-radius: 3px; font-size: .86em; }
+.qz-a table { font-size: 16px; margin: 8px 0 12px; width: auto; }
+.qz-a [data-fig] { margin: 10px 0 12px; }
+.qz-miss { color: var(--ink-2); font-size: 17.2px; line-height: 1.55; border-top: 1px dashed var(--rule); padding-top: 10px; margin-top: .9em !important; }
+.qz-miss b { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--ink-3); margin-right: 8px; }
+.qz-nofig { font-family: var(--mono); font-size: 14px; color: var(--bad); padding: 8px 0; }
+/* optional depth under a toggle; its questions do not count toward the page's progress */
+details.optional { margin: 20px 0 0; border: 1px dashed var(--rule-strong); border-radius: 4px; padding: 0 18px; }
+details.optional > summary { cursor: pointer; list-style: none; display: flex; gap: 10px; align-items: baseline; padding: 12px 0; font-family: var(--display); font-weight: 600; font-size: 18px; }
+details.optional > summary::-webkit-details-marker { display: none; }
+details.optional > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.optional[open] > summary::before { content: "−"; }
+details.optional > summary .optional-count { margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--ink-3); font-weight: 400; }
+details.optional > .prose { padding-top: 4px; }
+details.optional .qz:last-of-type { border-bottom: none; }
+.rail .quiz-progress { font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin-top: 8px; }
+.rail a.back { display: inline-block; margin-top: 8px; font-family: var(--display); font-size: 16px; color: var(--ink-2); }
+.sources { font-size: 17.2px; color: var(--ink-2); }
+.sources ul { padding-left: 1.2em; line-height: 1.6; }
+@media (max-width: 760px) {
+  .qz-q { font-size: 19px; }
+  table.qz-sort td.qz-item { width: 100%; display: block; padding-bottom: 2px; }
+  table.qz-sort td.qz-bins { display: flex; padding-top: 0; }
+  table.qz-sort tr { display: block; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+}
+
+/* --- this week --- */
+/* Связи схем, формул и кода на страницах ADD. */
+[data-link-scope] { margin: 18px 0; }
+[data-link-scope] svg { width: 100%; max-width: 760px; height: auto; display: block; margin: 0 auto; }
+[data-link-scope] svg text { fill: var(--ink); font-family: var(--mono); font-size: 14px; }
+[data-link-scope] svg .caption { fill: var(--ink-2); font-family: var(--body); font-size: 16px; }
+[data-link-scope] svg rect { fill: var(--panel-sunk); stroke: var(--rule-strong); }
+[data-link-scope] svg path, [data-link-scope] svg line { stroke: var(--ink-3); fill: none; }
+[data-link-scope] svg .accent { fill: color-mix(in srgb, var(--cls-0) 15%, var(--panel)); }
+[data-f] { transition: background .12s, fill .12s; }
+svg [data-f] { cursor: pointer; }
+svg [data-f].hi rect, svg rect[data-f].hi { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)); stroke: var(--cls-1); }
+.formula [data-f].hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .ln { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre.code { overflow-x: hidden; }
+.add-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.add-controls label { display: flex; gap: 8px; align-items: center; font-size: 16px; }
+.add-controls output { font-family: var(--mono); }
+.add-result { font-family: var(--mono); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.add-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.add-table td, .add-table th { padding: 8px 10px; border-bottom: 1px solid var(--rule); text-align: left; }
+.add-table button { padding: 3px 8px; }
+.add-links { display: flex; gap: 8px 18px; flex-wrap: wrap; font-size: 16px; }
+.sources { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .add-table td, .add-table th { padding: 6px 3px; font-size: 13px; } }
+svg text[data-f].hi, svg [data-f].hi > text { fill: var(--cls-1); }
+[data-link-scope] svg rect.hit { fill: transparent; stroke: none; }
+.panel-body > [data-fig], .qz-q > [data-link-scope] { overflow-x: auto; }
+@media (max-width: 600px) { [data-link-scope] svg { min-width: 620px; } }
+.add-controls label { white-space: nowrap; }
+#normalization-table { overflow-x: auto; }
+svg.word2vec-diagram [data-f].hi > rect:not(.hit) { stroke: var(--cls-1) !important; stroke-width: 2; }
+svg.word2vec-diagram [data-f].hi > text { fill: var(--cls-1) !important; }
+
+svg [data-f].hi circle { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)) !important; stroke: var(--cls-1) !important; }
+
+
+#ppl-after-link { display: none; }
+#loss:has(.qz[data-q="q-ppl-link"].done) #ppl-after-link { display: block; }
+#ppl-jokes-table { overflow-x: auto; }
+
+
+/* Отдельные выражения центрируются; длинная строка прокручивается внутри блока. */
+.equation { display: flex; overflow-x: auto; padding: 10px 2px; margin: 10px 0; }
+.equation > span { flex: 0 0 auto; margin-inline: auto; }
+.equation math { math-style: normal; font-size: 1.15em; }
+.equation munder, .equation munderover { math-style: normal; }
+.formula .equation math { font-size: 1.15em; margin: 0; }
+.formula p { font-size: 17px; line-height: 1.6; margin: 8px 0 18px; }
+@media (max-width: 600px) { .equation math, .formula .equation math { font-size: 1em; } }
+
+/* Схемы занятия 3: подписи разных ролей и подсветка прямоугольников с заданной заливкой. */
+[data-link-scope] svg .label { font-family: var(--body); font-size: 15px; fill: var(--ink-2); }
+[data-link-scope] svg .small { font-size: 12.5px; fill: var(--ink-2); }
+[data-link-scope] svg .num { font-size: 12.5px; }
+[data-link-scope] svg .strong { font-weight: 600; fill: var(--ink); }
+[data-link-scope] svg .warn { font-size: 12.5px; fill: var(--cls-1); }
+.w3fig svg [data-f].hi > rect:not(.hit), .w3fig svg [data-f].hi > g > rect { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)) !important; stroke: var(--cls-1) !important; }
+.w3fig svg [data-f].hi > path { stroke: var(--cls-1) !important; }
+.w3fig svg [data-cell], .w3fig svg [data-query] { cursor: pointer; }
+
+/* Калькулятор BLEU: n-граммы перевода и их совпадения с эталоном. */
+.bleu .row { display: flex; gap: 6px 12px; align-items: baseline; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.bleu .k { font-family: var(--mono); font-size: 13px; color: var(--ink-3); min-width: 84px; }
+.bleu .g { flex: 1; min-width: 0; }
+.bleu .p { font-family: var(--mono); font-size: 14px; white-space: nowrap; margin-left: auto; }
+.bleu .tok.hit { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.bleu .tok.clip { text-decoration: line-through; border-color: var(--cls-1); color: var(--ink-2); }
+.bleu .tok.miss { color: var(--ink-2); }
+.bleu .none { font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
+.bleu .total { font-family: var(--mono); font-size: 15px; margin-top: 12px; }
+.bleu-input input { flex: 1; min-width: 0; font-family: var(--mono); }
+.bleu-input { flex-wrap: nowrap; }
+</style>
+<meta name="quiz-store" content="add2026_week03">
+
+</head>
+<body>
+<div class="shell"><aside class="rail">
+<div><div class="rail-mark">NLP @ HSE DSBA · ADD-2026</div><div class="rail-eq">Занятие 3<br>Машинный перевод и трансформер</div></div>
+<nav id="nav"></nav><div class="rail-btns"><button id="btn-reset">Сбросить ответы</button><button id="btn-theme">Тема</button></div><div class="quiz-progress" id="quiz-progress"></div>
+<div class="rail-foot"><a href="https://xufana.github.io/dsba_nlp/week03/">Семинар DSBA</a><br><a href="https://colab.research.google.com/github/xufana/dsba_nlp/blob/ADD-2026/week04_practice/week04_practice.ipynb">Занятие 4 · ноутбук</a></div>
+</aside><main><div class="wrap">
+<section id="hero"><p class="eyebrow">Author: Daria Andreeva</p><h1>Машинный перевод и трансформер</h1><p class="lede">Как перейти от генерации перевода к сети, в которой токены обмениваются информацией через attention.</p><div class="prose"><p>В языковой модели предсказываем продолжение по префиксу. В переводе к этому условию добавляется исходный текст. Длина перевода и порядок слов могут отличаться от исходной последовательности.</p></div></section>
+<section id="translation"><p class="eyebrow">блок 01</p><h2>Как поставить задачу перевода?</h2><div class="prose"><p>Энкодер читает источник, декодер генерирует перевод. В рекуррентном encoder–decoder последнее состояние энкодера инициализирует декодер. Затем каждый шаг декодера использует предыдущее состояние и очередной входной токен.</p>
+<div class="equation"><span><math><mi>P</mi><mo>(</mo><mi>y</mi><mo>|</mo><mi>x</mi><mo>)</mo><mo>=</mo><munderover><mo>∏</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><mi>P</mi><mo>(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>|</mo><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo>,</mo><mi>x</mi><mo>)</mo></math></span></div>
+<p><math><mi>x</mi></math> — весь источник, <math><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub></math> — уже известный префикс перевода. EOS завершает последовательность. При обучении в декодер подаём эталонный префикс, при генерации — выбранные моделью токены. Ошибку считаем по правильным токенам перевода, исключая PAD.</p></div>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Источник <select id="encdec-length"><option value="short">the cat sleeps · 3 токена</option><option value="long">длинное предложение · 30 токенов</option></select></label></div><div data-fig="encdec"></div></div><div class="panel-note"><p>Обе сети развёрнуты по времени: одна ячейка — один шаг. Энкодер читает «the cat sleeps», декодер начинает с BOS и генерирует «кошка спит EOS». Между ними — только последнее состояние энкодера: <math><mi>d</mi></math> чисел. Переключите длину источника: состояний энкодера стало больше, а вектор на границе тот же.</p></div></div>
+<div class="qz" data-q="q-bottleneck"></div></section>
+<section id="quality"><p class="eyebrow">блок 02</p><h2>Как оценить перевод?</h2><div class="prose"><p>Вероятность перевода — оценка модели. Чтобы проверить качество, нужны отложенные пары предложений с эталонными переводами. Самая известная автоматическая метрика — BLEU. Она сравнивает перевод с эталоном по n-граммам, <math><mi>n</mi></math> от 1 до 4.</p>
+<p>Для каждого <math><mi>n</mi></math> считаем точность: какая доля n-грамм перевода встречается в эталоне. Одну n-грамму засчитываем не больше раз, чем она встречается в эталоне:</p>
+<div class="equation"><span><math><msub><mi>p</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mi>g</mi></munder><mi mathvariant="normal">min</mi><mo>(</mo><msub><mi mathvariant="normal">count</mi><mrow><mi>h</mi><mi>y</mi><mi>p</mi></mrow></msub><mo>(</mo><mi>g</mi><mo>)</mo><mo>,</mo><msub><mi mathvariant="normal">count</mi><mrow><mi>r</mi><mi>e</mi><mi>f</mi></mrow></msub><mo>(</mo><mi>g</mi><mo>)</mo><mo>)</mo></mrow><mrow><munder><mo>∑</mo><mi>g</mi></munder><msub><mi mathvariant="normal">count</mi><mrow><mi>h</mi><mi>y</mi><mi>p</mi></mrow></msub><mo>(</mo><mi>g</mi><mo>)</mo></mrow></mfrac></math></span></div>
+<p>Точность не наказывает за пропуски: верный короткий кусок эталона получит все <math><msub><mi>p</mi><mi>n</mi></msub><mo>=</mo><mn>1</mn></math>. Поэтому добавляем штраф за краткость, где <math><mi>c</mi></math> — длина перевода, <math><mi>r</mi></math> — длина эталона:</p>
+<div class="equation"><span><math><mi mathvariant="normal">BP</mi><mo>=</mo><mi mathvariant="normal">min</mi><mo>(</mo><mn>1</mn><mo>,</mo><mi mathvariant="normal">exp</mi><mo>(</mo><mn>1</mn><mo>−</mo><mi>r</mi><mo>/</mo><mi>c</mi><mo>)</mo><mo>)</mo></math></span></div>
+<p>BLEU — среднее геометрическое четырёх точностей, умноженное на штраф. Обычно его умножают на 100.</p>
+<div class="equation"><span><math><mi mathvariant="normal">BLEU</mi><mo>=</mo><mi mathvariant="normal">BP</mi><mo>·</mo><mi mathvariant="normal">exp</mi><mo>(</mo><mfrac><mn>1</mn><mn>4</mn></mfrac><munderover><mo>∑</mo><mrow><mi>n</mi><mo>=</mo><mn>1</mn></mrow><mn>4</mn></munderover><mi mathvariant="normal">ln</mi><mo>(</mo><msub><mi>p</mi><mi>n</mi></msub><mo>)</mo><mo>)</mo></math></span></div></div><div class="qz" data-q="q-synonyms"></div><div class="prose"><p>Каждая часть формулы закрывает одну лазейку. Точность учитывает только точные совпадения строк: «кот» и «кошка» для неё разные токены. Ограничение <math><msub><mi mathvariant="normal">count</mi><mrow><mi>r</mi><mi>e</mi><mi>f</mi></mrow></msub></math> не даёт набрать точность повтором одного верного слова. BP не даёт выиграть, выбросив сомнительный хвост. Проверки смысла в формуле нет.</p></div><div class="qz" data-q="q-edges"></div>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Вариант <select id="bleu-case"></select></label></div><div class="add-controls bleu-input"><label for="bleu-hyp">Перевод</label><input id="bleu-hyp" type="text" spellcheck="false" autocomplete="off"></div><div id="bleu-result" class="bleu" aria-live="polite"></div></div><div class="panel-note"><p>Эталон фиксирован. Выберите вариант или впишите свой перевод, слова через пробел. Зелёная n-грамма есть в эталоне; перечёркнутая есть, но в переводе повторяется чаще, чем в эталоне, и сверх этого не засчитывается. BLEU здесь — по одному предложению и без сглаживания, как в исходной формуле.</p></div></div>
+<div class="prose"><p>На практике BLEU считают по всему тестовому корпусу: числители и знаменатели <math><msub><mi>p</mi><mi>n</mi></msub></math> суммируют по всем предложениям, <math><mi>c</mi></math> и <math><mi>r</mi></math> — тоже. Поэтому одно предложение без общих четырёхграмм не обнуляет результат; для оценки отдельного предложения используют сглаживание. Несколько эталонных переводов частично помогают с перефразами: ограничение совпадений берётся по эталону, где n-грамма встречается чаще всего.</p>
+<p>Высокий BLEU на корпусе означает, что переводы в среднем близки к эталонам по словам. Он не гарантирует, что сохранён каждый факт.</p></div><div class="qz" data-q="q-quality"></div></section>
+<section id="attention"><p class="eyebrow">блок 03</p><h2>Как читать источник на каждом шаге?</h2><div class="prose"><p>Сохраним состояния энкодера на всех позициях. На каждом шаге декодер сравнивает своё состояние с каждым состоянием источника. Обучаемая функция выдаёт оценки соответствия, softmax превращает их в веса, а взвешенная сумма состояний даёт контекст текущего шага.</p>
+<div class="equation"><span><math><msub><mi>e</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><mi mathvariant="normal">score</mi><mo>(</mo><msub><mi>s</mi><mi>t</mi></msub><mo>,</mo><msub><mi>h</mi><mi>i</mi></msub><mo>)</mo></math></span></div>
+<div class="equation"><span><math><msub><mi>α</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><mfrac><mrow><mi mathvariant="normal">exp</mi><mo>(</mo><msub><mi>e</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>)</mo></mrow><mrow><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>S</mi></munderover><mi mathvariant="normal">exp</mi><mo>(</mo><msub><mi>e</mi><mrow><mi>t</mi><mo>,</mo><mi>j</mi></mrow></msub><mo>)</mo></mrow></mfrac></math></span></div>
+<div class="equation"><span><math><msub><mi>c</mi><mi>t</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>S</mi></munderover><msub><mi>α</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><msub><mi>h</mi><mi>i</mi></msub></math></span></div>
+<p><math><msub><mi>h</mi><mi>i</mi></msub></math> — состояние энкодера, <math><msub><mi>s</mi><mi>t</mi></msub></math> — текущее состояние декодера, <math><mi>S</mi></math> — длина источника. Выходной слой использует состояние декодера и контекст. При следующем слове состояние декодера меняется, поэтому меняются и веса. Обе сети и функция соответствия обучаются по ошибке перевода.</p></div>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Следующий токен <select id="rnn-step"><option value="0">кошка</option><option value="1">спит</option><option value="2">EOS</option></select></label><label><input type="checkbox" id="rnn-enabled" checked> Attention</label></div><div data-fig="rnn-attention"></div><div id="rnn-result" class="add-result"></div></div><div class="panel-note"><p>Та же развёрнутая RNN, что в блоке 01. Без attention декодер видит источник только через последнее состояние энкодера. С attention на каждом шаге все <math><msub><mi>h</mi><mi>i</mi></msub></math> смешиваются с весами <math><msub><mi>α</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub></math> в контекст <math><msub><mi>c</mi><mi>t</mi></msub></math>; толщина линии — вес. Контекст идёт в выходной слой вместе с <math><msub><mi>s</mi><mi>t</mi></msub></math>. Выберите шаг: состояние декодера другое, поэтому другие и веса. Оценки учебные, не обученные; это не лингвистическая разметка.</p></div><pre class="code"><code><span class="ln" data-f="scores" tabindex="0">scores = score(decoder_state, encoder_states)</span><span class="ln">scores = scores.masked_fill(source_ids == pad_id, -torch.inf)</span><span class="ln" data-f="weights" tabindex="0">weights = scores.softmax(dim=-1)</span><span class="ln" data-f="context" tabindex="0">context = (weights[..., <b class="kw">None</b>] * encoder_states).sum(dim=1)</span><span class="ln" data-f="output" tabindex="0">logits = head(torch.cat([decoder_state, context], dim=-1))</span></code></pre></div>
+<div class="qz" data-q="q-context"></div><div class="prose"><p>Матрицу весов можно рассмотреть: строка соответствует шагу перевода, столбец — позиции источника. Для обучения достаточно пар предложений; соответствия отдельных слов не обязательны. Большой вес показывает вклад позиции в данную взвешенную сумму. Сам по себе он не объясняет весь выбор выходного слова.</p></div><div class="qz" data-q="q-pad"></div></section>
+<section id="qkv"><p class="eyebrow">блок 04</p><h2>Self-attention: запросы, ключи и значения</h2><div class="prose"><p>Теперь построим представление каждого токена через другие токены той же последовательности. Это self-attention: для каждой позиции вычисляем свой набор весов и собираем свой контекст. Рекуррентный перенос состояния для этого не требуется. Внутри слоя позиции можно вычислять параллельно.</p>
+<p>Как определить, какую информацию собирать и что передавать? Из входных представлений <math><mi>X</mi></math> тремя обучаемыми линейными преобразованиями получаем <strong>Q</strong> (queries, запросы), <strong>K</strong> (keys, ключи) и <strong>V</strong> (values, значения). Запрос позиции сравнивается с ключами доступных позиций. Полученные веса определяют, как смешать значения.</p>
+<div class="equation"><span><math><mi>Q</mi><mo>=</mo><mi>X</mi><msub><mi>W</mi><mi>Q</mi></msub><mo>,</mo><mspace width="1em"/><mi>K</mi><mo>=</mo><mi>X</mi><msub><mi>W</mi><mi>K</mi></msub><mo>,</mo><mspace width="1em"/><mi>V</mi><mo>=</mo><mi>X</mi><msub><mi>W</mi><mi>V</mi></msub></math></span></div></div>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Запрос позиции <select id="query-position"><option value="0">кот</option><option value="1">спит</option><option value="2">дома</option></select></label></div><div data-fig="qkv"></div><div id="qkv-result" class="add-result" aria-live="polite"></div></div><div class="panel-note"><p>Столбцы — токены, строки — шаги расчёта, как в рисунках Alammar (2018). Векторы q, k, v получены из x учебными матрицами (под катом), обучения здесь нет. Запрос выбранной позиции сравнивается с ключами всех трёх позиций; softmax даёт веса; выход z — смесь значений с этими весами. Смените запрос: меняются оценки, веса и z, а k и v остаются прежними.</p></div><details class="optional"><summary>матрицы учебного примера</summary><pre class="code"><code><span class="ln">X = torch.tensor([[1., 0.], [0., 1.], [1., 1.]])</span><span class="ln">W_Q = torch.eye(2)</span><span class="ln">W_K = torch.tensor([[1., 1.], [0., 1.]])</span><span class="ln">W_V = torch.tensor([[1., 0.], [1., 1.]])</span><span class="ln">Q, K, V = X @ W_Q, X @ W_K, X @ W_V</span><span class="ln">A = (Q @ K.T / math.sqrt(2)).softmax(dim=-1)</span><span class="ln">Z = A @ V</span></code></pre></details></div>
+<div class="qz" data-q="q-roles"></div><div class="prose"><p>Скалярные произведения всех запросов со всеми ключами образуют матрицу <math><mi>T</mi><mo>×</mo><mi>S</mi></math>. В self-attention <math><mi>T</mi><mo>=</mo><mi>S</mi></math>. Делим оценки на <math><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></math>, применяем маску, затем softmax <strong>по ключам в каждой строке</strong>. Результат умножаем на V.</p>
+<div class="equation"><span><math><mi>A</mi><mo>=</mo><mi mathvariant="normal">softmax</mi><mo>(</mo><mfrac><mrow><mi>Q</mi><msup><mi>K</mi><mi>T</mi></msup></mrow><msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt></mfrac><mo>+</mo><mi>M</mi><mo>)</mo></math></span></div>
+<div class="equation"><span><math><mi>Z</mi><mo>=</mo><mi>A</mi><mi>V</mi></math></span></div>
+<p><math><msub><mi>d</mi><mi>k</mi></msub></math> — ширина запроса и ключа одной головы. При независимых компонентах единичной дисперсии дисперсия скалярного произведения растёт с <math><msub><mi>d</mi><mi>k</mi></msub></math>; масштабирование сдерживает этот рост. <math><mi>M</mi></math> равно нулю на разрешённых парах и <math><mo>−</mo><mi>∞</mi></math> на запрещённых. Каждая строка должна содержать разрешённый ключ.</p></div><div class="panel" data-link-scope><div class="panel-body"><div data-fig="attention-matrix"></div></div><div class="panel-note"><p>Те же числа в матричной форме. Выделенная строка S, A и Z — расчёт выбранного запроса со схемы выше. В self-attention энкодера без PAD маска нулевая; в блоке 05 она станет нужна.</p></div><pre class="code"><code><span class="ln" data-f="scores" tabindex="0">scores = q @ k.transpose(-2, -1) / math.sqrt(q.size(-1))</span><span class="ln" data-f="mask" tabindex="0">scores = scores.masked_fill(~allowed, -torch.inf)</span><span class="ln" data-f="weights" tabindex="0">weights = scores.softmax(dim=-1)</span><span class="ln" data-f="context" tabindex="0">output = weights @ v</span></code></pre></div><div class="qz" data-q="q-values"></div></section>
+<section id="masks"><p class="eyebrow">блок 05</p><h2>Кто кого читает?</h2><div class="prose"><p><strong>Self-attention энкодера:</strong> Q, K и V получаем из представлений источника. Каждая позиция может читать весь источник, кроме PAD.</p>
+<p><strong>Causal self-attention декодера:</strong> Q, K и V получаем из представлений перевода. Позиция читает себя и предыдущие позиции; будущие закрыты маской. При teacher forcing на входе лежит весь сдвинутый эталон, поэтому без маски модель увидит ответы.</p>
+<p><strong>Cross-attention декодера:</strong> Q получаем из текущих представлений декодера, K и V — из выходов энкодера. Перевод читает источник; скрывать последующие слова источника не требуется.</p></div>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Механизм <select id="mask-mode"><option value="encoder">Энкодер: self-attention</option><option value="causal">Декодер: causal self-attention</option><option value="cross">Декодер: cross-attention</option></select></label></div><div data-fig="mask"></div><div id="mask-result" class="add-result" aria-live="polite"></div></div><div class="panel-note"><p>Сверху — токены и стрелки от выбранного запроса к позициям, которые он читает, снизу — та же маска матрицей. Нажмите на токен или клетку. В cross-attention запросы и ключи из разных последовательностей: строк три, столбцов четыре, и ключи с значениями одни и те же для каждого шага перевода.</p></div></div>
+<div class="qz" data-q="q-cross"></div><div class="prose"><p>Обучение предсказанию следующего токена можно распараллелить по позициям, потому что эталонный префикс уже известен. При генерации следующий вход становится известен после выбора токена. Поэтому авторегрессионная генерация остаётся последовательной и у трансформера.</p></div><div class="qz" data-q="q-causal"></div></section>
+<section id="heads"><p class="eyebrow">блок 06</p><h2>Несколько голов и порядок токенов</h2><div class="prose"><p>Одна голова даёт одно распределение весов для каждого запроса. В multi-head attention несколько голов строят распределения параллельно, со своими проекциями Q, K и V. Их выходы объединяются по признакам и проходят через выходное линейное преобразование. Конкретные роли голов заранее не задаём.</p>
+<p>При ширине модели <math><mi>d</mi></math> и числе голов <math><mi>H</mi></math> ширина одной головы равна <math><mi>d</mi><mo>/</mo><mi>H</mi></math>. После разделения тензор имеет оси «батч, голова, позиция, признак». После attention возвращаем оси «батч, позиция, признак».</p></div><div class="panel" data-link-scope><div class="panel-body"><div data-fig="heads"></div></div><div class="panel-note"><p>Разделяем признаки, сохраняя все позиции в каждой голове. После смешивания значений объединяем головы и применяем W_O. Простое копирование одной готовой карты attention не создаёт разных обучаемых голов.</p></div></div><div class="qz" data-q="q-heads"></div><div class="prose"><p>Self-attention с полной маской без позиционной информации перестановочно эквивариантен: переставим входные строки — так же переставятся выходные. Для понимания порядка добавляем информацию о позициях. В ноутбуке используем обучаемые позиционные эмбеддинги; в исходном трансформере были синусоидальные. Причинная маска тоже ограничивает порядок доступа, но не заменяет явную информацию о расстояниях между токенами.</p></div></section>
+<section id="block"><p class="eyebrow">блок 07</p><h2>Из attention собираем блок</h2><div class="prose"><p>В трансформере attention переносит информацию между позициями, а <strong>FFN</strong> применяет одну и ту же двухслойную сеть к каждой позиции отдельно. <strong>Residual</strong> складывает вход подслоя с его выходом. <strong>LayerNorm</strong> нормирует признаки внутри вектора одной позиции; его параметры обучаются.</p>
+<p>На схеме и в ноутбуке используем <strong>Pre-LN</strong>: сначала нормализация, затем подслой, затем прибавление к входу. В исходной статье используется Post-LN. Dropout в учебном блоке опущен; это позволяет напрямую проверять вычисления.</p></div><div class="panel" data-link-scope><div class="panel-body"><div data-fig="block"></div></div><div class="panel-note"><p>Две позиции, как у Alammar (2018): attention — одна широкая плашка, потому что смешивает позиции; LayerNorm и FFN нарисованы отдельно на каждой позиции, с общими весами. Пунктир — residual: вход подслоя прибавляется к его выходу, ширина d сохраняется. У Alammar и в исходной статье Post-LN, «Add &amp; Normalize» после подслоя; здесь Pre-LN, как в ноутбуке занятия 4.</p></div><pre class="code"><code><span class="ln" data-f="norm1" tabindex="0">normalized = norm1(x)</span><span class="ln" data-f="attention" tabindex="0">x = x + attention(normalized, allowed)</span><span class="ln" data-f="norm2" tabindex="0">normalized = norm2(x)</span><span class="ln" data-f="ffn" tabindex="0">x = x + ffn(normalized)</span></code></pre></div><div class="qz" data-q="q-ffn"></div></section>
+<section id="assembly"><p class="eyebrow">блок 08</p><h2>Полный переводчик</h2><div class="prose"><p>Энкодер переводчика получает эмбеддинги источника с позициями и применяет несколько блоков self-attention + FFN. Декодер получает сдвинутый перевод с позициями. Каждый блок декодера содержит causal self-attention, cross-attention к выходу энкодера и FFN. У каждого подслоя есть нормализация и residual. Линейный выходной слой даёт оценки токенов целевого словаря, softmax — их вероятности.</p>
+<p>Число блоков энкодера и декодера выбираем при построении модели. Веса разных блоков обычно различаются. При обучении cross-entropy сравнивает предсказания с переводом, сдвинутым на один токен вперёд; PAD исключаем из loss.</p></div><div class="panel" data-link-scope><div class="panel-body"><div data-fig="assembly"></div></div><div class="panel-note"><p>Схема по Alammar (2018): два блока энкодера, блок декодера целиком, второй свёрнут. Выход последнего блока энкодера даёт K и V для cross-attention каждого блока декодера; запросы приходят снизу, из самого декодера. Подписи «Add &amp; Norm» — Post-LN исходной статьи. В ноутбуке занятия 4 реализуем причинный блок языковой модели; у него нет источника и cross-attention.</p></div></div></section>
+<section id="design"><p class="eyebrow">блок 09</p><h2>Спроектируем систему</h2><div class="qz" data-q="q-design"></div></section>
+<section id="sources"><p class="eyebrow">блок 10</p><h2>Источники</h2><h3>References</h3><div class="prose footnote sources"><ul>
+<li>Bahdanau, Cho &amp; Bengio (2015). <a href="https://arxiv.org/abs/1409.0473"><em>Neural Machine Translation by Jointly Learning to Align and Translate.</em></a> ICLR. — Attention в рекуррентном переводчике.</li>
+<li>Vaswani et al. (2017). <a href="https://arxiv.org/abs/1706.03762"><em>Attention Is All You Need.</em></a> NeurIPS. — Архитектура трансформера.</li>
+<li>Alammar (2018). <a href="https://jalammar.github.io/visualizing-neural-machine-translation-mechanics-of-seq2seq-models-with-attention/"><em>Visualizing A Neural Machine Translation Model (Mechanics of Seq2seq Models With Attention).</em></a> Блог. — Иллюстрации encoder–decoder с attention.</li>
+<li>Alammar (2018). <a href="https://jalammar.github.io/illustrated-transformer/"><em>The Illustrated Transformer.</em></a> Блог. — Иллюстрации трансформера, по которым перерисованы схемы.</li>
+<li>Papineni et al. (2002). <a href="https://aclanthology.org/P02-1040/"><em>BLEU: a Method for Automatic Evaluation of Machine Translation.</em></a> ACL. — Метрика машинного перевода.</li>
+</ul></div></section>
+</div></main></div>
+
+<div hidden id="text-chunks">
+<template data-text="topics"><ul>
+<li>Условная генерация и машинный перевод</li>
+<li>Оценка перевода: BLEU и его слепые зоны</li>
+<li>Attention в encoder–decoder</li>
+<li>Self-attention, Q, K, V и маски</li>
+<li>Устройство трансформера</li>
+</ul></template>
+</div>
+<script type="application/json" id="quiz-data">{"q-bottleneck":{"key":"q-bottleneck","type":"pick","q":"<p>Что ограничивает доступ декодера к источнику в варианте без attention?<\/p>","a":"<p>Последнее состояние должно передать информацию обо всей последовательности. Это ограничение пути передачи информации; фактические ошибки проверяем на переводах разной длины.<\/p>","miss":"","opts":[{"k":"o0","label":"весь источник передаётся через одно состояние фиксированной ширины","right":true},{"k":"o1","label":"длина перевода должна совпасть с длиной источника","right":false},{"k":"o2","label":"декодер не может использовать предыдущие слова перевода","right":false}],"multi":false,"n":1},"q-synonyms":{"key":"q-synonyms","type":"pick","q":"<p>Перевод полностью переписали синонимами, смысл не изменился. Что будет с BLEU этого предложения?<\/p>","a":"<p>BLEU сравнивает n-граммы как строки. Синоним — другая строка, поэтому общих биграмм почти не остаётся, а четырёхграмм — ни одной. При <math><msub><mi>p<\/mi><mn>4<\/mn><\/msub><mo>=<\/mo><mn>0<\/mn><\/math> среднее геометрическое и BLEU предложения равны нулю. Проверьте на калькуляторе ниже.<\/p>","miss":"почти не изменится: смысл сохранён","opts":[{"k":"o0","label":"упадёт почти до нуля: совпадут только отдельные слова","right":true},{"k":"o1","label":"почти не изменится: смысл сохранён","right":false},{"k":"o2","label":"вырастет: перевод стал разнообразнее","right":false}],"multi":false,"n":2},"q-edges":{"key":"q-edges","type":"sort","q":"<p>Эталон: «кошка спит на тёплом диване уже три часа». Как BLEU оценит каждый перевод?<\/p>","a":"<p>Синонимы и допустимая в русском перестановка слов теряют общие четырёхграммы — BLEU предложения обнуляется. Отрицание и другое число меняют одну позицию, большинство n-грамм совпадает — BLEU остаётся высоким. Повтор отсекается ограничением на число совпадений. Точные значения — в калькуляторе ниже.<\/p>","miss":"","bins":["низкий, перевод верный","высокий, смысл искажён","низкий, перевод плохой"],"items":[{"label":"кот дремлет на горячей софе целых три часа","bins":["низкий, перевод верный"]},{"label":"уже три часа на тёплом диване спит кошка","bins":["низкий, перевод верный"]},{"label":"кошка не спит на тёплом диване уже три часа","bins":["высокий, смысл искажён"]},{"label":"кошка спит на тёплом диване уже два часа","bins":["высокий, смысл искажён"]},{"label":"кошка кошка кошка кошка кошка кошка","bins":["низкий, перевод плохой"]}],"n":3},"q-quality":{"key":"q-quality","type":"pick","q":"<p>Перевод получил высокий BLEU, но изменил число в договоре. Достаточно ли BLEU для приёмки такой системы?<\/p>","a":"<p>Метрика по корпусу не гарантирует сохранения каждого факта. Критичные для задачи ошибки проверяем отдельно.<\/p>","miss":"","opts":[{"k":"o0","label":"да, агрегированная метрика учитывает любую ошибку смысла","right":false},{"k":"o1","label":"нет, нужны отдельная проверка чисел и разбор критичных ошибок","right":true}],"multi":false,"n":4},"q-context":{"key":"q-context","type":"pick","q":"<p>Почему при генерации следующего слова контекст источника может измениться, хотя энкодер повторно не запускается?<\/p>","a":"<p>Состояния источника сохраняются. На новом шаге декодер вычисляет новые оценки соответствия и новую взвешенную сумму.<\/p>","miss":"","opts":[{"k":"o0","label":"изменилось состояние декодера, по которому вычисляются веса","right":true},{"k":"o1","label":"изменились слова исходного предложения","right":false},{"k":"o2","label":"softmax каждый раз выбирает случайную позицию","right":false}],"multi":false,"n":5},"q-pad":{"key":"q-pad","type":"pick","q":"<p>Можно ли сначала сделать softmax по всем позициям, а затем просто обнулить веса PAD?<\/p>","a":"<p>Иначе часть вероятностной массы уйдёт на PAD, а сумма оставшихся весов будет меньше единицы. В каждом источнике должна остаться хотя бы одна разрешённая позиция.<\/p>","miss":"","opts":[{"k":"o0","label":"да, получится то же распределение","right":false},{"k":"o1","label":"нужно ещё перенормировать веса; проще исключить PAD до softmax","right":true}],"multi":false,"n":6},"q-roles":{"key":"q-roles","type":"sort","q":"<p>Сопоставьте тензор и его роль.<\/p>","a":"<p>Оценки получаем из Q и K; смешиваем V. Раздельные преобразования позволяют обучать способ сравнения и передаваемое представление.<\/p>","miss":"","bins":["запрос позиции","сравнение с запросом","содержимое взвешенной суммы"],"items":[{"label":"Q","bins":["запрос позиции"]},{"label":"K","bins":["сравнение с запросом"]},{"label":"V","bins":["содержимое взвешенной суммы"]}],"n":7},"q-values":{"key":"q-values","type":"pick","q":"<p>Зафиксируем Q, K и маску, но изменим V. Что изменится?<\/p>","a":"<p>Веса зависят от Q, K и маски. V участвует в следующем матричном умножении.<\/p>","miss":"","opts":[{"k":"o0","label":"веса attention","right":false},{"k":"o1","label":"результат взвешенной суммы, а веса сохранятся","right":true},{"k":"o2","label":"ничего, V не участвует в результате","right":false}],"multi":false,"n":8},"q-cross":{"key":"q-cross","type":"pick","q":"<p>Откуда берутся Q, K и V в cross-attention переводчика?<\/p>","a":"<p>Позиции перевода задают запросы; позиции источника дают ключи и значения. Число запросов и ключей может различаться.<\/p>","miss":"","opts":[{"k":"o0","label":"Q из декодера, K и V из энкодера","right":true},{"k":"o1","label":"все три из энкодера","right":false},{"k":"o2","label":"Q и K из декодера, V из будущих слов перевода","right":false}],"multi":false,"n":9},"q-causal":{"key":"q-causal","type":"pick","q":"<p>Убрали causal mask, но сохранили сдвиг входа и цели. Почему обучение языковой модели стало некорректным?<\/p>","a":"<p>Сдвиг определяет, какой токен предсказываем. Маска ограничивает информацию для этого предсказания. Нужны оба условия.<\/p>","miss":"","opts":[{"k":"o0","label":"позиция может прочитать целевой токен на следующей входной позиции","right":true},{"k":"o1","label":"токены перестали иметь эмбеддинги","right":false},{"k":"o2","label":"размер словаря изменился","right":false}],"multi":false,"n":10},"q-heads":{"key":"q-heads","type":"pick","q":"<p>Каждая голова получает свою часть позиций предложения?<\/p>","a":"<p>Ограничения по позициям задаёт маска. Разделение на головы относится к признакам.<\/p>","miss":"","opts":[{"k":"o0","label":"да, первая голова читает начало, вторая конец","right":false},{"k":"o1","label":"нет, каждая голова читает все разрешённые позиции в своём пространстве признаков","right":true}],"multi":false,"n":11},"q-ffn":{"key":"q-ffn","type":"pick","q":"<p>Какой подслой позволяет представлению «кот» использовать информацию от «спит»?<\/p>","a":"<p>Между позициями информация передаётся через attention. FFN и LayerNorm работают с вектором отдельной позиции.<\/p>","miss":"","opts":[{"k":"o0","label":"self-attention","right":true},{"k":"o1","label":"FFN, применяемый отдельно к каждой позиции","right":false},{"k":"o2","label":"LayerNorm по признакам одной позиции","right":false}],"multi":false,"n":12},"q-design":{"key":"q-design","type":"write","q":"<p>Нужно переводить короткие инструкции, сохраняя названия товаров и числа. Спроектируйте первую проверяемую версию системы.<\/p>","a":"<p>Сначала определяем критичные ошибки и тест. Затем проверяем полный путь от токенизации до декодирования. Вероятность модели и агрегированная метрика не заменяют проверку фактов.<\/p>","miss":"","check":["задача: условная генерация перевода с сохранением фактов","данные: параллельные инструкции и отдельный тест без дубликатов обучения","представление: токенизация источника и перевода, специальные токены и позиции","модель: encoder–decoder с causal self-attention и cross-attention","метрика: BLEU по корпусу, проверка чисел и названий, просмотр ошибок","что сломается первым: редкие названия, длинные инструкции, смена предметной области"],"n":13}}</script>
+<script type="application/json" id="add-data">{}</script>
+<script>
+/* Shared by every week's demo.js; scripts/build_demo.py puts this in front of it. */
+
+// TXT("key", {n: 12}) — a text chunk from demo/text/*.md with its {n} placeholders filled; see scripts/demo_text.py
+function TXT(key, vars) {
+  const t = document.querySelector(`template[data-text="${key}"]`);
+  if (!t) throw new Error("no text chunk '" + key + "' — add it to demo/text/");
+  let s = t.innerHTML;
+  if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
+  return s;
+}
+
+// reference lists (demo/text, `## end-refs`): external links open in a new tab
+document.querySelectorAll('.prose.footnote a[href^="http"]').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
+
+/* The questions of a lecture page. scripts/build_demo.py puts this in front of the week's demo/lecture/lecture.js;
+   the questions themselves are parsed from demo/lecture/text/*.md by scripts/quiz_text.py into #quiz-data.
+
+   lecture.js registers what the markdown cannot hold:
+     QUIZ.figs.name = host => { ...draw an SVG into host... }   for every <div data-fig="name"></div> in a question
+                                                                 or an answer; a `point` question's clickable parts
+                                                                 carry data-pick="key" matching its options
+     QUIZ.values.name = 0.631                                     for a fill answer written as `@name`
+   Answers are kept in localStorage per page (meta[name=quiz-store]) so a student can leave and come back;
+   "Reset answers" in the rail clears them. Nothing here depends on the seminar's demo_data. */
+"use strict";
+const quizRu = document.documentElement.lang === "ru";
+const qt = (en, ru) => quizRu ? ru : en;
+const QUIZ = { figs: {}, values: {}, data: null, state: null };
+
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const DATA = JSON.parse($("#quiz-data").textContent);
+  const STORE = "quiz:" + (($('meta[name="quiz-store"]') || {}).content || location.pathname);
+  const load = () => { try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { return {}; } };
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* private window: answers live until reload */ } };
+  let state = load();
+  QUIZ.data = DATA; QUIZ.state = () => state;
+
+  /* ------------------------------------------------------------- figures */
+  function drawFigs(root) {
+    $$("[data-fig]", root).forEach(h => {
+      if (h.dataset.drawn) return;
+      const f = QUIZ.figs[h.dataset.fig];
+      if (f) { f(h); h.dataset.drawn = "1"; }
+      else h.innerHTML = `<div class="qz-nofig">figure “${esc(h.dataset.fig)}” is not drawn in lecture.js</div>`;
+    });
+  }
+
+  /* -------------------------------------------------------------- answers */
+  const norm = s => String(s).toLowerCase().replace(/[×*]/g, "x").replace(/\s+/g, " ").replace(/[.,;:]+$/, "").trim();
+  const num = s => { const v = parseFloat(String(s).replace(",", ".").replace(/[^0-9eE+.\-]/g, "")); return isNaN(v) ? null : v; };
+  function expected(alt) {
+    if (alt.startsWith("@")) {
+      const v = QUIZ.values[alt.slice(1)];
+      if (v === undefined) throw new Error(`QUIZ.values.${alt.slice(1)} is not set in lecture.js`);
+      return v;
+    }
+    return alt;
+  }
+  function matches(given, blank) {
+    for (const alt of blank.alts) {
+      const e = expected(alt);
+      const en = typeof e === "number" ? e : num(e);
+      if (en !== null && (blank.tol != null || typeof e === "number" || /^[-+]?[0-9.,eE]+$/.test(String(e).trim()))) {
+        const g = num(given); if (g === null) continue;
+        const dec = (String(e).split(".")[1] || "").length;
+        const tol = Math.max(blank.tol || 0, dec ? 0.5 * Math.pow(10, -dec) : 0, Math.abs(en) * 1e-9);
+        if (Math.abs(g - en) <= tol) return true;
+      } else if (norm(given) === norm(e)) return true;
+    }
+    return false;
+  }
+  const shown = blank => { const e = expected(blank.alts[0]); return typeof e === "number" ? (blank.tol != null ? +e.toFixed(Math.max(0, Math.ceil(-Math.log10(blank.tol)))) : +e.toFixed(3)) : e; };
+
+  /* `{name}` in a question, an option or an answer -> QUIZ.values.name (a number the browser computed), so the
+     markdown holds the sentence and never the number */
+  const fmtv = v => typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(3)) : String(v);
+  const fill = html => html.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? esc(fmtv(QUIZ.values[k])) : m);
+
+  /* ------------------------------------------------------------ rendering */
+  const KIND = {
+    pick: q => q.multi ? qt("tick all that apply", "выберите всё подходящее") : qt("pick one", "выберите один ответ"),
+    point: q => q.multi ? qt("click everything that fits", "отметьте части схемы") : qt("click in the picture", "выберите на схеме"),
+    sort: () => qt("sort into bins", "распределите по группам"), fill: () => qt("fill in", "заполните пропуски"), write: () => qt("write, then reveal", "ответьте, затем откройте разбор"),
+  };
+  const pad = n => String(n).padStart(2, "0");
+
+  function render(q) {
+    const host = $(`.qz[data-q="${q.key}"]`);
+    const st = state[q.key] || (state[q.key] = {});
+    host.dataset.type = q.type;
+    host.classList.toggle("done", !!st.done);
+    host.innerHTML = `<div class="qz-head"><span class="qz-n">${pad(q.n)}</span><span class="qz-kind">${KIND[q.type](q)}</span></div>
+      <div class="qz-q">${fill(q.q)}</div><div class="qz-ui"></div>
+      <div class="qz-a" hidden>${fill(q.a)}${q.miss ? `<p class="qz-miss"><b>${qt("if the answer is", "если ответили так:")}</b>${fill(q.miss)}</p>` : ""}</div>`;
+    drawFigs(host);
+    UI[q.type](q, host, st);
+    if (st.done) finish(q, host, st, true);
+  }
+
+  function row(extra) { return `<div class="btnrow qz-row">${extra || ""}<span class="qz-verdict"></span></div>`; }
+  const verdict = (host, text, ok) => { const v = $(".qz-verdict", host); v.textContent = text; v.className = "qz-verdict " + (ok === true ? "ok" : ok === false ? "no" : ""); };
+
+  const UI = {
+    pick(q, host, st) { UI.point(q, host, st); },
+    point(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<div class="picklist qz-opts">${q.opts.map(o => `<button data-k="${esc(o.k)}">${fill(o.label)}</button>`).join("")}</div>`
+        + row(q.multi ? `<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>` : "");
+      st.sel = st.sel || [];
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      parts.forEach(p => p.classList.add("qz-pickable"));
+      const btns = $$(".qz-opts button", host);
+      const keyOf = el => el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+      const paint = () => {
+        [...btns, ...parts].forEach(el => el.classList.toggle("pick", st.sel.includes(keyOf(el))));
+        const ck = $(".qz-check", host); if (ck) ck.disabled = !st.sel.length;
+      };
+      const choose = k => {
+        if (st.done) return;
+        if (q.multi) { st.sel = st.sel.includes(k) ? st.sel.filter(x => x !== k) : [...st.sel, k]; paint(); save(); }
+        else { st.sel = [k]; finish(q, host, st); }
+      };
+      btns.forEach(b => b.addEventListener("click", () => choose(b.dataset.k)));
+      parts.forEach(p => p.addEventListener("click", () => choose(p.dataset.pick)));
+      const ck = $(".qz-check", host); if (ck) ck.addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    sort(q, host, st) {
+      const ui = $(".qz-ui", host);
+      st.sel = st.sel || {};
+      ui.innerHTML = `<table class="qz-sort"><tbody>${q.items.map((it, i) => `<tr data-i="${i}"><td class="qz-item">${fill(it.label)}</td>
+        <td class="qz-bins">${q.bins.map(b => `<button data-b="${esc(b)}">${esc(b)}</button>`).join("")}</td></tr>`).join("")}</tbody></table>`
+        + row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button><span class="qz-count mono"></span>`);
+      const paint = () => {
+        $$("tr", ui).forEach(tr => $$("button", tr).forEach(b => b.classList.toggle("pick", st.sel[tr.dataset.i] === b.dataset.b)));
+        const n = Object.keys(st.sel).length;
+        $(".qz-check", host).disabled = n < q.items.length;
+        $(".qz-count", host).textContent = st.done ? "" : qt(`${n} / ${q.items.length} placed`, `${n} / ${q.items.length} распределено`);
+      };
+      ui.addEventListener("click", e => {
+        const b = e.target.closest("button[data-b]"); if (!b || st.done) return;
+        st.sel[b.closest("tr").dataset.i] = b.dataset.b; paint(); save();
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    fill(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>`);
+      st.vals = st.vals || {};
+      const inputs = $$("input.qz-blank", host);
+      const paint = () => { $(".qz-check", host).disabled = inputs.some(i => !i.value.trim()); };
+      inputs.forEach(i => {
+        i.value = st.vals[i.dataset.blank] || "";
+        i.addEventListener("input", () => { st.vals[i.dataset.blank] = i.value; paint(); save(); });
+        i.addEventListener("keydown", e => { if (e.key === "Enter" && !$(".qz-check", host).disabled) finish(q, host, st); });
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    write(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<textarea class="qz-text" rows="3" placeholder="${qt("Your answer, in a few sentences — then reveal.", "Ваш ответ в нескольких предложениях")}"></textarea>`
+        + row(`<button class="primary qz-check">${qt("Reveal", "Открыть разбор")}</button>`);
+      const ta = $("textarea", ui);
+      ta.value = st.text || "";
+      ta.addEventListener("input", () => { st.text = ta.value; save(); });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+    },
+  };
+
+  function finish(q, host, st, restoring) {
+    st.done = true;
+    host.classList.add("done");
+    const ck = $(".qz-check", host); if (ck) ck.remove();
+    if (q.type === "pick" || q.type === "point") {
+      const right = new Set(q.opts.filter(o => o.right).map(o => o.k));
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      [...$$(".qz-opts button", host), ...parts].forEach(el => {
+        const k = el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+        el.classList.remove("pick");
+        el.classList.toggle("right", right.has(k));
+        el.classList.toggle("wrong", st.sel.includes(k) && !right.has(k));
+        el.classList.toggle("missed", right.has(k) && !st.sel.includes(k));
+        el.disabled = true;
+      });
+      const hit = st.sel.filter(k => right.has(k)).length, wrong = st.sel.length - hit, missed = right.size - hit;
+      if (!q.multi) verdict(host, hit ? qt("right", "верно") : qt("not quite", "не совсем"), !!hit);
+      else verdict(host, wrong + missed === 0 ? qt("all of them", "всё верно") : qt(`${hit} right · ${wrong} wrong · ${missed} missed`, `${hit} верно · ${wrong} ошибочно · ${missed} пропущено`), wrong + missed === 0);
+    } else if (q.type === "sort") {
+      let agree = 0;
+      $$("table.qz-sort tr", host).forEach(tr => {
+        const it = q.items[+tr.dataset.i], chosen = st.sel[tr.dataset.i], ok = it.bins.includes(chosen);
+        agree += ok ? 1 : 0;
+        $$("button", tr).forEach(b => {
+          b.classList.remove("pick"); b.disabled = true;
+          b.classList.toggle("right", b.dataset.b === chosen && ok);
+          b.classList.toggle("wrong", b.dataset.b === chosen && !ok);
+          b.classList.toggle("ans", it.bins.includes(b.dataset.b) && b.dataset.b !== chosen);
+        });
+      });
+      $(".qz-count", host).textContent = "";
+      verdict(host, qt(`${agree} of ${q.items.length} agree with the answer`, `${agree} / ${q.items.length} верно`), agree === q.items.length ? true : agree >= q.items.length * 0.7 ? null : false);
+    } else if (q.type === "fill") {
+      let ok = 0;
+      $$("input.qz-blank", host).forEach(i => {
+        const b = q.blanks.find(x => x.id === i.dataset.blank), good = matches(i.value, b);
+        ok += good ? 1 : 0;
+        i.classList.toggle("right", good); i.classList.toggle("wrong", !good); i.readOnly = true;
+        if (!good && !i.nextElementSibling?.classList.contains("qz-exp")) i.insertAdjacentHTML("afterend", `<span class="qz-exp">${esc(shown(b))}</span>`);
+      });
+      verdict(host, ok === q.blanks.length ? qt("right", "верно") : `${ok} / ${q.blanks.length}`, ok === q.blanks.length);
+    } else if (q.type === "write") {
+      $("textarea", host).readOnly = false;
+      if (q.check.length && !$(".qz-ticks", host)) {
+        st.ticks = st.ticks || [];
+        $(".qz-ui", host).insertAdjacentHTML("beforeend", `<div class="qz-ticks"><div class="qz-ticks-k">${qt("tick what your answer had", "отметьте, что было в вашем ответе")}</div>${q.check.map((c, i) =>
+          `<label><input type="checkbox" data-i="${i}" ${st.ticks.includes(i) ? "checked" : ""}> <span>${fill(c)}</span></label>`).join("")}</div>`);
+        $(".qz-ticks", host).addEventListener("change", e => {
+          const i = +e.target.dataset.i; st.ticks = e.target.checked ? [...new Set([...st.ticks, i])] : st.ticks.filter(x => x !== i); save();
+        });
+      }
+    }
+    const a = $(".qz-a", host); a.hidden = false; drawFigs(a);
+    if (!restoring) save();
+    progress();
+  }
+
+  /* ------------------------------------------------------------- progress */
+  const isOptional = host => !!host.closest("details.optional");
+  function progress() {
+    const hosts = $$(".qz"), main = hosts.filter(h => !isOptional(h)), opt = hosts.filter(isOptional);
+    const done = l => l.filter(h => h.classList.contains("done")).length;
+    const el = $("#quiz-progress"); if (!el) return;
+    el.textContent = qt(`answered ${done(main)} / ${main.length}`, `отвечено ${done(main)} / ${main.length}`) + (opt.length ? qt(` · ${done(opt)} / ${opt.length} optional`, ` · ${done(opt)} / ${opt.length} дополнительно`) : "");
+    $$(".optional-count").forEach(c => { const l = $$(".qz", c.closest("details")); c.textContent = `${done(l)} / ${l.length}`; });
+  }
+
+  /* ----------------------------------------------------------------- rail */
+  const nav = $("#nav");
+  if (nav) {
+    const secs = $$("main section").filter(s => s.id && $("h2", s));
+    nav.innerHTML = secs.map((s, i) => `<a href="#${s.id}"><span>${pad(i + 1)}</span><span>${esc($("h2", s).textContent)}</span></a>`).join("");
+    const links = $$("a", nav);
+    const onScroll = () => {
+      const y = window.scrollY + 120; let cur = 0;
+      secs.forEach((s, i) => { if (s.offsetTop <= y) cur = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === cur));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  }
+  const theme = $("#btn-theme");
+  if (theme) theme.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+  const reset = $("#btn-reset");
+  if (reset) {
+    let armed = 0;
+    reset.addEventListener("click", () => {
+      if (Date.now() - armed > 4000) { armed = Date.now(); reset.textContent = qt("Click again to reset", "Ещё раз для сброса"); setTimeout(() => { reset.textContent = qt("Reset answers", "Сбросить ответы"); }, 4000); return; }
+      QUIZ.reset();
+      reset.textContent = qt("Reset answers", "Сбросить ответы");
+    });
+  }
+  QUIZ.reset = () => { state = {}; save(); $$("[data-fig]").forEach(h => delete h.dataset.drawn); Object.values(DATA).forEach(render); progress(); };
+
+  /* ----------------------------------------------------------------- go */
+  (function fillProse() {   // `{name}` in the page's own prose, text nodes only, so markup and figures are untouched
+    const walker = document.createTreeWalker(document.querySelector("main") || document.body, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walker.nextNode()) if (/\{[a-z][a-z0-9_]*\}/.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+    nodes.forEach(n => { n.nodeValue = n.nodeValue.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? fmtv(QUIZ.values[k]) : m); });
+  })();
+  drawFigs(document);
+  Object.values(DATA).sort((a, b) => a.n - b.n).forEach(render);
+  progress();
+});
+
+/* Схемы и связи со строками кода для страниц ADD. */
+const ADD = {
+  esc: s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
+  svg(content, width=760, height=180, label='Схема') {
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${this.esc(label)}"><defs><marker id="arrow-${++this.serial}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" style="fill:var(--ink-3)"/></marker></defs>${content.replaceAll('MARKER', 'arrow-'+this.serial)}</svg>`;
+  },
+  serial: 0,
+  text(x,y,label,cls='',anchor='middle') {
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" class="${cls}">${this.esc(label)}</text>`;
+  },
+  box(x,y,w,h,lines,key='',pick='') {
+    return `<g ${key?`data-f="${key}" tabindex="0"`:''} ${pick?`data-pick="${pick}"`:''}><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/>${lines.map((line,i)=>this.text(x+w/2,y+h/2+(i-(lines.length-1)/2)*23+5,line)).join('')}${pick?`<rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/>`:''}</g>`;
+  },
+  arrow(x1,y1,x2,y2) { return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#MARKER)"/>`; },
+  flow(items, label='Последовательность преобразований') {
+    const w=760/items.length;
+    return this.svg(items.map((a,i)=>this.box(i*w+6,30,w-30,90,a.lines,a.key,a.pick)+(i<items.length-1?this.arrow((i+1)*w-24,75,(i+1)*w+1,75):'')).join(''),760,150,label);
+  },
+  table(headers, rows) {
+    return '<table class="add-table"><thead><tr>'+headers.map(h=>'<th>'+this.esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(v=>'<td>'+this.esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+  },
+  softmax(values) { const m=Math.max(...values), ex=values.map(v=>Math.exp(v-m)), z=ex.reduce((a,b)=>a+b,0); return ex.map(v=>v/z); },
+  link(scope,key,on) { scope.querySelectorAll('[data-f]').forEach(n=>n.classList.toggle('hi',on && n.dataset.f===key)); },
+};
+for(const event of ['pointerover','focusin']) document.addEventListener(event,e=>{
+  const node=e.target.closest('[data-f]'), scope=node?.closest('[data-link-scope]');
+  if(scope) ADD.link(scope,node.dataset.f,true);
+});
+for(const event of ['pointerout','focusout']) document.addEventListener(event,e=>{
+  const node=e.target.closest('[data-f]'), scope=node?.closest('[data-link-scope]');
+  if(scope) ADD.link(scope,node.dataset.f,false);
+});
+
+/* Учебные схемы: развёрнутая RNN, BLEU, attention и трансформер по рисункам Alammar (2018). */
+const SUBS = '₀₁₂₃₄₅₆₇₈₉', sub = n => String(n).split('').map(d => SUBS[+d]).join('');
+const tint = (c, p = 22) => `color-mix(in srgb, var(${c}) ${p}%, var(--panel))`;
+const G = {
+  rect(x, y, w, h, fill = 'var(--panel-sunk)', stroke = '', extra = '') {
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" style="fill:${fill}${stroke ? ';stroke:' + stroke : ''}${extra}"/>`;
+  },
+  /* прямоугольник с подписью; key связывает его со строкой кода */
+  cell(x, y, w, h, lines, o = {}) {
+    const fs = o.cls === 'num' ? 4.5 : 5, step = o.cls === 'num' ? 18 : 21;
+    const body = this.rect(x, y, w, h, o.fill, o.stroke, o.sw ? `;stroke-width:${o.sw}` : '') +
+      lines.map((l, i) => ADD.text(x + w / 2, y + h / 2 + (i - (lines.length - 1) / 2) * step + fs, l, o.cls || '')).join('');
+    return o.key ? `<g data-f="${o.key}" tabindex="0">${body}</g>` : body;
+  },
+  pill(x, y, w, h, label, fill, key = '') {
+    const body = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" style="fill:${fill};stroke:var(--ink-3)"/>` + ADD.text(x + w / 2, y + h / 2 + 5, label);
+    return key ? `<g data-f="${key}" tabindex="0">${body}</g>` : body;
+  },
+  vec(x, y, vals, color, o = {}) {
+    const cw = o.cw || 46, ch = o.ch || 24;
+    return vals.map((v, i) => this.rect(x + i * cw, y, cw, ch, tint(color, 24), o.stroke || '', o.sw ? `;stroke-width:${o.sw}` : '') +
+      (o.blank ? '' : ADD.text(x + i * cw + cw / 2, y + ch / 2 + 4.5, typeof v === 'number' ? v.toFixed(o.dec ?? 2) : v, 'num'))).join('');
+  },
+  path(d, style = '', arrow = true) { return `<path d="${d}" style="fill:none;${style}"${arrow ? ' marker-end="url(#MARKER)"' : ''}/>`; },
+  circle(cx, cy, r = 11) { return `<circle cx="${cx}" cy="${cy}" r="${r}" style="fill:var(--panel);stroke:var(--ink-2)"/>` + ADD.text(cx, cy + 5, '+'); },
+};
+
+const BLEU = {
+  ref: 'кошка спит на тёплом диване уже три часа',
+  cases: [
+    ['copy', 'копия эталона', 'кошка спит на тёплом диване уже три часа'],
+    ['syn', 'синонимы', 'кот дремлет на горячей софе целых три часа'],
+    ['order', 'другой порядок слов', 'уже три часа на тёплом диване спит кошка'],
+    ['neg', 'добавили «не»', 'кошка не спит на тёплом диване уже три часа'],
+    ['num', 'другое число', 'кошка спит на тёплом диване уже два часа'],
+    ['short', 'обрезанный перевод', 'кошка спит на тёплом диване'],
+    ['rep', 'повтор одного слова', 'кошка кошка кошка кошка кошка кошка'],
+  ],
+  tokens: s => s.toLowerCase().trim().split(/\s+/).filter(Boolean),
+  grams(t, n) { const out = []; for (let i = 0; i + n <= t.length; i++) out.push(t.slice(i, i + n).join(' ')); return out; },
+  /* BLEU одного предложения без сглаживания: та же формула, что sacrebleu.sentence_bleu(smooth_method="none") */
+  score(hyp, ref = this.ref) {
+    const h = this.tokens(hyp), r = this.tokens(ref);
+    const rows = [1, 2, 3, 4].map(n => {
+      const limit = new Map(), used = new Map();
+      for (const g of this.grams(r, n)) limit.set(g, (limit.get(g) || 0) + 1);
+      const grams = this.grams(h, n).map(g => {
+        const u = used.get(g) || 0, l = limit.get(g) || 0; used.set(g, u + 1);
+        return { g, state: !l ? 'miss' : u < l ? 'hit' : 'clip' };
+      });
+      const m = grams.filter(x => x.state === 'hit').length;
+      return { n, grams, m, total: grams.length, p: grams.length ? m / grams.length : 0 };
+    });
+    const c = h.length, bp = !c ? 0 : c >= r.length ? 1 : Math.exp(1 - r.length / c);
+    const bleu = rows.some(x => x.p === 0) ? 0 : bp * Math.exp(rows.reduce((s, x) => s + Math.log(x.p), 0) / 4);
+    return { rows, c, r: r.length, bp, bleu: 100 * bleu };
+  },
+  render() {
+    const out = document.querySelector('#bleu-result'); if (!out) return;
+    const hyp = document.querySelector('#bleu-hyp').value, res = this.score(hyp);
+    const chips = (list, cls) => list.map(x => `<span class="tok ${cls ? cls(x) : ''}">${ADD.esc(x.g ?? x)}</span>`).join('');
+    const legend = { hit: 'есть в эталоне', clip: 'сверх числа в эталоне', miss: 'нет в эталоне' };
+    let html = `<div class="row"><span class="k">эталон</span><span>${chips(this.tokens(this.ref))}</span></div>`;
+    html += res.rows.map(row => `<div class="row"><span class="k">${row.n}-граммы</span><span class="g">${row.grams.length ? row.grams.map(x => `<span class="tok ${x.state}" title="${legend[x.state]}">${ADD.esc(x.g)}</span>`).join('') : '<span class="none">нет: перевод короче</span>'}</span><span class="p">p${sub(row.n)} = ${row.m} / ${row.total}${row.total ? ' = ' + row.p.toFixed(3) : ''}</span></div>`).join('');
+    html += `<div class="total">c = ${res.c}, r = ${res.r} · BP = ${res.bp.toFixed(3)} · <b>BLEU = ${res.bleu.toFixed(1)}</b>${res.bleu === 0 && res.c ? ' · есть p, равное нулю' : ''}</div>`;
+    out.innerHTML = html;
+  },
+  init() {
+    const select = document.querySelector('#bleu-case'), input = document.querySelector('#bleu-hyp');
+    select.innerHTML = this.cases.map(([k, label]) => `<option value="${k}">${label}</option>`).join('') + '<option value="own">свой вариант</option>';
+    select.value = 'syn'; input.value = this.cases[1][2];
+    select.onchange = () => { const c = this.cases.find(x => x[0] === select.value); if (c) input.value = c[2]; else input.focus(); this.render(); };
+    input.oninput = () => { if (!this.cases.some(c => c[0] === select.value && c[2] === input.value)) select.value = 'own'; this.render(); };
+    this.render();
+  },
+};
+
+const W3 = {
+  /* учебные оценки соответствия: шаг перевода × позиция источника */
+  weights(step) { return ADD.softmax([[0, 3, -1], [-1, 0, 3], [0, .5, 1]][step]); },
+  /* развёрнутые энкодер и декодер; без attention источник проходит через последнее состояние */
+  encdec(host, o = {}) {
+    const attention = !!o.attention, step = o.step || 0, long = !!o.long;
+    const src = long ? ['the', 'cat', '…', 'day'] : ['the', 'cat', 'sleeps'];
+    const hs = long ? ['h₁', 'h₂', '…', 'h₃₀'] : ['h₁', 'h₂', 'h₃'];
+    const inp = ['BOS', 'кошка', 'спит'], out = ['кошка', 'спит', 'EOS'];
+    const top = attention ? 0 : -80, n = src.length, ew = long ? 66 : 80, eg = (300 - n * ew) / (n - 1), y = 210 + top, h = 50;
+    const ex = i => 20 + i * (ew + eg), dx = j => 460 + j * 100, w = attention ? this.weights(step) : null;
+    let s = '';
+    s += attention
+      ? `<g data-f="scores" tabindex="0">${ADD.text(20, 30, 'αₜ,ᵢ = softmax по i от score(sₜ, hᵢ)', '', 'start')}${G.path(`M ${dx(step) + 80} ${y + 10} H ${dx(step) + 90} V 88`, 'stroke-dasharray:5 4;stroke:var(--cls-3)')}</g>`
+      : ADD.text(380, 30, 'источник доходит до декодера одним вектором', 'label');
+    src.forEach((t, i) => {
+      if (hs[i] === '…') { s += ADD.text(ex(i) + ew / 2, y + h / 2 + 5, '…') + ADD.text(ex(i) + ew / 2, 300 + top, '…'); }
+      else {
+        const lines = w ? [hs[i], `α = ${w[i].toFixed(2)}`] : [hs[i]];
+        s += G.cell(ex(i), y, ew, h, lines, { fill: tint('--cls-0', 16), stroke: 'var(--cls-0)', key: w ? 'weights' : '', cls: w ? 'num' : '' });
+        s += ADD.text(ex(i) + ew / 2, 300 + top, t) + ADD.arrow(ex(i) + ew / 2, 284 + top, ex(i) + ew / 2, y + h + 4);
+      }
+      if (i < n - 1) s += ADD.arrow(ex(i) + ew, y + h / 2, ex(i + 1) - 3, y + h / 2);
+    });
+    /* бутылочное горлышко: последнее состояние энкодера = начальное состояние декодера */
+    s += ADD.arrow(320, y + h / 2, 350, y + h / 2);
+    s += G.vec(354, y + 13, [0, 0, 0, 0], '--cls-1', { cw: 18, blank: true, stroke: 'var(--cls-1)' });
+    s += ADD.text(390, y + 2, 'd чисел', 'warn') + ADD.arrow(428, y + h / 2, 456, y + h / 2);
+    if (!attention) s += ADD.text(390, y + 66, 'один вектор', 'warn');
+    for (let j = 0; j < 3; j++) {
+      const cur = j === step && (attention || o.highlight);
+      s += G.cell(dx(j), y, 80, h, [`s${sub(j + 1)}`], { fill: tint('--cls-3', cur ? 26 : 12), stroke: 'var(--cls-3)', sw: cur ? 2.5 : 0 });
+      s += ADD.text(dx(j) + 40, 300 + top, inp[j]) + ADD.arrow(dx(j) + 40, 284 + top, dx(j) + 40, y + h + 4);
+      if (j < 2) s += ADD.arrow(dx(j) + 80, y + h / 2, dx(j + 1) - 3, y + h / 2);
+      if (cur) s += G.cell(dx(j) - 5, 120 + top, 90, 34, [out[j]], { fill: tint('--cls-3', 22), stroke: 'var(--cls-3)', key: 'output' }) + ADD.arrow(dx(j) + 40, y - 2, dx(j) + 40, 158 + top);
+      else s += ADD.text(dx(j) + 40, 143 + top, out[j]) + ADD.arrow(dx(j) + 40, y - 2, dx(j) + 40, 152 + top);
+    }
+    if (attention) {
+      const cx = dx(step) + 40;
+      s += G.cell(cx - 60, 50, 120, 36, [`c${sub(step + 1)}`], { fill: tint('--cls-2', 26), stroke: 'var(--cls-2)', key: 'context' }) + ADD.arrow(cx, 86, cx, 116);
+      src.forEach((_, i) => {
+        if (hs[i] === '…') return;
+        const x1 = ex(i) + ew / 2, x2 = cx - 45 + i * 22;
+        s += G.path(`M ${x1} ${y - 2} Q ${(x1 + x2) / 2} 110 ${x2} 89`, `stroke:var(--cls-2);stroke-width:${(1 + w[i] * 6).toFixed(2)};opacity:.8`, false);
+      });
+    }
+    s += ADD.text(170, 335 + top, 'энкодер: RNN читает источник', 'label') + ADD.text(600, 335 + top, 'декодер: RNN пишет перевод', 'label');
+    host.innerHTML = ADD.svg(s, 760, 350 + top, attention ? 'Рекуррентный переводчик с attention' : 'Рекуррентный encoder–decoder');
+  },
+  rnn(host) {
+    const step = +document.querySelector('#rnn-step').value, enabled = document.querySelector('#rnn-enabled').checked;
+    this.encdec(host, { attention: enabled, step, highlight: true });
+    const w = this.weights(step);
+    document.querySelector('#rnn-result').textContent = enabled
+      ? `Σ α = ${w.reduce((a, b) => a + b, 0).toFixed(3)} · c${sub(step + 1)} = ${w.map((v, i) => `${v.toFixed(2)}·h${sub(i + 1)}`).join(' + ')}`
+      : 'Связь с источником: только последнее состояние энкодера h₃.';
+  },
+  example(i) {
+    const x = [[1, 0], [0, 1], [1, 1]], keys = [[1, 1], [0, 1], [1, 2]], values = [[1, 0], [1, 1], [2, 1]];
+    const q = x[i], scores = keys.map(k => (q[0] * k[0] + q[1] * k[1]) / Math.sqrt(2));
+    const weights = ADD.softmax(scores);
+    const output = [0, 1].map(j => weights.reduce((sum, w, k) => sum + w * values[k][j], 0));
+    return { x, queries: x, q, keys, values, raw: keys.map(k => q[0] * k[0] + q[1] * k[1]), scores, weights, output };
+  },
+  toks: ['кот', 'спит', 'дома'],
+  /* расчёт одного запроса в духе Alammar: столбцы — токены, строки — шаги */
+  qkv(host) {
+    const i = +document.querySelector('#query-position').value, e = this.example(i), cx = [310, 470, 630];
+    const rows = [['x: вход', 44], ['q = x·W_Q', 84], ['k = x·W_K', 118], ['v = x·W_V', 152], [`q${sub(i + 1)}·kⱼ`, 214], ['/ √dₖ = / √2', 252], ['softmax', 290], ['αⱼ·vⱼ', 328], [`z${sub(i + 1)} = Σⱼ αⱼ·vⱼ`, 392]];
+    let s = rows.map(([label, y]) => ADD.text(20, y + 17, label, 'label', 'start')).join('');
+    s += `<line x1="20" x2="740" y1="190" y2="190" style="stroke:var(--rule);stroke-dasharray:3 4"/>`;
+    s += ADD.text(470, 206, `запрос «${this.toks[i]}» сравниваем с ключом каждой позиции`, 'small');
+    this.toks.forEach((t, j) => {
+      const x = cx[j] - 46, me = j === i;
+      s += ADD.text(cx[j], 26, me ? `«${t}» · запрос` : `«${t}»`, me ? 'strong' : '');
+      s += G.vec(x, 44, e.x[j], '--cls-2');
+      s += `<g style="opacity:${me ? 1 : .35}">${G.vec(x, 84, e.queries[j], '--cls-3', me ? { stroke: 'var(--cls-3)', sw: 2.5 } : {})}</g>`;
+      s += G.vec(x, 118, e.keys[j], '--cls-1') + G.vec(x, 152, e.values[j], '--cls-0');
+      s += G.cell(x, 214, 92, 24, [e.raw[j].toFixed(2)], { cls: 'num' }) + ADD.arrow(cx[j], 238, cx[j], 250);
+      s += G.cell(x, 252, 92, 24, [e.scores[j].toFixed(2)], { cls: 'num' }) + ADD.arrow(cx[j], 276, cx[j], 288);
+      s += G.cell(x, 290, 92, 24, [e.weights[j].toFixed(3)], { cls: 'num', fill: tint('--cls-2', Math.round(10 + 50 * e.weights[j])), stroke: 'var(--cls-2)' }) + ADD.arrow(cx[j], 314, cx[j], 326);
+      s += G.vec(x, 328, e.values[j].map(v => v * e.weights[j]), '--cls-0');
+      s += ADD.arrow(cx[j], 354, 470 + (j - 1) * 30, 388);
+    });
+    s += G.vec(424, 392, e.output, '--cls-2', { stroke: 'var(--cls-2)', sw: 2, dec: 3, cw: 46 });
+    host.innerHTML = ADD.svg(s, 760, 430, 'Расчёт self-attention для одного запроса');
+    document.querySelector('#qkv-result').textContent = `z${sub(i + 1)} = ${e.weights.map((w, j) => `${w.toFixed(3)}·v${sub(j + 1)}`).join(' + ')} = [${e.output.map(v => v.toFixed(3)).join(', ')}]`;
+  },
+  /* матричная форма тех же чисел */
+  matrix(host) {
+    const i = +(document.querySelector('#query-position')?.value || 0), e = this.example(i), cw0 = 52, ch = 26;
+    const S = e.queries.map(q => e.keys.map(k => (q[0] * k[0] + q[1] * k[1]) / Math.sqrt(2)));
+    const A = S.map(r => ADD.softmax(r)), Z = A.map(r => [0, 1].map(j => r.reduce((s, w, k) => s + w * e.values[k][j], 0)));
+    const grid = (x, y, M, color, o = {}) => {
+      const cw = o.cw || cw0;
+      let g = M.map((row, r) => row.map((v, c) => G.rect(x + c * cw, y + r * ch, cw, ch, tint(color, o.hi === r ? 34 : 16), o.hi === r ? 'var(--cls-3)' : '', o.hi === r ? ';stroke-width:2' : '') +
+        ADD.text(x + c * cw + cw / 2, y + r * ch + 17.5, v.toFixed(o.dec ?? 2), 'num')).join('')).join('');
+      if (o.rows) g += o.rows.map((t, r) => ADD.text(x - 8, y + r * ch + 18, t, 'small', 'end')).join('');
+      if (o.cols) g += o.cols.map((t, c) => ADD.text(x + c * cw + cw / 2, y - 8, t, 'small')).join('');
+      if (o.label) g += ADD.text(x + M[0].length * cw / 2, y + M.length * ch + 20, o.label, 'small');
+      return o.key ? `<g data-f="${o.key}" tabindex="0">${g}</g>` : g;
+    };
+    const kt = [0, 1].map(r => e.keys.map(k => k[r])), y0 = 50, y1 = 232;
+    let s = grid(64, y0, e.queries, '--cls-3', { hi: i, rows: this.toks, label: 'Q · T×dₖ', dec: 0 }) + ADD.text(183, y0 + 44, '×');
+    s += grid(198, y0 + 13, kt, '--cls-1', { cols: this.toks, label: 'Kᵀ · dₖ×S', dec: 0 }) + ADD.text(392, y0 + 44, '/ √dₖ =');
+    s += grid(430, y0, S, '--cls-1', { hi: i, cols: this.toks, label: 'S · T×S', key: 'scores' }) + ADD.text(602, y0 + 44, '+');
+    s += grid(616, y0, S.map(r => r.map(() => 0)), '--ink-3', { cw: 40, label: 'M · нули', key: 'mask', dec: 0 });
+    s += ADD.text(20, y1 - 24, 'A = softmax(S + M) по каждой строке: строка в сумме 1', 'label', 'start');
+    s += grid(64, y1, A, '--cls-2', { hi: i, rows: this.toks, label: 'A · T×S', key: 'weights' }) + ADD.text(236, y1 + 44, '×');
+    s += grid(252, y1, e.values, '--cls-0', { label: 'V · S×dᵥ', dec: 0 }) + ADD.text(372, y1 + 44, '=');
+    s += grid(388, y1, Z, '--cls-2', { hi: i, label: 'Z · T×dᵥ', key: 'context' });
+    host.innerHTML = ADD.svg(s, 760, 340, 'Матричный расчёт одной головы attention');
+  },
+  maskTokens(mode) {
+    return mode === 'encoder' ? { q: ['the', 'cat', 'sleeps', 'PAD'], k: ['the', 'cat', 'sleeps', 'PAD'] }
+      : mode === 'causal' ? { q: ['BOS', 'кошка', 'спит', 'PAD'], k: ['BOS', 'кошка', 'спит', 'PAD'] }
+        : { q: ['BOS', 'кошка', 'спит'], k: ['the', 'cat', 'sleeps', 'PAD'] };
+  },
+  maskAllowed(mode, i, j) { return j < 3 && (mode !== 'causal' || j <= i); },
+  maskQuery: 1,
+  maskWhy(mode, i, j) {
+    const t = this.maskTokens(mode);
+    if (this.maskAllowed(mode, i, j)) return `«${t.q[i]}» читает «${t.k[j]}»: доступ разрешён`;
+    return `«${t.q[i]}» → «${t.k[j]}»: ` + (j === 3 ? 'PAD исключён' : 'будущая позиция закрыта');
+  },
+  mask(host) {
+    const mode = document.querySelector('#mask-mode').value, t = this.maskTokens(mode), rows = t.q.length;
+    const qi = this.maskQuery = Math.min(this.maskQuery, rows - 1), bx = j => 60 + j * 175, bw = 110;
+    const titles = { encoder: `self-attention энкодера: «${t.q[qi]}» читает весь источник, кроме PAD`, causal: `causal self-attention: «${t.q[qi]}» читает себя и прошлые позиции`, cross: `cross-attention: «${t.q[qi]}» из декодера читает источник` };
+    let s = ADD.text(380, 24, titles[mode], 'label');
+    const tokenBox = (x, y, label, role, idx, isQuery) => {
+      const fill = role === 'q' ? tint('--cls-3', 26) : role === 'k' ? tint('--cls-0', 18) : 'var(--panel-sunk)';
+      const stroke = role === 'q' ? 'var(--cls-3)' : role === 'k' ? 'var(--cls-0)' : 'var(--ink-3)';
+      const extra = role === 'off' ? ';stroke-dasharray:4 4;opacity:.55' : role === 'q' ? ';stroke-width:2.5' : '';
+      return `<g${isQuery != null ? ` data-query="${isQuery}" role="button" tabindex="0"` : ''}>${G.rect(x, y, bw, 40, fill, stroke, extra)}${ADD.text(x + bw / 2, y + 25, label)}</g>`;
+    };
+    if (mode === 'cross') {
+      s += ADD.text(60, 52, 'выход энкодера → K и V', 'small', 'start');
+      t.k.forEach((k, j) => {
+        const ok = this.maskAllowed(mode, qi, j);
+        s += tokenBox(bx(j), 62, k, ok ? 'k' : 'off', j, null);
+        if (ok) s += G.path(`M ${bx(j) + bw / 2} 104 L ${bx(qi) + bw / 2 + (j - 1) * 12} 156`, 'stroke:var(--cls-2);stroke-width:2');
+      });
+      t.q.forEach((q, i) => s += tokenBox(bx(i), 160, q, i === qi ? 'q' : 'k', i, i));
+      s += ADD.text(60, 226, 'декодер после causal self-attention → Q', 'small', 'start');
+    } else {
+      t.k.forEach((k, j) => {
+        const ok = this.maskAllowed(mode, qi, j), role = j === qi ? 'q' : ok ? 'k' : 'off';
+        s += tokenBox(bx(j), 150, k, role, j, j < rows ? j : null);
+        if (!ok) s += ADD.text(bx(j) + bw / 2, 212, j === 3 ? 'PAD: исключён' : 'закрыто: будущее', 'small');
+        else if (j === qi) {
+          const c = bx(j) + bw / 2;
+          s += G.path(`M ${c + 26} 148 C ${c + 40} 104, ${c - 40} 104, ${c - 22} 146`, 'stroke:var(--cls-2);stroke-width:2') + ADD.text(c, 212, 'запрос', 'small');
+        } else {
+          const a = bx(j) + bw / 2, b = bx(qi) + bw / 2 + (j - qi) * 9;
+          s += G.path(`M ${a} 148 Q ${(a + b) / 2} ${108 - 22 * Math.abs(j - qi)} ${b} 146`, 'stroke:var(--cls-2);stroke-width:2');
+        }
+      });
+    }
+    /* та же маска матрицей */
+    const my = 300, mx = j => 240 + j * 92;
+    s += ADD.text(380, 262, 'та же маска: строки — запросы, столбцы — ключи', 'label');
+    t.k.forEach((k, j) => s += ADD.text(mx(j) + 42, 288, k, 'small'));
+    for (let i = 0; i < rows; i++) {
+      s += ADD.text(230, my + i * 42 + 24, t.q[i], i === qi ? 'small strong' : 'small', 'end');
+      for (let j = 0; j < t.k.length; j++) {
+        const yes = this.maskAllowed(mode, i, j), x = mx(j), y = my + i * 42;
+        s += `<g data-cell="${i},${j}" role="button" tabindex="0" aria-label="${ADD.esc(this.maskWhy(mode, i, j))}">${G.rect(x, y, 84, 36, yes ? tint('--cls-2', i === qi ? 40 : 20) : 'var(--panel-sunk)', i === qi ? 'var(--cls-3)' : '', i === qi ? ';stroke-width:2' : '')}${ADD.text(x + 42, y + 23, yes ? '✓' : '×')}</g>`;
+      }
+    }
+    host.innerHTML = ADD.svg(s, 760, my + rows * 42 + 8, 'Кто кого читает: стрелки и маска');
+    const describe = (i, j) => { this.maskQuery = i; this.mask(host); document.querySelector('#mask-result').textContent = this.maskWhy(mode, i, j); };
+    const bind = (node, fn) => { node.onclick = fn; node.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); fn(); } }; };
+    host.querySelectorAll('[data-cell]').forEach(g => { const [i, j] = g.dataset.cell.split(',').map(Number); bind(g, () => describe(i, j)); });
+    host.querySelectorAll('[data-query]').forEach(g => { const i = +g.dataset.query; bind(g, () => { this.maskQuery = i; this.mask(host); document.querySelector('#mask-result').textContent = `Запрос «${t.q[i]}»: читает ${t.k.filter((_, j) => this.maskAllowed(mode, i, j)).map(k => `«${k}»`).join(', ')}.`; }); });
+    const result = document.querySelector('#mask-result');
+    if (!result.dataset.mode || result.dataset.mode !== mode) { result.dataset.mode = mode; result.textContent = 'Нажмите на токен или клетку маски.'; }
+  },
+  heads(host) {
+    let s = ADD.box(255, 15, 250, 50, ['X: B × T × d']);
+    for (let i = 0; i < 3; i++) {
+      const x = 20 + i * 250;
+      s += ADD.arrow(380, 65, x + 110, 105) + ADD.box(x, 110, 220, 75, [`голова ${i + 1}: Q, K, V`, 'все T позиций', 'ширина d / H']);
+      s += ADD.arrow(x + 110, 185, 380, 235);
+    }
+    s += ADD.box(205, 240, 350, 50, ['объединение: B × T × d']) + ADD.arrow(380, 290, 380, 325) + ADD.box(255, 330, 250, 50, ['W_O: d → d']);
+    host.innerHTML = ADD.svg(s, 760, 400, 'Параллельные головы attention');
+  },
+  /* причинный Pre-LN блок на двух позициях, как у Alammar: attention общий, LayerNorm и FFN — на позицию */
+  block(host) {
+    const cx = [250, 510], toks = ['кот', 'спит'], pw = 170;
+    const per = (y, label, fill, key) => `<g data-f="${key}" tabindex="0">${cx.map(c => G.pill(c - pw / 2, y, pw, 32, label, fill)).join('')}</g>`;
+    let s = ADD.text(380, 24, 'Pre-LN блок декодера на двух позициях', 'label');
+    s += `<rect x="120" y="94" width="520" height="378" rx="14" style="fill:none;stroke:var(--cls-3);stroke-dasharray:6 4"/>` + ADD.text(668, 284, '×N', 'strong');
+    cx.forEach((c, k) => {
+      s += G.vec(c - 44, 480, [0, 0, 0, 0], '--cls-2', { cw: 22, blank: true }) + ADD.text(c, 524, `«${toks[k]}»: x${sub(k + 1)}`);
+      s += G.vec(c - 44, 52, [0, 0, 0, 0], '--cls-2', { cw: 22, blank: true });
+      s += ADD.arrow(c, 478, c, 442) + ADD.arrow(c, 404, c, 370) + ADD.arrow(c, 332, c, 310) + ADD.arrow(c, 284, c, 258) + ADD.arrow(c, 220, c, 186) + ADD.arrow(c, 150, c, 126) + ADD.arrow(c, 100, c, 80);
+      const side = k ? 1 : -1, rx = c + side * 110, rx2 = c + side * 100;
+      s += G.path(`M ${c} 466 H ${rx} V 296 H ${c - side * -13}`, 'stroke-dasharray:6 4');
+      s += G.path(`M ${c} 272 H ${rx2} V 112 H ${c - side * -13}`, 'stroke-dasharray:6 4');
+    });
+    s += G.path(`M ${cx[0]} 404 L ${cx[1] - 30} 370`, 'stroke:var(--cls-2);stroke-width:2');
+    s += per(406, 'LayerNorm', 'var(--panel-sunk)', 'norm1');
+    s += G.pill(150, 334, 460, 36, 'causal self-attention', tint('--cls-2', 26), 'attention');
+    s += `<g data-f="add1" tabindex="0">${cx.map(c => G.circle(c, 296)).join('')}</g>`;
+    s += per(222, 'LayerNorm', 'var(--panel-sunk)', 'norm2');
+    s += per(152, 'FFN: d → 4d → d', tint('--cls-0', 20), 'ffn') + ADD.text(380, 173, 'одни веса', 'small');
+    s += `<g data-f="add2" tabindex="0">${cx.map(c => G.circle(c, 112)).join('')}</g>`;
+    s += ADD.text(380, 320, '«спит» читает «кот»', 'small');
+    s += ADD.text(570, 69, 'выход: d чисел на позицию', 'small', 'start');
+    host.innerHTML = ADD.svg(s, 760, 540, 'Причинный блок трансформера на двух позициях');
+  },
+  /* полный переводчик: два блока энкодера, блок декодера, K и V из энкодера в каждый cross-attention */
+  assembly(host) {
+    const RH = 28, GAP = 16, H = 700;
+    let s = ADD.text(380, 24, 'Трансформер для перевода', 'label');
+    const frame = (x, w, bottom, cols, rows, title, color) => {
+      let y = bottom - 14; const boxes = [];
+      for (const [kind, label, fill] of rows) {
+        const yb = y - RH;
+        s += kind === 'wide' ? G.pill(x + 24, yb, w - 48, RH, label, fill) : cols.map(c => G.pill(c - 60, yb, 120, RH, label, fill)).join('');
+        boxes.push({ yb, label }); y = yb - GAP;
+      }
+      const top = y + GAP - 28;
+      s += `<rect x="${x}" y="${top}" width="${w}" height="${bottom - top}" rx="14" style="fill:none;stroke:${color};stroke-width:1.6"/>` + ADD.text(x + 12, top + 18, title, 'small', 'start');
+      boxes.forEach((b, k) => {
+        const from = k ? boxes[k - 1].yb : bottom;
+        cols.forEach(c => s += ADD.arrow(c, from, c, b.yb + RH + 2));
+        if (b.label === 'Add & Norm') {
+          const start = k >= 2 ? boxes[k - 2].yb - 8 : bottom - 6;
+          s += G.path(`M ${cols[0]} ${start} H ${x + 12} V ${b.yb + RH / 2} H ${x + 22}`, 'stroke-dasharray:4 4');
+        }
+      });
+      return { top, boxes };
+    };
+    const inputs = (cols, toks) => cols.forEach((c, k) => {
+      s += ADD.text(c, H - 12, toks[k]) + G.vec(c - 40, H - 60, [0, 0, 0, 0], '--cls-2', { cw: 20, ch: 18, blank: true });
+      s += ADD.arrow(c, H - 62, c, H - 80) + G.circle(c, H - 90, 9) + ADD.arrow(c, H - 100, c, H - 112);
+    });
+    const ec = [110, 270], dc = [490, 650], A = tint('--cls-2', 24), N = 'var(--panel-sunk)', F = tint('--cls-0', 20);
+    const enc = [['wide', 'Self-attention', A], ['wide', 'Add & Norm', N], ['per', 'FFN', F], ['wide', 'Add & Norm', N]];
+    inputs(ec, ['the', 'cat']); inputs(dc, ['BOS', 'кошка']);
+    s += ADD.text(190, H - 86, '+ позиция', 'small') + ADD.text(570, H - 86, '+ позиция', 'small');
+    const e1 = frame(20, 340, H - 112, ec, enc, 'энкодер · блок 1', 'var(--cls-0)');
+    ec.forEach(c => s += ADD.arrow(c, e1.top, c, e1.top - 20));
+    const e2 = frame(20, 340, e1.top - 22, ec, enc, 'энкодер · блок 2', 'var(--cls-0)');
+    const dec = [['wide', 'Causal self-attention', A], ['wide', 'Add & Norm', N], ['wide', 'Cross-attention', tint('--cls-1', 24)], ['wide', 'Add & Norm', N], ['per', 'FFN', F], ['wide', 'Add & Norm', N]];
+    const d1 = frame(400, 340, H - 112, dc, dec, 'декодер · блок 1', 'var(--cls-3)');
+    const d2y = d1.top - 58;
+    dc.forEach(c => s += ADD.arrow(c, d1.top, c, d2y + 38));
+    s += `<rect x="400" y="${d2y}" width="340" height="36" rx="14" style="fill:none;stroke:var(--cls-3);stroke-dasharray:6 4"/>` + ADD.text(570, d2y + 23, 'декодер · блок 2: то же', 'small');
+    s += ADD.arrow(570, d2y, 570, d2y - 20) + G.pill(424, d2y - 50, 292, RH, 'Linear', tint('--cls-3', 22));
+    s += ADD.arrow(570, d2y - 50, 570, d2y - 70) + G.pill(424, d2y - 100, 292, RH, 'Softmax → P(следующий токен)', tint('--cls-1', 22));
+    /* память: выход энкодера → K и V для каждого блока декодера */
+    const crossY = d1.boxes[2].yb + RH / 2, mem = 'stroke:var(--cls-1);stroke-width:2';
+    ec.forEach(c => s += ADD.arrow(c, e2.top, c, e2.top - 18) + G.vec(c - 40, e2.top - 36, [0, 0, 0, 0], '--cls-0', { cw: 20, ch: 18, blank: true }));
+    s += G.path(`M 110 ${e2.top - 36} V ${e2.top - 46} H 270 V ${e2.top - 36}`, mem, false);
+    s += G.path(`M 190 ${e2.top - 46} V ${e2.top - 56} H 380 V ${crossY} H 422`, mem);
+    s += G.path(`M 380 ${d2y + 18} H 398`, mem);
+    s += ADD.text(30, e2.top - 64, 'выход энкодера → K, V для cross-attention каждого блока', 'warn', 'start');
+    host.innerHTML = ADD.svg(s, 760, H, 'Путь источника и перевода через трансформер');
+  },
+};
+
+const figureDrawers = {
+  encdec: h => W3.encdec(h, { long: document.querySelector('#encdec-length')?.value === 'long' }),
+  'rnn-attention': h => W3.rnn(h), qkv: h => W3.qkv(h),
+  'attention-matrix': h => W3.matrix(h), mask: h => W3.mask(h),
+  heads: h => W3.heads(h), block: h => W3.block(h), assembly: h => W3.assembly(h),
+};
+for (const [name, draw] of Object.entries(figureDrawers)) figureDrawers[name] = h => { h.classList.add('w3fig'); draw(h); };
+Object.assign(QUIZ.figs, figureDrawers);
+function redrawAll() { for (const h of document.querySelectorAll('[data-fig]')) figureDrawers[h.dataset.fig](h); }
+document.addEventListener('DOMContentLoaded', () => {
+  for (const id of ['encdec-length', 'rnn-step', 'rnn-enabled', 'query-position', 'mask-mode']) document.getElementById(id).onchange = redrawAll;
+  BLEU.init();
+});
+
+</script>
+</body>
+</html>
+
+<!-- built from demo/ · sha256:635795a46b51466d1da5d6ab10e570978082e74a1a94bb92fe2eff2906e9d49b -->

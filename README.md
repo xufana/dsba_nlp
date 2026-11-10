@@ -9,7 +9,10 @@
 * [Неделя 1 — представления текста](week01_text_representations/demo/week01_add.html): постановка задачи, токенизация, TF-IDF, классификация и эмбеддинги.
 * [Неделя 2 — языковая модель и генерация](week02_language_modelling/demo/week02_add.html): BPE, n-граммы, обучение, рекуррентные сети и декодирование.
 
-[Ноутбуки и полные семинары](https://github.com/xufana/dsba_nlp/tree/autumn-2026) находятся в `autumn-2026`. На каждой странице есть ссылки на семинар и ноутбук нужной недели.
+* [Занятие 3 — машинный перевод и трансформер](week03_attention_transformer/demo/week03_add.html): encoder–decoder, attention, Q/K/V, маски и устройство сети.
+* [Занятие 4 — практика](week04_practice/week04_practice.ipynb): классификатор, генератор на GRU и блок трансформера с SVG-схемами.
+
+[Ноутбуки и полные семинары](https://github.com/xufana/dsba_nlp/tree/autumn-2026) находятся в `autumn-2026`. Ноутбук занятия 4 находится в ADD-2026; ссылки на полный курс ведут в autumn-2026.
 
 ## Редактирование
 
@@ -27,6 +30,7 @@ uv run python scripts/build_add.py
 uv run python scripts/build_add_site.py
 node scripts/check_demo.js week01_text_representations week01_text_representations/demo/week01_add.html week01_text_representations/demo/add/check_steps.json
 node scripts/check_demo.js week02_language_modelling week02_language_modelling/demo/week02_add.html week02_language_modelling/demo/add/check_steps.json
+node scripts/check_demo.js week03_attention_transformer week03_attention_transformer/demo/week03_add.html week03_attention_transformer/demo/add/check_steps.json
 ```
 
 Локальный курс: `/tmp/dsba_nlp/_site/add-2026/index.html`. Проверки и скриншоты: `/tmp/dsba_nlp/weekNN/check_out/`.

@@ -333,5 +333,22 @@
       "height": 1100,
       "expr": "document.querySelector('[data-q=\"q-ppl-link\"] .qz-check')?.click();window.checkEquations()"
     }
+  ],
+  "figures": [
+    {
+      "sel": "[data-fig=\"shift\"]",
+      "file": "shift.png",
+      "svg": true
+    },
+    {
+      "sel": "[data-fig=\"rnn\"]",
+      "file": "rnn.png",
+      "svg": true
+    },
+    {
+      "sel": "[data-fig=\"gru\"]",
+      "file": "gru.png",
+      "svg": true
+    }
   ]
 }

@@ -866,6 +866,29 @@ svg [data-f].hi circle { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)
 .formula .equation math { font-size: 1.15em; margin: 0; }
 .formula p { font-size: 17px; line-height: 1.6; margin: 8px 0 18px; }
 @media (max-width: 600px) { .equation math, .formula .equation math { font-size: 1em; } }
+
+/* Схемы занятия 3: подписи разных ролей и подсветка прямоугольников с заданной заливкой. */
+[data-link-scope] svg .label { font-family: var(--body); font-size: 15px; fill: var(--ink-2); }
+[data-link-scope] svg .small { font-size: 12.5px; fill: var(--ink-2); }
+[data-link-scope] svg .num { font-size: 12.5px; }
+[data-link-scope] svg .strong { font-weight: 600; fill: var(--ink); }
+[data-link-scope] svg .warn { font-size: 12.5px; fill: var(--cls-1); }
+.w3fig svg [data-f].hi > rect:not(.hit), .w3fig svg [data-f].hi > g > rect { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)) !important; stroke: var(--cls-1) !important; }
+.w3fig svg [data-f].hi > path { stroke: var(--cls-1) !important; }
+.w3fig svg [data-cell], .w3fig svg [data-query] { cursor: pointer; }
+
+/* Калькулятор BLEU: n-граммы перевода и их совпадения с эталоном. */
+.bleu .row { display: flex; gap: 6px 12px; align-items: baseline; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.bleu .k { font-family: var(--mono); font-size: 13px; color: var(--ink-3); min-width: 84px; }
+.bleu .g { flex: 1; min-width: 0; }
+.bleu .p { font-family: var(--mono); font-size: 14px; white-space: nowrap; margin-left: auto; }
+.bleu .tok.hit { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.bleu .tok.clip { text-decoration: line-through; border-color: var(--cls-1); color: var(--ink-2); }
+.bleu .tok.miss { color: var(--ink-2); }
+.bleu .none { font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
+.bleu .total { font-family: var(--mono); font-size: 15px; margin-top: 12px; }
+.bleu-input input { flex: 1; min-width: 0; font-family: var(--mono); }
+.bleu-input { flex-wrap: nowrap; }
 </style>
 <meta name="quiz-store" content="add2026_week02">
 
@@ -1718,4 +1741,4 @@ document.addEventListener('DOMContentLoaded',()=>{
 </body>
 </html>
 
-<!-- built from demo/ · sha256:b015b70739bc6ea73fd04ff6f134058f777ac9d42c644d3e71803816d239d504 -->
+<!-- built from demo/ · sha256:d5dd39b95e1d6a4207f7974ff34adad75af8f2e56f53b0e3176c67e24e3d6658 -->

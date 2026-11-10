@@ -11,7 +11,7 @@ import demo_text
 import quiz_text
 
 ROOT = Path(__file__).resolve().parent.parent
-WEEKS = ("week01_text_representations", "week02_language_modelling")
+WEEKS = ("week01_text_representations", "week02_language_modelling", "week03_attention_transformer")
 
 
 def code_panel(source):

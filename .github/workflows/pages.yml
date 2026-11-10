@@ -9,6 +9,8 @@ on:
       - "week*/demo/week*_lecture.html"
       - "week*/demo/week*_add.html"
       - "week*/README.md"
+      - "week04_practice/*.ipynb"
+      - "week04_practice/practice_data.json"
       - "scripts/build_site.py"
       - "scripts/build_add_site.py"
       - ".github/workflows/pages.yml"
