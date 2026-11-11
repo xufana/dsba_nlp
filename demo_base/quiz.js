@@ -136,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ui.innerHTML = row(`<button class="primary qz-check" disabled>Check</button>`);
       st.vals = st.vals || {};
       const inputs = $$("input.qz-blank", host);
-      const paint = () => { $(".qz-check", host).disabled = inputs.some(i => !i.value.trim()); };
+      const paint = () => { const c = $(".qz-check", host); if (c) c.disabled = inputs.some(i => !i.value.trim()); };   // answered: no Check button
       inputs.forEach(i => {
         i.value = st.vals[i.dataset.blank] || "";
         i.addEventListener("input", () => { st.vals[i.dataset.blank] = i.value; paint(); save(); });

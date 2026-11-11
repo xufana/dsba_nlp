@@ -1,0 +1,29 @@
+[project]
+name = "nlp-dsba-week09"
+version = "0.1.0"
+description = "Week 9 — information retrieval (lecture) and RAG (seminar)."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "matplotlib>=3.8",
+    "torch>=2.2",
+    "transformers[torch]>=5.0",
+    "ipykernel>=6.29",
+    "sentence-transformers>=5.0",
+    "langchain-core>=1.0",
+    "langchain-classic>=1.0",
+    "langchain-community>=0.4",
+    "langchain-text-splitters>=1.0",
+    "langchain-huggingface>=1.0",
+    "langchain-qdrant>=1.0",
+    "qdrant-client>=1.12",
+    "rank-bm25>=0.2.2",
+    "rapidfuzz>=3.9",
+    "openpyxl>=3.1",
+    "scikit-learn>=1.4",
+]
+
+[tool.uv]
+package = false

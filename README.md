@@ -12,6 +12,7 @@ This repository contain materials for NLP course for 4th year students of HSE DS
 6. Week 6: The bill — scaling laws, the modern block, serving. [seminar](/week06_modern_llm/)
 7. Week 7: Parameter-efficient fine-tuning — linear probing, LP-FT, prompt tuning, adapters, LoRA, and what training fewer parameters saves. [seminar](/week07_peft/)
 8. Week 8: From next token to assistant — pretraining data, SFT, DPO, RL with a verifier, and the cost of fine-tuning. [seminar](/week08_training_alignment/)
+9. Week 9: Information retrieval — BM25, dense retrieval, ANN, fusion, reranking; the seminar builds RAG on top of it. [seminar](/week09_rag/)
 
 Interactive pages for the seminars: [xufana.github.io/dsba_nlp](https://xufana.github.io/dsba_nlp/).
 

@@ -1,0 +1,305 @@
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Lecture 9<br>Information Retrieval · check yourself</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-btns">
+    <button id="btn-reset" title="Forget every answer on this page">Reset answers</button>
+    <button id="btn-theme" title="Light / dark">Theme</button>
+  </div>
+  <div class="quiz-progress" id="quiz-progress"></div>
+  <div class="rail-foot">
+    <a class="back" href="week09_demo.html">← the seminar demo</a>
+    <div style="margin-top:10px">{{inline:rail-note}}</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================= hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>Information retrieval,<br>as questions</h1>
+  <p class="lede">{{inline:lede}}</p>
+  <div class="prose">{{text:intro-p1}}</div>
+</section>
+
+<!-- ============================================================= task -->
+<section id="task">
+  <p class="eyebrow">Block 00 · the task</p>
+  <h2>A query against a collection</h2>
+  <div class="prose slide">{{text:s-task}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Classification and retrieval</span><span>one label, or an order over the collection</span></div>
+    <div class="panel-body"><div data-fig="task"></div></div>
+    <div class="panel-note">{{inline:task-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:task-p1}}{{text:task-more}}</div></details>
+  <div class="prose slide">{{text:s-why}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>A question and its post</span><span>which of its words the post contains</span></div>
+    <div class="panel-body"><div data-fig="mismatch"></div></div>
+    <div class="panel-note">{{inline:mismatch-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:task-p1b}}{{text:mismatch-more}}{{text:task-vocab}}</div></details>
+  {{quiz:q-is-ir}}
+  <div class="prose slide">{{text:s-nothing}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>No answer, still a ranking</span><span>«Как сварить борщ?» against the posts</span></div>
+    <div class="panel-body"><div data-fig="noanswer"></div></div>
+    <div class="panel-note">{{inline:noanswer-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:task-p2}}{{text:noanswer-more}}</div></details>
+</section>
+
+<!-- ============================================================= eval -->
+<section id="eval">
+  <p class="eyebrow">Block 01 · what "good" means</p>
+  <h2>Relevance and the metrics</h2>
+  <div class="prose slide">{{text:s-rel}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Pooling</span><span>only what some system retrieved gets judged</span></div>
+    <div class="panel-body"><div data-fig="pool"></div></div>
+    <div class="panel-note">{{inline:pool-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:eval-pool}}{{text:pool-more}}</div></details>
+  <div class="prose slide">{{text:s-gold}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:eval-gold}}</div></details>
+  <div class="prose slide">{{text:s-metrics}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Ranking metrics</span><span>one list, ten metrics</span></div>
+    <div class="panel-body"><div data-fig="metrics"></div>
+      <div class="mt-desc prose" data-m="p" hidden>{{text:mt-p}}</div>
+      <div class="mt-desc prose" data-m="rprec" hidden>{{text:mt-rprec}}</div>
+      <div class="mt-desc prose" data-m="recall" hidden>{{text:mt-recall}}</div>
+      <div class="mt-desc prose" data-m="hit" hidden>{{text:mt-hit}}</div>
+      <div class="mt-desc prose" data-m="f1" hidden>{{text:mt-f1}}</div>
+      <div class="mt-desc prose" data-m="rr" hidden>{{text:mt-rr}}</div>
+      <div class="mt-desc prose" data-m="ap" hidden>{{text:mt-ap}}</div>
+      <div class="mt-desc prose" data-m="ndcg" hidden>{{text:mt-ndcg}}</div>
+      <div class="mt-desc prose" data-m="err" hidden>{{text:mt-err}}</div>
+      <div class="mt-desc prose" data-m="bpref" hidden>{{text:mt-bpref}}</div></div>
+    <div class="panel-note">{{inline:metrics-caption}}</div>
+  </div>
+  {{quiz:q-metrics}}
+  <div class="prose slide">{{text:s-reader}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:eval-p4}}</div></details>
+  {{quiz:q-which-metric}}
+  <div class="prose slide">{{text:s-trap1}}</div>
+  {{quiz:q-pk-cap}}
+  <div class="prose slide">{{text:s-trap2}}</div>
+  {{quiz:q-recall-k}}
+  <div class="prose slide">{{text:s-trap3}}</div>
+  {{quiz:q-mrr-drop}}
+</section>
+
+<!-- ============================================================= lexical -->
+<section id="lexical">
+  <p class="eyebrow">Block 02 · lexical search</p>
+  <h2>The inverted index and BM25</h2>
+  <div class="prose slide">{{text:s-index}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>An inverted index</span><span>term → the documents that contain it</span></div>
+    <div class="panel-body"><div data-fig="invidx"></div></div>
+    <div class="panel-note">{{inline:invidx-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:lex-p1}}</div></details>
+  <div class="prose slide">{{text:s-bm25}}</div>
+  <div class="formula"><span class="fn">BM25 · Robertson et al. (1994)</span>
+    <math display="block"><mrow><mtext>score</mtext><mo stretchy="false">(</mo><mi>q</mi><mo>,</mo><mi>d</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mrow><mi>t</mi><mo>∈</mo><mi>q</mi></mrow></munder><mrow class="c-idf"><mtext>idf</mtext><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow><mo>·</mo><mfrac><mrow><mtext>tf</mtext><mo stretchy="false">(</mo><mi>t</mi><mo>,</mo><mi>d</mi><mo stretchy="false">)</mo><mo>·</mo><mrow class="c-k1"><mo stretchy="false">(</mo><msub><mi>k</mi><mn>1</mn></msub><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></mrow></mrow><mrow><mtext>tf</mtext><mo stretchy="false">(</mo><mi>t</mi><mo>,</mo><mi>d</mi><mo stretchy="false">)</mo><mo>+</mo><mrow class="c-k1"><msub><mi>k</mi><mn>1</mn></msub><mo>·</mo></mrow><mrow class="c-b"><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>b</mi><mo>+</mo><mi>b</mi><mo>·</mo><mo>|</mo><mi>d</mi><mo>|</mo><mo>/</mo><mtext>avgdl</mtext><mo stretchy="false">)</mo></mrow></mrow></mfrac></mrow></math>
+  </div>
+  <div class="prose slide">{{text:s-bm25parts}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>One term's contribution</span><span>tf-idf grows forever, BM25 saturates</span></div>
+    <div class="panel-body"><div data-fig="bm25"></div></div>
+    <div class="panel-note">{{inline:bm25-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:lex-p2}}{{text:lex-p3}}</div></details>
+  {{quiz:q-bm25}}
+  <div class="prose slide">{{text:s-lexwhat}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:lex-p4}}</div></details>
+  {{quiz:q-lexical}}
+  <div class="prose slide">{{text:s-expand}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:lex-expand}}</div></details>
+</section>
+
+<!-- ============================================================= dense -->
+<section id="dense">
+  <p class="eyebrow">Block 03 · vectors</p>
+  <h2>Offline, online, and bi-encoders</h2>
+  <div class="prose slide">{{text:s-lanes}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Offline and online</span><span>the index is built once; a query only reads it</span></div>
+    <div class="panel-body"><div data-fig="lanes"></div></div>
+    <div class="panel-note">{{inline:lanes-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:dense-lead}}</div></details>
+  <div class="prose slide">{{text:s-bienc}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>A bi-encoder</span><span>each text alone → one vector → a dot product</span></div>
+    <div class="panel-body"><div data-fig="bienc"></div></div>
+    <div class="panel-note">{{inline:bienc-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:dense-p1}}</div></details>
+  <div class="prose slide">{{text:s-train}}</div>
+  <div class="formula"><span class="fn">InfoNCE with in-batch negatives · s — the similarity, τ — a temperature</span>
+    <math display="block"><mrow><mi>ℒ</mi><mo>=</mo><mo>−</mo><mfrac><mn>1</mn><mi>B</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>B</mi></munderover><mi>log</mi><mfrac><mrow><mi>exp</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">(</mo><msub><mi>q</mi><mi>i</mi></msub><mo>,</mo><msub><mi>p</mi><mi>i</mi></msub><mo stretchy="false">)</mo><mo>/</mo><mi>τ</mi><mo stretchy="false">)</mo></mrow><mrow><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>B</mi></munderover><mi>exp</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">(</mo><msub><mi>q</mi><mi>i</mi></msub><mo>,</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="false">)</mo><mo>/</mo><mi>τ</mi><mo stretchy="false">)</mo></mrow></mfrac></mrow></math>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>In-batch negatives</span><span>one matrix product, B × B scores</span></div>
+    <div class="panel-body"><div data-fig="inbatch"></div></div>
+    <div class="panel-note">{{inline:inbatch-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:dense-p2}}{{text:dense-p3}}</div></details>
+  {{quiz:q-inbatch}}
+  <div class="prose slide">{{text:s-neg}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Negative mining</span><span>from easy to hard</span></div>
+    <div class="panel-body"><div data-fig="negs"></div></div>
+    <div class="panel-note">{{inline:negs-caption}}</div>
+  </div>
+  <div class="prose">{{text:neg-table}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:dense-neg}}</div></details>
+  <div class="prose slide">{{text:s-asym}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:dense-p4}}</div></details>
+  {{quiz:q-asym}}
+  <div class="panel">
+    <div class="panel-head"><span>Prefixes</span><span>where the documents land</span></div>
+    <div class="panel-body"><div data-fig="prefix"></div></div>
+    <div class="panel-note">{{inline:prefix-caption}}</div>
+  </div>
+</section>
+
+<!-- ============================================================= ann -->
+<section id="ann">
+  <p class="eyebrow">Block 04 · scale</p>
+  <h2>Approximate nearest neighbours</h2>
+  <div class="prose slide">{{text:s-ann}}</div>
+  <div class="prose">{{text:ann-asym}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:ann-p1}}</div></details>
+  <div class="prose slide">{{text:s-hnsw}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>HNSW</span><span>a greedy walk, layer by layer</span></div>
+    <div class="panel-body"><div data-fig="hnsw"></div></div>
+    <div class="panel-note">{{inline:hnsw-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:ann-hnsw}}</div></details>
+  <div class="prose slide">{{text:s-ivf}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>IVF</span><span>probe the nearest cells only</span></div>
+    <div class="panel-body"><div data-fig="ivf"></div></div>
+    <div class="panel-note">{{inline:ivf-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:ann-ivf}}</div></details>
+  <div class="prose slide">{{text:s-ivfreal}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>IVF on real vectors</span><span>recall of the exact top 10 by n_probe</span></div>
+    <div class="panel-body"><div data-fig="ivfreal"></div></div>
+    <div class="panel-note">{{inline:ivfreal-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:ivf-real}}</div></details>
+  <div class="prose slide">{{text:s-pq}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Product quantisation</span><span>4 KB → m bytes</span></div>
+    <div class="panel-body"><div data-fig="pq"></div></div>
+    <div class="panel-note">{{inline:pq-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:ann-pq}}</div></details>
+  {{quiz:q-ann}}
+  <div class="prose slide">{{text:s-filter}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:ann-p2}}</div></details>
+  {{quiz:q-filter}}
+  <div class="panel">
+    <div class="panel-head"><span>Filtering</span><span>after the search, or during it</span></div>
+    <div class="panel-body"><div data-fig="postf"></div></div>
+    <div class="panel-note">{{inline:postf-caption}}</div>
+  </div>
+</section>
+
+<!-- ============================================================= hybrid -->
+<section id="hybrid">
+  <p class="eyebrow">Block 05 · both</p>
+  <h2>Hybrid search and rank fusion</h2>
+  <div class="prose slide">{{text:s-hyb}}</div>
+  <div class="formula"><span class="fn">Reciprocal rank fusion · Cormack et al. (2009)</span>
+    <math display="block"><mrow><mtext>RRF</mtext><mo stretchy="false">(</mo><mi>d</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mrow><mi>m</mi><mo>∈</mo><mtext>retrievers</mtext></mrow></munder><mfrac><msub><mi>w</mi><mi>m</mi></msub><mrow><mi>c</mi><mo>+</mo><msub><mtext>rank</mtext><mi>m</mi></msub><mo stretchy="false">(</mo><mi>d</mi><mo stretchy="false">)</mo></mrow></mfrac></mrow></math>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:hyb-p1}}</div></details>
+  <div class="prose slide">{{text:s-c}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>The weight of a rank</span><span>1 / (c + r), relative to rank 1</span></div>
+    <div class="panel-body"><div data-fig="rrfw"></div></div>
+    <div class="panel-note">{{inline:rrfw-caption}}</div>
+  </div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:hyb-p2}}</div></details>
+  {{quiz:q-rrf}}
+</section>
+
+<!-- ============================================================= rerank -->
+<section id="rerank">
+  <p class="eyebrow">Block 06 · the second stage</p>
+  <h2>Cross-encoders, late interaction, cascades</h2>
+  <div class="prose slide">{{text:s-inter}}</div>
+  <div class="formula"><span class="fn">ColBERT's MaxSim · E<sub>q</sub>, E<sub>d</sub> — token vectors</span>
+    <math display="block"><mrow><mtext>score</mtext><mo stretchy="false">(</mo><mi>q</mi><mo>,</mo><mi>d</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>q</mi></mrow></munder><munder><mi>max</mi><mrow><mi>j</mi><mo>∈</mo><mi>d</mi></mrow></munder><mspace width="0.2em"/><msub><mi>E</mi><msub><mi>q</mi><mi>i</mi></msub></msub><mo>·</mo><msub><mi>E</mi><msub><mi>d</mi><mi>j</mi></msub></msub></mrow></math>
+  </div>
+  <div class="prose">{{text:rr-table}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:rr-p1}}</div></details>
+  {{quiz:q-enc}}
+  <div class="prose slide">{{text:s-slow}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:rr-slow}}</div></details>
+  <div class="prose slide">{{text:s-rerank}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:rr-task}}</div></details>
+  <div class="panel">
+    <div class="panel-head"><span>A cascade on gonzo_ML</span><span>the reranker's MRR and its ceiling, by depth</span></div>
+    <div class="panel-body"><div data-fig="cascade"></div></div>
+    <div class="panel-note">{{inline:cascade-caption}}</div>
+  </div>
+  <div class="prose slide">{{text:s-cascade}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:rr-p2}}</div></details>
+  {{quiz:q-cascade}}
+</section>
+
+<!-- ============================================================= rag -->
+<section id="rag">
+  <p class="eyebrow">Block 07 · the application</p>
+  <h2>Retrieval for a language model</h2>
+  <div class="prose slide">{{text:s-rag}}</div>
+  <figure class="ragfig"><svg class="rag-fig" viewBox="0 0 940 360" role="img" ><defs><marker id="lecarwf2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs><rect class="zone" x="165" y="85" width="400" height="235" rx="12"/><text class="t s" x="178" y="104">Retriever</text><rect class="zone" x="672" y="85" width="136" height="235" rx="12"/><text class="t s" x="684" y="104">Generator</text><rect class="bx ok" x="416" y="6" width="150" height="48" rx="3"/><rect class="bx ok" x="408" y="14" width="150" height="48" rx="3"/><rect class="bx ok" x="400" y="22" width="150" height="48" rx="3"/><text class="t" x="475.0" y="50.0" text-anchor="middle">documents</text><line class="ln" x1="475" y1="71" x2="475" y2="93" marker-end="url(#lecarwf2)"/><rect class="bx acc" x="400" y="95" width="150" height="44" rx="8"/><text class="t " x="475.0" y="121.0" text-anchor="middle">document encoder</text><line class="ln" x1="475" y1="140" x2="475" y2="163" marker-end="url(#lecarwf2)"/><rect class="bx ok" x="416" y="152" width="150" height="48" rx="3"/><rect class="bx ok" x="408" y="160" width="150" height="48" rx="3"/><rect class="bx ok" x="400" y="168" width="150" height="48" rx="3"/><text class="t" x="475.0" y="196.0" text-anchor="middle">search index</text><line class="ln" x1="475" y1="217" x2="475" y2="238" marker-end="url(#lecarwf2)"/><rect class="bx plain" x="400" y="240" width="150" height="44" rx="3"/><text class="t " x="475.0" y="266.0" text-anchor="middle">vector search</text><text class="t b" x="30" y="268">Input</text><line class="ln" x1="82" y1="262" x2="178" y2="262" marker-end="url(#lecarwf2)"/><rect class="bx acc" x="180" y="240" width="150" height="44" rx="8"/><text class="t " x="255.0" y="266.0" text-anchor="middle">query encoder</text><line class="ln" x1="332" y1="262" x2="398" y2="262" marker-end="url(#lecarwf2)"/><line class="ln" x1="552" y1="262" x2="688" y2="262" marker-end="url(#lecarwf2)"/><rect class="bx acc" x="690" y="218" width="100" height="92" rx="10"/><text class="t " x="740.0" y="268.0" text-anchor="middle">LLM</text><line class="ln" x1="82" y1="300" x2="688" y2="300" marker-end="url(#lecarwf2)"/><line class="ln" x1="792" y1="262" x2="852" y2="262" marker-end="url(#lecarwf2)"/><text class="t b" x="858" y="268">Output</text><circle class="num" cx="134" cy="246" r="11"/><text class="numt" x="134" y="250" text-anchor="middle">1</text><circle class="num" cx="556" cy="236" r="11"/><text class="numt" x="556" y="240" text-anchor="middle">2</text><circle class="num" cx="556" cy="91" r="11"/><text class="numt" x="556" y="95" text-anchor="middle">3</text><circle class="num" cx="620" cy="246" r="11"/><text class="numt" x="620" y="250" text-anchor="middle">4</text><circle class="num" cx="866" cy="236" r="11"/><text class="numt" x="866" y="240" text-anchor="middle">5</text><text class="t s" x="30" y="345"><tspan class="numtx">1</tspan> query preprocessing   <tspan class="numtx">2</tspan> search method   <tspan class="numtx">3</tspan> embedder   <tspan class="numtx">4</tspan> reranker   <tspan class="numtx">5</tspan> postprocessing · choice of model</text></svg><figcaption>{{inline:rag-caption}}</figcaption></figure>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:rag-p1}}</div></details>
+  <div class="prose slide">{{text:s-rag2}}</div>
+  <details class="more"><summary>In detail</summary><div class="prose">{{text:rag-p2}}</div></details>
+  {{quiz:q-blame}}
+  <div class="panel">
+    <div class="panel-head"><span>Whose failure</span><span>two evaluations, four outcomes</span></div>
+    <div class="panel-body"><div data-fig="blame"></div></div>
+    <div class="panel-note">{{inline:blame-caption}}</div>
+  </div>
+  {{quiz:q-threshold}}
+  <div class="panel">
+    <div class="panel-head"><span>The best cosine, answerable or not</span><span>bge-m3 on gonzo_ML</span></div>
+    <div class="panel-body"><div data-fig="strip"></div></div>
+    <div class="panel-note">{{inline:strip-caption}}</div>
+  </div>
+</section>
+
+<!-- ============================================================= design -->
+<section id="design">
+  <p class="eyebrow">Block 08 · design it</p>
+  <h2>Design it</h2>
+  {{quiz:q-design}}
+</section>
+
+<!-- ============================================================= sources -->
+<section id="sources">
+  <p class="eyebrow">Block 09 · sources</p>
+  <h2>Sources</h2>
+  <div class="prose footnote">{{text:sources}}</div>
+</section>
+
+</div>
+</main>
+</div>

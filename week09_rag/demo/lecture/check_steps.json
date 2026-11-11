@@ -1,0 +1,154 @@
+{
+ "steps": [
+  {
+   "name": "count",
+   "expr": "const qs=[...document.querySelectorAll('.qz')]; return qs.length+' questions · types '+JSON.stringify(qs.reduce((a,q)=>(a[q.dataset.type]=(a[q.dataset.type]||0)+1,a),{}))+' · figs '+[...document.querySelectorAll('[data-fig]')].map(f=>f.dataset.fig+':'+(f.querySelector('svg,table,button')?'ok':'EMPTY')).join(',')+' · progress: '+document.getElementById('quiz-progress').textContent"
+  },
+  {
+   "name": "nofig",
+   "expr": "return document.querySelectorAll('.qz-nofig').length+' missing figures'"
+  },
+  {
+   "name": "values",
+   "expr": "return JSON.stringify(Object.fromEntries(Object.entries(QUIZ.values).map(([k,v])=>[k,typeof v==='number'?+v.toFixed(4):v])))"
+  },
+  {
+   "name": "placeholders left",
+   "expr": "const m=document.body.innerText.match(/\\{[a-z][a-z0-9_]*\\}/g); return m? 'LEFT: '+m.join(' ') : 'none'"
+  },
+  {
+   "name": "math left",
+   "expr": "const m=document.body.innerText.match(/\\$[^$\\n]{1,40}\\$/g); return m? 'RAW TEX: '+m.join(' ') : 'none'"
+  },
+  {
+   "name": "details",
+   "expr": "const d=[...document.querySelectorAll('details.more')]; const empty=d.filter(x=>x.querySelector('.prose').textContent.trim().length<20).length; d.forEach(x=>x.open=true); return d.length+' folds, '+empty+' empty; opened all'"
+  },
+  {
+   "name": "svg text clipping",
+   "expr": "const bad=[]; document.querySelectorAll('svg').forEach((s,si)=>{ const vb=s.viewBox.baseVal; if(!vb||!vb.width) return; s.querySelectorAll('text').forEach(t=>{ if(t.getAttribute('transform')) return; let b; try{b=t.getBBox();}catch(e){return;} if(b.width===0) return; if(b.x<-1||b.y<-1||b.x+b.width>vb.width+1||b.y+b.height>vb.height+1) bad.push((s.closest('[id]')||{id:'svg'+si}).id+': \"'+t.textContent.slice(0,30)+'\" '+Math.round(b.x)+','+Math.round(b.y)+' '+Math.round(b.width)+'x'+Math.round(b.height)+' in '+vb.width+'x'+vb.height); }); }); return bad.length? bad.slice(0,25).join(' | ') : 'no clipped text'"
+  },
+  {
+   "name": "metrics vs python",
+   "expr": "const c=JSON.parse(document.getElementById('lecture-data').textContent).metric_cases; let worst=0, bad=[]; c.forEach((x,i)=>{const m=QUIZ.metrics(x.rels,x.k,x.R); for(const k in x.want){const d=Math.abs(m[k]-x.want[k]); worst=Math.max(worst,d); if(d>1e-9) bad.push(i+':'+k);}}); return (bad.length?'MISMATCH '+bad.join(','):'✓')+' '+c.length+' cases, max |Δ| '+worst.toExponential(1)"
+  },
+  {
+   "name": "ivf vs python",
+   "expr": "const L=JSON.parse(document.getElementById('lecture-data').textContent).ivf; let n=0, bad=[]; L.presets.forEach((q,i)=>L.preset_found[i].forEach((want,j)=>{n++; const got=QUIZ.ivfSearch(q,j+1).found.slice().sort((a,b)=>a-b); if(JSON.stringify(got)!==JSON.stringify(want)) bad.push(i+'/'+(j+1));})); return (bad.length?'MISMATCH '+bad.join(' '):'✓')+' '+n+' (query, n_probe) pairs'"
+  },
+  {
+   "name": "pool toggle",
+   "expr": "const f=document.querySelector('[data-fig=\"pool\"]'); const a=f.querySelector('.fig-stat').textContent; f.querySelector('button').click(); const b=f.querySelector('.fig-stat').textContent; f.querySelector('button').click(); return a+' → '+b"
+  },
+  {
+   "name": "inbatch toggle",
+   "expr": "const f=document.querySelector('[data-fig=\"inbatch\"]'); f.querySelector('button').click(); const n=f.querySelectorAll('rect').length; f.querySelector('button').click(); return n+' cells with hard negatives, '+f.querySelectorAll('rect').length+' without'"
+  },
+  {
+   "name": "prefix toggle",
+   "expr": "const f=document.querySelector('[data-fig=\"prefix\"]'); f.querySelectorAll('button')[1].click(); const n=f.querySelectorAll('line').length; f.querySelectorAll('button')[0].click(); return n+' neighbour lines'"
+  },
+  {
+   "name": "metric tabs",
+   "expr": "const f=document.querySelector('[data-fig=\"metrics\"]'); const out=[]; f.querySelectorAll('.mt-tabs button').forEach(b=>{b.click(); const vis=[...document.querySelectorAll('.mt-desc')].filter(d=>!d.hidden).map(d=>d.dataset.m); out.push(f.querySelector('.mt-live .v').textContent+' ['+vis+']');}); f.querySelector('.mt-tabs button').click(); f.querySelector('.mt-rank button').click(); const after=f.querySelector('.mt-live .v').textContent; for(let i=0;i<3;i++) f.querySelector('.mt-rank button').click(); return out.join(' | ')+' || after a click: '+after"
+  },
+  {
+   "name": "sliders",
+   "expr": "const set=(fig,v)=>{const i=document.querySelector('[data-fig=\"'+fig+'\"] input[type=range]'); i.value=v; i.dispatchEvent(new Event('input')); return document.querySelector('[data-fig=\"'+fig+'\"] .fig-stat').textContent;}; const a=set('rrfw','0'), c=set('ivf','4'); set('rrfw','60'); set('ivf','1'); return a+' || '+c"
+  },
+  {
+   "name": "point encoders",
+   "expr": "const h=document.querySelector('.qz[data-q=\"q-enc\"]'); ['cross'].forEach(k=>h.querySelector('[data-pick=\"'+k+'\"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))); const c=h.querySelector('.qz-check'); if(c) c.click(); return h.querySelector('.qz-verdict').textContent"
+  },
+  {
+   "name": "fill metrics",
+   "expr": "const h=document.querySelector('.qz[data-q=\"q-metrics\"]'); const v={p3:'0.333',rr:'0.5',ap:'0.5',ndcg:'0.651'}; h.querySelectorAll('input').forEach(i=>{const id=i.dataset.blank; i.value=v[id]||''; i.dispatchEvent(new Event('input',{bubbles:true}));}); const c=h.querySelector('.qz-check'); if(c) c.click(); return h.querySelector('.qz-verdict').textContent"
+  },
+  {
+   "name": "bm25 sliders",
+   "expr": "const f=document.querySelector('[data-fig=\"bm25\"]'); const s=f.querySelector('[data-s=\"k1\"]'); s.value='0'; s.dispatchEvent(new Event('input')); return f.querySelector('[data-v=\"k1\"]').textContent+' '+f.querySelectorAll('polyline').length+' lines'"
+  },
+  {
+   "name": "answer all",
+   "expr": "document.querySelectorAll('.qz').forEach(h=>{ if(h.classList.contains('done')) return; const t=h.dataset.type; if(t==='pick'||t==='point'){h.querySelectorAll('.qz-opts button')[0].click(); const c=h.querySelector('.qz-check'); if(c){c.click();}} else if(t==='sort'){h.querySelectorAll('table.qz-sort tr').forEach(tr=>tr.querySelector('button').click()); h.querySelector('.qz-check').click();} else if(t==='fill'){h.querySelectorAll('input.qz-blank').forEach(i=>{i.value='x'; i.dispatchEvent(new Event('input'));}); h.querySelector('.qz-check').click();} else {h.querySelector('.qz-check').click();} }); return document.getElementById('quiz-progress').textContent"
+  }
+ ],
+ "screens": [
+  {
+   "sel": "#hero",
+   "file": "lec_00_hero.png"
+  },
+  {
+   "sel": "#task",
+   "file": "lec_01_task.png"
+  },
+  {
+   "sel": "#eval",
+   "file": "lec_02_eval.png"
+  },
+  {
+   "sel": "#lexical",
+   "file": "lec_03_lexical.png"
+  },
+  {
+   "sel": "#dense",
+   "file": "lec_04_dense.png"
+  },
+  {
+   "sel": "#ann",
+   "file": "lec_05_ann.png"
+  },
+  {
+   "sel": "#hybrid",
+   "file": "lec_06_hybrid.png"
+  },
+  {
+   "sel": "#rerank",
+   "file": "lec_07_rerank.png"
+  },
+  {
+   "sel": "#rag",
+   "file": "lec_08_rag.png"
+  },
+  {
+   "sel": "#design",
+   "file": "lec_09_design.png"
+  },
+  {
+   "sel": "#sources",
+   "file": "lec_10_sources.png"
+  },
+  {
+   "sel": ".panel:has([data-fig=\"pool\"])",
+   "file": "fig_pool.png"
+  },
+  {
+   "sel": ".panel:has([data-fig=\"metrics\"])",
+   "file": "fig_metrics.png"
+  },
+  {
+   "sel": ".panel:has([data-fig=\"postf\"])",
+   "file": "fig_postf.png"
+  },
+  {
+   "sel": ".panel:has([data-fig=\"task\"])",
+   "file": "fig_task.png"
+  },
+  {
+   "sel": ".panel:has([data-fig=\"mismatch\"])",
+   "file": "fig_mismatch.png"
+  },
+  {
+   "sel": ".panel:has([data-fig=\"lanes\"])",
+   "file": "fig_lanes.png"
+  },
+  {
+   "sel": ".qz[data-q=\"q-enc\"]",
+   "file": "q_enc.png"
+  },
+  {
+   "sel": ".panel:has([data-fig=\"negs\"])",
+   "file": "fig_negs.png"
+  }
+ ]
+}

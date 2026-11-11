@@ -1,0 +1,78 @@
+/* lecture 9 — the RAG schematic (the seminar's drawing, demo/week.css) and the BM25 sliders */
+.ragfig { margin: 18px auto 22px; }
+.ragfig svg { width: 100%; height: auto; display: block; color: var(--ink-2); }
+.ragfig figcaption { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.5; margin-top: 8px; }
+.rag-fig .bx { fill: var(--panel-sunk); stroke: var(--rule-strong); stroke-width: 1.2; }
+.rag-fig .bx.plain { fill: var(--panel); stroke: var(--rule-strong); }
+.rag-fig .bx.acc { fill: color-mix(in srgb, var(--cls-0) 14%, var(--panel)); stroke: var(--cls-0); }
+.rag-fig .bx.ok { fill: color-mix(in srgb, var(--cls-2) 14%, var(--panel)); stroke: var(--cls-2); }
+.rag-fig .bx.warm { fill: color-mix(in srgb, var(--cls-1) 14%, var(--panel)); stroke: var(--cls-1); }
+.rag-fig .zone { fill: color-mix(in srgb, var(--cls-0) 6%, transparent); stroke: var(--rule-strong); stroke-dasharray: 4 3; }
+.rag-fig .ovl { fill: none; stroke: var(--ink-2); stroke-dasharray: 3 3; stroke-width: 1.2; }
+.rag-fig .t { fill: var(--ink); font-family: var(--body); font-size: 13px; }
+.rag-fig .t.s { font-size: 11.5px; fill: var(--ink-2); }
+.rag-fig .t.m { font-family: var(--mono); font-size: 11px; }
+.rag-fig .t.b, .rag-fig .t .b { font-weight: 600; }
+.rag-fig .t .low { fill: var(--bad); font-weight: 600; }
+.rag-fig .t.zero { fill: var(--bad); }
+.rag-fig .ln { stroke: currentColor; stroke-width: 1.3; fill: none; }
+.rag-fig .num { fill: var(--cls-1); }
+.rag-fig .numt { fill: #fff; font-family: var(--body); font-weight: 600; font-size: 11px; }
+.rag-fig .numtx { fill: var(--cls-1); font-weight: 700; }
+.lec-sliders { display: flex; gap: 24px; flex-wrap: wrap; font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin-bottom: 8px; }
+.lec-sliders label { display: flex; gap: 8px; align-items: center; }
+.lec-sliders b { color: var(--ink); font-weight: 500; min-width: 2.6em; display: inline-block; }
+
+/* BM25's three parts: the same colour in the formula, the list under it and the sliders */
+.c-idf, math .c-idf { color: var(--cls-2); }
+.c-k1, math .c-k1 { color: var(--cls-0); }
+.c-b, math .c-b { color: var(--cls-1); }
+.formula math .c-idf *, .formula math .c-k1 *, .formula math .c-b * { color: inherit; }
+.lec-sliders label.c-k1 b, .lec-sliders label.c-b b { color: inherit; }
+
+/* tables of costs and trade-offs inside the prose */
+table.asym { font-size: 15px; margin: 12px 0 18px; }
+table.asym td, table.asym th { padding: 6px 8px; vertical-align: top; }
+table.asym th { white-space: normal; }
+table.asym td:first-child { white-space: nowrap; color: var(--ink-2); }
+
+/* figures with controls */
+.fig-ctl { display: flex; gap: 10px 18px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; font-family: var(--mono); font-size: 13px; color: var(--ink-2); }
+.fig-ctl button { font-family: var(--mono); font-size: 13px; }
+.fig-ctl button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.fig-ctl .lec-sliders { margin-bottom: 0; }
+.fig-stat { font-family: var(--mono); font-size: 13px; color: var(--ink-2); margin-top: 8px; line-height: 1.5; min-height: 1.5em; }
+.fig-svg svg { cursor: default; }
+[data-fig="ivf"] .fig-svg svg { max-width: 460px; cursor: crosshair; }
+
+/* slide theses: what stays on the board; the rest folds into "In detail" */
+.prose.slide { font-size: 21px; line-height: 1.45; margin: 18px 0 12px; }
+.prose.slide p { margin: 0 0 8px; }
+.prose.slide ul { margin: 4px 0 8px; padding-left: 1.2em; }
+.prose.slide li { margin: 3px 0; }
+details.more { margin: 2px 0 18px; }
+details.more > summary { cursor: pointer; list-style: none; display: inline-flex; gap: 8px; align-items: baseline; font-family: var(--mono); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding: 2px 0; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::before { content: "+"; }
+details.more[open] > summary::before { content: "−"; }
+details.more > .prose { margin-top: 8px; padding-left: 14px; border-left: 2px solid var(--rule); font-size: 17px; color: var(--ink-2); }
+
+/* the metrics: one list, a tab per metric */
+.mt-rank { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+.mt-rank button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; background: var(--panel); }
+.mt-rank .n { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+.mt-rank .gr { font-family: var(--mono); font-size: 17px; font-weight: 600; }
+.mt-rank button.g1 { background: color-mix(in srgb, var(--good) 16%, var(--panel)); border-color: var(--good); }
+.mt-rank button.g2 { background: color-mix(in srgb, var(--good) 40%, var(--panel)); border-color: var(--good); }
+.mt-rank button.gu { border-style: dashed; color: var(--ink-3); }
+.mt-rank button.out { opacity: .4; }
+.mt-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 10px; }
+.mt-tabs button { font-family: var(--mono); font-size: 13.5px; }
+.mt-tabs button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.mt-live { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; padding: 8px 0 4px; border-top: 1px solid var(--rule); }
+.mt-live .v { font-family: var(--display); font-weight: 700; font-size: 24px; }
+.mt-live .t { font-family: var(--mono); font-size: 13px; color: var(--ink-2); }
+.mt-live .s { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+.mt-desc { margin-top: 10px; font-size: 17px; }
+.mt-desc [data-fig] { margin-top: 10px; }
+.lec-sliders label span { white-space: nowrap; }

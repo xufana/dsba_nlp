@@ -1,0 +1,429 @@
+<div class="tooltip" id="tip"></div>
+<div class="shell">
+<aside class="rail">
+  <div>
+    <div class="rail-mark">NLP @ HSE DSBA · autumn 2026</div>
+    <div class="rail-eq">Seminar 9<br>RAG: Retrieval Meets Generation</div>
+  </div>
+  <nav id="nav"></nav>
+  <div class="rail-foot">
+    <div class="rail-btns">
+      <button id="btn-present" title="Hide the prose, one screen per block">Present</button>
+      <button id="btn-theme" title="Light / dark">Theme</button>
+    </div>
+    <div style="margin-top:10px" id="rail-note">Every number on this page is read from the seminar's artifacts (bge-m3, bge-reranker-v2-m3 and a 3B ruadapt Qwen, run on the notebook's pipeline) or computed in the browser and checked against Python — nothing is typed in.</div>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+<!-- ============================================================ 00 hero -->
+<section id="hero">
+  <p class="eyebrow">Author: Daria Andreeva</p>
+  <h1>RAG Systems: The Beginning</h1>
+  <p class="lede">{{inline:lede}}</p>
+  <div class="thesis">{{inline:thesis}}</div>
+  <div class="prose">{{text:hero-p1}}</div>
+
+  <div class="panel">
+    <div class="panel-head"><span>The data for the whole seminar</span><span class="fig-states" id="data-tabs"><button data-m="corpus" class="sel">gonzo_ML posts</button><button data-m="golden">the golden set</button></span></div>
+    <div class="panel-body">
+      <div id="data-corpus">
+        <div class="two">
+          <div><input type="text" id="corpus-q" class="wide" placeholder="filter the posts: a word, an id, a year"><div class="doclist" id="corpus-list"></div></div>
+          <div><div id="corpus-hist"></div></div>
+        </div>
+      </div>
+      <div id="data-golden" hidden><div class="doclist tall" id="golden-list"></div></div>
+    </div>
+    <div class="panel-note" id="data-note"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 01 pipeline -->
+<section id="pipe">
+  <p class="eyebrow">Block 01 · the pipeline</p>
+  <h2>RAG: simple and less simple</h2>
+  <div class="prose">{{text:pipe-p1}}</div>
+  <figure class="ragfig" style="max-width:640px"><svg class="rag-fig" viewBox="0 0 720 150" role="img" ><defs><marker id="arwf1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs><text class="t b" x="30" y="80">Input</text><line class="ln" x1="80" y1="75" x2="195" y2="75" marker-end="url(#arwf1)"/><rect class="bx ok" x="216" y="29" width="150" height="60" rx="3"/><rect class="bx ok" x="208" y="37" width="150" height="60" rx="3"/><rect class="bx ok" x="200" y="45" width="150" height="60" rx="3"/><text class="t" x="275.0" y="79.0" text-anchor="middle">documents</text><line class="ln" x1="352" y1="75" x2="465" y2="75" marker-end="url(#arwf1)"/><rect class="bx acc" x="470" y="30" width="110" height="90" rx="10"/><text class="t " x="525.0" y="79.0" text-anchor="middle">LLM</text><line class="ln" x1="582" y1="75" x2="645" y2="75" marker-end="url(#arwf1)"/><text class="t b" x="652" y="80">Output</text><line class="ln" x1="80" y1="108" x2="466" y2="108" marker-end="url(#arwf1)"/><text class="t s" x="270" y="125" text-anchor="middle">the question goes into the prompt as is</text><text class="t s" x="275" y="16" text-anchor="middle">all the documents go into the same prompt</text></svg><figcaption>{{inline:f1-cap}}</figcaption></figure>
+  <figure class="ragfig"><svg class="rag-fig" viewBox="0 0 940 360" role="img" ><defs><marker id="arwf2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs><rect class="zone" x="165" y="85" width="400" height="235" rx="12"/><text class="t s" x="178" y="104">Retriever</text><rect class="zone" x="672" y="85" width="136" height="235" rx="12"/><text class="t s" x="684" y="104">Generator</text><rect class="bx ok" x="416" y="6" width="150" height="48" rx="3"/><rect class="bx ok" x="408" y="14" width="150" height="48" rx="3"/><rect class="bx ok" x="400" y="22" width="150" height="48" rx="3"/><text class="t" x="475.0" y="50.0" text-anchor="middle">documents</text><line class="ln" x1="475" y1="71" x2="475" y2="93" marker-end="url(#arwf2)"/><rect class="bx acc" x="400" y="95" width="150" height="44" rx="8"/><text class="t " x="475.0" y="121.0" text-anchor="middle">document encoder</text><line class="ln" x1="475" y1="140" x2="475" y2="163" marker-end="url(#arwf2)"/><rect class="bx ok" x="416" y="152" width="150" height="48" rx="3"/><rect class="bx ok" x="408" y="160" width="150" height="48" rx="3"/><rect class="bx ok" x="400" y="168" width="150" height="48" rx="3"/><text class="t" x="475.0" y="196.0" text-anchor="middle">search index</text><line class="ln" x1="475" y1="217" x2="475" y2="238" marker-end="url(#arwf2)"/><rect class="bx plain" x="400" y="240" width="150" height="44" rx="3"/><text class="t " x="475.0" y="266.0" text-anchor="middle">vector search</text><text class="t b" x="30" y="268">Input</text><line class="ln" x1="82" y1="262" x2="178" y2="262" marker-end="url(#arwf2)"/><rect class="bx acc" x="180" y="240" width="150" height="44" rx="8"/><text class="t " x="255.0" y="266.0" text-anchor="middle">query encoder</text><line class="ln" x1="332" y1="262" x2="398" y2="262" marker-end="url(#arwf2)"/><line class="ln" x1="552" y1="262" x2="688" y2="262" marker-end="url(#arwf2)"/><rect class="bx acc" x="690" y="218" width="100" height="92" rx="10"/><text class="t " x="740.0" y="268.0" text-anchor="middle">LLM</text><line class="ln" x1="82" y1="300" x2="688" y2="300" marker-end="url(#arwf2)"/><line class="ln" x1="792" y1="262" x2="852" y2="262" marker-end="url(#arwf2)"/><text class="t b" x="858" y="268">Output</text><circle class="num" cx="134" cy="246" r="11"/><text class="numt" x="134" y="250" text-anchor="middle">1</text><circle class="num" cx="556" cy="236" r="11"/><text class="numt" x="556" y="240" text-anchor="middle">2</text><circle class="num" cx="556" cy="91" r="11"/><text class="numt" x="556" y="95" text-anchor="middle">3</text><circle class="num" cx="620" cy="246" r="11"/><text class="numt" x="620" y="250" text-anchor="middle">4</text><circle class="num" cx="866" cy="236" r="11"/><text class="numt" x="866" y="240" text-anchor="middle">5</text><text class="t s" x="30" y="345"><tspan class="numtx">1</tspan> query preprocessing   <tspan class="numtx">2</tspan> search method   <tspan class="numtx">3</tspan> embedder   <tspan class="numtx">4</tspan> reranker   <tspan class="numtx">5</tspan> postprocessing · choice of model</text></svg><figcaption>{{inline:f2-cap}}</figcaption></figure>
+
+  <div class="panel">
+    <div class="panel-head"><span>One query through the whole pipeline</span><span class="mono">search · real; answer · the 3B model's</span></div>
+    <div class="panel-body">
+      <div class="ctlrow"><select id="step-q" class="wide"></select>
+        <span class="btnrow"><button id="step-prev">←</button><button class="primary" id="step-next">Next step →</button></span></div>
+      <div class="pipe-steps" id="step-bar"></div>
+      <div class="step-out" id="step-out"></div>
+    </div>
+    <div class="panel-note" id="step-note"></div>
+  </div>
+
+  <div class="prose">{{text:lcel-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>LangChain · the RAG module in LCEL</span><span class="mono">the notebook's bonus cell</span></div>
+    <div class="panel-body"><pre class="code" id="code-lcel"></pre></div>
+    <div class="panel-note">{{inline:lcel-note}}</div>
+  </div>
+</section>
+
+<!-- ============================================================ 02 index -->
+<section id="index">
+  <p class="eyebrow">Block 02 · what is indexed</p>
+  <h2>Documents, chunks, vectors</h2>
+  <div class="prose">{{text:index-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>LangChain · the index</span><span class="mono">the notebook's cells</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-k"><span class="q">{{inline:bet-k}}</span></div>
+      <pre class="code" id="code-index"></pre>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-k">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="k-note" hidden>{{inline:k-note}}</div>
+  </div>
+
+  <h3>Parent document</h3>
+  <div class="prose">{{text:pd-p1}}</div>
+  <figure class="ragfig" style="max-width:520px"><svg class="rag-fig" viewBox="0 0 520 215" role="img" ><defs><marker id="arwf6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs><text class="t b" x="200" y="20" text-anchor="middle">Text</text><rect class="bx plain" x="30" y="30" width="340" height="176" rx="10"/><rect class="bx ok" x="42" y="42" width="316" height="72" rx="8"/><rect class="bx acc" x="42" y="90" width="316" height="72" rx="8" fill-opacity=".55"/><rect class="bx warm" x="42" y="138" width="316" height="58" rx="8" fill-opacity=".55"/><rect class="ovl" x="42" y="90" width="316" height="24" rx="4"/><rect class="ovl" x="42" y="138" width="316" height="24" rx="4"/><text class="t b" x="430" y="70">Chunk</text><line class="ln" x1="425" y1="66" x2="362" y2="70" marker-end="url(#arwf6)"/><line class="ln" x1="425" y1="66" x2="362" y2="125" marker-end="url(#arwf6)"/><line class="ln" x1="425" y1="66" x2="362" y2="178" marker-end="url(#arwf6)"/><text class="t b" x="430" y="195">Overlap</text><line class="ln" x1="425" y1="190" x2="362" y2="102" marker-end="url(#arwf6)"/><line class="ln" x1="425" y1="190" x2="362" y2="150" marker-end="url(#arwf6)"/></svg><figcaption>{{inline:f6-cap}}</figcaption></figure>
+  <div class="panel">
+    <div class="panel-head"><span>Small children are searched, the parent is returned</span><span class="mono">bge-m3 · 120-character children</span></div>
+    <div class="panel-body">
+      <select id="pd-q" class="wide"></select>
+      <div class="pd-parent" id="pd-parent"></div>
+    </div>
+    <div class="panel-note" id="pd-note"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>LangChain · ParentDocumentRetriever</span><span class="mono">the notebook's cell</span></div>
+    <div class="panel-body"><pre class="code" id="code-pd"></pre></div>
+    <div class="panel-note">{{inline:pd-trap}}</div>
+  </div>
+  <div class="prose">{{text:symm-p1}}</div>
+  <figure class="ragfig" style="max-width:640px"><svg class="rag-fig" viewBox="0 0 640 245" role="img" ><defs><marker id="arwf7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs><rect class="bx plain" x="40" y="30" width="150" height="50" rx="8"/><text class="t " x="115.0" y="59.0" text-anchor="middle">Query</text><line class="ln" x1="192" y1="55" x2="298" y2="55" marker-end="url(#arwf7)"/><rect class="bx ok" x="300" y="30" width="150" height="50" rx="3"/><text class="t " x="375.0" y="59.0" text-anchor="middle">Answer</text><text class="t s" x="470" y="59">index = answers</text><rect class="bx plain" x="40" y="120" width="150" height="50" rx="8"/><text class="t " x="115.0" y="149.0" text-anchor="middle">User Query</text><line class="ln" x1="192" y1="145" x2="298" y2="145" marker-end="url(#arwf7)"/><rect class="bx acc" x="300" y="120" width="150" height="50" rx="8"/><text class="t " x="375.0" y="149.0" text-anchor="middle">Index Query</text><text class="t s" x="470" y="149">index = questions</text><line class="ln" x1="375" y1="171" x2="375" y2="188" stroke-dasharray="4 3"/><rect class="bx ok" x="300" y="190" width="150" height="40" rx="3"/><text class="t " x="375.0" y="214.0" text-anchor="middle">Answer</text><text class="t s" x="632" y="214" text-anchor="end">answer linked to its question</text></svg><figcaption>{{inline:f7-cap}}</figcaption></figure>
+</section>
+
+<!-- ============================================================ 03 search -->
+<section id="search">
+  <p class="eyebrow">Block 03 · the search method</p>
+  <h2>Sparse, dense, and both</h2>
+  <div class="prose">{{text:search-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Retrieval arena</span><span class="mono">BM25 in the browser · dense from the artifact</span></div>
+    <div class="panel-body">
+      <div class="ctlrow"><select id="ar-q" class="wide"></select><input type="text" id="ar-free" class="wide" placeholder="…or your own text, Enter"></div>
+      <div class="small-note">{{inline:arena-hint}}</div>
+      <div class="arena" id="arena"></div>
+      <details class="codenote"><summary><span class="k">How each column is computed</span></summary>
+        <div class="how">
+          <div class="howrow"><div class="howk">tokens</div><div>{{inline:how-tok}} <span class="mono" id="ar-toks"></span></div></div>
+          <div class="howrow"><div class="howk">BM25</div><div><div class="formula">
+            <math display="block"><mrow><mtext>score</mtext><mo stretchy="false">(</mo><mi>q</mi><mo>,</mo><mi>d</mi><mo stretchy="false">)</mo><mo>=</mo>
+              <munder><mo>∑</mo><mrow><mi>t</mi><mo>∈</mo><mi>q</mi></mrow></munder><mtext>idf</mtext><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>·</mo>
+              <mfrac><mrow><mtext>tf</mtext><mo stretchy="false">(</mo><mi>t</mi><mo>,</mo><mi>d</mi><mo stretchy="false">)</mo><mo>·</mo><mo stretchy="false">(</mo><msub><mi>k</mi><mn>1</mn></msub><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></mrow>
+              <mrow><mtext>tf</mtext><mo stretchy="false">(</mo><mi>t</mi><mo>,</mo><mi>d</mi><mo stretchy="false">)</mo><mo>+</mo><msub><mi>k</mi><mn>1</mn></msub><mo>·</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>b</mi><mo>+</mo><mi>b</mi><mo>·</mo><mo>|</mo><mi>d</mi><mo>|</mo><mo>/</mo><mtext>avgdl</mtext><mo stretchy="false">)</mo></mrow></mfrac></mrow></math>
+            </div><div class="small-note">{{inline:how-bm25}}</div></div></div>
+          <div class="howrow"><div class="howk">dense</div><div><div class="formula"><math display="block"><mrow><mtext>score</mtext><mo stretchy="false">(</mo><mi>q</mi><mo>,</mo><mi>d</mi><mo stretchy="false">)</mo><mo>=</mo><mi>cos</mi><mo stretchy="false">(</mo><mi>e</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo><mo>,</mo><mi>e</mi><mo stretchy="false">(</mo><mi>d</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></math></div><div class="small-note">{{inline:how-dense}}</div></div></div>
+          <div class="howrow"><div class="howk">ensemble</div><div><div class="formula"><math display="block"><mrow><mtext>score</mtext><mo stretchy="false">(</mo><mi>d</mi><mo stretchy="false">)</mo><mo>=</mo>
+            <munder><mo>∑</mo><mrow><mi>m</mi><mo>∈</mo><mtext>retrievers</mtext></mrow></munder><mfrac><msub><mi>w</mi><mi>m</mi></msub><mrow><mn>60</mn><mo>+</mo><msub><mtext>rank</mtext><mi>m</mi></msub><mo stretchy="false">(</mo><mi>d</mi><mo stretchy="false">)</mo></mrow></mfrac></mrow></math></div><div class="small-note">{{inline:how-rrf}}</div></div></div>
+        </div>
+      </details>
+    </div>
+    <div class="panel-note" id="arena-check"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span>LangChain · BM25Retriever and EnsembleRetriever</span><span class="mono">the notebook's cell</span></div>
+    <div class="panel-body">
+      <pre class="code" id="code-search"></pre>
+      <div class="bet" id="bet-tok" style="margin-top:14px"><span class="q">{{inline:bet-tok}}</span></div>
+      <div class="btnrow"><button class="primary" id="btn-tok">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="tok-note" hidden></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>A question to the room</span></div>
+    <div class="panel-body"><div class="bet"><span class="q">{{inline:bet-rrf}}</span></div>
+      <div class="veil-wrap"><div class="prose" id="rrf-answer" hidden>{{text:rrf-answer}}</div><button id="btn-rrf">Show the answer</button></div></div>
+    <div class="panel-note">{{inline:search-code-note}}</div>
+  </div>
+</section>
+
+<!-- ============================================================ 04 query -->
+<section id="query">
+  <p class="eyebrow">Block 04 · before the search</p>
+  <h2>Preprocessing the query</h2>
+  <div class="prose">{{text:query-p1}}</div>
+
+  <h3>Query expansion</h3>
+  <div class="prose">{{text:qe-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>The question and its rephrasing, searched the same way</span><span class="mono">bge-m3 · rephrased by the 3B model</span></div>
+    <div class="panel-body">
+      <select id="qe-q" class="wide"></select>
+      <div class="ctx" id="qe-text"></div>
+      <div class="twocol" id="qe-cols"></div>
+    </div>
+    <div class="panel-note" id="qe-note"></div>
+  </div>
+
+  <div class="prose">{{text:para-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>What rephrasing fixes and what it breaks</span><span class="mono">BM25, lower case, in the browser</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-para"><span class="q">{{inline:bet-para}}</span></div>
+      <div id="para-rows" class="para-rows"></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-para">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="para-note" hidden></div>
+  </div>
+
+  <h3>HyDE</h3>
+  <div class="prose">{{text:hyde-p1}}</div>
+  <figure class="ragfig" style="max-width:700px"><svg class="rag-fig" viewBox="0 0 700 265" role="img" ><defs><marker id="arwf3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs><text class="t b" x="160" y="22" text-anchor="middle">Plain RAG</text><rect class="bx acc" x="60" y="36" width="200" height="36" rx="8"/><text class="t " x="160.0" y="58.0" text-anchor="middle">Question</text><line class="ln" x1="160" y1="73" x2="160" y2="98" marker-end="url(#arwf3)"/><rect class="bx plain" x="60" y="100" width="200" height="44" rx="3"/><text class="t " x="160.0" y="118.5" text-anchor="middle">Use the</text><text class="t " x="160.0" y="133.5" text-anchor="middle">question to search</text><line class="ln" x1="160" y1="145" x2="160" y2="213" marker-end="url(#arwf3)"/><rect class="bx acc" x="60" y="215" width="200" height="36" rx="8"/><text class="t " x="160.0" y="237.0" text-anchor="middle">Search result</text><text class="t b" x="480" y="22" text-anchor="middle">HyDE RAG</text><rect class="bx acc" x="380" y="36" width="200" height="36" rx="8"/><text class="t " x="480.0" y="58.0" text-anchor="middle">Question</text><line class="ln" x1="480" y1="73" x2="480" y2="88" marker-end="url(#arwf3)"/><rect class="bx warm" x="380" y="90" width="200" height="44" rx="3"/><text class="t " x="480.0" y="108.5" text-anchor="middle">Generate an answer</text><text class="t " x="480.0" y="123.5" text-anchor="middle">with the LLM</text><line class="ln" x1="480" y1="135" x2="480" y2="150" marker-end="url(#arwf3)"/><rect class="bx plain" x="380" y="152" width="200" height="44" rx="3"/><text class="t " x="480.0" y="170.5" text-anchor="middle">Use the</text><text class="t " x="480.0" y="185.5" text-anchor="middle">answer to search</text><line class="ln" x1="480" y1="197" x2="480" y2="213" marker-end="url(#arwf3)"/><rect class="bx acc" x="380" y="215" width="200" height="36" rx="8"/><text class="t " x="480.0" y="237.0" text-anchor="middle">Search result</text><text class="t s" x="596" y="118">← +1 LLM call</text></svg><figcaption>{{inline:f3-cap}}</figcaption></figure>
+  <div class="panel">
+    <div class="panel-head"><span>Search with the question, search with a hypothetical answer</span><span class="mono">bge-m3 · hypothetical answer by the 3B model</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-hyde"><span class="q">{{inline:bet-hyde}}</span></div>
+      <div class="btnrow"><button class="primary" id="btn-hyde">Reveal</button></div>
+      <div class="reveal-wrap" id="hyde-body">
+        <select id="hyde-q" class="wide"></select>
+        <div class="ctx" id="hyde-text"></div>
+        <div class="twocol" id="hyde-cols"></div>
+        <div class="veil">the bet first</div>
+      </div>
+    </div>
+    <div class="panel-note" id="hyde-note" hidden></div>
+  </div>
+  <div class="prose small">{{text:hyde-cost}}</div>
+
+  <h3>SelfQuery</h3>
+  <div class="prose">{{text:sq-p1}}</div>
+  <figure class="ragfig"><svg class="rag-fig" viewBox="0 0 1050 150" role="img" ><defs><marker id="arwf4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs><rect class="bx acc" x="15" y="30" width="140" height="100" rx="22"/><text class="t " x="85.0" y="69.0" text-anchor="middle">“Posts about Mamba,</text><text class="t " x="85.0" y="84.0" text-anchor="middle">written</text><text class="t " x="85.0" y="99.0" text-anchor="middle">in 2024”</text><line class="ln" x1="157" y1="80" x2="183" y2="80" marker-end="url(#arwf4)"/><rect class="bx warm" x="185" y="52" width="120" height="56" rx="3"/><text class="t " x="245.0" y="76.5" text-anchor="middle">query</text><text class="t " x="245.0" y="91.5" text-anchor="middle">constructor</text><line class="ln" x1="307" y1="80" x2="333" y2="80" marker-end="url(#arwf4)"/><rect class="bx acc" x="335" y="30" width="210" height="100" rx="22"/><text class="t " x="440.0" y="69.0" text-anchor="middle">“Posts about Mamba”</text><text class="t " x="440.0" y="84.0" text-anchor="middle">filter: gte(“date”, 2024-01-01)</text><text class="t " x="440.0" y="99.0" text-anchor="middle">lt(“date”, 2025-01-01)</text><line class="ln" x1="547" y1="80" x2="573" y2="80" marker-end="url(#arwf4)"/><rect class="bx plain" x="575" y="52" width="120" height="56" rx="3"/><text class="t " x="635.0" y="76.5" text-anchor="middle">query</text><text class="t " x="635.0" y="91.5" text-anchor="middle">translator</text><line class="ln" x1="697" y1="80" x2="723" y2="80" marker-end="url(#arwf4)"/><rect class="bx acc" x="725" y="30" width="170" height="100" rx="22"/><text class="t " x="810.0" y="69.0" text-anchor="middle">“Posts about Mamba”</text><text class="t " x="810.0" y="84.0" text-anchor="middle">filter: {“date”: {“$gte”: “2024-01-01”,</text><text class="t " x="810.0" y="99.0" text-anchor="middle">“$lt”: “2025-01-01”}}</text><line class="ln" x1="897" y1="80" x2="923" y2="80" marker-end="url(#arwf4)"/><rect class="bx ok" x="942" y="44" width="100" height="44" rx="3"/><rect class="bx ok" x="934" y="52" width="100" height="44" rx="3"/><rect class="bx ok" x="926" y="60" width="100" height="44" rx="3"/><text class="t" x="976.0" y="86.0" text-anchor="middle">vector store</text></svg><figcaption>{{inline:f4-cap}}</figcaption></figure>
+  <div class="panel">
+    <div class="panel-head"><span>A rule-based query constructor over the posts' dates</span><span class="mono">parser and BM25 in the browser</span></div>
+    <div class="panel-body">
+      <input type="text" id="sq-q" class="wide" value="посты про Mamba за 2024">
+      <div class="btnrow" id="sq-presets" style="margin:8px 0"></div>
+      <div class="small-note">{{inline:sq-hint}}</div>
+      <div class="two eq">
+        <div><div class="k-label">query constructor → structured query</div><pre class="jsonv" id="sq-json"></pre></div>
+        <div><div class="k-label">query translator → a Qdrant filter</div><pre class="jsonv" id="sq-filter"></pre></div>
+      </div>
+      <div class="twocol" id="sq-cols"></div>
+    </div>
+    <div class="panel-note" id="sq-gonzo-note"></div>
+  </div>
+  <div class="prose">{{text:sq-songs-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>The same constructor over songs</span><span class="mono">synthetic collection · parser and BM25 in the browser</span></div>
+    <div class="panel-body">
+      <input type="text" id="sqs-q" class="wide" value="найди рок, выпущенный до 90-х">
+      <div class="btnrow" id="sqs-presets" style="margin:8px 0"></div>
+      <div class="small-note" id="sqs-hint"></div>
+      <div class="two eq">
+        <div><div class="k-label">query constructor → structured query</div><pre class="jsonv" id="sqs-json"></pre></div>
+        <div><div class="k-label">query translator → a store filter</div><pre class="jsonv" id="sqs-filter"></pre></div>
+      </div>
+      <div class="twocol" id="sqs-cols"></div>
+    </div>
+    <div class="panel-note" id="sqs-note"></div>
+  </div>
+
+  <h3>FLARE</h3>
+  <div class="prose">{{text:flare-p1}}</div>
+  <figure class="ragfig" style="max-width:700px"><svg class="rag-fig" viewBox="0 0 700 300" role="img" ><defs><marker id="arwf5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs><text class="t s" transform="rotate(-90 14 70)" x="14" y="70" text-anchor="middle">input</text><text class="t s" transform="rotate(-90 14 200)" x="14" y="200" text-anchor="middle">generation</text><line class="ln" x1="24" y1="40" x2="24" y2="285"/><line class="ln" x1="24" y1="285" x2="24" y2="292" marker-end="url(#arwf5)"/><text class="t" x="40" y="58"><tspan class="b">x:</tspan> the question</text><rect class="bx warm" x="34" y="72" width="330" height="24" rx="3"/><text class="t" x="40" y="88"><tspan class="b">y₁:</tspan> a draft sentence, its <tspan class="low">doubtful</tspan> <tspan class="low">tokens</tspan> marked…</text><rect class="bx acc" x="34" y="126" width="330" height="24" rx="3"/><text class="t" x="40" y="142"><tspan class="b">q₂:</tspan> [search “the draft, [?] where it was unsure”]</text><text class="t" x="40" y="168"><tspan class="b">y₂:</tspan> the sentence rewritten from what was found</text><rect class="bx acc" x="34" y="196" width="330" height="24" rx="3"/><text class="t" x="40" y="212"><tspan class="b">q₃:</tspan> [search “the next draft, [?] again”]</text><text class="t" x="40" y="238"><tspan class="b">y₃:</tspan> the next sentence, rewritten</text><rect class="bx plain" x="470" y="20" width="150" height="26" rx="3"/><text class="t s" x="545" y="37" text-anchor="middle">search result: D<tspan baseline-shift="sub" font-size="8">x</tspan></text><rect class="bx acc" x="490" y="50" width="150" height="26" rx="3"/><text class="t s" x="565" y="67" text-anchor="middle">search result: D<tspan baseline-shift="sub" font-size="8">q₂</tspan></text><rect class="bx ok" x="510" y="80" width="150" height="26" rx="3"/><text class="t s" x="585" y="97" text-anchor="middle">search result: D<tspan baseline-shift="sub" font-size="8">q₃</tspan></text><rect class="bx plain" x="500" y="140" width="130" height="60" rx="6"/><text class="t " x="565.0" y="174.0" text-anchor="middle">retriever</text><line class="ln" x1="565" y1="140" x2="565" y2="110" marker-end="url(#arwf5)"/><line class="ln" x1="372" y1="54" x2="498" y2="160" marker-end="url(#arwf5)"/><line class="ln" x1="372" y1="138" x2="498" y2="170" marker-end="url(#arwf5)"/><line class="ln" x1="372" y1="208" x2="498" y2="180" marker-end="url(#arwf5)"/><text class="t s" x="440" y="270" text-anchor="middle">each q is a draft sentence with its doubtful tokens masked</text></svg><figcaption>{{inline:f5-cap}}</figcaption></figure>
+  <div class="panel">
+    <div class="panel-head"><span>Forward-looking active retrieval</span><span class="mono">scripted</span></div>
+    <div class="panel-body">
+      <div class="small-note">{{inline:flare-tag}}</div>
+      <div class="ctx">Курьер опоздал, а один товар приехал разбитым. Что мне полагается и когда вернут деньги?</div>
+      <div class="ctlrow" style="margin-top:10px"><label class="field" style="margin:0">confidence threshold θ <b id="fl-tv">0.40</b></label><input type="range" id="fl-t" min="0" max="0.9" step="0.05" value="0.4" style="flex:1 1 200px;width:auto">
+        <button class="primary" id="fl-run">▶ Generate</button><button id="fl-reset">Reset</button></div>
+      <div class="flare"><div><div class="k-label">the model's answer (above each token, its probability)</div><div class="gen" id="fl-gen"></div></div>
+        <div><div class="k-label">log: generation → search → regeneration</div><div class="flog" id="fl-log"></div></div></div>
+      <div class="stat-row" id="fl-stats"></div>
+    </div>
+    <div class="panel-note">{{inline:flare-note}}</div>
+  </div>
+</section>
+
+<!-- ============================================================ 05 rerank -->
+<section id="rerank">
+  <p class="eyebrow">Block 05 · after the search</p>
+  <h2>Reranking</h2>
+  <div class="prose">{{text:rerank-p1}}</div>
+  <figure class="ragfig"><svg class="rag-fig" viewBox="0 0 900 165" role="img" ><defs><marker id="arwf8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs><rect class="bx ok" x="346" y="6" width="150" height="46" rx="3"/><rect class="bx ok" x="338" y="14" width="150" height="46" rx="3"/><rect class="bx ok" x="330" y="22" width="150" height="46" rx="3"/><text class="t" x="405.0" y="43.0" text-anchor="middle">document</text><text class="t" x="405.0" y="58.0" text-anchor="middle">collection</text><line class="ln" x1="405" y1="69" x2="405" y2="93" marker-end="url(#arwf8)"/><text class="t" x="30" y="115">search query /</text><text class="t" x="30" y="131">question</text><line class="ln" x1="140" y1="120" x2="328" y2="120" marker-end="url(#arwf8)"/><rect class="bx plain" x="330" y="95" width="150" height="50" rx="10"/><text class="t " x="405.0" y="124.0" text-anchor="middle">retrieval</text><line class="ln" x1="482" y1="120" x2="558" y2="120" marker-end="url(#arwf8)"/><text class="t s" x="520" y="108" text-anchor="middle">retrieve</text><text class="t s" x="520" y="140" text-anchor="middle">candidates</text><rect class="bx acc" x="560" y="90" width="180" height="60" rx="10"/><text class="t " x="650.0" y="116.5" text-anchor="middle">re-ranker</text><text class="t " x="650.0" y="131.5" text-anchor="middle">cross encoder</text><text class="t m" x="650" y="78" text-anchor="middle">bge-reranker-v2-m3</text><line class="ln" x1="742" y1="120" x2="808" y2="120" marker-end="url(#arwf8)"/><text class="t" x="815" y="115">ranked</text><text class="t" x="815" y="131">documents</text></svg><figcaption>{{inline:f8-cap}}</figcaption></figure>
+  <div class="panel">
+    <div class="panel-head"><span>How many candidates to rerank</span><span class="mono">bge-reranker-v2-m3 over the ensemble's pool</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-rerank"><span class="q">{{inline:bet-rerank}}</span></div>
+      <div class="btnrow"><button class="primary" id="btn-rerank">Reveal</button></div>
+      <div class="reveal-wrap">
+        <div class="sliders"><label class="field">k_candidates <b id="rr-kv"></b></label><input type="range" id="rr-k" min="1" max="50" step="1" value="20"></div>
+        <div id="rr-plot"></div><div class="k-label">the gold post's rank · in the ensemble's pool → after reranking the first k</div><div id="rr-rows" class="rr-strip"></div>
+        <div class="veil" id="rr-veil">the bet first</div>
+      </div>
+    </div>
+    <div class="panel-note" id="rerank-note"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>LangChain · the cross-encoder</span><span class="mono">the notebook's cell</span></div>
+    <div class="panel-body"><pre class="code" id="code-rerank"></pre></div>
+    <div class="panel-note">{{inline:rerank-code-note}}</div>
+  </div>
+</section>
+
+<!-- ============================================================ 06 answer -->
+<section id="answer">
+  <p class="eyebrow">Block 06 · generation</p>
+  <h2>The prompt, and where hallucinations come from</h2>
+  <div class="prose">{{text:answer-p1}}</div>
+
+  <div class="panel">
+    <div class="panel-head"><span>Prompt sandbox</span><span class="fig-states" id="ps-mode"><button data-m="closed book" class="sel">no context</button><button data-m="context">top-3 context</button><button data-m="context + say so">top-3 + «скажи, если нет ответа»</button></span></div>
+    <div class="panel-body">
+      <div class="small-note">{{inline:sandbox-hint}}</div>
+      <select id="ps-q" class="wide"></select>
+      <div class="two eq"><div><div class="k-label">the prompt</div><div class="prompt-view" id="ps-prompt"></div></div>
+        <div><div class="k-label">the answer</div><div class="answer" id="ps-answer"></div></div></div>
+      <div class="bet" id="bet-idk" style="margin-top:16px"><span class="q">{{inline:bet-idk}}</span></div>
+      <div class="btnrow"><button class="primary" id="btn-idk">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="idk-note" hidden></div>
+  </div>
+
+  <h3>A threshold on similarity</h3>
+  <div class="prose">{{text:th-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>The best cosine per question</span><span class="mono">bge-m3 · top-1 over the documents</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-th"><span class="q">{{inline:bet-th}}</span></div>
+      <div class="sliders"><label class="field">threshold <b id="th-v"></b></label><input type="range" id="th" min="0.3" max="0.8" step="0.005" value="0.5"></div>
+      <div id="th-plot"></div>
+      <div class="stat-row" id="th-stats"></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-th">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="th-note" hidden></div>
+  </div>
+
+  <div class="prose">{{text:thg-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Why a threshold fails in general</span><span class="mono">synthetic scores</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-thg"><span class="q">{{inline:bet-thg}}</span></div>
+      <div class="btnrow" id="thg-groups" style="margin:6px 0"></div>
+      <div class="sliders"><label class="field">threshold <b id="thg-v"></b></label><input type="range" id="thg-t" min="0.2" max="0.9" step="0.005" value="0.5"></div>
+      <div id="thg-plot"></div>
+      <div class="stat-row" id="thg-stats"></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-thg">Reveal</button></div>
+    </div>
+    <div class="panel-note">{{inline:thg-cap}}</div>
+    <div class="panel-note" id="thg-note" hidden></div>
+  </div>
+
+  <h3>CRAG: ask the model whether the context is enough</h3>
+  <div class="prose">{{text:crag-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>"Is the context enough to answer?" — the 3B model on the top-1 document</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-crag"><span class="q">{{inline:bet-crag}}</span></div>
+      <div class="btnrow"><button class="primary" id="btn-crag">Reveal</button></div>
+      <div class="reveal-wrap"><div id="crag-grid"></div><div class="veil">the bet first</div></div>
+    </div>
+    <div class="panel-note" id="crag-note" hidden></div>
+  </div>
+  <div class="grid-3cards">
+    <div class="card"><div class="k">Before generation</div>{{inline:card-before}}</div>
+    <div class="card"><div class="k">During</div>{{inline:card-during}}</div>
+    <div class="card"><div class="k">After</div>{{inline:card-after}}</div>
+  </div>
+</section>
+
+<!-- ============================================================ 07 eval -->
+<section id="eval">
+  <p class="eyebrow">Block 07 · how to measure</p>
+  <h2>What counts as a hit</h2>
+  <div class="prose">{{text:eval-p1}}</div>
+  <div class="prose">{{text:proxy-p1}}{{text:proxy-table}}{{text:proxy-p2}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Two proxies on the same lists: the post id and fuzzy match</span><span class="mono">Qdrant top 10 · rapidfuzz.partial_ratio</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-proxy"><span class="q">{{inline:bet-proxy}}</span></div>
+      <div class="sliders"><label class="field">fuzzy threshold <b id="px-tv"></b></label><input type="range" id="px-t" min="30" max="100" step="1" value="80"></div>
+      <div id="px-plot"></div>
+      <div class="stat-row" id="px-stats"></div>
+      <div class="two eq" id="px-pair" style="margin-top:10px"><div><div class="k-label">the golden quote</div><div class="ctx" id="px-a"></div></div><div><div class="k-label">the retrieved document, around the best window</div><div class="ctx" id="px-b"></div></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-proxy">Reveal</button></div>
+    </div>
+    <div class="panel-note" id="proxy-note" hidden></div>
+  </div>
+  <div class="panel-note plain" id="asran-note"></div>
+
+  <h3>Ranking metrics</h3>
+  <div class="prose">{{text:rank-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>P@k, Hit@k, reciprocal rank, NDCG@k on a live output</span><span class="mono">computed in the browser</span></div>
+    <div class="panel-body">
+      <div class="ctlrow"><select id="mk-q" class="wide"></select><select id="mk-ret"></select></div>
+      <div class="sliders"><label class="field">k <b id="mk-kv"></b></label><input type="range" id="mk-k" min="1" max="10" step="1" value="5"></div>
+      <div class="two"><div class="rank" id="mk-list"></div><div id="mk-out"></div></div>
+    </div>
+    <div class="panel-note">{{inline:rank-note}}</div>
+  </div>
+
+  <h3>The scoreboard</h3>
+  <div class="prose">{{text:board-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Every retriever of the notebook, scored by the gold post</span><span class="mono">top-10 · 20 questions</span></div>
+    <div class="panel-body"><div class="scroll-x"><table class="results board" id="board"></table></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="btn-board">Reveal all</button></div></div>
+    <div class="panel-note" id="board-note" hidden></div>
+  </div>
+
+  <h3>LLM as a judge</h3>
+  <div class="prose">{{text:judge-intro}}{{text:judge-schemes}}{{text:judge-rubric}}{{text:judge-bias}}{{text:kappa-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>A judge with a shift: what kappa sees</span><span class="mono">synthetic labels · computed in the browser</span></div>
+    <div class="panel-body">
+      <div class="sliders two eq"><div><label class="field">systematic shift of the judge <b id="ks-v"></b></label><input type="range" id="ks-sh" min="0" max="2" step="1" value="1"></div>
+        <div><label class="field">share of random ±1 errors <b id="ks-nv"></b></label><input type="range" id="ks-ns" min="0" max="60" step="5" value="15"></div></div>
+      <div class="two eq"><div><div class="stat-row" id="ks-stats"></div><div class="small-note" id="ks-note" style="margin-top:10px"></div></div>
+        <div><div class="k-label">person (rows) × judge (columns)</div><div class="kgrid" id="ks-grid"></div></div></div>
+      <div class="small-note" id="ks-check" style="margin-top:8px"></div>
+    </div>
+    <div class="panel-note">{{inline:kappa-cap}}</div>
+  </div>
+  <div class="prose">{{text:judge-p1}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Two judges, one model, the same 20 answers</span><span class="mono">0–5 · lenient vs strict</span></div>
+    <div class="panel-body">
+      <div class="bet" id="bet-judge"><span class="q">{{inline:bet-judge}}</span></div>
+      <div class="btnrow"><button class="primary" id="btn-judge">Reveal</button></div>
+      <div class="reveal-wrap"><div class="hm-wrap" id="judge-mats"></div><div class="veil">the bet first</div></div>
+    </div>
+    <div class="panel-note" id="judge-note" hidden></div>
+  </div>
+</section>
+
+<!-- ============================================================ 08 end -->
+<section id="end">
+  <p class="eyebrow">Block 08 · the roadmap</p>
+  <h2>What in the end: where to start in each block</h2>
+  <div class="prose">{{text:end-p1}}</div>
+  <div class="two">
+    <div class="prose">
+      <h3>A quick checklist of basic RAG techniques and how to choose</h3>
+      {{text:checklist}}
+      <h3>What to take away</h3>
+      {{text:takeaways}}
+    </div>
+    <figure class="ragfig" style="max-width:320px"><svg class="rag-fig" viewBox="0 0 320 500" role="img" ><defs><marker id="arwf10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs><rect class="bx ok" x="20" y="20" width="220" height="38" rx="12"/><text class="t " x="130.0" y="43.0" text-anchor="middle">vector store</text><line class="ln" x1="130" y1="59" x2="130" y2="80" marker-end="url(#arwf10)"/><rect class="bx plain" x="20" y="82" width="220" height="38" rx="12"/><text class="t " x="130.0" y="105.0" text-anchor="middle">Query Expansion</text><line class="ln" x1="130" y1="121" x2="130" y2="142" marker-end="url(#arwf10)"/><rect class="bx plain" x="20" y="144" width="220" height="38" rx="12"/><text class="t " x="130.0" y="167.0" text-anchor="middle">Bi-encoder</text><line class="ln" x1="130" y1="183" x2="130" y2="204" marker-end="url(#arwf10)"/><rect class="bx plain" x="20" y="206" width="220" height="38" rx="12"/><text class="t " x="130.0" y="229.0" text-anchor="middle">ReRank</text><line class="ln" x1="130" y1="245" x2="130" y2="266" marker-end="url(#arwf10)"/><rect class="bx plain" x="20" y="268" width="220" height="38" rx="12"/><text class="t " x="130.0" y="291.0" text-anchor="middle">LLM</text><line class="ln" x1="130" y1="307" x2="130" y2="328" marker-end="url(#arwf10)"/><rect class="bx plain" x="20" y="330" width="220" height="38" rx="12"/><text class="t " x="130.0" y="353.0" text-anchor="middle">prompting</text><line class="ln" x1="130" y1="369" x2="130" y2="390" marker-end="url(#arwf10)"/><rect class="bx plain" x="20" y="392" width="220" height="38" rx="12"/><text class="t " x="130.0" y="415.0" text-anchor="middle">sampling</text><line class="ln" x1="130" y1="431" x2="130" y2="452" marker-end="url(#arwf10)"/><rect class="bx warm" x="20" y="454" width="220" height="38" rx="12"/><text class="t " x="130.0" y="477.0" text-anchor="middle">validate</text><path class="ln" d="M242 473 H290 V39 H244" marker-end="url(#arwf10)"/><text class="t s" x="304" y="256.0" transform="rotate(-90 304 256.0)" text-anchor="middle">validate → back to the index</text></svg><figcaption>{{inline:f10-cap}}</figcaption></figure>
+  </div>
+  <h3>References</h3>
+  <div class="prose footnote">{{text:end-refs}}</div>
+</section>
+
+</div>
+</main>
+</div>

@@ -1,0 +1,144 @@
+{
+ "steps": [
+  {
+   "name": "ready",
+   "timeout": 30000,
+   "expr": "return new Promise(r=>{const t=()=>window.READY?r('ready'):setTimeout(t,50);t();})"
+  },
+  {
+   "name": "loaded",
+   "expr": "return document.querySelectorAll('section').length + ' sections, ' + document.querySelectorAll('template[data-text]').length + ' templates, ' + document.querySelectorAll('svg').length + ' svgs'"
+  },
+  {
+   "name": "timing",
+   "expr": "return performance.getEntriesByType('mark').map(m=>m.name+':'+Math.round(m.startTime)).join(' ')"
+  },
+  {
+   "name": "checks",
+   "expr": "return CHECKS.map(c=>(c.ok?'✓ ':'✗ ')+c.id).join(' | ')"
+  },
+  {
+   "name": "filled",
+   "expr": "return ['corpus-list','corpus-hist','golden-list','data-note','step-out','code-lcel','code-index','pd-parent','pd-note','code-pd','arena','arena-check','code-search','qe-cols','qe-note','hyde-cols','sq-json','sq-cols','rr-plot','rr-rows','rerank-note','code-rerank','ps-prompt','ps-answer','th-plot','th-stats','crag-grid','px-plot','px-stats','px-a','px-b','para-rows','sq-gonzo-note','sqs-json','sqs-cols','thg-plot','thg-stats','ks-grid','ks-stats','ks-check','fl-gen','asran-note','mk-list','mk-out','board','judge-mats'].map(id=>{const n=document.getElementById(id);return id+':'+(n?n.innerHTML.length:'MISSING')}).filter(x=>/MISSING|:0$/.test(x)).join(' ') || 'all filled'"
+  },
+  {
+   "name": "walk the stepper",
+   "expr": "const out=[]; for(let n=0;n<4;n++){ document.querySelectorAll('#step-bar button')[n].click(); out.push(n+':'+document.getElementById('step-out').textContent.length);} const s=document.getElementById('step-q'); s.value=String(25); s.dispatchEvent(new Event('change')); document.getElementById('step-next').click(); document.getElementById('step-next').click(); document.getElementById('step-next').click(); return out.join(' ')+' | N6 answer: '+document.getElementById('step-out').textContent.slice(-160)"
+  },
+  {
+   "name": "click reveals",
+   "expr": "['bet-k','bet-tok','bet-hyde','bet-rerank','bet-idk','bet-th','bet-crag','bet-proxy','bet-thg','bet-judge'].forEach(id=>{const b=document.querySelector('#'+id+' button[data-opt]'); if(b) b.click();}); ['btn-k','btn-tok','btn-rrf','btn-hyde','btn-rerank','btn-idk','btn-th','btn-crag','btn-proxy','btn-thg','btn-para','btn-board','btn-judge'].forEach(id=>{const b=document.getElementById(id); if(b) b.click();}); return ['k-note','tok-note','hyde-note','rerank-note','idk-note','th-note','crag-note','proxy-note','thg-note','para-note','board-note','judge-note'].map(id=>id+': '+document.getElementById(id).textContent.slice(0,170)).join(' || ')"
+  },
+  {
+   "name": "free text and selfquery",
+   "expr": "const f=document.getElementById('ar-free'); f.value='Mamba-2 SSD'; f.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'})); const a=document.querySelector('#arena .rl').textContent.slice(0,120); document.querySelectorAll('#sq-presets button')[1].click(); return a+' || '+document.getElementById('sq-filter').textContent.replace(/\\s+/g,' ')+' || '+document.querySelectorAll('#sq-cols .rl')[1].textContent.slice(0,120)"
+  },
+  {
+   "name": "states",
+   "expr": "['ps-mode','data-tabs'].forEach(id=>{const b=document.querySelectorAll('#'+id+' button'); b[b.length-1].click(); b[0].click();}); const r=document.getElementById('rr-k'); r.value='50'; r.dispatchEvent(new Event('input')); document.querySelector('#mk-list [data-dn]').click(); return document.getElementById('rerank-note').textContent.slice(0,200)+' || '+document.getElementById('mk-out').textContent.slice(0,160)"
+  },
+  {
+   "name": "selfquery songs",
+   "expr": "const out=[]; document.querySelectorAll('#sqs-presets button').forEach(b=>{b.click(); out.push(b.textContent+' → '+document.getElementById('sqs-note').textContent.slice(0,90)+' | top: '+(document.querySelector('#sqs-cols > div:nth-child(2) .r .x b')||{textContent:'—'}).textContent);}); return document.getElementById('sq-gonzo-note').textContent.slice(0,120)+' || '+out.join(' || ')"
+  },
+  {
+   "name": "paraphrase ranks",
+   "expr": "return [...document.querySelectorAll('#para-rows .pr')].map(r=>(r.classList.contains('broken')?'✗ ':'· ')+r.querySelector('.rk').textContent).join(' | ')"
+  },
+  {
+   "name": "threshold groups",
+   "expr": "const bs=document.querySelectorAll('#thg-groups button'); bs[0].click(); bs[1].click(); const t=document.getElementById('thg-t'); t.value='0.55'; t.dispatchEvent(new Event('input')); const a=document.getElementById('thg-stats').textContent; bs[2].click(); const b=document.getElementById('thg-stats').textContent; bs[2].click(); return a+' || other encoder: '+b+' || '+document.getElementById('thg-note').textContent"
+  },
+  {
+   "name": "proxy slider",
+   "expr": "const t=document.getElementById('px-t'); const out=[]; for(const v of ['80','60','45','40']){ t.value=v; t.dispatchEvent(new Event('input')); out.push(v+': '+document.getElementById('px-stats').textContent);} t.value='80'; t.dispatchEvent(new Event('input')); document.querySelector('#px-plot circle').dispatchEvent(new MouseEvent('click',{bubbles:true})); return out.join(' | ')+' || '+document.getElementById('proxy-note').textContent"
+  },
+  {
+   "name": "kappa",
+   "expr": "const s=document.getElementById('ks-sh'); const out=[]; for(const v of ['0','1','2']){ s.value=v; s.dispatchEvent(new Event('input')); out.push(v+': '+document.getElementById('ks-stats').textContent);} s.value='1'; s.dispatchEvent(new Event('input')); return out.join(' | ')+' || '+document.getElementById('ks-check').textContent"
+  },
+  {
+   "name": "flare",
+   "timeout": 40000,
+   "expr": "const t=document.getElementById('fl-t'); t.value='0.4'; t.dispatchEvent(new Event('input')); document.getElementById('fl-run').click(); return new Promise(r=>setTimeout(()=>r(document.getElementById('fl-stats').textContent+' || '+document.getElementById('fl-log').textContent.slice(0,240)),16000))"
+  },
+  {
+   "name": "unfilled placeholders",
+   "expr": "const bad=[...document.querySelectorAll('.panel-note,.prose,.stat,.small-note')].map(n=>n.textContent).filter(t=>/\\{[a-zA-Z]+\\}|undefined|NaN/.test(t)).map(t=>t.slice(0,80)); return bad.length? bad.join(' | '):'none'"
+  },
+  {
+   "name": "svg text clipping",
+   "expr": "const bad=[]; document.querySelectorAll('svg').forEach((s,si)=>{ const vb=s.viewBox.baseVal; if(!vb||!vb.width) return; s.querySelectorAll('text').forEach(t=>{ if(t.getAttribute('transform')) return; let b; try{b=t.getBBox();}catch(e){return;} if(b.width===0) return; if(b.x<-1||b.y<-1||b.x+b.width>vb.width+1||b.y+b.height>vb.height+1) bad.push((s.closest('[id]')||{id:'svg'+si}).id+': \"'+t.textContent.slice(0,30)+'\" '+Math.round(b.x)+','+Math.round(b.y)+' '+Math.round(b.width)+'x'+Math.round(b.height)+' in '+vb.width+'x'+vb.height); }); }); return bad.length? bad.slice(0,25).join(' | ') : 'no clipped text'"
+  },
+  {
+   "name": "horizontal overflow",
+   "expr": "const w=document.documentElement.clientWidth; const bad=[...document.querySelectorAll('.panel, .ragfig, .prose')].filter(n=>n.scrollWidth>n.clientWidth+2 && !n.closest('.scroll-x')).map(n=>(n.id||n.className)+':'+n.scrollWidth+'>'+n.clientWidth); return bad.length? bad.slice(0,10).join(' | '):'none'"
+  }
+ ],
+ "screens": [
+  {
+   "sel": "#hero",
+   "file": "00_hero.png"
+  },
+  {
+   "sel": "#pipe",
+   "file": "01_pipe.png"
+  },
+  {
+   "sel": "#index",
+   "file": "02_index.png"
+  },
+  {
+   "sel": "#search",
+   "file": "03_search.png"
+  },
+  {
+   "sel": "#query",
+   "file": "04_query.png"
+  },
+  {
+   "sel": "#rerank",
+   "file": "05_rerank.png"
+  },
+  {
+   "sel": "#answer",
+   "file": "06_answer.png"
+  },
+  {
+   "sel": "#eval",
+   "file": "07_eval.png"
+  },
+  {
+   "sel": "#end",
+   "file": "08_end.png"
+  },
+  {
+   "sel": ".panel:has(#para-rows)",
+   "file": "x_para.png"
+  },
+  {
+   "sel": ".panel:has(#sqs-q)",
+   "file": "x_sqs.png"
+  },
+  {
+   "sel": ".panel:has(#fl-run)",
+   "file": "x_flare.png"
+  },
+  {
+   "sel": ".panel:has(#thg-plot)",
+   "file": "x_thg.png"
+  },
+  {
+   "sel": ".panel:has(#px-plot)",
+   "file": "x_proxy.png"
+  },
+  {
+   "sel": ".panel:has(#ks-grid)",
+   "file": "x_kappa.png"
+  },
+  {
+   "sel": "#eval",
+   "file": "x_eval_top.png"
+  }
+ ]
+}
