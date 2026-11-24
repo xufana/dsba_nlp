@@ -25,7 +25,9 @@ def add_cards(out):
     """Публикует объединённые страницы и ссылки на практику autumn-2026."""
     cards = []
     sources = sorted(ROOT.glob("week[0-9][0-9]_*/demo/week*_add.html"))
-    for i, src in enumerate(sources):
+    numbers = sorted({src.name[4:6] for src in sources} | ({"04"} if (ROOT / "week04_practice/week04_practice.ipynb").exists() else set()))
+    seminar_sources = {"week05_bert": ("04", "week04_pretraining_transfer"), "week06_gpt": ("05", "week05_decoder_only"), "week07_peft_alignment": ("07", "week07_peft")}
+    for src in sources:
         num = src.name[4:6]
         week = src.parent.parent.name
         page = src.read_text()
@@ -33,15 +35,24 @@ def add_cards(out):
         topics = build_site.inner(r'<template data-text="topics">(.*?)</template>', page)
         dest = out / f"week{num}"
         dest.mkdir(parents=True, exist_ok=True)
-        previous = sources[i-1].name[4:6] if i else None
-        following = sources[i+1].name[4:6] if i+1 < len(sources) else (
-            "04" if num == "03" and (ROOT / "week04_practice/week04_practice.ipynb").exists() else None)
+        position = numbers.index(num)
+        previous = numbers[position - 1] if position else None
+        following = numbers[position + 1] if position + 1 < len(numbers) else None
         (dest / "index.html").write_text(add_navigation(page, previous, following))
+        if week == "week08_practice":
+            for name in ("week08_practice.ipynb", "practice_data.json"):
+                shutil.copy2(ROOT / week / name, dest / name)
+            figures = ROOT / week / "figures"
+            if figures.exists():
+                shutil.copytree(figures, dest / "figures", dirs_exist_ok=True)
+        seminar_num, seminar_week = seminar_sources.get(week, (num, week))
+        branch = "ADD-2026" if week == "week08_practice" else "autumn-2026"
+        seminar_href = f"week{num}/" if week == "week08_practice" else f"{BASE}/week{seminar_num}/"
         cards.append({"num": num, "topic": title, "formula": None,
-                      "lecture": f"week{num}/", "href": f"{BASE}/week{num}/", "check": None,
+                      "lecture": f"week{num}/", "href": seminar_href, "check": None,
                       "topics": re.findall(r"<li>(.*?)</li>", topics or '', re.S),
-                      "colab": f"https://colab.research.google.com/github/{REPO}/blob/autumn-2026/{week}/{week}.ipynb",
-                      "github": f"https://github.com/{REPO}/blob/autumn-2026/{week}/{week}.ipynb"})
+                      "colab": f"https://colab.research.google.com/github/{REPO}/blob/{branch}/{seminar_week}/{seminar_week}.ipynb",
+                      "github": f"https://github.com/{REPO}/blob/{branch}/{seminar_week}/{seminar_week}.ipynb"})
     if not cards:
         raise SystemExit("Нет weekNN_add.html — запустите scripts/build_add.py")
     return cards
@@ -81,6 +92,8 @@ def main():
     add_out = args.out / 'add-2026'
     add_out.mkdir()
     add = build_site.render(add_cards(add_out))
+    add = add.replace('<a class="t" href="week08/">Lecture</a>', '<a class="t" href="week08/">Разбор и интерактивы</a>')
+    add = add.replace('<a class="t" href="week08/">Seminar demo</a>', '<a class="t" href="week08/">Практика ADD</a>')
     notebook = ROOT / "week04_practice/week04_practice.ipynb"
     if notebook.exists():
         practice = add_out / "week04"
@@ -94,8 +107,14 @@ def main():
         landing = landing.replace("Lectures and seminar demos for the NLP course, 4th year DSBA, autumn 2026.",
                                   "Занятие 4 · ADD-2026 · практика на CPU")
         landing = landing.replace("<footer>", '<footer><a href="../">ADD-2026 · все занятия</a> · ', 1)
+        following = '<a href="../week05/">Занятие 5 · BERT →</a> · ' if (add_out / "week05").exists() else ''
+        landing = landing.replace('<footer>', '<footer><a href="../week03/">← Занятие 3</a> · ' + following, 1)
         (practice / "index.html").write_text(landing)
-        add = add.replace("  </ol>", practice_card("week04/") + "\n  </ol>", 1)
+        marker = re.search(r'<li class="card">\s*<div class="num">05</div>', add)
+        if marker:
+            add = add[:marker.start()] + practice_card("week04/") + '\n' + add[marker.start():]
+        else:
+            add = add.replace("  </ol>", practice_card("week04/") + "\n  </ol>", 1)
     for en, ru in (
         ('<html lang="en">', '<html lang="ru">'),
         ('<title>NLP @ HSE DSBA</title>', '<title>NLP @ HSE DSBA · ADD-2026</title>'),

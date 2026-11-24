@@ -1,0 +1,12 @@
+/* Схемы и тезисы лекций о BERT и GPT. */
+.transformer-fig svg [role="button"] { cursor: pointer; }
+.transformer-fig svg [role="button"]:focus { outline: 2px solid var(--cls-1); outline-offset: 3px; }
+.transformer-fig svg text.small, .transformer-fig svg text.num { font-size: 12px; }
+.transformer-fig svg [data-f].hi > rect { stroke: var(--cls-1) !important; stroke-width: 2; }
+.prose.slide { font-size: 23px; line-height: 1.5; }
+.prose.slide p { margin-bottom: 14px; }
+details.more { margin: 10px 0 20px; }
+details.more > summary { color: var(--ink-2); font-size: 16px; cursor: pointer; }
+.panel-body:has(> .transformer-fig) { overflow-x: auto; }
+.panel-body select { max-width: 100%; }
+@media (max-width:600px) { .prose.slide { font-size: 20px; } .add-controls label { white-space: normal; flex-wrap: wrap; } }

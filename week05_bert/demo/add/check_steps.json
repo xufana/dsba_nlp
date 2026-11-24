@@ -1,0 +1,132 @@
+{
+  "steps": [
+    {
+      "name": "loaded",
+      "expr": "const ids=[...document.querySelectorAll('[id]')].map(x=>x.id);if(new Set(ids).size!==ids.length)throw Error('duplicate ID');if(/\\{[a-z][a-z0-9_]*\\}|undefined/.test(document.querySelector('main').innerText))throw Error('unfilled value');if(document.documentElement.lang!=='ru')throw Error('lang');if(document.querySelectorAll('.qz-nofig').length)throw Error('missing figure'); if(document.body.innerText.includes('{{'))throw Error('placeholder'); if([...document.querySelectorAll('[data-fig]')].some(h=>!h.querySelector('svg')))throw Error('empty diagram');return document.querySelectorAll('.qz').length+' вопросов, '+document.querySelectorAll('svg').length+' SVG';"
+    },
+    {
+      "name": "DSBA BERT picture in Russian before block 02",
+      "expr": "const section=document.querySelector('#bert'),panel=document.querySelector('.dsba-bert-copy');if(section.lastElementChild!==panel||section.nextElementSibling.id!=='pretrain')throw Error('placement');const check=(mode,text)=>{document.querySelector('#fig-bert-btns [data-m=\"'+mode+'\"]').click();if(!document.querySelector('#fig-bert svg').textContent.includes(text))throw Error(mode);redrawAll();if(document.querySelector('#fig-bert-btns .sel').dataset.m!==mode)throw Error('mode lost');};check('in','вход: сумма строк трёх таблиц');check('mlm','Голова MLM');check('nsp','подряд / случайно');for(const mode of ['mlm','nsp','in']){document.querySelector('#code-pretrain [data-f=\"'+mode+'\"]').dispatchEvent(new Event('pointerover',{bubbles:true}));if(document.querySelector('#fig-bert-btns .sel').dataset.m!==mode)throw Error('code hover');}if(/the input|The code|Hover a line|one vector per position|no loss here|softmax over/.test(panel.textContent))throw Error('English UI copy');return 'Russian labels, three modes and code hover; before block 02';"
+    },
+    {
+      "name": "norms, rotations, gates vs PyTorch",
+      "expr": "\nfor(const r of BERT_DATA.reference.norms){for(const [key,rms] of [['ln',false],['rms',true]])Transformer.norm(r.x,rms).forEach((v,i)=>{if(Math.abs(v-r[key][i])>1e-9)throw Error(key);});}\nfor(const r of BERT_DATA.reference.rope){const q=Transformer.rotate([1,0,.5,-1],r.p),k=Transformer.rotate([.5,1,-1,.5],r.r);for(const [key,a]of [['q',q],['k',k]])a.forEach((v,i)=>{if(Math.abs(v-r[key][i])>1e-9)throw Error('rotate');});if(Math.abs(Transformer.dot(q,k)-r.score)>1e-9)throw Error('score');}\nconst g=BERT_DATA.reference.gate;for(const name of ['silu','gelu'])g.x.forEach((v,i)=>{if(Math.abs(Transformer[name](v)-g[name][i])>1e-9)throw Error(name);});for(const r of BERT_DATA.reference.ffn){const a=BERT.ffnValues(r.kind,r.coordinate,r.raw);for(const [key,actual] of [['hidden',a.h],['output',a.out]])actual.forEach((v,i)=>{if(Math.abs(v-r[key][i])>1e-9)throw Error('FFN '+key);});}return BERT_DATA.reference.engine+'; 24 gated FFN cases';\n"
+    },
+    {
+      "name": "BERT token, MLM positions, saved predictions",
+      "expr": "const set=(id,v)=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};\nfor(let i=0;i<7;i++){set('bert-token',i);if(BERT.token!==i)throw Error('token');}document.querySelector('[data-token=\"2\"]').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));if(BERT.token!==2)throw Error('keyboard');\nfor(const i of [1,4,6])document.querySelector('[data-mlm=\"'+i+'\"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));document.getElementById('mlm-check').click();if(!document.getElementById('mlm-result').textContent.startsWith('Верно'))throw Error('mlm');document.getElementById('mlm-reset').click();if(BERT.selected.size||BERT.checked)throw Error('reset');\nfor(let i=0;i<3;i++){set('mlm-example',i);if(!document.getElementById('mlm-predictions').textContent.includes(BERT_DATA.mlm[i].top[0][0]))throw Error('prediction');}return 'token paths, keyboard, three MLM targets and three saved distributions';\n"
+    },
+    {
+      "name": "task heads and pretraining modes",
+      "expr": "const set=(id,v)=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};\nfor(const task of ['seq','ner','qa'])for(const train of ['head','all']){set('head-task',task);set('head-train',train);const s=document.querySelector('[data-fig=heads]').textContent;if(task==='qa'&&!s.includes('start'))throw Error('span');if(task==='ner'&&!s.includes('B-PER'))throw Error('NER');}\nset('pretrain-model','roberta');const before=document.querySelector('[data-fig=evolution]').textContent;document.getElementById('mask-next').click();if(before===document.querySelector('[data-fig=evolution]').textContent)throw Error('dynamic mask');set('pretrain-model','electra');if(!document.querySelector('[data-fig=evolution]').textContent.includes('совпали'))throw Error('ELECTRA');return 'six task/training states, dynamic masks and correct ELECTRA labels';\n"
+    },
+    {
+      "name": "local-global layers and padding",
+      "expr": "for(const r of BERT_DATA.reference.masks)r.allowed.forEach((row,i)=>row.forEach((v,j)=>{if(BERT.allowed(r.layer,i,j)!==v)throw Error('mask vs torch');}));const set=(id,v)=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};\nfor(const mode of ['bert','modern'])for(let depth=1;depth<=6;depth++)for(let token=0;token<9;token++){const actual=BERT.reachable(depth,token,mode);if(actual.size!==9)throw Error('global first layer');if(BERT.global(depth,mode)!==(mode==='bert'||[1,4].includes(depth)))throw Error('global');}\nset('modern-layer',2);document.querySelector('[data-modern=\"0\"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));if(BERT.modernToken!==0)throw Error('select');const c=document.getElementById('padding-off');for(const flag of [true,false]){c.checked=flag;c.dispatchEvent(new Event('input'));if(!document.getElementById('padding-result').textContent.startsWith(flag?'11':'15'))throw Error('padding');}return 'layer schedule, reachable paths and document boundaries';\n"
+    },
+    {
+      "name": "hover and focus",
+      "expr": "for(const scope of document.querySelectorAll('[data-link-scope]')){for(const line of scope.querySelectorAll('pre [data-f]')){line.dispatchEvent(new Event('focusin',{bubbles:true}));if(!scope.querySelector('svg [data-f=\"'+line.dataset.f+'\"].hi')&&!scope.querySelector('.formula [data-f=\"'+line.dataset.f+'\"].hi'))throw Error('no target '+line.dataset.f);line.dispatchEvent(new Event('focusout',{bubbles:true}));}}return 'all code links work';"
+    },
+    {
+      "name": "answer and persistence",
+      "expr": "for(const q of Object.values(QUIZ.data)){const h=document.querySelector('[data-q=\"'+q.key+'\"]');if(q.type==='pick'||q.type==='point'){for(const o of q.opts.filter(o=>o.right))h.querySelector('[data-k=\"'+o.k+'\"]').click();h.querySelector('.qz-check')?.click();}else if(q.type==='sort'){[...h.querySelectorAll('tr')].forEach((tr,i)=>{[...tr.querySelectorAll('button')].find(b=>b.dataset.b===q.items[i].bins[0]).click();});h.querySelector('.qz-check').click();}else if(q.type==='write'){h.querySelector('textarea').value='проверка';h.querySelector('textarea').dispatchEvent(new Event('input'));h.querySelector('.qz-check').click();}if(!h.classList.contains('done'))throw Error('not finished '+q.key);if(h.querySelector('.qz-verdict.no'))throw Error('wrong grading '+q.key);}const key='quiz:'+document.querySelector('meta[name=\"quiz-store\"]').content;const state=JSON.parse(localStorage.getItem(key));if(Object.values(state).filter(s=>s.done).length!==Object.keys(QUIZ.data).length)throw Error('persistence');return document.querySelector('#quiz-progress').textContent;"
+    },
+    {
+      "name": "reset",
+      "expr": "QUIZ.reset();if(document.querySelector('.qz.done'))throw Error('reset');return 'reset';"
+    },
+    {
+      "name": "SVG geometry in all modes",
+      "expr": "const set=(id,v)=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};document.querySelectorAll('details').forEach(d=>d.open=true);const check=()=>{document.querySelectorAll('details').forEach(d=>d.open=true);const bad=[];for(const svg of document.querySelectorAll('svg')){const v=svg.viewBox.baseVal;const ts=[...svg.querySelectorAll('text')];for(let i=0;i<ts.length;i++){const t=ts[i],b=t.getBBox();if(b.x<-.5||b.y<-.5||b.x+b.width>v.width+.5||b.y+b.height>v.height+.5)bad.push('clip '+t.textContent);for(let j=i+1;j<ts.length;j++){const c=ts[j].getBBox();if(b.x<c.x+c.width-1&&c.x<b.x+b.width-1&&b.y<c.y+c.height-1&&c.y<b.y+b.height-1)bad.push('overlap '+t.textContent+' / '+ts[j].textContent);}}}if(bad.length)throw Error(bad.join(' | '));return 'all SVG labels fit';};\nfor(const mode of ['seq','ner','qa']){set('head-task',mode);check();}for(const mode of ['bert','roberta','electra']){set('pretrain-model',mode);check();}for(const i of [0,1,2,3]){set('norm-input',i);check();}for(const i of [0,1]){set('rope-pair',i);for(const shift of [0,100]){set('rope-shift',shift);check();}}for(const kind of ['gelu','silu'])for(const coord of [0,1,2])for(const raw of [-4,0,4]){set('ffn-kind',kind);set('ffn-coordinate',coord);set('ffn-gate',raw);check();}for(const mode of ['in','mlm','nsp']){document.querySelector('#fig-bert-btns [data-m=\"'+mode+'\"]').click();check();}document.querySelector('#fig-bert-btns [data-m=\"in\"]').click();return 'all Russian labels fit in all three DSBA modes';\n"
+    }
+  ],
+  "screens": [
+    {
+      "sel": "#bert",
+      "file": "bert.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#pretrain",
+      "file": "pretrain.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#tasks",
+      "file": "tasks.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#evolution",
+      "file": "evolution.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#positions",
+      "file": "positions.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#block",
+      "file": "block.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#modern",
+      "file": "modern.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#block",
+      "file": "dark.png",
+      "height": 1300,
+      "expr": "document.documentElement.dataset.theme='dark'"
+    },
+    {
+      "sel": "#bert",
+      "file": "mobile.png",
+      "width": 390,
+      "height": 1050,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": ".dsba-bert-copy",
+      "file": "dsba_bert_in.png",
+      "height": 1100,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelector('#fig-bert-btns [data-m=\"in\"]').click();document.querySelector('.dsba-bert-copy details').open=false"
+    },
+    {
+      "sel": ".dsba-bert-copy",
+      "file": "dsba_bert_mlm.png",
+      "height": 1100,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelector('#fig-bert-btns [data-m=\"mlm\"]').click();document.querySelector('.dsba-bert-copy details').open=false"
+    },
+    {
+      "sel": ".dsba-bert-copy",
+      "file": "dsba_bert_nsp.png",
+      "height": 1100,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelector('#fig-bert-btns [data-m=\"nsp\"]').click();document.querySelector('.dsba-bert-copy details').open=false"
+    },
+    {
+      "sel": ".dsba-bert-copy",
+      "file": "dsba_bert_dark.png",
+      "height": 1100,
+      "expr": "document.documentElement.dataset.theme='dark';document.querySelector('#fig-bert-btns [data-m=\"in\"]').click()"
+    },
+    {
+      "sel": ".dsba-bert-copy",
+      "file": "dsba_bert_mobile.png",
+      "width": 390,
+      "height": 1100,
+      "expr": "document.documentElement.dataset.theme='light'"
+    }
+  ]
+}

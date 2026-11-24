@@ -1,0 +1,107 @@
+{
+  "steps": [
+    {
+      "name": "loaded",
+      "expr": "const ids=[...document.querySelectorAll('[id]')].map(x=>x.id);if(new Set(ids).size!==ids.length)throw Error('duplicate ID');if(/\\{[a-z][a-z0-9_]*\\}|undefined/.test(document.querySelector('main').innerText))throw Error('unfilled value');if(document.documentElement.lang!=='ru')throw Error('lang');if(document.querySelectorAll('.qz-nofig').length)throw Error('missing figure'); if(document.body.innerText.includes('{{'))throw Error('placeholder'); if([...document.querySelectorAll('[data-fig]')].some(h=>!h.querySelector('svg')))throw Error('empty diagram');return document.querySelectorAll('.qz').length+' вопросов, '+document.querySelectorAll('svg').length+' SVG';"
+    },
+    {
+      "name": "FlashAttention HBM traffic and phase controls",
+      "expr": "const h=document.querySelector('[data-fig=\"flash-flow\"]');if(!h.textContent.includes('Обычный attention')||!h.textContent.includes('FlashAttention')||!h.textContent.includes('SRAM'))throw Error('comparison');if(!document.querySelector('[data-fig=\"flash\"]').closest('details.optional'))throw Error('numeric example should fold');document.getElementById('flash-flow-reset').click();for(let phase=1;phase<=3;phase++){document.getElementById('flash-flow-next').click();if(GPT.flashPhase!==phase)throw Error('phase');for(const part of h.querySelectorAll('[data-flash-phase]')){const opacity=+part.getAttribute('opacity');if(opacity!==(Number(part.dataset.flashPhase)===phase?1:.23))throw Error('highlight');}}document.getElementById('flash-flow-reset').click();if(GPT.flashPhase!==0)throw Error('reset');return 'two implementations; all three phases and reset; numerical example folds';"
+    },
+    {
+      "name": "attention and every tile vs PyTorch SDPA",
+      "expr": "\nlet worst=0;for(const r of GPT_DATA.reference.attention){for(const tile of [1,2,3,8]){for(const actual of [Transformer.attention(r.q,r.k,r.v,r.causal),Transformer.tiled(r.q,r.k,r.v,r.causal,tile).output])actual.flat().forEach((v,i)=>{const e=Math.abs(v-r.output.flat()[i]);worst=Math.max(worst,e);if(!Number.isFinite(v)||e>1e-9)throw Error('SDPA '+e);});}}return GPT_DATA.reference.engine+'; 8 masks/shapes, 4 tile sizes; max error '+worst;\n"
+    },
+    {
+      "name": "cached prefixes and memory vs Python",
+      "expr": "\nconst r=GPT.flashData();for(let i=0;i<r.q.length;i++){const a=Transformer.attention([r.q[i]],r.k.slice(0,i+1),r.v.slice(0,i+1))[0];a.forEach((v,j)=>{if(Math.abs(v-GPT_DATA.reference.prefixes[i][j])>1e-9)throw Error('prefix');});}\nfor(const c of GPT_DATA.reference.cache)if(Transformer.cacheBytes(c.layers,c.heads,c.width,c.length)!==c.bytes)throw Error('bytes');\nfor(const h of [1,2,8])for(let q=0;q<8;q++)if(Transformer.group(q,8,h)!==Math.floor(q/(8/h)))throw Error('group');for(let stage=1;stage<=5;stage++){const cached=GPT.cacheCounts(stage,true),full=GPT.cacheCounts(stage,false);if(cached.total!==stage+3||full.total!==stage*4+stage*(stage-1)/2)throw Error('count');}return 'all causal prefixes, nine byte counts and all head mappings';\n"
+    },
+    {
+      "name": "training shift and complete saved generation",
+      "expr": "const set=(id,v)=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};\nset('training-mode','train');set('training-shift',0);document.getElementById('training-reveal').click();if(!document.getElementById('training-result').textContent.includes('Нужен сдвиг'))throw Error('wrong shift');set('training-shift',1);document.getElementById('training-reveal').click();if(!document.getElementById('training-result').textContent.startsWith('Верно'))throw Error('right shift');set('training-mode','generate');document.getElementById('generation-reset').click();for(let i=0;i<GPT_DATA.generation.tokens.length;i++)document.getElementById('generation-next').click();if(document.getElementById('generation-text').textContent!==GPT_DATA.generation.prompt.join('')+GPT_DATA.generation.tokens.join(''))throw Error('generation');if(!document.getElementById('generation-next').disabled)throw Error('end');return 'shift requires commitment; all saved tokens reconstruct exact continuation';\n"
+    },
+    {
+      "name": "cache, GQA and tiled attention controls",
+      "expr": "const set=(id,v)=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};\nfor(const mode of ['full','cache']){set('cache-mode',mode);document.getElementById('cache-reset').click();for(let stage=1;stage<=5;stage++)document.getElementById('cache-next').click();if(!document.getElementById('cache-next').disabled)throw Error('cache end');}\nfor(const h of [1,2,8]){set('gqa-heads',h);for(const n of [1,1024,8192])set('gqa-length',n);}\nfor(const mask of ['full','causal'])for(const tile of [1,2,3])for(let q=0;q<5;q++){set('flash-mask',mask);set('flash-tile',tile);set('flash-query',q);document.getElementById('flash-reset').click();for(let s=0;s<6&&!document.getElementById('flash-next').disabled;s++)document.getElementById('flash-next').click();if(!document.getElementById('flash-next').disabled)throw Error('tile end');}set('flash-mode','naive');if(!document.getElementById('flash-next').disabled)throw Error('naive');set('flash-mode','tiles');GPT.flashStep=1;GPT.cacheStage=2;redrawAll();return 'prefill/decode, 3 KV layouts, 30 tiled states and naive mode';\n"
+    },
+    {
+      "name": "hover and focus",
+      "expr": "for(const scope of document.querySelectorAll('[data-link-scope]')){for(const line of scope.querySelectorAll('pre [data-f]')){line.dispatchEvent(new Event('focusin',{bubbles:true}));if(!scope.querySelector('svg [data-f=\"'+line.dataset.f+'\"].hi')&&!scope.querySelector('.formula [data-f=\"'+line.dataset.f+'\"].hi'))throw Error('no target '+line.dataset.f);line.dispatchEvent(new Event('focusout',{bubbles:true}));}}return 'all code links work';"
+    },
+    {
+      "name": "answer and persistence",
+      "expr": "for(const q of Object.values(QUIZ.data)){const h=document.querySelector('[data-q=\"'+q.key+'\"]');if(q.type==='pick'||q.type==='point'){for(const o of q.opts.filter(o=>o.right))h.querySelector('[data-k=\"'+o.k+'\"]').click();h.querySelector('.qz-check')?.click();}else if(q.type==='sort'){[...h.querySelectorAll('tr')].forEach((tr,i)=>{[...tr.querySelectorAll('button')].find(b=>b.dataset.b===q.items[i].bins[0]).click();});h.querySelector('.qz-check').click();}else if(q.type==='write'){h.querySelector('textarea').value='проверка';h.querySelector('textarea').dispatchEvent(new Event('input'));h.querySelector('.qz-check').click();}if(!h.classList.contains('done'))throw Error('not finished '+q.key);if(h.querySelector('.qz-verdict.no'))throw Error('wrong grading '+q.key);}const key='quiz:'+document.querySelector('meta[name=\"quiz-store\"]').content;const state=JSON.parse(localStorage.getItem(key));if(Object.values(state).filter(s=>s.done).length!==Object.keys(QUIZ.data).length)throw Error('persistence');return document.querySelector('#quiz-progress').textContent;"
+    },
+    {
+      "name": "reset",
+      "expr": "QUIZ.reset();if(document.querySelector('.qz.done'))throw Error('reset');return 'reset';"
+    },
+    {
+      "name": "SVG geometry in all modes",
+      "expr": "const set=(id,v)=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};document.querySelectorAll('details').forEach(d=>d.open=true);const check=()=>{document.querySelectorAll('details').forEach(d=>d.open=true);const bad=[];for(const svg of document.querySelectorAll('svg')){const v=svg.viewBox.baseVal;const ts=[...svg.querySelectorAll('text')];for(let i=0;i<ts.length;i++){const t=ts[i],b=t.getBBox();if(b.x<-.5||b.y<-.5||b.x+b.width>v.width+.5||b.y+b.height>v.height+.5)bad.push('clip '+t.textContent);for(let j=i+1;j<ts.length;j++){const c=ts[j].getBBox();if(b.x<c.x+c.width-1&&c.x<b.x+b.width-1&&b.y<c.y+c.height-1&&c.y<b.y+b.height-1)bad.push('overlap '+t.textContent+' / '+ts[j].textContent);}}}if(bad.length)throw Error(bad.join(' | '));return 'all SVG labels fit';};\nfor(const mode of ['gpt','bert']){set('architecture-mode',mode);check();}for(const mode of ['train','generate']){set('training-mode',mode);check();}for(const mode of ['full','cache']){set('cache-mode',mode);for(let stage=0;stage<=5;stage++){GPT.cacheStage=stage;redrawAll();check();}}for(const h of [1,2,8]){set('gqa-heads',h);check();}for(const mode of ['naive','tiles']){set('flash-mode',mode);for(let n=0;n<4;n++){GPT.flashStep=n;redrawAll();check();}}for(let phase=0;phase<=3;phase++){GPT.flashPhase=phase;redrawAll();check();}GPT.flashPhase=0;redrawAll();return 'all GPT and memory-flow mode labels fit';\n"
+    }
+  ],
+  "screens": [
+    {
+      "sel": "#gpt",
+      "file": "gpt.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#training",
+      "file": "training.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#cache",
+      "file": "cache.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#gqa",
+      "file": "gqa.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#flash",
+      "file": "flash.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#growth",
+      "file": "growth.png",
+      "height": 1250,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details.more').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "#flash",
+      "file": "dark.png",
+      "height": 1300,
+      "expr": "document.documentElement.dataset.theme='dark'"
+    },
+    {
+      "sel": "#gpt",
+      "file": "mobile.png",
+      "width": 390,
+      "height": 1050,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('details').forEach(d=>d.open=false)"
+    },
+    {
+      "sel": "[data-fig=\"flash\"]",
+      "file": "flash_complete.png",
+      "height": 1300,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('#flash details').forEach(d=>d.open=true);document.getElementById('flash-mode').value='tiles';GPT.flashStep=3;redrawAll()"
+    },
+    {
+      "sel": "#flash",
+      "file": "flash_softmax.png",
+      "height": 1300,
+      "expr": "document.documentElement.dataset.theme='light';document.querySelectorAll('#flash details').forEach(d=>d.open=false);GPT.flashPhase=2;redrawAll()"
+    }
+  ]
+}

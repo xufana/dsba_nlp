@@ -1,0 +1,8 @@
+.generation-text { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); font-size: 15px; line-height: 1.65; }
+.generation-text { padding-top: 14px; }
+.generation-text mark { background: color-mix(in srgb,var(--cls-1) 20%,var(--panel)); color: var(--ink); }
+#model-passports { overflow-x: auto; }
+.flash-flow svg { max-width: 1040px; min-width: 900px; }
+.flash-flow svg text { font-size: 14px; }
+.flash-flow svg text.num { font-size: 13px; }
+.flash-flow svg text.small { font-size: 13px; }

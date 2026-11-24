@@ -1,0 +1,1712 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BERT и развитие энкодеров · ADD-2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* The design system of the seminar pages, shared by every week (scripts/build_demo.py puts it in <style>).
+   A week adds its own rules in demo/week.css, appended after this file. */
+:root {
+  color-scheme: light;
+  --ground:        #f7f6f2;
+  --panel:         #fdfdfc;
+  --panel-sunk:    #f1efe9;
+  --ink:           #14161a;
+  --ink-2:         #55595f;
+  --ink-3:         #8b8e92;
+  --rule:          #dcdad3;
+  --rule-strong:   #bab7ad;
+  --cls-0: #2a78d6; --cls-1: #eb6834; --cls-2: #1baf7a; --cls-3: #4a3aa7;
+  --good:  #0ca30c; --bad: #d03b3b;
+  --seq-1: #5598e7; --seq-2: #3987e5; --seq-3: #2a78d6; --seq-4: #256abf; --seq-5: #104281;
+  --shadow: 0 1px 2px rgba(20,22,26,.05), 0 8px 24px -16px rgba(20,22,26,.28);
+
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground:      #131413;
+    --panel:       #1b1c1b;
+    --panel-sunk:  #232422;
+    --ink:         #f0efe9;
+    --ink-2:       #a8a79f;
+    --ink-3:       #7b7a73;
+    --rule:        #31322e;
+    --rule-strong: #4c4d47;
+    --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+    --good: #0ca30c; --bad: #d03b3b;
+    --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground:      #131413;
+  --panel:       #1b1c1b;
+  --panel-sunk:  #232422;
+  --ink:         #f0efe9;
+  --ink-2:       #a8a79f;
+  --ink-3:       #7b7a73;
+  --rule:        #31322e;
+  --rule-strong: #4c4d47;
+  --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+  --good: #0ca30c; --bad: #d03b3b;
+  --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 20.1px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+
+/* ---------------------------------------------------------------- shell */
+.shell { display: grid; grid-template-columns: 278px minmax(0, 1fr); gap: 0; }
+.rail {
+  position: sticky; top: 0; align-self: start; height: 100vh;
+  border-right: 1px solid var(--rule);
+  padding: 26px 18px 18px 26px;
+  display: flex; flex-direction: column; gap: 18px;
+  overflow-y: auto;
+}
+.rail-mark {
+  font-family: var(--mono); font-size: 14px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.rail-eq { font-family: var(--display); font-size: 17.7px; font-weight: 700; line-height: 1.3; }
+.rail nav { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
+.rail nav a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: baseline;
+  padding: 4px 6px 4px 0; text-decoration: none; color: var(--ink-2);
+  font-family: var(--display); font-size: 16.4px; line-height: 1.32;
+  border-radius: 3px;
+}
+.rail nav a span:first-child {
+  font-family: var(--mono); font-size: 13.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.rail nav a:hover { color: var(--ink); background: var(--panel-sunk); }
+.rail nav a.on { color: var(--ink); font-weight: 700; }
+.rail nav a.on span:first-child { color: var(--ink); }
+.rail-foot { margin-top: auto; font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.6; }
+.rail-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+main { padding: 0 0 140px; min-width: 0; }
+.wrap { max-width: 1160px; padding: 0 48px; margin: 0 auto; }
+section { padding: 64px 0 8px; scroll-margin-top: 20px; }
+.prose { max-width: none; }
+.prose p { margin: 0 0 1.05em; }
+.prose p + p { margin-top: -.15em; }
+
+/* --------------------------------------------------------------- type */
+h1 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(41px, 6.04vw, 72.9px); line-height: .98; letter-spacing: -.025em;
+  margin: 0 0 22px; text-wrap: balance;
+}
+h2 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(27.5px, 3.19vw, 37.8px); line-height: 1.08; letter-spacing: -.018em;
+  margin: 0 0 14px; text-wrap: balance;
+}
+h3 {
+  font-family: var(--display); font-weight: 700; font-size: 20.6px;
+  letter-spacing: -.008em; margin: 34px 0 10px;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 14px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px;
+}
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.lede { font-size: 23.5px; line-height: 1.52; color: var(--ink-2); max-width: none; }
+.prose strong { font-weight: 600; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.prose code { background: var(--panel-sunk); padding: .1em .34em; border-radius: 3px; }
+a { color: inherit; text-underline-offset: 2px; text-decoration-color: var(--rule-strong); }
+
+/* -------------------------------------------------------------- panels */
+.panel {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 4px; box-shadow: var(--shadow);
+  margin: 22px 0 26px; overflow: hidden;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 11px 16px; border-bottom: 1px solid var(--rule);
+  background: var(--panel-sunk);
+  font-family: var(--mono); font-size: 14px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-2); flex-wrap: wrap;
+}
+.panel-body { padding: 18px 16px; }
+.panel-body.tight { padding: 12px 16px; }
+.panel-note {
+  padding: 12px 16px; border-top: 1px solid var(--rule); background: var(--panel-sunk);
+  font-size: 17.7px; color: var(--ink-2); line-height: 1.55;
+}
+.scroll-x { overflow-x: auto; }
+
+/* ------------------------------------------------------------- controls */
+button, .btn {
+  font-family: var(--display); font-size: 16.4px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px;
+  padding: 6px 12px; cursor: pointer; line-height: 1.35;
+  transition: background .12s ease, border-color .12s ease;
+}
+button:hover { background: var(--panel-sunk); border-color: var(--ink-3); }
+button[disabled] { opacity: .42; cursor: not-allowed; }
+button.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+button.primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
+button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.btnrow { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+input[type="text"], textarea, select {
+  font-family: var(--mono); font-size: 16.4px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px; padding: 8px 10px;
+  width: 100%;
+}
+input[type="range"] { accent-color: var(--ink); width: 100%; }
+label.field { display: block; font-family: var(--mono); font-size: 14px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+
+/* ---------------------------------------------------------------- data */
+table { border-collapse: collapse; width: 100%; font-size: 16.4px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--mono); font-size: 15.4px; }
+th.data-th { text-transform: none; letter-spacing: 0; font-size: 14.5px; color: var(--ink-2); }
+tr:last-child td { border-bottom: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 14.5px; letter-spacing: .02em;
+  padding: 2px 8px; border-radius: 2px; border: 1px solid var(--rule-strong);
+  white-space: nowrap;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.c0 { background: var(--cls-0); } .c1 { background: var(--cls-1); }
+.c2 { background: var(--cls-2); } .c3 { background: var(--cls-3); }
+.t0 { color: var(--cls-0); } .t1 { color: var(--cls-1); }
+.t2 { color: var(--cls-2); } .t3 { color: var(--cls-3); }
+
+.stat-row { display: flex; gap: 34px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .v { font-family: var(--display); font-weight: 700; font-size: 32.5px;
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); }
+
+.reveal-wrap { position: relative; }
+.veil {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 26px 16px; background: var(--panel-sunk);
+  border: 1px dashed var(--rule-strong); border-radius: 3px;
+  font-family: var(--mono); font-size: 15.4px; color: var(--ink-2);
+  text-align: center; flex-wrap: wrap;
+}
+[hidden] { display: none !important; }
+
+.tok {
+  display: inline-block; font-family: var(--mono); font-size: 15.4px;
+  padding: 1px 6px; margin: 2px 3px 2px 0; border-radius: 2px;
+  background: var(--panel-sunk); border: 1px solid var(--rule);
+}
+.tok.diff { border-color: var(--ink-3); background: var(--panel); font-weight: 500; }
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+
+svg { display: block; max-width: 100%; }
+svg text { font-family: var(--mono); fill: var(--ink-2); }
+.axis line, .axis path { stroke: var(--rule); }
+.gridline { stroke: var(--rule); stroke-dasharray: 2 3; }
+
+.tooltip {
+  position: fixed; pointer-events: none; z-index: 50; opacity: 0;
+  background: var(--panel); border: 1px solid var(--rule-strong);
+  border-radius: 3px; box-shadow: var(--shadow); padding: 7px 10px;
+  font-family: var(--mono); font-size: 14.5px; line-height: 1.5; color: var(--ink);
+  transition: opacity .1s ease; max-width: 280px;
+}
+
+.footnote { font-size: 17.2px; color: var(--ink-2); max-width: none; }
+
+/* library pointers: a quiet line of names, with the actual call one click away */
+.codenote { margin: 16px 0 0; border-top: 1px solid var(--rule); padding-top: 9px; }
+.codenote > summary {
+  cursor: pointer; list-style: none; display: flex; gap: 9px;
+  align-items: baseline; flex-wrap: wrap; padding: 2px 0;
+}
+.codenote > summary::-webkit-details-marker { display: none; }
+.codenote > summary::before {
+  content: "+"; font-family: var(--mono); font-size: 15px; color: var(--ink-3);
+  width: 9px; flex: none;
+}
+.codenote[open] > summary::before { content: "−"; }
+.codenote > summary:hover .libs, .codenote[open] > summary .libs { color: var(--ink); }
+.codenote .k {
+  font-family: var(--mono); font-size: 13px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3); flex: none;
+}
+.codenote .libs {
+  font-family: var(--mono); font-size: 15px; line-height: 1.55; color: var(--ink-2);
+  transition: color .12s ease;
+}
+.codenote pre {
+  margin: 11px 0 0; padding: 13px 15px; background: var(--panel-sunk);
+  border-radius: 3px; font-family: var(--mono); font-size: 15.4px; line-height: 1.8;
+  white-space: pre-wrap; word-break: break-word; color: var(--ink);
+}
+.codenote .why { font-size: 16.4px; color: var(--ink-2); line-height: 1.55; margin-top: 10px; }
+.codenote .why code { font-family: var(--mono); font-size: 15.4px; }
+.kbd {
+  font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; color: var(--ink-2);
+}
+
+/* ------------------------------------------------------- week 2 additions */
+.michael { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); }
+.michael figcaption { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-top: 8px; line-height: 1.5; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+
+/* a bet: pick one option, then reveal */
+.bet { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 12px; }
+.bet .q { font-family: var(--body); font-size: 17.5px; font-weight: 600; color: var(--ink); flex-basis: 100%; line-height: 1.4; }
+.bet button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.bet button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.bet button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.bet .verdict { font-family: var(--mono); font-size: 15px; margin-left: 6px; }
+.bet .verdict.ok { color: var(--good); } .bet .verdict.no { color: var(--bad); }
+
+/* generated text */
+.gen { font-size: 19.5px; line-height: 1.75; margin: 0 0 12px; }
+.gen .t { padding: 1px 1px; border-radius: 2px; white-space: pre-wrap; }
+.gen .copied { background: color-mix(in srgb, var(--cls-1) 22%, transparent); border-bottom: 2px solid var(--cls-1); }
+.gen .dead { color: var(--bad); font-family: var(--mono); }
+.gen .prompt { color: var(--ink-3); }
+.gen-list { display: flex; flex-direction: column; gap: 10px; }
+.gen-list .gen { padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; margin: 0; }
+
+.merge-row { display: grid; grid-template-columns: 54px 1fr 110px; gap: 10px; font-family: var(--mono); font-size: 15px; padding: 3px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.merge-row .n { color: var(--ink-3); } .merge-row .c { text-align: right; color: var(--ink-2); }
+.merge-row .p { display: flex; gap: 6px; align-items: center; }
+.merge-row .p .tok { margin: 0; }
+.merge-row .tok.new { border-color: var(--ink); font-weight: 600; }
+.eow { color: var(--cls-1); }
+
+.pbar { display: grid; grid-template-columns: 150px 1fr 64px; gap: 10px; align-items: center; font-family: var(--mono); font-size: 14.5px; padding: 2px 0; }
+.pbar .lab { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pbar .bar { height: 14px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pbar .bar i { display: block; height: 100%; background: var(--cls-0); }
+.pbar.cut .bar i { background: var(--rule-strong); } .pbar.cut .lab { color: var(--ink-3); }
+.pbar .v { color: var(--ink-2); }
+
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 18px; margin: 12px 0; }
+.sliders label.field { display: flex; justify-content: space-between; }
+.sliders label.field b { color: var(--ink); font-weight: 500; }
+.sliders .off { opacity: .4; }
+
+.tr-row { display: grid; grid-template-columns: 64px 1fr; gap: 8px 14px; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 18.5px; line-height: 1.5; }
+.tr-row .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.tr-row .bleu { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-left: 8px; }
+.tr-row:last-child { border-bottom: none; }
+.nowrap { white-space: nowrap; }
+.busy { opacity: .55; pointer-events: none; }
+
+/* formulas: native MathML, kept outside .prose so they survive presentation mode */
+math { font-family: "STIX Two Math", "Latin Modern Math", "Cambria Math", "Times New Roman", serif; }
+.prose math { font-size: 1.05em; }
+.formula {
+  margin: 12px 0 22px; padding: 14px 20px 12px; background: var(--panel-sunk);
+  border-left: 3px solid var(--rule-strong); border-radius: 3px; overflow-x: auto;
+}
+.formula .fn {
+  display: block; font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px;
+}
+.formula math { font-size: 1.25em; margin: 6px 0; }
+.formula math + math { margin-top: 10px; }
+.formula mtext { font-family: var(--body); font-size: .82em; color: var(--ink-2); }
+body.present .formula { margin-top: 10px; }
+
+/* the one-screen recipe */
+.recipe { padding: 4px 16px 6px; }
+.recipe .step { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--rule); }
+.recipe .step:first-child { border-top: none; }
+.recipe .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.recipe .k b { display: block; font-family: var(--display); font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1; margin-bottom: 4px; }
+.recipe pre { margin: 0; font-family: var(--mono); font-size: 14.5px; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--ink); }
+.recipe .c { color: var(--ink-3); }
+
+/* --------------------------------------------------- presentation mode */
+body.present .prose:not(.keep) { display: none; }
+body.present .footnote { display: none; }
+body.present section { min-height: 100vh; padding-top: 40px; }
+body.present .panel { margin-top: 14px; }
+body.present .lede { display: none; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; border-right: none;
+    border-bottom: 1px solid var(--rule); padding: 18px 20px; }
+  .rail nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .wrap { padding: 0 20px; }
+  body { font-size: 18.6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+/* ------------------------------------------------------- week 3 additions */
+/* code next to the formula it implements: hover a line, the term lights up (and back) */
+.two { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .two { grid-template-columns: 1fr; } }
+/* wide code: the formulas go below it, as a row of cards */
+.two.stacked { grid-template-columns: 1fr; }
+.two.stacked .fstack { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 6px 22px; }
+.two.stacked .fstack .row { border-top: none; border-left: 2px solid var(--rule); padding: 4px 0 4px 12px; grid-template-columns: 1fr; gap: 2px; }
+.two.stacked .fstack .row .n { white-space: nowrap; }
+.hm svg rect.flat { stroke: none; }
+#masks-out > div { display: flex; flex-direction: column; justify-content: flex-end; }
+#masks-out .hm-title { min-height: 2.8em; }
+.temp-table td:first-child { white-space: nowrap; }
+pre.code { margin: 0; padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; white-space: normal; overflow-x: auto; color: var(--ink); counter-reset: ln; }
+pre.code .ln { display: block; white-space: pre; min-height: 1.5em; padding: 0 8px 0 40px; margin: 0 -8px; position: relative; border-radius: 2px; transition: background .12s ease; }
+pre.code .ln::before { counter-increment: ln; content: counter(ln); position: absolute; left: 8px; width: 24px; text-align: right; color: var(--ink-3); font-size: 12.5px; top: 1px; }
+pre.code .ln[data-f] { cursor: default; }
+pre.code .ln.hi, .fstack .fx.hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .c { color: var(--ink-3); }
+pre.code .kw { color: var(--cls-3); }
+.fstack .fx { padding: 2px 6px; border-radius: 3px; transition: background .12s ease; }
+.fstack .fx[data-f] { cursor: default; }
+.fstack .fx.dim { opacity: .35; }
+.fstack .row { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--rule); }
+.fstack .row:first-child { border-top: none; }
+.fstack .row .n { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .08em; }
+.fstack .row .say { font-size: 16.4px; color: var(--ink-2); line-height: 1.5; margin-top: 2px; }
+.fstack math { font-size: 1.1em; }
+.fstack .row > div { min-width: 0; overflow-x: auto; }
+.two:not(.stacked) .fstack math { font-size: 1em; }
+.two:not(.stacked) .fstack math[display="block"] { display: inline-block; margin: 2px 0; }
+.fstack .fx.hi math { color: var(--ink); }
+
+/* a redrawn schematic and its credit line */
+.fig { margin: 8px 0 0; }
+.figcap { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.5; margin: 8px 0 2px; }
+.figcap a { color: var(--ink-2); }
+
+/* attention heatmaps */
+.hm-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.hm-title { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.hm svg rect.cell { stroke: var(--panel); stroke-width: .6; }
+.hm svg rect.cell:hover { stroke: var(--ink); stroke-width: 1.5; }
+.headgrid { display: grid; grid-template-columns: 40px repeat(8, minmax(0, 1fr)); gap: 4px; align-items: center; }
+.headgrid .lab { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); text-align: center; }
+.headgrid svg { cursor: pointer; border: 1px solid var(--rule); border-radius: 2px; background: var(--panel); }
+.headgrid svg.on { outline: 2px solid var(--cls-1); }
+
+/* the score table */
+.scores td math { font-size: 1.1em; }
+.scores td:first-child { font-weight: 600; font-family: var(--display); }
+
+/* live text-in → text-out panels */
+.io { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.io .out { font-family: var(--mono); font-size: 22px; letter-spacing: .04em; padding: 8px 12px; background: var(--panel-sunk); border-radius: 3px; min-height: 46px; }
+.io .out.ok { border-left: 3px solid var(--good); } .io .out.no { border-left: 3px solid var(--bad); }
+.small-note { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); margin-top: 6px; }
+.toggle { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 3px; overflow: hidden; }
+.toggle button { border: none; border-radius: 0; }
+.toggle button.sel { background: var(--ink); color: var(--ground); }
+.ck { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.ck b { color: var(--good); font-weight: 500; } .ck b.no { color: var(--bad); }
+.results th.data-th, .results td { font-size: 15.4px; }
+.results tr.hl td { background: color-mix(in srgb, var(--cls-0) 10%, transparent); }
+
+/* ------------------------------------------------------- week 4 additions */
+/* token strips: WordPiece pieces, with the continuation marker and special tokens coloured */
+.pieces { display: flex; flex-wrap: wrap; gap: 4px 3px; align-items: center; line-height: 1.3; }
+.pieces .tok { margin: 0; }
+.pieces .tok.cont { border-color: color-mix(in srgb, var(--cls-1) 60%, var(--rule)); background: color-mix(in srgb, var(--cls-1) 10%, var(--panel)); }
+.pieces .tok.sp { border-color: var(--ink-3); color: var(--ink-2); font-weight: 600; }
+.pieces .tok.unk { border-color: var(--bad); color: var(--bad); font-weight: 600; }
+.pieces .tok.eow { color: var(--cls-1); }
+.pieces .tok.seg1 { background: color-mix(in srgb, var(--cls-2) 12%, var(--panel)); }
+.pieces .tok.mk { background: color-mix(in srgb, var(--cls-3) 22%, var(--panel)); border-color: var(--cls-3); }
+.pieces .tok.rnd { background: color-mix(in srgb, var(--cls-1) 22%, var(--panel)); border-color: var(--cls-1); }
+.pieces .tok.keep { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.pieces .tok.ans { background: color-mix(in srgb, var(--good) 22%, var(--panel)); border-color: var(--good); font-weight: 600; }
+.pieces .tok.ent { font-weight: 600; }
+.pieces .tok.dim { opacity: .45; }
+.pieces .tok.word { border-style: dashed; }
+.pieces .gap { flex-basis: 100%; height: 0; }
+.pieces .lab { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin-right: 6px; letter-spacing: .06em; text-transform: uppercase; }
+/* the merge stepper */
+.merge-row.wp { grid-template-columns: 54px 1fr 190px; }
+.merge-row .c small { color: var(--ink-3); }
+.merge-list { max-height: 330px; overflow-y: auto; }
+.merge-row.now { background: color-mix(in srgb, var(--cls-1) 12%, transparent); }
+/* the two encoders side by side */
+.enc-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.enc-row .k { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.enc-row:last-child { border-bottom: none; }
+.enc-row.diff .k { color: var(--cls-1); }
+/* segmentation lattice rows */
+.seg-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.seg-row .p { font-family: var(--mono); font-size: 14.5px; text-align: right; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.seg-row.best .p { color: var(--ink); font-weight: 600; }
+.seg-row:last-child { border-bottom: none; }
+/* a small legend line */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin: 8px 0 0; align-items: center; }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; border: 1px solid var(--rule-strong); }
+/* zero-shot label pickers */
+.zs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 14px; }
+.zs-grid label.field b { color: var(--ink); }
+.zs-grid select { width: 100%; }
+.conf { border-collapse: collapse; font-family: var(--mono); font-size: 14px; }
+.conf td, .conf th { padding: 4px 9px; text-align: right; border-bottom: none; }
+.conf th { font-size: 12.5px; }
+.conf td.hit { background: color-mix(in srgb, var(--good) 18%, transparent); }
+.conf td.miss { color: var(--ink-3); }
+/* the head figure toggle and the task tables */
+.task-table td:first-child { font-weight: 600; font-family: var(--display); white-space: nowrap; }
+.task-table td { vertical-align: top; font-size: 15.4px; }
+.task-table code { white-space: nowrap; }
+/* a load report */
+pre.report { margin: 0; font-family: var(--mono); font-size: 13.5px; line-height: 1.55; white-space: pre; overflow-x: auto; color: var(--ink-2); padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; }
+pre.report .miss { color: var(--bad); font-weight: 600; } pre.report .unex { color: var(--ink-3); }
+/* the dial */
+.dial { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .dial { grid-template-columns: 1fr; } }
+.dial .knob { display: flex; gap: 6px; flex-wrap: wrap; }
+.dial .knob button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the MLM variants, under a toggle */
+details.variants { margin: 12px 0 0; }
+details.variants > summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 18px; padding: 8px 0; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+details.variants > summary::-webkit-details-marker { display: none; }
+details.variants > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.variants[open] > summary::before { content: "−"; }
+.variant { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: center; padding: 14px 0; border-top: 1px solid var(--rule); }
+@media (max-width: 1000px) { .variant { grid-template-columns: 1fr; } }
+.variant .say { font-size: 17px; line-height: 1.55; color: var(--ink-2); }
+.variant .say b { color: var(--ink); }
+/* NER entity chips */
+.ent-line { font-size: 18.5px; line-height: 2.1; margin: 0 0 8px; }
+.ent { padding: 2px 6px; border-radius: 3px; border-bottom: 2px solid; white-space: nowrap; }
+.ent i { font-family: var(--mono); font-style: normal; font-size: 11.5px; letter-spacing: .06em; margin-left: 5px; opacity: .8; }
+.ent.PER { background: color-mix(in srgb, var(--cls-0) 16%, transparent); border-color: var(--cls-0); }
+.ent.ORG { background: color-mix(in srgb, var(--cls-1) 16%, transparent); border-color: var(--cls-1); }
+.ent.LOC { background: color-mix(in srgb, var(--cls-2) 16%, transparent); border-color: var(--cls-2); }
+.ent.MISC { background: color-mix(in srgb, var(--cls-3) 16%, transparent); border-color: var(--cls-3); }
+.ent.wrong { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* alignment table */
+.align { font-family: var(--mono); font-size: 14.5px; border-collapse: collapse; }
+.align td, .align th { padding: 3px 10px; }
+.align td.ign { color: var(--ink-3); }
+.align tr.cont td:first-child { color: var(--cls-1); }
+/* QA */
+.ctx { font-size: 18px; line-height: 1.7; }
+.ctx mark { background: color-mix(in srgb, var(--good) 28%, transparent); color: inherit; padding: 1px 2px; border-radius: 2px; }
+.ctx mark.gold { background: none; box-shadow: inset 0 -2px 0 var(--cls-0); }
+.ctx .q { color: var(--ink-3); }
+.window { border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; margin: 8px 0; }
+.window .wh { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+.window .wh b { color: var(--ink); font-weight: 500; }
+.qa-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px 14px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; align-items: baseline; }
+.qa-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: block; }
+.qa-row:last-child { border-bottom: none; }
+.qa-row .ok { color: var(--good); } .qa-row .no { color: var(--bad); }
+
+/* ------------------------------------------------ week 4, second pass (2026-09-30) */
+/* a schematic with states: the buttons switch what the same picture highlights */
+.fig-states { display: flex; gap: 6px; flex-wrap: wrap; }
+.fig-states button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the variants footnote: three small pictures, each with its paragraph */
+.variant .fig svg { max-width: 560px; }
+/* clickable tokens (the MLM picker): the chosen one is outlined */
+.pieces .tok.pick { cursor: pointer; }
+.pieces .tok.pick:hover { border-color: var(--ink); }
+.pieces .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* the scoreboard in the rail: rows light up as reveals happen */
+.score { margin-top: 12px; border-top: 1px solid var(--rule); padding-top: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+.score .row { display: grid; grid-template-columns: 1fr 52px; gap: 6px; padding: 2px 0; line-height: 1.35; align-items: baseline; }
+.score .row.off { opacity: .38; }
+.score .row.on { color: var(--ink); }
+.score .row.line { color: var(--bad); border-bottom: 1px dashed var(--bad); margin-bottom: 3px; }
+.score .row .v { text-align: right; font-variant-numeric: tabular-nums; }
+.score .row.pass .v { color: var(--good); font-weight: 600; }
+.score .t { letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+/* the results table sorters */
+.sorters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.sorters button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* a bare figure caption line under a schematic */
+.figline { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin: 6px 0 0; line-height: 1.5; }
+/* two-column figure + code */
+.fig-code { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+/* the QA score rows: hover a token to read both scores */
+.qa-pick { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.qa-pick button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.qa-pick button.noans { border-style: dashed; }
+
+/* ------------------------------------------------------- week 5 additions */
+/* the two tables, growing: a row that has just been written */
+.results tr.new td, .costs tr.new td { animation: rowin .9s ease; }
+@keyframes rowin { from { background: color-mix(in srgb, var(--cls-1) 30%, transparent); } to { background: transparent; } }
+.costs td, .costs th { font-size: 14.5px; }
+.costs td.mono { font-size: 13.5px; }
+/* the logit-lens strip: one column per layer, five guesses each */
+.lens { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); gap: 4px; overflow-x: auto; }
+.lens .col { display: flex; flex-direction: column; gap: 2px; }
+.lens .col .h { font-family: var(--mono); font-size: 12px; color: var(--ink-3); text-align: center; letter-spacing: .06em; padding-bottom: 3px; border-bottom: 1px solid var(--rule); margin-bottom: 2px; }
+.lens .g { font-family: var(--mono); font-size: 13px; padding: 1px 5px; border-radius: 2px; white-space: pre; overflow: hidden; text-overflow: ellipsis; background: var(--panel-sunk); }
+.lens .g.gold { background: color-mix(in srgb, var(--good) 28%, transparent); font-weight: 600; }
+.lens .g.same { box-shadow: inset 0 0 0 1px var(--cls-1); }
+.lens .g i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+.tokrow { display: flex; flex-wrap: wrap; gap: 3px; margin: 8px 0; }
+.tokrow .tok { cursor: pointer; margin: 0; }
+.tokrow .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* attention: the heatmap and its controls */
+.att { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .att { grid-template-columns: 1fr; } }
+.att canvas { width: 100%; image-rendering: pixelated; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+.att .hm-box { position: relative; }
+.att .ax { font-family: var(--mono); font-size: 12px; color: var(--ink-3); display: flex; justify-content: space-between; }
+/* RoPE dials */
+.dials { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin: 8px 0 14px; }
+.clocks svg { max-width: 760px; }
+.rope-out { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rope-out .box { padding: 12px 14px; background: var(--panel-sunk); border-radius: 3px; }
+.rope-out .box .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.rope-out .box .v { font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; transition: color .15s; }
+.rope-out .box.moved .v { color: var(--bad); } .rope-out .box.still .v { color: var(--good); }
+/* the KV stepper */
+.stepper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.stepper .cnt { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.stepper .cnt b { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* the verbalizer builder */
+.vb { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; }
+@media (max-width: 900px) { .vb { grid-template-columns: repeat(2, 1fr); } }
+.vb .cls { border-top: 3px solid; padding-top: 6px; }
+.vb .cls.c0 { border-color: var(--cls-0); background: none; } .vb .cls.c1 { border-color: var(--cls-1); background: none; }
+.vb .cls.c2 { border-color: var(--cls-2); background: none; } .vb .cls.c3 { border-color: var(--cls-3); background: none; }
+.vb .cls .h { font-family: var(--display); font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.vb .words { display: flex; flex-wrap: wrap; gap: 4px; }
+.vb .words button { font-family: var(--mono); font-size: 13px; padding: 2px 7px; }
+.vb .words button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.vb .words button i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 3px; }
+.vb .words button.on i { color: var(--ground); opacity: .7; }
+.vb-acc { display: flex; gap: 30px; align-items: baseline; flex-wrap: wrap; margin-top: 12px; }
+/* the design card as a form */
+.card { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px 16px; align-items: center; }
+.card .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.card select, .card input { width: auto; min-width: 200px; }
+.card .row-btns button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.card-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.card-tabs button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.est { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+.est .stat .v { font-size: 26px; }
+/* label-it-yourself over words */
+.words-pick { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: flex-end; }
+.words-pick .w { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.words-pick .w .s { font-family: var(--mono); font-size: 14px; }
+.words-pick .w select { font-size: 12.5px; padding: 2px 4px; width: auto; }
+.words-pick .w.hit select { border-color: var(--good); } .words-pick .w.miss select { border-color: var(--bad); }
+.words-pick .w .g { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+.words-pick .w.unx .s { text-decoration: underline dotted var(--bad); }
+/* unexpressible words in a typed sentence */
+.wl { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.wl .tok.unx { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+.wl .tok i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+/* per-row bets over a table */
+table.rowbet td.b { white-space: nowrap; }
+table.rowbet td.b button { font-size: 13px; padding: 2px 8px; }
+table.rowbet td.b button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.rowbet td.b button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.rowbet td.b button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.rowbet td.zero { color: var(--bad); font-weight: 600; }
+/* horizontal bar pairs for the breakdowns */
+.pair { display: grid; grid-template-columns: 90px 1fr 1fr 150px; gap: 8px; align-items: center; font-family: var(--mono); font-size: 13.5px; padding: 2px 0; }
+.pair .lab { text-align: right; color: var(--ink-2); }
+.pair .bar { height: 12px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pair .bar i { display: block; height: 100%; }
+.pair .bar.e i { background: var(--cls-0); } .pair .bar.d i { background: var(--cls-1); }
+.pair .n { color: var(--ink-3); }
+.pair.hl .lab { color: var(--bad); font-weight: 600; }
+/* generated text against gold: dropped words */
+.diffline { font-size: 17px; line-height: 1.8; }
+.diffline .drop { color: var(--bad); text-decoration: line-through; }
+.diffline .chg { background: color-mix(in srgb, var(--cls-1) 24%, transparent); border-radius: 2px; }
+/* NER writer */
+.ner-write textarea { min-height: 64px; }
+.ner-parse { margin-top: 8px; }
+.ent.inv { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* QA */
+.ctx mark.pred { background: color-mix(in srgb, var(--good) 28%, transparent); }
+.ctx .nosub { color: var(--bad); font-weight: 600; }
+.order-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; }
+.order-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.order-row:last-child { border-bottom: none; }
+/* lightning round */
+.lr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.lr:last-child { border-bottom: none; }
+.lr .pick { display: flex; gap: 4px; flex-wrap: wrap; }
+.lr .pick button { font-family: var(--mono); font-size: 13px; padding: 2px 8px; }
+.lr .pick button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.lr .pick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.lr .pick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.lr .ans { grid-column: 1 / -1; font-size: 16px; color: var(--ink-2); line-height: 1.5; }
+/* the course table */
+.course td:first-child { font-family: var(--mono); }
+.course tr.now td { background: color-mix(in srgb, var(--cls-1) 10%, transparent); font-weight: 600; }
+.big-num { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: -.03em; line-height: 1; }
+
+/* ------------------------------------------------------- week 6 additions */
+/* the meme, kept: an image with a caption beside it */
+.michael { display: grid; grid-template-columns: minmax(0, .9fr) minmax(280px, 1.1fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; max-width: 452px; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+.michael figcaption { font-family: var(--body); font-size: 17.7px; color: var(--ink-2); line-height: 1.55; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+/* pick three changes */
+.picklist { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.picklist button { font-size: 15px; padding: 4px 11px; }
+.picklist button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.picklist button.yes { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.picklist button.no { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.picklist button .why { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+/* the N–D plane */
+.plane-wrap { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .plane-wrap { grid-template-columns: 1fr; } }
+.plane-models { display: flex; flex-direction: column; gap: 6px; }
+.plane-models button { text-align: left; font-size: 14.5px; display: flex; justify-content: space-between; gap: 8px; }
+.plane-models button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.plane-models button .st { font-family: var(--mono); font-size: 12px; opacity: .7; }
+#plane svg { max-width: 760px; cursor: crosshair; }
+#plane svg.done { cursor: default; }
+/* the bill table */
+table.bill td, table.bill th { font-size: 14px; white-space: nowrap; }
+table.bill td:first-child { font-weight: 600; font-family: var(--display); }
+/* passports as a diff */
+.pp-row { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 6px 14px; padding: 6px 0; border-bottom: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; align-items: baseline; }
+.pp-row:last-child { border-bottom: none; }
+.pp-row .k { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pp-row.head { font-family: var(--display); font-weight: 700; font-size: 16px; }
+.pp-row.diff { background: color-mix(in srgb, var(--cls-1) 9%, transparent); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 3px; }
+.pp-row.diff .k { color: var(--cls-1); }
+.pp-row .sec { font-size: 11.5px; color: var(--ink-3); margin-left: 6px; }
+/* norm grid and rope grid: controls beside the picture */
+.norm-grid, .rope-grid { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .norm-grid, .rope-grid { grid-template-columns: 1fr; } }
+#fig-norm svg { max-width: 620px; } #fig-rope-matrix svg { max-width: 560px; display: block; margin: 0 auto; }
+#fig-rope-coords svg, #fig-slow svg, #fig-gqa svg, #fig-ffn svg, #fig-stack svg, #fig-prenorm svg, #fig-regimes svg, #fig-queue svg, #fig-roundtrip svg, #fig-moe svg, #fig-scatter svg, #fig-linear svg, #fig-masks svg { max-width: 920px; display: block; }
+#ffn-curves svg, #ffn-gate svg, #scaling-chart svg, #steps-chart svg, #tpp-chart svg, #serving-chart svg, #decode-chart svg, #xover-chart svg, #lin-chart svg { max-width: 640px; }
+/* order-the-models bet */
+.orderpick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+.orderpick button { font-size: 15px; }
+.orderpick button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.orderpick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.orderpick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.orderpick button i { font-style: normal; font-family: var(--mono); font-size: 11.5px; margin-right: 6px; opacity: .7; }
+.orderpick .arrow { color: var(--ink-3); }
+/* heatmap cells for the per-class table */
+.conf td.v { font-variant-numeric: tabular-nums; }
+/* small inline stat row */
+.est .stat .v small { font-size: 13px; font-weight: 400; color: var(--ink-3); margin-left: 4px; }
+.small-note { font-family: var(--mono); font-size: 13px; color: var(--ink-3); line-height: 1.5; margin-top: 8px; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 18px; margin-bottom: 10px; }
+.bet .q input { vertical-align: middle; }
+#bpb-out .pbar { grid-template-columns: 190px 1fr 70px; }
+#bpb-out .pbar .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prose.footnote ul { padding-left: 1.2em; line-height: 1.6; }  /* reference lists */
+
+/* ------------------------------------------------- lecture pages (demo_base/quiz.js) */
+/* one question: number + kind, the question, the answering UI, the answer (hidden until committed) */
+.qz { border-top: 1px solid var(--rule); padding: 22px 0 26px; }
+.qz:last-of-type { border-bottom: 1px solid var(--rule); }
+.qz-head { display: flex; gap: 12px; align-items: baseline; font-family: var(--mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.qz-n { font-weight: 500; color: var(--ink-2); }
+.qz.done .qz-n::after { content: " ✓"; color: var(--good); }
+.qz-q { font-family: var(--display); font-size: 21.5px; font-weight: 600; line-height: 1.35; color: var(--ink); margin-bottom: 12px; }
+.qz-q p { margin: 0 0 .55em; } .qz-q p:last-child { margin-bottom: 0; }
+.qz-q code { font-size: .82em; font-weight: 500; background: var(--panel-sunk); padding: .05em .3em; border-radius: 3px; }
+.qz-q [data-fig] { margin: 14px 0 10px; }
+.qz-q [data-fig] svg, .qz-a [data-fig] svg, .panel [data-fig] svg { width: 100%; max-width: 820px; height: auto; display: block; margin: 0 auto; }
+.qz-q table { font-family: var(--body); font-weight: 400; font-size: 16.4px; margin: 10px 0; width: auto; }
+.qz-ui { margin: 0 0 6px; }
+.qz-row { margin-top: 10px; min-height: 28px; }
+.qz-verdict { font-family: var(--mono); font-size: 15px; color: var(--ink-2); }
+.qz-verdict.ok { color: var(--good); } .qz-verdict.no { color: var(--bad); }
+.qz-opts button.missed { border-style: dashed; border-color: var(--good); }
+.qz-opts button[disabled] { opacity: 1; cursor: default; }
+.qz-opts button[disabled]:not(.right):not(.wrong):not(.missed) { opacity: .5; }
+/* clickable parts of a figure: lecture.js draws a rect.hit as the last child of every [data-pick] group */
+svg rect.hit { fill: transparent; stroke: none; }  /* a figure drawn outside a question: its click targets stay invisible */
+.qz-pickable { cursor: pointer; }
+.qz-pickable rect.hit { fill: transparent; stroke: transparent; stroke-width: 2; stroke-dasharray: 4 3; transition: stroke .12s ease; }
+.qz-pickable:hover rect.hit { stroke: var(--ink-3); }
+.qz-pickable.pick rect.hit { stroke: var(--ink); stroke-dasharray: none; fill: color-mix(in srgb, var(--ink) 8%, transparent); }
+.qz-pickable.right rect.hit { stroke: var(--good); stroke-dasharray: none; fill: color-mix(in srgb, var(--good) 12%, transparent); }
+.qz-pickable.wrong rect.hit { stroke: var(--bad); stroke-dasharray: none; fill: color-mix(in srgb, var(--bad) 12%, transparent); }
+.qz-pickable.missed rect.hit { stroke: var(--good); }
+/* sort: one row per item, the bins as buttons */
+table.qz-sort td { padding: 7px 10px 7px 0; vertical-align: top; }
+table.qz-sort td.qz-item { font-size: 17.5px; width: 38%; }
+table.qz-sort td.qz-bins { display: flex; flex-wrap: wrap; gap: 5px 6px; }
+table.qz-sort td.qz-bins button { font-size: 14.5px; padding: 3px 10px; }
+table.qz-sort button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.qz-sort button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.qz-sort button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.qz-sort button.ans { border-color: var(--good); border-style: dashed; }
+table.qz-sort button[disabled] { opacity: 1; cursor: default; }
+table.qz-sort button[disabled]:not(.right):not(.wrong):not(.ans) { opacity: .45; }
+.qz-count { font-size: 14px; color: var(--ink-3); }
+/* fill: inputs inline in the question */
+input.qz-blank { width: auto; display: inline-block; font-size: .85em; padding: 1px 8px; margin: 0 2px; text-align: center; vertical-align: baseline; border-radius: 3px; }
+input.qz-blank.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+input.qz-blank.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); text-decoration: line-through; color: var(--ink-3); }
+.qz-exp { font-family: var(--mono); font-size: .8em; color: var(--good); margin: 0 6px 0 2px; font-weight: 500; }
+/* write: a textarea, then a checklist */
+textarea.qz-text { font-family: var(--body); font-size: 17.5px; line-height: 1.5; min-height: 80px; resize: vertical; }
+.qz-ticks { margin-top: 14px; display: flex; flex-direction: column; gap: 5px; }
+.qz-ticks-k { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px; }
+.qz-ticks label { display: flex; gap: 10px; align-items: baseline; font-size: 17.2px; line-height: 1.45; cursor: pointer; }
+.qz-ticks input { accent-color: var(--ink); flex: none; }
+/* the answer */
+.qz-a { margin-top: 16px; padding: 14px 18px 14px 18px; background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--ink); border-radius: 4px; font-size: 18.6px; line-height: 1.62; }
+.qz-a p { margin: 0 0 .75em; } .qz-a p:last-child { margin-bottom: 0; }
+.qz-a ul, .qz-a ol { margin: 0 0 .75em; padding-left: 1.3em; }
+.qz-a code { background: var(--panel-sunk); padding: .08em .32em; border-radius: 3px; font-size: .86em; }
+.qz-a table { font-size: 16px; margin: 8px 0 12px; width: auto; }
+.qz-a [data-fig] { margin: 10px 0 12px; }
+.qz-miss { color: var(--ink-2); font-size: 17.2px; line-height: 1.55; border-top: 1px dashed var(--rule); padding-top: 10px; margin-top: .9em !important; }
+.qz-miss b { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--ink-3); margin-right: 8px; }
+.qz-nofig { font-family: var(--mono); font-size: 14px; color: var(--bad); padding: 8px 0; }
+/* optional depth under a toggle; its questions do not count toward the page's progress */
+details.optional { margin: 20px 0 0; border: 1px dashed var(--rule-strong); border-radius: 4px; padding: 0 18px; }
+details.optional > summary { cursor: pointer; list-style: none; display: flex; gap: 10px; align-items: baseline; padding: 12px 0; font-family: var(--display); font-weight: 600; font-size: 18px; }
+details.optional > summary::-webkit-details-marker { display: none; }
+details.optional > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.optional[open] > summary::before { content: "−"; }
+details.optional > summary .optional-count { margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--ink-3); font-weight: 400; }
+details.optional > .prose { padding-top: 4px; }
+details.optional .qz:last-of-type { border-bottom: none; }
+.rail .quiz-progress { font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin-top: 8px; }
+.rail a.back { display: inline-block; margin-top: 8px; font-family: var(--display); font-size: 16px; color: var(--ink-2); }
+.sources { font-size: 17.2px; color: var(--ink-2); }
+.sources ul { padding-left: 1.2em; line-height: 1.6; }
+@media (max-width: 760px) {
+  .qz-q { font-size: 19px; }
+  table.qz-sort td.qz-item { width: 100%; display: block; padding-bottom: 2px; }
+  table.qz-sort td.qz-bins { display: flex; padding-top: 0; }
+  table.qz-sort tr { display: block; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+}
+
+/* --- this week --- */
+/* Связи схем, формул и кода на страницах ADD. */
+[data-link-scope] { margin: 18px 0; }
+[data-link-scope] svg { width: 100%; max-width: 760px; height: auto; display: block; margin: 0 auto; }
+[data-link-scope] svg text { fill: var(--ink); font-family: var(--mono); font-size: 14px; }
+[data-link-scope] svg .caption { fill: var(--ink-2); font-family: var(--body); font-size: 16px; }
+[data-link-scope] svg rect { fill: var(--panel-sunk); stroke: var(--rule-strong); }
+[data-link-scope] svg path, [data-link-scope] svg line { stroke: var(--ink-3); fill: none; }
+[data-link-scope] svg .accent { fill: color-mix(in srgb, var(--cls-0) 15%, var(--panel)); }
+[data-f] { transition: background .12s, fill .12s; }
+svg [data-f] { cursor: pointer; }
+svg [data-f].hi rect, svg rect[data-f].hi { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)); stroke: var(--cls-1); }
+.formula [data-f].hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .ln { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre.code { overflow-x: hidden; }
+.add-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.add-controls label { display: flex; gap: 8px; align-items: center; font-size: 16px; }
+.add-controls output { font-family: var(--mono); }
+.add-result { font-family: var(--mono); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.add-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.add-table td, .add-table th { padding: 8px 10px; border-bottom: 1px solid var(--rule); text-align: left; }
+.add-table button { padding: 3px 8px; }
+.add-links { display: flex; gap: 8px 18px; flex-wrap: wrap; font-size: 16px; }
+.sources { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .add-table td, .add-table th { padding: 6px 3px; font-size: 13px; } }
+svg text[data-f].hi, svg [data-f].hi > text { fill: var(--cls-1); }
+[data-link-scope] svg rect.hit { fill: transparent; stroke: none; }
+.panel-body > [data-fig], .qz-q > [data-link-scope] { overflow-x: auto; }
+@media (max-width: 600px) { [data-link-scope] svg { min-width: 620px; } }
+.add-controls label { white-space: nowrap; }
+#normalization-table { overflow-x: auto; }
+svg.word2vec-diagram [data-f].hi > rect:not(.hit) { stroke: var(--cls-1) !important; stroke-width: 2; }
+svg.word2vec-diagram [data-f].hi > text { fill: var(--cls-1) !important; }
+
+svg [data-f].hi circle { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)) !important; stroke: var(--cls-1) !important; }
+
+
+#ppl-after-link { display: none; }
+#loss:has(.qz[data-q="q-ppl-link"].done) #ppl-after-link { display: block; }
+#ppl-jokes-table { overflow-x: auto; }
+
+
+/* Отдельные выражения центрируются; длинная строка прокручивается внутри блока. */
+.equation { display: flex; overflow-x: auto; padding: 10px 2px; margin: 10px 0; }
+.equation > span { flex: 0 0 auto; margin-inline: auto; }
+.equation math { math-style: normal; font-size: 1.15em; }
+.equation munder, .equation munderover { math-style: normal; }
+.formula .equation math { font-size: 1.15em; margin: 0; }
+.formula p { font-size: 17px; line-height: 1.6; margin: 8px 0 18px; }
+@media (max-width: 600px) { .equation math, .formula .equation math { font-size: 1em; } }
+
+/* Схемы занятия 3: подписи разных ролей и подсветка прямоугольников с заданной заливкой. */
+[data-link-scope] svg .label { font-family: var(--body); font-size: 15px; fill: var(--ink-2); }
+[data-link-scope] svg .small { font-size: 12.5px; fill: var(--ink-2); }
+[data-link-scope] svg .num { font-size: 12.5px; }
+[data-link-scope] svg .strong { font-weight: 600; fill: var(--ink); }
+[data-link-scope] svg .warn { font-size: 12.5px; fill: var(--cls-1); }
+.w3fig svg [data-f].hi > rect:not(.hit), .w3fig svg [data-f].hi > g > rect { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)) !important; stroke: var(--cls-1) !important; }
+.w3fig svg [data-f].hi > path { stroke: var(--cls-1) !important; }
+.w3fig svg [data-cell], .w3fig svg [data-query] { cursor: pointer; }
+
+/* Калькулятор BLEU: n-граммы перевода и их совпадения с эталоном. */
+.bleu .row { display: flex; gap: 6px 12px; align-items: baseline; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.bleu .k { font-family: var(--mono); font-size: 13px; color: var(--ink-3); min-width: 84px; }
+.bleu .g { flex: 1; min-width: 0; }
+.bleu .p { font-family: var(--mono); font-size: 14px; white-space: nowrap; margin-left: auto; }
+.bleu .tok.hit { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.bleu .tok.clip { text-decoration: line-through; border-color: var(--cls-1); color: var(--ink-2); }
+.bleu .tok.miss { color: var(--ink-2); }
+.bleu .none { font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
+.bleu .total { font-family: var(--mono); font-size: 15px; margin-top: 12px; }
+.bleu-input input { flex: 1; min-width: 0; font-family: var(--mono); }
+.bleu-input { flex-wrap: nowrap; }
+</style>
+<style>
+/* Схемы и тезисы лекций о BERT и GPT. */
+.transformer-fig svg [role="button"] { cursor: pointer; }
+.transformer-fig svg [role="button"]:focus { outline: 2px solid var(--cls-1); outline-offset: 3px; }
+.transformer-fig svg text.small, .transformer-fig svg text.num { font-size: 12px; }
+.transformer-fig svg [data-f].hi > rect { stroke: var(--cls-1) !important; stroke-width: 2; }
+.prose.slide { font-size: 23px; line-height: 1.5; }
+.prose.slide p { margin-bottom: 14px; }
+details.more { margin: 10px 0 20px; }
+details.more > summary { color: var(--ink-2); font-size: 16px; cursor: pointer; }
+.panel-body:has(> .transformer-fig) { overflow-x: auto; }
+.panel-body select { max-width: 100%; }
+@media (max-width:600px) { .prose.slide { font-size: 20px; } .add-controls label { white-space: normal; flex-wrap: wrap; } }
+
+</style>
+<style>
+.dsba-bert-copy .fig { overflow-x: auto; }
+.dsba-bert-copy .fig svg { min-width: 800px; }
+
+</style>
+<meta name="quiz-store" content="add2026_week05">
+
+</head>
+<body>
+<div class="tooltip" id="tip"></div>
+<div class="shell"><aside class="rail"><div><div class="rail-mark">NLP @ HSE DSBA · ADD-2026</div><div class="rail-eq">Занятие 5<br>BERT и развитие энкодеров</div></div><nav id="nav"></nav><div class="rail-btns"><button id="btn-reset">Сбросить ответы</button><button id="btn-theme">Тема</button></div><div class="quiz-progress" id="quiz-progress"></div><div class="rail-foot"><a href="https://xufana.github.io/dsba_nlp/week04/">Семинар DSBA · BERT</a><br><a href="https://xufana.github.io/dsba_nlp/add-2026/week06/">Дальше · GPT</a></div></aside><main><div class="wrap">
+<section id="hero"><p class="eyebrow">Author: Daria Andreeva</p><h1>BERT и развитие энкодеров</h1><p class="lede">Как предобучить представления текста, приспособить их к задаче и обновить энкодер для длинных документов.</p><div class="prose"><p>В трансформере для перевода энкодер строил представление источника. <strong>BERT оставляет стек энкодера и учится на обычных текстах.</strong> После предобучения добавляем выход для своей задачи и обучаем его на размеченных примерах.</p></div></section>
+<section id="bert"><p class="eyebrow">блок 01</p><h2>От трансформера к BERT</h2><div class="prose slide"><p><strong>Один выходной вектор на каждый токен.</strong> В self-attention BERT доступны и левый, и правый контекст.</p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>Вход разбивается на подслова WordPiece. Для каждой позиции складываются три обучаемых вектора: токена, позиции и сегмента. <code>[CLS]</code> стоит в начале; <code>[SEP]</code> разделяет сегменты и завершает вход. В <code>bert-base-uncased</code> ширина представления — {bert_width}, число блоков — {bert_layers}, таблица позиций содержит {bert_context} строк.</p>
+<p>Attention смешивает позиции, FFN преобразует каждую позицию отдельно. На выходе остаётся столько же векторов, сколько было входных токенов. Чтобы получить метку или границы ответа, нужен обучаемый выходной слой.</p></div></details>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Позиция <select id="bert-token"><option value="0">[CLS]</option><option value="1">the</option><option value="2" selected>cat</option><option value="3">[SEP]</option><option value="4">it</option><option value="5">sleeps</option><option value="6">[SEP]</option></select></label></div><div data-fig="bert"></div></div><div class="panel-note"><p>Выберите токен: подсветится его путь от строк таблиц к выходному вектору. Короткие полоски обозначают векторы полной ширины. Рисунок по мотивам Alammar (2018); показаны два блока из всего стека.</p></div></div><div class="qz" data-q="q-context"></div>
+<div class="panel dsba-bert-copy">
+    <div class="panel-head"><span>Схема BERT · по Alammar (2018)</span><span class="fig-states" id="fig-bert-btns"><button data-m="in" class="sel">Вход</button><button data-m="mlm">MLM</button><button data-m="nsp">NSP</button></span></div>
+    <div class="panel-body"><div class="fig" id="fig-bert" data-fig="bert-dsba"></div>
+      <details class="variants"><summary>Код · какие позиции читает каждая голова и как считается ошибка</summary><pre class="code" id="code-pretrain"></pre>
+        <div class="figline">Наведите на строку: схема переключится на соответствующую голову. В коде показаны входы и ошибки <code>BertForPreTraining</code>; маскирование выполняет <code>DataCollatorForLanguageModeling</code>.</div></details></div>
+    <div class="panel-note" id="fig-bert-note"></div>
+  </div>
+</section>
+<section id="pretrain"><p class="eyebrow">блок 02</p><h2>Как получить цели из текста</h2><div class="prose slide"><p><strong>MLM:</strong> предсказываем исходные токены в выбранных позициях по испорченному тексту.</p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>В исходном BERT выбирают {mlm_rate}% позиций. Среди выбранных {mask_rate}% заменяют на <code>[MASK]</code>, {random_rate}% — случайным токеном, {keep_rate}% сохраняют. Во всех выбранных позициях целью остаётся исходный токен. Прямые слагаемые ошибки есть только в выбранных позициях; через attention градиент проходит и к представлениям других токенов.</p>
+<p>Модель учит закономерности текста без ручных меток. При дообучении на прикладной задаче метки уже нужны.</p></div></details>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><button id="mlm-check">Проверить позиции</button><button id="mlm-reset">Сначала</button></div><div data-fig="mlm"></div><div id="mlm-result" class="add-result" aria-live="polite"></div></div><div class="panel-note"><p>Рамки в верхней строке отмечают позиции, выбранные для MLM. Отметьте во входе позиции с прямым слагаемым ошибки, затем проверьте. Учебный пример включает маску, случайную замену и сохранённый токен; их доли здесь не воспроизводят распределение BERT.</p></div></div>
+<div class="prose slide"><p>Голова MLM выдаёт <strong>распределение по словарю</strong>. Даже подходящее слово не обязано иметь вероятность, близкую к единице.</p></div><div class="panel"><div class="panel-body"><div class="add-controls"><label>Вход <select id="mlm-example"><option value="0">[MASK]</option><option value="1">случайная замена: banana</option><option value="2">исходное слово: store</option></select></label></div><div id="mlm-predictions" aria-live="polite"></div></div><div class="panel-note"><p>Сохранённые ответы <code>bert-base-uncased</code> на английскую фразу из материалов autumn-2026. Показываем только наиболее вероятные слова; суммы видимых вероятностей может не хватать до единицы. Смена варианта читает другой сохранённый расчёт.</p></div></div>
+<div class="prose slide"><p><strong>NSP:</strong> по представлению <code>[CLS]</code> предсказываем, следовал ли второй отрывок за первым в исходном тексте.</p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>Положительная пара взята подряд, отрицательная содержит случайный второй отрывок. В исходном BERT представление <code>[CLS]</code> проходит через pooler и двоичный классификатор. Эта задача предобучения отличается от классификации темы текста, которую позднее задаём своими метками.</p></div></details><div class="panel" data-link-scope><div class="panel-body"><div data-fig="nsp"></div></div></div><div class="qz" data-q="q-pretrain"></div></section>
+<section id="tasks"><p class="eyebrow">блок 03</p><h2>Три задачи — три формы ответа</h2><div class="prose slide"><p><strong>Задача задаёт форму выхода:</strong> метка текста, метка каждой позиции или границы ответа.</p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>Для классификации используем представление <code>[CLS]</code> и линейный слой над классами. В NER выходной слой применяется к каждой позиции; BIO-метки различают начало и продолжение сущности. Если слово разбито на подслова, нужно согласовать позиции токенов с разметкой слов.</p>
+<p>Для извлечения ответа вопрос и документ подаются вместе. Выходной слой выдаёт оценку начала и конца для каждой позиции. Каждая строка нормируется по позициям документа; выбираем допустимый фрагмент с началом не позже конца.</p></div></details>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Задача <select id="head-task"><option value="seq">классификация</option><option value="ner">NER</option><option value="qa">ответ фрагментом</option></select></label><label>Обучаем <select id="head-train"><option value="head">голову</option><option value="all">всю модель</option></select></label></div><div data-fig="heads"></div></div><div class="panel-note"><p>Переключите задачу и набор обучаемых частей. Цвет показывает, где меняются параметры. Значения меток и границ на схеме заданы как учебные целевые ответы; это не предсказания загруженной модели.</p></div></div><div class="qz" data-q="q-heads"></div>
+<div class="prose slide"><p><strong>Заморозка сохраняет энкодер; дообучение меняет представления под задачу.</strong></p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>При замороженном энкодере обучаем выходной слой на его готовых признаках. При полном дообучении ошибка задачи обновляет и энкодер. Выбор зависит от данных, бюджета и качества на отложенной выборке.</p>
+<p>Вектор <code>[CLS]</code> исходного BERT не обучался специально сближать перефразировки. Для поиска по близости векторов обычно требуется отдельная задача обучения; Sentence-BERT обучает такие представления на парах предложений.</p></div></details><div class="qz" data-q="q-transfer"></div></section>
+<section id="evolution"><p class="eyebrow">блок 04</p><h2>Рецепт обучения и задача предобучения</h2><div class="prose slide"><p><strong>RoBERTa меняет рецепт обучения. ELECTRA меняет задачу предобучения.</strong></p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>RoBERTa сохраняет двунаправленный энкодер и MLM, убирает NSP, меняет маску при повторных предъявлениях текста и увеличивает объём и бюджет обучения. Это совокупность изменений; отдельный эффект нельзя приписать только отказу от NSP.</p>
+<p>В ELECTRA небольшой генератор предлагает замены выбранным токенам. Дискриминатор учится в каждой обычной позиции определять, совпадает ли полученный токен с исходным. Если генератор угадал исходное слово, цель — «исходный». Для прикладных задач используем дискриминатор.</p></div></details>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Модель <select id="pretrain-model"><option value="bert">BERT</option><option value="roberta">RoBERTa</option><option value="electra">ELECTRA</option></select></label><button id="mask-next">Другое предъявление</button></div><div data-fig="evolution"></div></div><div class="panel-note"><p>Один текст и три задачи. В RoBERTa кнопка меняет учебную маску; исходный BERT показан с одним фиксированным вариантом. В ELECTRA видны выбранные позиции, предложения генератора и цели дискриминатора. Значения заданы для объяснения механизма.</p></div></div><div class="qz" data-q="q-electra"></div></section>
+<section id="positions"><p class="eyebrow">блок 05</p><h2>Позиции через повороты</h2><div class="prose slide"><p><strong>RoPE вводит позиции поворотом Q и K внутри attention.</strong></p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>Координаты запроса и ключа разбиваются на пары. Каждая пара поворачивается на угол, зависящий от позиции; разные пары используют разные частоты. Для фиксированных содержательных Q и K общий сдвиг позиций сохраняет скалярное произведение повёрнутых векторов: значение зависит от разности позиций.</p>
+<p>Поворот можно вычислить за пределами обучающего окна. Качество на таких длинах требует отдельной проверки и часто дополнительного обучения. RoPE сам по себе не гарантирует работу на произвольно длинном тексте.</p></div></details>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Общий сдвиг <input id="rope-shift" type="range" min="0" max="100" value="0"><output id="rope-shift-value"></output></label><label>Пара <select id="rope-pair"><option value="0">быстрая</option><option value="1">медленная</option></select></label></div><div data-fig="rope"></div><div id="rope-result" class="add-result" aria-live="polite"></div></div><div class="panel-note"><p>Выберите пару координат и сдвиньте обе позиции. Исходные Q и K фиксированы. Точки на окружностях показывают направления после поворота; ниже вычисляется вклад пары в скалярное произведение.</p></div><pre class="code"><code><span class="ln">pairs = x.reshape(*x.shape[:-1], -1, 2)</span><span class="ln" data-f="angle" tabindex="0">angle = position / theta ** (torch.arange(0, d, 2) / d)</span><span class="ln">a, b = pairs.unbind(-1)</span><span class="ln">rotated = torch.stack((a * angle.cos() - b * angle.sin(),</span><span class="ln" data-f="rotation" tabindex="0">                       a * angle.sin() + b * angle.cos()), -1)</span><span class="ln">result = rotated.flatten(-2)</span></code></pre></div><div class="qz" data-q="q-rope"></div></section>
+<section id="block"><p class="eyebrow">блок 06</p><h2>Устройство современного блока</h2><div class="prose slide"><p><strong>Gated FFN:</strong> одна проекция несёт значения, вторая после активации управляет их покоординатным произведением.</p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>В обычном FFN последовательно идут проекция вверх, активация и проекция вниз. В gated FFN проекций вверх две: <math><mi>u</mi><mo>=</mo><mi>X</mi><msub><mi>W</mi><mi>u</mi></msub></math>, <math><mi>g</mi><mo>=</mo><mi>X</mi><msub><mi>W</mi><mi>g</mi></msub></math>; затем считаем <math><mi>u</mi><mo>⊙</mo><mi>f</mi><mo>(</mo><mi>g</mi><mo>)</mo></math> и возвращаем результат проекцией <math><msub><mi>W</mi><mi>d</mi></msub></math>. GeGLU использует GELU, SwiGLU — SiLU. В ModernBERT используется GeGLU; в Llama — SwiGLU.</p></div></details>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>FFN <select id="ffn-kind"><option value="gelu">GeGLU · ModernBERT</option><option value="silu">SwiGLU · Llama</option></select></label><label>Координата <select id="ffn-coordinate"><option value="0">a</option><option value="1">b</option><option value="2">c</option></select></label><label>Вход активации <input id="ffn-gate" type="range" min="-4" max="4" step="0.25" value="1"></label></div><div data-fig="ffn"></div><div id="ffn-result" class="add-result" aria-live="polite"></div></div><div class="panel-note"><p>Выберите координату: её путь выделен в обеих ветвях, произведении и выходной проекции. Ползунок меняет значение во входе gate-активации. Показан учебный вектор; сравнение вариантов не является измерением качества моделей. GELU вычисляется с tanh-приближением.</p></div><pre class="code"><code><span class="ln" data-f="value" tabindex="0">u = up(x)</span><span class="ln" data-f="gate" tabindex="0">g = gate(x)</span><span class="ln" data-f="product" tabindex="0">h = u * activation(g)</span><span class="ln" data-f="down" tabindex="0">output = down(h)</span></code></pre></div>
+<div class="prose slide"><p><strong>Норма применяется к координатам одного токена.</strong> Положение нормы относительно residual и способ нормировки — отдельные решения.</p></div><details class="optional"><summary>Нормы и residual <span class="optional-count"></span></summary><div class="prose"><p>LayerNorm вычитает среднее и делит на корень из дисперсии с малой добавкой. RMSNorm делит на корень из среднего квадрата с малой добавкой. Затем применяется обучаемый масштаб; LayerNorm обычно имеет и сдвиг. В калькуляторе масштаб равен единице, сдвиг нулевой.</p>
+<p>В Post-LN нормировка идёт после сложения с residual. В Pre-LN подслой читает нормированную копию входа, а основной путь проходит через сложение. Исходный BERT использует Post-LN; ModernBERT — Pre-LN и LayerNorm. RMSNorm здесь показан как вариант из Llama.</p></div><div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Вектор <select id="norm-input"><option value="0">разные координаты</option><option value="1">нулевой</option><option value="2">одинаковые координаты</option><option value="3">отрицательные координаты</option></select></label><label>Блок <select id="norm-place"><option value="post">Post-LN · BERT</option><option value="pre">Pre-LN · ModernBERT</option></select></label></div><div data-fig="norm"></div><div id="norm-result" class="add-result"></div></div><pre class="code"><code><span class="ln">mean = x.mean(dim=-1, keepdim=<b class="kw">True</b>)</span><span class="ln" data-f="ln" tabindex="0">layer_norm = (x - mean) / ((x - mean).square().mean(-1, keepdim=<b class="kw">True</b>) + eps).sqrt()</span><span class="ln" data-f="rms" tabindex="0">rms_norm = x / (x.square().mean(-1, keepdim=<b class="kw">True</b>) + eps).sqrt()</span></code></pre></div><div class="qz" data-q="q-norm"></div></details></section>
+<section id="modern"><p class="eyebrow">блок 07</p><h2>ModernBERT и длинные документы</h2><div class="prose slide"><p><strong>ModernBERT:</strong> RoPE, Pre-LN, GeGLU и чередование локального и глобального attention.</p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>В исходном BERT каждый токен читает весь доступный вход в каждом слое. В ModernBERT первый слой глобальный, затем глобальный повторяется через каждые {global_every} слоя; остальные используют локальное окно {local_window} токенов. Поддерживаемая длина контекста — {modern_context}. Для вычисления используются FlashAttention и обработка без padding; механизм FlashAttention разбираем в следующей лекции.</p>
+<p>ModernBERT обучен на {modern_tokens} токенов. Его результаты отражают и архитектуру, и данные, и обучение. Отдельный вклад RoPE или GeGLU требует контролируемого сравнения.</p></div></details>
+<div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Слой <input id="modern-layer" type="range" min="1" max="6" value="2"><output id="modern-layer-value"></output></label><label>Схема <select id="modern-mode"><option value="modern">ModernBERT</option><option value="bert">BERT</option></select></label></div><div data-fig="modern"></div><div id="modern-result" class="add-result" aria-live="polite"></div></div><div class="panel-note"><p>Уменьшенная учебная последовательность: локальное окно охватывает соседние позиции, глобальный слой — всю последовательность. Нажмите токен и меняйте глубину: рамки показывают, откуда информация могла попасть к нему через уже пройденные слои. Это доступность пути, а не измеренные веса attention.</p></div></div><div class="qz" data-q="q-local"></div>
+<div class="prose slide"><p><strong>Unpadding убирает вычисления по пустым позициям.</strong> Границы отдельных текстов сохраняются.</p></div><div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label><input id="padding-off" type="checkbox"> Убрать padding</label></div><div data-fig="padding"></div><div id="padding-result" class="add-result" aria-live="polite"></div></div><div class="panel-note"><p>Те же документы до и после удаления padding. Границы и цвета документов сохраняются: attention одного документа не получает доступ к другому. Счётчик показывает позиции, а не время на GPU.</p></div></div><div class="qz" data-q="q-padding"></div></section>
+<section id="design"><p class="eyebrow">блок 08</p><h2>Спроектируем систему</h2><div class="qz" data-q="q-design"></div></section><section id="sources"><p class="eyebrow">блок 09</p><h2>Источники</h2><h3>References</h3><div class="prose footnote sources"><ul>
+<li>Devlin et al. (2019). <a href="https://arxiv.org/abs/1810.04805"><em>BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.</em></a> NAACL.</li>
+<li>Liu et al. (2019). <a href="https://arxiv.org/abs/1907.11692"><em>RoBERTa: A Robustly Optimized BERT Pretraining Approach.</em></a> arXiv.</li>
+<li>Clark et al. (2020). <a href="https://arxiv.org/abs/2003.10555"><em>ELECTRA: Pre-training Text Encoders as Discriminators Rather Than Generators.</em></a> ICLR.</li>
+<li>Reimers, Gurevych (2019). <a href="https://aclanthology.org/D19-1410/"><em>Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks.</em></a> EMNLP-IJCNLP.</li>
+<li>Su et al. (2024). <a href="https://arxiv.org/abs/2104.09864"><em>RoFormer: Enhanced Transformer with Rotary Position Embedding.</em></a> Neurocomputing.</li>
+<li>Zhang, Sennrich (2019). <a href="https://arxiv.org/abs/1910.07467"><em>Root Mean Square Layer Normalization.</em></a> NeurIPS.</li>
+<li>Shazeer (2020). <a href="https://arxiv.org/abs/2002.05202"><em>GLU Variants Improve Transformer.</em></a> arXiv.</li>
+<li>Touvron et al. (2023). <a href="https://arxiv.org/abs/2307.09288"><em>Llama 2: Open Foundation and Fine-Tuned Chat Models.</em></a> arXiv.</li>
+<li>Warner et al. (2024). <a href="https://arxiv.org/abs/2412.13663"><em>Smarter, Better, Faster, Longer: A Modern Bidirectional Encoder for Fast, Memory Efficient, and Long Context Finetuning and Inference.</em></a> arXiv.</li>
+<li>Alammar (2018). <a href="https://jalammar.github.io/illustrated-bert/"><em>The Illustrated BERT, ELMo, and co.</em></a> — иллюстрации архитектуры.</li>
+</ul></div></section>
+</div></main></div>
+
+<div hidden id="text-chunks">
+<template data-text="topics"><ul>
+<li>BERT: вход и контекстные представления</li>
+<li>MLM, NSP, RoBERTa и ELECTRA</li>
+<li>Классификация, NER и извлечение ответа</li>
+<li>RoPE и современный блок</li>
+<li>ModernBERT и длинный контекст</li>
+</ul></template>
+<template data-text="fig-bert-note-in">На входе два отрывка: <code>[CLS] A [SEP] B [SEP]</code>. Представление каждого токена — <strong>сумма строк трёх обучаемых таблиц</strong>: WordPiece, сегмента A или B (<code>token_type_ids</code>) и позиции. В таблице позиций BERT — 512 строк. <code>[SEP]</code> разделяет отрывки; <code>[CLS]</code> — служебный токен со своей строкой в таблице эмбеддингов. Затем идут 12 блоков энкодера; на выходе каждой позиции — вектор ширины 768. В исходном BERT используется Post-LN.</template>
+<template data-text="fig-bert-note-mlm"><strong>MLM — предсказание скрытых токенов.</strong> В исходном BERT выбирают 15% позиций. Среди выбранных <span class="tok mk" style="font-size:12px">80%</span> заменяют на <code>[MASK]</code>, <span class="tok rnd" style="font-size:12px">10%</span> — случайным токеном, <span class="tok keep" style="font-size:12px">10%</span> сохраняют. Цель во всех выбранных позициях — исходный токен. Голова применяет Linear, GELU, LayerNorm и проекцию на словарь из 30 522 токенов. Ошибка считается в выбранных позициях; через attention градиент проходит и к представлениям других токенов.</template>
+<template data-text="fig-bert-note-nsp"><strong>NSP — предсказание следующего отрывка.</strong> Голова читает <math><msub><mi>h</mi><mn>0</mn></msub></math>, представление <code>[CLS]</code>, через pooler <math><mrow><mi>tanh</mi><mo>(</mo><mi>W</mi><msub><mi>h</mi><mn>0</mn></msub><mo>+</mo><mi>b</mi><mo>)</mo></mrow></math> и <code>Linear(768, 2)</code>. Нужно определить, следовал ли отрывок B за A в исходном тексте или был выбран случайно. Это отдельная задача предобучения исходного BERT; в RoBERTa её исключили.</template>
+</div>
+<script type="application/json" id="quiz-data">{"q-context":{"key":"q-context","type":"pick","q":"<p>Во входе «river bank» заменим «river» на «investment». Что может измениться на выходе BERT для оставшегося слова «bank»?<\/p>","a":"<p>Строка входной таблицы остаётся той же. Self-attention позволяет выходному вектору зависеть от соседних токенов.<\/p>","miss":"","opts":[{"k":"o0","label":"его контекстное представление","right":true},{"k":"o1","label":"только строка «bank» в таблице токенов","right":false},{"k":"o2","label":"ничего: идентификатор токена остался тем же","right":false}],"multi":false,"n":1},"q-pretrain":{"key":"q-pretrain","type":"sort","q":"<p>Какие целевые ответы нужны этим задачам?<\/p>","a":"<p>В MLM и NSP цели строятся из самого корпуса. Для классификации обращений требуется разметка прикладной задачи.<\/p>","miss":"","bins":["исходные токены в выбранных позициях","последовательная или случайная пара","размеченная тема обращения"],"items":[{"label":"MLM","bins":["исходные токены в выбранных позициях"]},{"label":"NSP","bins":["последовательная или случайная пара"]},{"label":"классификация обращений","bins":["размеченная тема обращения"]}],"n":2},"q-heads":{"key":"q-heads","type":"sort","q":"<p>Какой выход нужен задаче?<\/p>","a":"<p>Выходы нормируются по разным осям. В NER выбираем тип метки для позиции; при извлечении ответа — позицию в документе.<\/p>","miss":"","bins":["распределение по классам текста","распределение по BIO-меткам в позициях","распределения начала и конца по позициям"],"items":[{"label":"тема обращения","bins":["распределение по классам текста"]},{"label":"имена организаций","bins":["распределение по BIO-меткам в позициях"]},{"label":"ответ фрагментом документа","bins":["распределения начала и конца по позициям"]}],"n":3},"q-transfer":{"key":"q-transfer","type":"pick","q":"<p>Энкодер заморожен, обучается только линейный классификатор. Могут ли измениться выходные представления одного и того же текста после шага обучения, если отключён dropout?<\/p>","a":"<p>При неизменных параметрах и детерминированном вычислении энкодер возвращает те же представления. Классификатор учится разделять их.<\/p>","miss":"","opts":[{"k":"o0","label":"да, потому что изменилась ошибка","right":false},{"k":"o1","label":"нет, меняется только способ читать готовые признаки","right":true},{"k":"o2","label":"да, заморожена только таблица токенов","right":false}],"multi":false,"n":4},"q-electra":{"key":"q-electra","type":"pick","q":"<p>Генератор ELECTRA предложил в выбранной позиции то же слово, которое было в исходном тексте. Какова цель дискриминатора?<\/p>","a":"<p>Цель определяется совпадением токена с исходным, поэтому удачная догадка генератора получает метку «исходный».<\/p>","miss":"","opts":[{"k":"o0","label":"заменённый: позицию выбирали для замены","right":false},{"k":"o1","label":"исходный: полученный токен совпадает с исходным","right":true},{"k":"o2","label":"эту позицию всегда исключают из ошибки","right":false}],"multi":false,"n":5},"q-rope":{"key":"q-rope","type":"pick","q":"<p>Формула RoPE определена для позиции за пределами обучающего окна. Что из этого следует?<\/p>","a":"<p>Определённость формулы и способность модели использовать непривычные расстояния — разные свойства. Память и вычисления attention тоже зависят от длины.<\/p>","miss":"","opts":[{"k":"o0","label":"модель обязательно сохранит качество","right":false},{"k":"o1","label":"поворот можно вычислить; качество нужно проверить отдельно","right":true},{"k":"o2","label":"больше не нужны ограничения памяти","right":false}],"multi":false,"n":6},"q-norm":{"key":"q-norm","type":"pick","q":"<p>У вектора все координаты одинаковы и положительны. Что получится после нормировки до обучаемого масштаба и сдвига?<\/p>","a":"<p>LayerNorm вычитает среднее. RMSNorm сохраняет направление вектора и меняет его масштаб. Обе работают по координатам отдельного токена.<\/p>","miss":"","opts":[{"k":"o0","label":"LayerNorm даст нули, RMSNorm сохранит положительные значения","right":true},{"k":"o1","label":"обе нормы обязательно дадут нули","right":false},{"k":"o2","label":"нормы смешают разные токены","right":false}],"multi":false,"n":7},"q-local":{"key":"q-local","type":"pick","q":"<p>Два токена находятся дальше друг от друга, чем локальное окно. Могут ли их представления обменяться информацией в ModernBERT?<\/p>","a":"<p>Локальный слой ограничивает прямые связи одного слоя. Глобальные слои дают прямые связи между всеми позициями.<\/p>","miss":"","opts":[{"k":"o0","label":"нет, дальние токены навсегда изолированы","right":false},{"k":"o1","label":"да, через глобальные слои и пути через промежуточные позиции","right":true},{"k":"o2","label":"только если убрать позиции","right":false}],"multi":false,"n":8},"q-padding":{"key":"q-padding","type":"pick","q":"<p>Несколько документов упакованы в одну последовательность для вычислений. Должен ли токен первого документа читать второй?<\/p>","a":"<p>Удаление padding сохраняет независимость примеров. Реализация учитывает границы последовательностей.<\/p>","miss":"","opts":[{"k":"o0","label":"да, это смысл упаковки","right":false},{"k":"o1","label":"нет, границы документов ограничивают attention","right":true},{"k":"o2","label":"это определяется только цветом токена","right":false}],"multi":false,"n":9},"q-design":{"key":"q-design","type":"write","q":"<p>Службе поддержки нужны тема обращения, названия компаний и ответ фрагментом инструкции. Размеченных обращений мало; инструкции длинные. Спроектируйте решение: задача / данные / представление / модель / метрика / что сломается первым.<\/p>","a":"<p>Энкодер подходит всем трём задачам с разными головами. Длинный контекст нужно проверять на реальных документах. Извлечение фрагмента требует, чтобы ответ присутствовал в тексте; для отсутствующего ответа нужны соответствующие данные и правило отказа.<\/p>","miss":"","check":["Разделили классификацию, NER и извлечение ответа; указали выходы каждой задачи.","Предложили разметку и отложенную выборку без утечки между близкими обращениями.","Указали токенизацию, ограничения длины и обработку длинных инструкций.","Обосновали заморозку или дообучение и способ проверки решения.","Выбрали метрики: классификация, F1 по сущностям, точное совпадение и F1 ответа.","Проверили отсутствие ответа, редкие сущности и выход за контекст."],"n":10}}</script>
+<script type="application/json" id="add-data">{"source":{"branch":"autumn-2026","commit":"e24968d5eaf0a7a721fd14c412bd7a98a3d335cf","path":"week04_pretraining_transfer/artifacts/demo_data.json"},"body":{"layers":12,"heads":12,"d":768,"ffn":3072,"vocab":30522,"maxPos":512,"act":"gelu"},"mlm":[{"text":"She went to the [MASK] to buy some milk.","word":"[MASK]","top":[["store",0.36],["fridge",0.18],["kitchen",0.12],["refrigerator",0.08],["counter",0.04]]},{"text":"She went to the banana to buy some milk.","word":"banana","top":[["banana",0.48],["store",0.15],["house",0.03],["shop",0.02],["road",0.01]]},{"text":"She went to the store to buy some milk.","word":"store","top":[["store",0.99],["outlet",0.0],["counter",0.0],["grocery",0.0],["stores",0.0]]}],"recipe":{"selected":15,"mask":80,"random":10,"unchanged":10},"modern":{"context":8192,"window":128,"every":3,"trainingTokens":"2 трлн"},"reference":{"engine":"PyTorch 2.14.1, float64, CPU","norms":[{"x":[3,-1,2,0],"ln":[1.264908534252813,-1.264908534252813,0.6324542671264065,-0.6324542671264065],"rms":[1.6035651606688104,-0.5345217202229368,1.0690434404458735,0.0]},{"x":[0,0,0,0],"ln":[0.0,0.0,0.0,0.0],"rms":[0.0,0.0,0.0,0.0]},{"x":[7,7,7,7],"ln":[0.0,0.0,0.0,0.0],"rms":[0.9999998979591993,0.9999998979591993,0.9999998979591993,0.9999998979591993]},{"x":[-4,-3,-2,-1],"ln":[-1.3416354199689269,-0.447211806656309,0.447211806656309,1.3416354199689269],"rms":[-1.4605925129524255,-1.0954443847143192,-0.7302962564762128,-0.3651481282381064]}],"rope":[{"p":0,"r":0,"q":[1.0,0.0,0.5,-1.0],"k":[0.5,1.0,-1.0,0.5],"score":-0.5},{"p":3,"r":8,"q":[-0.9899924966004454,0.1411200080598672,0.5297705170769894,-0.9845522836477397],"k":[-1.0621082635276886,0.34917908950307736,-1.0367590532872057,0.41848615918213705],"score":0.13948948395279404},{"p":19,"r":24,"q":[0.9887046181866692,0.14987720966295234,0.6798610125351358,-0.88757478762902],"k":[1.1176678656751224,-0.028610173666314964,-1.0901892880655968,0.2479663609988802],"score":0.13948948395279426},{"p":1000,"r":1005,"q":[0.5623790762907029,0.8268795405320025,-0.963556875427596,0.5670609736317676],"k":[0.7809447609745774,0.800078296360025,1.1034718470386649,0.17986073165946298],"score":0.1394894839527946}],"ffn":[{"kind":"gelu","coordinate":0,"raw":-4.0,"hidden":[-0.00014049189638454251,-0.8411919906082768,0.9772988470438875],"output":[-1.3980353342444105,-0.5967970328991126]},{"kind":"gelu","coordinate":0,"raw":0.0,"hidden":[0.0,-0.8411919906082768,0.9772988470438875],"output":[-1.397894842348026,-0.5968672788473048]},{"kind":"gelu","coordinate":0,"raw":1.0,"hidden":[1.6823839812165535,-0.8411919906082768,0.9772988470438875],"output":[0.28448913886852767,-1.4380592694555816]},{"kind":"gelu","coordinate":0,"raw":4.0,"hidden":[7.999859508103615,-0.8411919906082768,0.9772988470438875],"output":[6.601964665755589,-4.596797032899112]},{"kind":"gelu","coordinate":1,"raw":-4.0,"hidden":[-0.3176160187834466,7.024594819227126e-05,0.9772988470438875],"output":[-1.294879742853238,0.40320296710088743]},{"kind":"gelu","coordinate":1,"raw":0.0,"hidden":[-0.3176160187834466,-0.0,0.9772988470438875],"output":[-1.2949148658273342,0.40313272115269516]},{"kind":"gelu","coordinate":1,"raw":1.0,"hidden":[-0.3176160187834466,-0.8411919906082768,0.9772988470438875],"output":[-1.7155108611314724,-0.4380592694555816]},{"kind":"gelu","coordinate":1,"raw":4.0,"hidden":[-0.3176160187834466,-3.9999297540518075,0.9772988470438875],"output":[-3.294879742853238,-3.5967970328991123]},{"kind":"gelu","coordinate":2,"raw":-4.0,"hidden":[-0.3176160187834466,-0.8411919906082768,-3.512297409613563e-05],"output":[-0.7381768911134888,-0.6823927619600775]},{"kind":"gelu","coordinate":2,"raw":0.0,"hidden":[-0.3176160187834466,-0.8411919906082768,0.0],"output":[-0.738212014087585,-0.6823839812165535]},{"kind":"gelu","coordinate":2,"raw":1.0,"hidden":[-0.3176160187834466,-0.8411919906082768,0.4205959953041384],"output":[-1.1588080093917235,-0.5772349823905188]},{"kind":"gelu","coordinate":2,"raw":4.0,"hidden":[-0.3176160187834466,-0.8411919906082768,1.9999648770259038],"output":[-2.7381768911134885,-0.1823927619600776]},{"kind":"silu","coordinate":0,"raw":-4.0,"hidden":[-0.14388967969673247,-0.7310585786300049,0.8807970779778823],"output":[-1.3902160469896172,-0.4389144692871681]},{"kind":"silu","coordinate":0,"raw":0.0,"hidden":[0.0,-0.7310585786300049,0.8807970779778823],"output":[-1.2463263672928848,-0.5108593091355343]},{"kind":"silu","coordinate":0,"raw":1.0,"hidden":[1.4621171572600098,-0.7310585786300049,0.8807970779778823],"output":[0.21579078996712503,-1.2419178877655392]},{"kind":"silu","coordinate":0,"raw":4.0,"hidden":[7.856110320303268,-0.7310585786300049,0.8807970779778823],"output":[6.609783953010383,-4.438914469287168]},{"kind":"silu","coordinate":1,"raw":-4.0,"hidden":[-0.5378828427399902,0.07194483984836623,0.8807970779778823],"output":[-1.3827075007936895,0.5610855307128318]},{"kind":"silu","coordinate":1,"raw":0.0,"hidden":[-0.5378828427399902,-0.0,0.8807970779778823],"output":[-1.4186799207178726,0.48914069086446565]},{"kind":"silu","coordinate":1,"raw":1.0,"hidden":[-0.5378828427399902,-0.7310585786300049,0.8807970779778823],"output":[-1.784209210032875,-0.24191788776553924]},{"kind":"silu","coordinate":1,"raw":4.0,"hidden":[-0.5378828427399902,-3.928055160151634,0.8807970779778823],"output":[-3.3827075007936895,-3.4389144692871683]},{"kind":"silu","coordinate":2,"raw":-4.0,"hidden":[-0.5378828427399902,-0.7310585786300049,-0.03597241992418312],"output":[-0.8674397121308095,-0.47111026224105557]},{"kind":"silu","coordinate":2,"raw":0.0,"hidden":[-0.5378828427399902,-0.7310585786300049,0.0],"output":[-0.9034121320549926,-0.4621171572600098]},{"kind":"silu","coordinate":2,"raw":1.0,"hidden":[-0.5378828427399902,-0.7310585786300049,0.36552928931500245],"output":[-1.268941421369995,-0.3707348349312592]},{"kind":"silu","coordinate":2,"raw":4.0,"hidden":[-0.5378828427399902,-0.7310585786300049,1.964027580075817],"output":[-2.8674397121308095,0.028889737758944434]}],"masks":[{"layer":1,"allowed":[[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true]]},{"layer":2,"allowed":[[true,true,false,false,false,false,false,false,false],[true,true,true,false,false,false,false,false,false],[false,true,true,true,false,false,false,false,false],[false,false,true,true,true,false,false,false,false],[false,false,false,true,true,true,false,false,false],[false,false,false,false,true,true,true,false,false],[false,false,false,false,false,true,true,true,false],[false,false,false,false,false,false,true,true,true],[false,false,false,false,false,false,false,true,true]]},{"layer":3,"allowed":[[true,true,false,false,false,false,false,false,false],[true,true,true,false,false,false,false,false,false],[false,true,true,true,false,false,false,false,false],[false,false,true,true,true,false,false,false,false],[false,false,false,true,true,true,false,false,false],[false,false,false,false,true,true,true,false,false],[false,false,false,false,false,true,true,true,false],[false,false,false,false,false,false,true,true,true],[false,false,false,false,false,false,false,true,true]]},{"layer":4,"allowed":[[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true]]},{"layer":5,"allowed":[[true,true,false,false,false,false,false,false,false],[true,true,true,false,false,false,false,false,false],[false,true,true,true,false,false,false,false,false],[false,false,true,true,true,false,false,false,false],[false,false,false,true,true,true,false,false,false],[false,false,false,false,true,true,true,false,false],[false,false,false,false,false,true,true,true,false],[false,false,false,false,false,false,true,true,true],[false,false,false,false,false,false,false,true,true]]},{"layer":6,"allowed":[[true,true,false,false,false,false,false,false,false],[true,true,true,false,false,false,false,false,false],[false,true,true,true,false,false,false,false,false],[false,false,true,true,true,false,false,false,false],[false,false,false,true,true,true,false,false,false],[false,false,false,false,true,true,true,false,false],[false,false,false,false,false,true,true,true,false],[false,false,false,false,false,false,true,true,true],[false,false,false,false,false,false,false,true,true]]}],"gate":{"x":[-4.0,-1.0,0.0,2.0,5.0],"silu":[-0.07194483984836623,-0.2689414213699951,0.0,1.7615941559557646,4.966535745378576],"gelu":[-7.024594819227126e-05,-0.1588080093917233,0.0,1.954597694087775,4.999999770820381]}}}</script>
+<script>
+/* Shared by every week's demo.js; scripts/build_demo.py puts this in front of it. */
+
+// TXT("key", {n: 12}) — a text chunk from demo/text/*.md with its {n} placeholders filled; see scripts/demo_text.py
+function TXT(key, vars) {
+  const t = document.querySelector(`template[data-text="${key}"]`);
+  if (!t) throw new Error("no text chunk '" + key + "' — add it to demo/text/");
+  let s = t.innerHTML;
+  if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
+  return s;
+}
+
+// reference lists (demo/text, `## end-refs`): external links open in a new tab
+document.querySelectorAll('.prose.footnote a[href^="http"]').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
+
+/* The questions of a lecture page. scripts/build_demo.py puts this in front of the week's demo/lecture/lecture.js;
+   the questions themselves are parsed from demo/lecture/text/*.md by scripts/quiz_text.py into #quiz-data.
+
+   lecture.js registers what the markdown cannot hold:
+     QUIZ.figs.name = host => { ...draw an SVG into host... }   for every <div data-fig="name"></div> in a question
+                                                                 or an answer; a `point` question's clickable parts
+                                                                 carry data-pick="key" matching its options
+     QUIZ.values.name = 0.631                                     for a fill answer written as `@name`
+   Answers are kept in localStorage per page (meta[name=quiz-store]) so a student can leave and come back;
+   "Reset answers" in the rail clears them. Nothing here depends on the seminar's demo_data. */
+"use strict";
+const quizRu = document.documentElement.lang === "ru";
+const qt = (en, ru) => quizRu ? ru : en;
+const QUIZ = { figs: {}, values: {}, data: null, state: null };
+
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const DATA = JSON.parse($("#quiz-data").textContent);
+  const STORE = "quiz:" + (($('meta[name="quiz-store"]') || {}).content || location.pathname);
+  const load = () => { try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { return {}; } };
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* private window: answers live until reload */ } };
+  let state = load();
+  QUIZ.data = DATA; QUIZ.state = () => state;
+
+  /* ------------------------------------------------------------- figures */
+  function drawFigs(root) {
+    $$("[data-fig]", root).forEach(h => {
+      if (h.dataset.drawn) return;
+      const f = QUIZ.figs[h.dataset.fig];
+      if (f) { f(h); h.dataset.drawn = "1"; }
+      else h.innerHTML = `<div class="qz-nofig">figure “${esc(h.dataset.fig)}” is not drawn in lecture.js</div>`;
+    });
+  }
+
+  /* -------------------------------------------------------------- answers */
+  const norm = s => String(s).toLowerCase().replace(/[×*]/g, "x").replace(/\s+/g, " ").replace(/[.,;:]+$/, "").trim();
+  const num = s => { const v = parseFloat(String(s).replace(",", ".").replace(/[^0-9eE+.\-]/g, "")); return isNaN(v) ? null : v; };
+  function expected(alt) {
+    if (alt.startsWith("@")) {
+      const v = QUIZ.values[alt.slice(1)];
+      if (v === undefined) throw new Error(`QUIZ.values.${alt.slice(1)} is not set in lecture.js`);
+      return v;
+    }
+    return alt;
+  }
+  function matches(given, blank) {
+    for (const alt of blank.alts) {
+      const e = expected(alt);
+      const en = typeof e === "number" ? e : num(e);
+      if (en !== null && (blank.tol != null || typeof e === "number" || /^[-+]?[0-9.,eE]+$/.test(String(e).trim()))) {
+        const g = num(given); if (g === null) continue;
+        const dec = (String(e).split(".")[1] || "").length;
+        const tol = Math.max(blank.tol || 0, dec ? 0.5 * Math.pow(10, -dec) : 0, Math.abs(en) * 1e-9);
+        if (Math.abs(g - en) <= tol) return true;
+      } else if (norm(given) === norm(e)) return true;
+    }
+    return false;
+  }
+  const shown = blank => { const e = expected(blank.alts[0]); return typeof e === "number" ? (blank.tol != null ? +e.toFixed(Math.max(0, Math.ceil(-Math.log10(blank.tol)))) : +e.toFixed(3)) : e; };
+
+  /* `{name}` in a question, an option or an answer -> QUIZ.values.name (a number the browser computed), so the
+     markdown holds the sentence and never the number */
+  const fmtv = v => typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(3)) : String(v);
+  const fill = html => html.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? esc(fmtv(QUIZ.values[k])) : m);
+
+  /* ------------------------------------------------------------ rendering */
+  const KIND = {
+    pick: q => q.multi ? qt("tick all that apply", "выберите всё подходящее") : qt("pick one", "выберите один ответ"),
+    point: q => q.multi ? qt("click everything that fits", "отметьте части схемы") : qt("click in the picture", "выберите на схеме"),
+    sort: () => qt("sort into bins", "распределите по группам"), fill: () => qt("fill in", "заполните пропуски"), write: () => qt("write, then reveal", "ответьте, затем откройте разбор"),
+  };
+  const pad = n => String(n).padStart(2, "0");
+
+  function render(q) {
+    const host = $(`.qz[data-q="${q.key}"]`);
+    const st = state[q.key] || (state[q.key] = {});
+    host.dataset.type = q.type;
+    host.classList.toggle("done", !!st.done);
+    host.innerHTML = `<div class="qz-head"><span class="qz-n">${pad(q.n)}</span><span class="qz-kind">${KIND[q.type](q)}</span></div>
+      <div class="qz-q">${fill(q.q)}</div><div class="qz-ui"></div>
+      <div class="qz-a" hidden>${fill(q.a)}${q.miss ? `<p class="qz-miss"><b>${qt("if the answer is", "если ответили так:")}</b>${fill(q.miss)}</p>` : ""}</div>`;
+    drawFigs(host);
+    UI[q.type](q, host, st);
+    if (st.done) finish(q, host, st, true);
+  }
+
+  function row(extra) { return `<div class="btnrow qz-row">${extra || ""}<span class="qz-verdict"></span></div>`; }
+  const verdict = (host, text, ok) => { const v = $(".qz-verdict", host); v.textContent = text; v.className = "qz-verdict " + (ok === true ? "ok" : ok === false ? "no" : ""); };
+
+  const UI = {
+    pick(q, host, st) { UI.point(q, host, st); },
+    point(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<div class="picklist qz-opts">${q.opts.map(o => `<button data-k="${esc(o.k)}">${fill(o.label)}</button>`).join("")}</div>`
+        + row(q.multi ? `<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>` : "");
+      st.sel = st.sel || [];
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      parts.forEach(p => p.classList.add("qz-pickable"));
+      const btns = $$(".qz-opts button", host);
+      const keyOf = el => el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+      const paint = () => {
+        [...btns, ...parts].forEach(el => el.classList.toggle("pick", st.sel.includes(keyOf(el))));
+        const ck = $(".qz-check", host); if (ck) ck.disabled = !st.sel.length;
+      };
+      const choose = k => {
+        if (st.done) return;
+        if (q.multi) { st.sel = st.sel.includes(k) ? st.sel.filter(x => x !== k) : [...st.sel, k]; paint(); save(); }
+        else { st.sel = [k]; finish(q, host, st); }
+      };
+      btns.forEach(b => b.addEventListener("click", () => choose(b.dataset.k)));
+      parts.forEach(p => p.addEventListener("click", () => choose(p.dataset.pick)));
+      const ck = $(".qz-check", host); if (ck) ck.addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    sort(q, host, st) {
+      const ui = $(".qz-ui", host);
+      st.sel = st.sel || {};
+      ui.innerHTML = `<table class="qz-sort"><tbody>${q.items.map((it, i) => `<tr data-i="${i}"><td class="qz-item">${fill(it.label)}</td>
+        <td class="qz-bins">${q.bins.map(b => `<button data-b="${esc(b)}">${esc(b)}</button>`).join("")}</td></tr>`).join("")}</tbody></table>`
+        + row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button><span class="qz-count mono"></span>`);
+      const paint = () => {
+        $$("tr", ui).forEach(tr => $$("button", tr).forEach(b => b.classList.toggle("pick", st.sel[tr.dataset.i] === b.dataset.b)));
+        const n = Object.keys(st.sel).length;
+        $(".qz-check", host).disabled = n < q.items.length;
+        $(".qz-count", host).textContent = st.done ? "" : qt(`${n} / ${q.items.length} placed`, `${n} / ${q.items.length} распределено`);
+      };
+      ui.addEventListener("click", e => {
+        const b = e.target.closest("button[data-b]"); if (!b || st.done) return;
+        st.sel[b.closest("tr").dataset.i] = b.dataset.b; paint(); save();
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    fill(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>`);
+      st.vals = st.vals || {};
+      const inputs = $$("input.qz-blank", host);
+      const paint = () => { $(".qz-check", host).disabled = inputs.some(i => !i.value.trim()); };
+      inputs.forEach(i => {
+        i.value = st.vals[i.dataset.blank] || "";
+        i.addEventListener("input", () => { st.vals[i.dataset.blank] = i.value; paint(); save(); });
+        i.addEventListener("keydown", e => { if (e.key === "Enter" && !$(".qz-check", host).disabled) finish(q, host, st); });
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    write(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<textarea class="qz-text" rows="3" placeholder="${qt("Your answer, in a few sentences — then reveal.", "Ваш ответ в нескольких предложениях")}"></textarea>`
+        + row(`<button class="primary qz-check">${qt("Reveal", "Открыть разбор")}</button>`);
+      const ta = $("textarea", ui);
+      ta.value = st.text || "";
+      ta.addEventListener("input", () => { st.text = ta.value; save(); });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+    },
+  };
+
+  function finish(q, host, st, restoring) {
+    st.done = true;
+    host.classList.add("done");
+    const ck = $(".qz-check", host); if (ck) ck.remove();
+    if (q.type === "pick" || q.type === "point") {
+      const right = new Set(q.opts.filter(o => o.right).map(o => o.k));
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      [...$$(".qz-opts button", host), ...parts].forEach(el => {
+        const k = el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+        el.classList.remove("pick");
+        el.classList.toggle("right", right.has(k));
+        el.classList.toggle("wrong", st.sel.includes(k) && !right.has(k));
+        el.classList.toggle("missed", right.has(k) && !st.sel.includes(k));
+        el.disabled = true;
+      });
+      const hit = st.sel.filter(k => right.has(k)).length, wrong = st.sel.length - hit, missed = right.size - hit;
+      if (!q.multi) verdict(host, hit ? qt("right", "верно") : qt("not quite", "не совсем"), !!hit);
+      else verdict(host, wrong + missed === 0 ? qt("all of them", "всё верно") : qt(`${hit} right · ${wrong} wrong · ${missed} missed`, `${hit} верно · ${wrong} ошибочно · ${missed} пропущено`), wrong + missed === 0);
+    } else if (q.type === "sort") {
+      let agree = 0;
+      $$("table.qz-sort tr", host).forEach(tr => {
+        const it = q.items[+tr.dataset.i], chosen = st.sel[tr.dataset.i], ok = it.bins.includes(chosen);
+        agree += ok ? 1 : 0;
+        $$("button", tr).forEach(b => {
+          b.classList.remove("pick"); b.disabled = true;
+          b.classList.toggle("right", b.dataset.b === chosen && ok);
+          b.classList.toggle("wrong", b.dataset.b === chosen && !ok);
+          b.classList.toggle("ans", it.bins.includes(b.dataset.b) && b.dataset.b !== chosen);
+        });
+      });
+      $(".qz-count", host).textContent = "";
+      verdict(host, qt(`${agree} of ${q.items.length} agree with the answer`, `${agree} / ${q.items.length} верно`), agree === q.items.length ? true : agree >= q.items.length * 0.7 ? null : false);
+    } else if (q.type === "fill") {
+      let ok = 0;
+      $$("input.qz-blank", host).forEach(i => {
+        const b = q.blanks.find(x => x.id === i.dataset.blank), good = matches(i.value, b);
+        ok += good ? 1 : 0;
+        i.classList.toggle("right", good); i.classList.toggle("wrong", !good); i.readOnly = true;
+        if (!good && !i.nextElementSibling?.classList.contains("qz-exp")) i.insertAdjacentHTML("afterend", `<span class="qz-exp">${esc(shown(b))}</span>`);
+      });
+      verdict(host, ok === q.blanks.length ? qt("right", "верно") : `${ok} / ${q.blanks.length}`, ok === q.blanks.length);
+    } else if (q.type === "write") {
+      $("textarea", host).readOnly = false;
+      if (q.check.length && !$(".qz-ticks", host)) {
+        st.ticks = st.ticks || [];
+        $(".qz-ui", host).insertAdjacentHTML("beforeend", `<div class="qz-ticks"><div class="qz-ticks-k">${qt("tick what your answer had", "отметьте, что было в вашем ответе")}</div>${q.check.map((c, i) =>
+          `<label><input type="checkbox" data-i="${i}" ${st.ticks.includes(i) ? "checked" : ""}> <span>${fill(c)}</span></label>`).join("")}</div>`);
+        $(".qz-ticks", host).addEventListener("change", e => {
+          const i = +e.target.dataset.i; st.ticks = e.target.checked ? [...new Set([...st.ticks, i])] : st.ticks.filter(x => x !== i); save();
+        });
+      }
+    }
+    const a = $(".qz-a", host); a.hidden = false; drawFigs(a);
+    if (!restoring) save();
+    progress();
+  }
+
+  /* ------------------------------------------------------------- progress */
+  const isOptional = host => !!host.closest("details.optional");
+  function progress() {
+    const hosts = $$(".qz"), main = hosts.filter(h => !isOptional(h)), opt = hosts.filter(isOptional);
+    const done = l => l.filter(h => h.classList.contains("done")).length;
+    const el = $("#quiz-progress"); if (!el) return;
+    el.textContent = qt(`answered ${done(main)} / ${main.length}`, `отвечено ${done(main)} / ${main.length}`) + (opt.length ? qt(` · ${done(opt)} / ${opt.length} optional`, ` · ${done(opt)} / ${opt.length} дополнительно`) : "");
+    $$(".optional-count").forEach(c => { const l = $$(".qz", c.closest("details")); c.textContent = `${done(l)} / ${l.length}`; });
+  }
+
+  /* ----------------------------------------------------------------- rail */
+  const nav = $("#nav");
+  if (nav) {
+    const secs = $$("main section").filter(s => s.id && $("h2", s));
+    nav.innerHTML = secs.map((s, i) => `<a href="#${s.id}"><span>${pad(i + 1)}</span><span>${esc($("h2", s).textContent)}</span></a>`).join("");
+    const links = $$("a", nav);
+    const onScroll = () => {
+      const y = window.scrollY + 120; let cur = 0;
+      secs.forEach((s, i) => { if (s.offsetTop <= y) cur = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === cur));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  }
+  const theme = $("#btn-theme");
+  if (theme) theme.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+  const reset = $("#btn-reset");
+  if (reset) {
+    let armed = 0;
+    reset.addEventListener("click", () => {
+      if (Date.now() - armed > 4000) { armed = Date.now(); reset.textContent = qt("Click again to reset", "Ещё раз для сброса"); setTimeout(() => { reset.textContent = qt("Reset answers", "Сбросить ответы"); }, 4000); return; }
+      QUIZ.reset();
+      reset.textContent = qt("Reset answers", "Сбросить ответы");
+    });
+  }
+  QUIZ.reset = () => { state = {}; save(); $$("[data-fig]").forEach(h => delete h.dataset.drawn); Object.values(DATA).forEach(render); progress(); };
+
+  /* ----------------------------------------------------------------- go */
+  (function fillProse() {   // `{name}` in the page's own prose, text nodes only, so markup and figures are untouched
+    const walker = document.createTreeWalker(document.querySelector("main") || document.body, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walker.nextNode()) if (/\{[a-z][a-z0-9_]*\}/.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+    nodes.forEach(n => { n.nodeValue = n.nodeValue.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? fmtv(QUIZ.values[k]) : m); });
+  })();
+  drawFigs(document);
+  Object.values(DATA).sort((a, b) => a.n - b.n).forEach(render);
+  progress();
+});
+
+/* Схемы и связи со строками кода для страниц ADD. */
+const ADD = {
+  esc: s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
+  svg(content, width=760, height=180, label='Схема') {
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${this.esc(label)}"><defs><marker id="arrow-${++this.serial}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" style="fill:var(--ink-3)"/></marker></defs>${content.replaceAll('MARKER', 'arrow-'+this.serial)}</svg>`;
+  },
+  serial: 0,
+  text(x,y,label,cls='',anchor='middle') {
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" class="${cls}">${this.esc(label)}</text>`;
+  },
+  box(x,y,w,h,lines,key='',pick='') {
+    return `<g ${key?`data-f="${key}" tabindex="0"`:''} ${pick?`data-pick="${pick}"`:''}><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/>${lines.map((line,i)=>this.text(x+w/2,y+h/2+(i-(lines.length-1)/2)*23+5,line)).join('')}${pick?`<rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/>`:''}</g>`;
+  },
+  arrow(x1,y1,x2,y2) { return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#MARKER)"/>`; },
+  flow(items, label='Последовательность преобразований') {
+    const w=760/items.length;
+    return this.svg(items.map((a,i)=>this.box(i*w+6,30,w-30,90,a.lines,a.key,a.pick)+(i<items.length-1?this.arrow((i+1)*w-24,75,(i+1)*w+1,75):'')).join(''),760,150,label);
+  },
+  table(headers, rows) {
+    return '<table class="add-table"><thead><tr>'+headers.map(h=>'<th>'+this.esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(v=>'<td>'+this.esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+  },
+  softmax(values) { const m=Math.max(...values), ex=values.map(v=>Math.exp(v-m)), z=ex.reduce((a,b)=>a+b,0); return ex.map(v=>v/z); },
+  link(scope,key,on) { scope.querySelectorAll('[data-f]').forEach(n=>n.classList.toggle('hi',on && n.dataset.f===key)); },
+};
+for(const event of ['pointerover','focusin']) document.addEventListener(event,e=>{
+  const node=e.target.closest('[data-f]'), scope=node?.closest('[data-link-scope]');
+  if(scope) ADD.link(scope,node.dataset.f,true);
+});
+for(const event of ['pointerout','focusout']) document.addEventListener(event,e=>{
+  const node=e.target.closest('[data-f]'), scope=node?.closest('[data-link-scope]');
+  if(scope) ADD.link(scope,node.dataset.f,false);
+});
+
+/* Расчёты и отрисовка учебных примеров двух лекций о трансформерах. */
+const Transformer = {
+  dot: (a, b) => a.reduce((s, x, i) => s + x * b[i], 0),
+  rotate(x, position, theta = 10000) {
+    const out = [];
+    for (let i = 0; i < x.length; i += 2) {
+      const angle = position / theta ** (i / x.length), c = Math.cos(angle), s = Math.sin(angle);
+      out.push(x[i] * c - x[i + 1] * s, x[i] * s + x[i + 1] * c);
+    }
+    return out;
+  },
+  norm(x, rms = false, eps = 1e-5) {
+    const mean = rms ? 0 : x.reduce((s, v) => s + v, 0) / x.length;
+    const scale = Math.sqrt(x.reduce((s, v) => s + (v - mean) ** 2, 0) / x.length + eps);
+    return x.map(v => (v - mean) / scale);
+  },
+  silu: x => x / (1 + Math.exp(-x)),
+  gelu: x => x / 2 * (1 + Math.tanh(Math.sqrt(2 / Math.PI) * (x + 0.044715 * x ** 3))),
+  gate(value, gate, kind) { return value.map((x, i) => x * this[kind](gate[i])); },
+  cacheBytes(layers, heads, width, length, bytes = 2) { return 2 * layers * heads * width * length * bytes; },
+  group(query, queryHeads, kvHeads) { return Math.floor(query / (queryHeads / kvHeads)); },
+  attention(q, k, v, causal = false) {
+    return q.map((row, i) => {
+      const scores = k.map((key, j) => causal && j > i ? -Infinity : this.dot(row, key) / Math.sqrt(row.length));
+      const weights = ADD.softmax(scores);
+      return v[0].map((_, d) => weights.reduce((s, a, j) => s + a * v[j][d], 0));
+    });
+  },
+  /* Плиточный softmax с накоплением максимума, знаменателя и взвешенной суммы. */
+  tiled(q, k, v, causal = false, tile = 2) {
+    const trace = [], width = v[0].length;
+    const output = q.map((row, i) => {
+      let m = -Infinity, l = 0, acc = Array(width).fill(0);
+      for (let start = 0; start < k.length; start += tile) {
+        const stop = Math.min(k.length, start + tile);
+        const scores = k.slice(start, stop).map((key, j) => causal && start + j > i ? -Infinity : this.dot(row, key) / Math.sqrt(row.length));
+        const next = Math.max(m, ...scores);
+        if (next === -Infinity) continue;
+        const alpha = m === -Infinity ? 0 : Math.exp(m - next);
+        const p = scores.map(s => Math.exp(s - next));
+        acc = acc.map((a, d) => alpha * a + p.reduce((sum, weight, j) => sum + weight * v[start + j][d], 0));
+        l = alpha * l + p.reduce((a, b) => a + b, 0); m = next;
+        trace.push({row: i, start, stop, m, l, acc: [...acc], output: acc.map(a => a / l)});
+      }
+      return acc.map(a => a / l);
+    });
+    return {output, trace};
+  },
+  fill: (c = '--cls-0', p = 20) => `color-mix(in srgb,var(${c}) ${p}%,var(--panel))`,
+  rect(x, y, w, h, color = '--cls-0', selected = false) {
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" style="fill:${this.fill(color, selected ? 40 : 15)};stroke:var(${selected ? color : '--rule-strong'});stroke-width:${selected ? 2 : 1}"/>`;
+  },
+  cell(x, y, w, h, label, color = '--cls-0', selected = false) {
+    return this.rect(x,y,w,h,color,selected) + ADD.text(x+w/2,y+h/2+5,label);
+  },
+  vec(x, y, values, color = '--cls-0', selected = false, cw = 28, ch = 24) {
+    return values.map((v, i) => this.rect(x+i*cw,y,cw,ch,color,selected) + (v === '' ? '' : ADD.text(x+(i+.5)*cw,y+ch/2+4,typeof v === 'number' ? v.toFixed(2) : v,'num'))).join('');
+  },
+  path(d, color = '--ink-3', arrow = true) {
+    return `<path d="${d}" style="fill:none;stroke:var(${color})"${arrow ? ' marker-end="url(#MARKER)"' : ''}/>`;
+  },
+  clickable(content, attribute, value) {
+    return `<g ${attribute}="${value}" tabindex="0" role="button">${content}</g>`;
+  },
+  mount(host, content, height, label) { host.classList.add('transformer-fig'); host.innerHTML = ADD.svg(content,760,height,label); },
+};
+
+/* BERT: вход, задачи предобучения, прикладные выходы и современный энкодер. */
+const BERT_DATA = JSON.parse(document.getElementById('add-data').textContent);
+const BERT = {
+  token: 2, selected: new Set(), checked: false, maskRound: 0, modernToken: 4,
+  tokens: ['[CLS]', 'the', 'cat', '[SEP]', 'it', 'sleeps', '[SEP]'],
+  col: i => 150 + i * 86,
+  architecture(host, mode = 'input') {
+    const T = Transformer, token = this.token;
+    let s = mode === 'input' ? ADD.text(380,25,'BERT: стек энкодера','caption') : '';
+    const outY = 72;
+    this.tokens.forEach((t,i) => {
+      const x = this.col(i), on = i === token;
+      s += T.clickable(T.cell(x-38,480,76,30,t,'--cls-0',on),'data-token',i);
+      for (const [y, label, color] of [[425,'токен','--cls-0'],[385,i < 4 ? 'A' : 'B','--cls-2'],[345,String(i),'--cls-1']]) {
+        s += T.vec(x-30,y,['','',''],color,on,20,23);
+        s += ADD.text(x, y+38, label,'small');
+      }
+      s += T.path(`M ${x} 343 V 309`) + ADD.text(x,305,'Σ','strong') + T.path(`M ${x} 290 V 275`);
+      s += T.vec(x-30,outY,['','',''],'--cls-0',on,20,23);
+      s += T.path(`M ${x} 140 V ${outY+24}`);
+    });
+    s += ADD.text(17,439,'слово','small','start') + ADD.text(17,399,'сегмент','small','start') + ADD.text(17,359,'позиция','small','start');
+    for (const y of [150,218]) {
+      s += T.rect(99,y,638,54,'--cls-0') + ADD.text(48,y+32,y===150?'блок 2':'блок 1','small');
+      s += T.rect(108,y+31,620,16,'--cls-2');
+      this.tokens.forEach((_,i) => s += T.rect(this.col(i)-30,y+7,60,16,'--cls-3',i===token));
+      this.tokens.forEach((_,i) => s += T.path(`M ${this.col(i)} ${y} V ${y-10}`));
+    }
+    s += ADD.text(418,133,'H: контекстный вектор на каждой позиции','caption');
+    s += ADD.text(418,540,'широкая полоса: attention · отдельные ячейки: FFN','small');
+    if (mode === 'nsp') {
+      s += T.path('M 150 71 V 50 H 390 V 42','--cls-1') + T.cell(280,23,360,32,'pooler → последовательная / случайная','--cls-1',true);
+    }
+    T.mount(host,s,565,'BERT: суммы эмбеддингов, два блока и выходные векторы');
+  },
+  mlm(host) {
+    const T=Transformer, raw=['she','went','to','the','store','for','milk'], input=['she','[MASK]','to','the','banana','for','milk'];
+    let s=ADD.text(380,25,'исходные токены → вход → представления → цели','caption');
+    raw.forEach((t,i) => {
+      const x=52+i*99, target=[1,4,6].includes(i), selected=this.selected.has(i);
+      s+=T.cell(x,55,88,32,t,'--cls-0',target)+T.path(`M ${x+44} 88 V 110`);
+      s+=T.clickable(T.cell(x,115,88,38,input[i],selected?'--cls-1':'--cls-0',selected),'data-mlm',i);
+      s+=T.path(`M ${x+44} 153 V 180`)+T.vec(x+14,185,['','',''],'--cls-2',false,20,25);
+      if(this.checked) s+=T.path(`M ${x+44} 212 V 240`)+T.cell(x,245,88,34,target?t:'—',target?'--cls-1':'--ink-3',target);
+    });
+    s+=ADD.text(380,320,this.checked?'цель есть в выбранных позициях; «milk» оставлен без замены':'нажмите позиции, где будет прямое слагаемое MLM-ошибки','small');
+    T.mount(host,s,345,'Позиции MLM: маска, случайная замена и сохранённый токен');
+    const result=document.getElementById('mlm-result');
+    result.textContent=this.checked ? ([1,4,6].every(i=>this.selected.has(i))&&this.selected.size===3 ? 'Верно: выбраны все три случая.' : 'Цели: went, store, milk. Сравните выбранные позиции с нижней строкой.') : `Выбрано позиций: ${this.selected.size}`;
+  },
+  predictions() {
+    const item=BERT_DATA.mlm[+document.getElementById('mlm-example').value];
+    document.getElementById('mlm-predictions').innerHTML='<p class="mono">'+ADD.esc(item.text)+'</p>'+ADD.table(['Токен','Вероятность'],item.top.map(([word,p])=>[word,p.toFixed(2)]));
+  },
+  heads(host) {
+    const T=Transformer, task=document.getElementById('head-task').value, full=document.getElementById('head-train').value==='all';
+    const tokens=task==='qa'?['[CLS]','who','[SEP]','Ada','met','Acme','[SEP]']:['[CLS]','Ada','met','Acme','in','Paris','[SEP]'];
+    let s=ADD.text(380,24,full?'обучаются энкодер и голова':'обучается голова; энкодер заморожен','caption');
+    tokens.forEach((t,i)=>{
+      const x=58+i*99;
+      s+=T.cell(x,355,88,32,t,'--cls-0')+T.path(`M ${x+44} 354 V 320`)+T.vec(x+14,275,['','',''],full?'--cls-1':'--ink-3',full,20,25)+T.path(`M ${x+44} 274 V 245`);
+      s+=T.vec(x+14,160,['','',''],full?'--cls-1':'--ink-3',full,20,25);
+      if(task==='seq'&&i===0)s+=T.path(`M ${x+44} 158 V 120 H 380 V 102`);
+      if(task!=='seq'){
+        s+=T.path(`M ${x+44} 158 V 130`);
+        if(task==='ner')s+=T.cell(x,82,88,38,['—','B-PER','O','B-ORG','O','B-LOC','—'][i],'--cls-1',true);
+        else {
+          const inDocument=i>=3&&i<=5;
+          s+=T.cell(x,55,88,25,inDocument?(i===3?'start ✓':'start'):'×',inDocument?'--cls-1':'--ink-3',i===3);
+          s+=T.cell(x,90,88,25,inDocument?(i===3?'end ✓':'end'):'×',inDocument?'--cls-2':'--ink-3',i===3);
+        }
+      }
+    });
+    s+=T.cell(58,202,682,42,'двунаправленный энкодер',full?'--cls-1':'--ink-3',full);
+    if(task==='seq')s+=T.cell(255,55,250,45,'P(тема | текст)','--cls-1',true);
+    s+=ADD.text(380,425,task==='qa'?'каждая строка softmax — по позициям; ответ: Ada':task==='ner'?'softmax по меткам отдельно в каждой позиции':'softmax по классам текста','small');
+    T.mount(host,s,450,'Классификация, NER и границы ответа на выходе энкодера');
+  },
+  evolution(host) {
+    const T=Transformer, mode=document.getElementById('pretrain-model').value, words=['she','went','to','the','store','for','milk'];
+    const chosen=mode==='roberta'&&this.maskRound%2?[0,2,5]:[1,4,6];
+    let s=ADD.text(380,28,mode==='electra'?'генератор заполняет выбранные позиции; дискриминатор читает весь результат':mode==='roberta'?'MLM · новая маска при другом предъявлении · NSP отсутствует':'MLM + NSP · показан один вариант маски','small');
+    words.forEach((w,i)=>{
+      const x=45+i*101, pick=chosen.includes(i), replaced=mode==='electra'&&i===4;
+      const middle=mode==='electra'?(i===4?'banana':w):(pick?'[MASK]':w);
+      s+=T.cell(x,58,90,32,w,'--cls-0')+T.path(`M ${x+45} 90 V 112`)+T.cell(x,118,90,35,middle,pick?'--cls-1':'--cls-0',pick)+T.path(`M ${x+45} 153 V 183`);
+      s+=T.vec(x+15,240,['','',''],'--cls-2',false,20,24)+T.path(`M ${x+45} 264 V 288`);
+      s+=T.cell(x,298,90,35,mode==='electra'?(replaced?'заменён':'исходный'):(pick?w:'—'),mode==='electra'||pick?'--cls-1':'--ink-3');
+    });
+    s+=T.cell(45,185,696,36,mode==='electra'?'дискриминатор · энкодер':'энкодер → голова MLM','--cls-2');
+    s+=ADD.text(380,375,mode==='electra'?'went и milk предложены генератором и совпали с оригиналом':'нижняя строка: целевые ответы MLM','small');
+    T.mount(host,s,405,'BERT, RoBERTa и ELECTRA на одной последовательности');
+    document.getElementById('mask-next').disabled=mode!=='roberta';
+  },
+  rope(host) {
+    const T=Transformer, shift=+document.getElementById('rope-shift').value, pair=+document.getElementById('rope-pair').value;
+    const p=3+shift,r=8+shift,q=[1,0,.5,-1],k=[.5,1,-1,.5],rq=T.rotate(q,p),rk=T.rotate(k,r);
+    let s=ADD.text(380,25,`позиции ${p} и ${r} · расстояние ${r-p}`,'caption');
+    const vector=(cx,cy,vec,color,label)=>{
+      const norm=Math.hypot(...vec),x=cx+72*vec[0]/norm,y=cy-72*vec[1]/norm;
+      return `<circle cx="${cx}" cy="${cy}" r="78" style="fill:none;stroke:var(--rule-strong)"/>`+T.path(`M ${cx-90} ${cy} H ${cx+90}`,'--rule-strong',false)+T.path(`M ${cx} ${cy-90} V ${cy+90}`,'--rule-strong',false)+T.path(`M ${cx} ${cy} L ${x} ${y}`,color)+ADD.text(cx,cy+125,label,'caption');
+    };
+    s+=`<g data-f="rotation">${vector(210,155,rq.slice(pair*2,pair*2+2),'--cls-0','Q после поворота')}${vector(550,155,rk.slice(pair*2,pair*2+2),'--cls-1','K после поворота')}</g>`;
+    s+=`<g data-f="angle">${ADD.text(380,320,`углы: ${(p/10000**(pair/2)).toFixed(3)} и ${(r/10000**(pair/2)).toFixed(3)} рад`,'small')}</g>`;
+    T.mount(host,s,350,'RoPE: две пары координат Q и K с общим сдвигом позиций');
+    document.getElementById('rope-shift-value').textContent=shift;
+    document.getElementById('rope-result').textContent=`Исходные пары: q=[${q.slice(pair*2,pair*2+2)}], k=[${k.slice(pair*2,pair*2+2)}]. Вклад пары: ${T.dot(rq.slice(pair*2,pair*2+2),rk.slice(pair*2,pair*2+2)).toFixed(6)} · полное qᵀk: ${T.dot(rq,rk).toFixed(6)}`;
+  },
+  ffnValues(kind,coordinate,raw){
+    const T=Transformer,gate=[-1,1,2],value=[2,-1,.5];gate[coordinate]=raw;
+    const activated=gate.map(x=>T[kind](x)),h=T.gate(value,gate,kind),out=[T.dot(h,[1,.5,-1]),T.dot(h,[-.5,1,.25])];
+    return {gate,value,activated,h,out};
+  },
+  ffn(host) {
+    const T=Transformer, i=+document.getElementById('ffn-coordinate').value,kind=document.getElementById('ffn-kind').value;
+    const {gate,value,activated,h,out}=this.ffnValues(kind,i,+document.getElementById('ffn-gate').value);
+    let s=ADD.text(380,25,kind==='gelu'?'GeGLU · GELU в управляющей ветви':'SwiGLU · SiLU в управляющей ветви','caption');
+    s+=T.vec(352,55,['x₁','x₂'],'--cls-0',false,28,25)+T.path('M 380 81 V 94 H 210 V 108')+T.path('M 380 94 H 550 V 108');
+    s+=T.cell(130,110,160,35,'Wᵤ · значения','--cls-0')+T.cell(470,110,160,35,'Wg · управление','--cls-1');
+    value.forEach((v,j)=>{s+=`<g data-f="value">${T.cell(135+j*50,170,47,28,v.toFixed(2),'--cls-0',i===j)}</g>`;s+=`<g data-f="gate">${T.cell(475+j*50,170,47,28,gate[j].toFixed(2),'--cls-1',i===j)}</g>`;});
+    s+=T.path('M 210 146 V 168')+T.path('M 550 146 V 168');
+    s+=T.path('M 550 200 V 215')+T.cell(468,218,165,35,kind==='gelu'?'GELU(g)':'SiLU(g)','--cls-1');
+    s+=T.path('M 210 200 V 285 H 365 V 308')+T.path('M 550 255 V 285 H 395 V 308');
+    s+=T.cell(345,310,70,32,'⊙','--cls-2',true)+T.path('M 380 344 V 362');
+    h.forEach((v,j)=>s+=`<g data-f="product">${T.cell(305+j*50,365,48,30,v.toFixed(3),'--cls-2',j===i)}</g>`);
+    s+=T.path('M 380 397 V 420');
+    s+=`<g data-f="down">${T.cell(170,423,420,35,'W↓ → выход полной ширины','--cls-3',true)}</g>`;
+    s+=T.path('M 380 460 V 478')+T.vec(310,482,out,'--cls-3',false,70,28);
+    T.mount(host,s,535,'Две проекции gated FFN, активация, произведение и выходная проекция');
+    document.getElementById('ffn-result').textContent=`Координата ${'abc'[i]}: ${value[i]} × ${activated[i].toFixed(4)} = ${h[i].toFixed(4)} · выход [${out.map(x=>x.toFixed(3)).join(', ')}]`;
+  },
+  norm(host) {
+    const T=Transformer,x=BERT_DATA.reference.norms[+document.getElementById('norm-input').value].x,pre=document.getElementById('norm-place').value==='pre';
+    let s=ADD.text(380,25,pre?'Pre-LN · подслой читает нормированную копию':'Post-LN · нормировка после сложения','caption');
+    const steps=pre?['x','Norm','Attention','+']:['x','Attention','+','Norm'];
+    steps.forEach((label,i)=>{s+=T.cell(55+i*172,70,140,40,label,i===3?'--cls-1':'--cls-0');if(i<3)s+=T.path(`M ${195+i*172} 90 H ${224+i*172}`);});
+    s+=T.path(pre?'M 90 70 V 47 H 641 V 69':'M 90 70 V 47 H 469 V 69','--cls-1');
+    s+=ADD.text(380,168,`x = [${x.join(', ')}]`,'num');
+    s+=`<g data-f="ln">${T.cell(60,200,210,35,'LayerNorm','--cls-0')}${ADD.text(500,223,T.norm(x).map(v=>v.toFixed(3)).join(' · '),'num')}</g>`;
+    s+=`<g data-f="rms">${T.cell(60,260,210,35,'RMSNorm','--cls-1')}${ADD.text(500,283,T.norm(x,true).map(v=>v.toFixed(3)).join(' · '),'num')}</g>`;
+    T.mount(host,s,325,'Положение нормы и два способа нормировки координат одного токена');
+    document.getElementById('norm-result').textContent='ε = 0.00001 · масштаб 1 · сдвиг 0';
+  },
+  global(layer,mode='modern') { return mode==='bert'||(layer-1)%BERT_DATA.modern.every===0; },
+  allowed(layer,i,j,mode='modern'){return this.global(layer,mode)||Math.abs(i-j)<=1;},
+  reachable(depth,token,mode='modern',n=9) {
+    let positions=new Set([token]);
+    for(let layer=depth;layer>=1;layer--) {
+      const next=new Set();for(const i of positions)for(let j=0;j<n;j++)if(this.allowed(layer,i,j,mode))next.add(j);
+      positions=next;
+    }
+    return positions;
+  },
+  modern(host) {
+    const T=Transformer,layer=+document.getElementById('modern-layer').value,mode=document.getElementById('modern-mode').value,global=this.global(layer,mode),reach=this.reachable(layer,this.modernToken,mode);
+    let s=ADD.text(380,25,`слой ${layer}: ${global?'глобальный':'локальный'} attention`,'caption');
+    for(let i=0;i<9;i++)for(let j=0;j<9;j++){
+      const allowed=this.allowed(layer,i,j,mode);
+      s+=T.rect(220+j*29,65+i*29,27,27,allowed?'--cls-0':'--ink-3',allowed&&i===this.modernToken);
+    }
+    s+=ADD.text(350,51,'ключи','small')+ADD.text(150,202,'запросы','small');
+    for(let i=0;i<9;i++)s+=T.clickable(T.cell(54+i*77,365,65,32,String(i),reach.has(i)?'--cls-1':'--ink-3',i===this.modernToken),'data-modern',i);
+    s+=ADD.text(380,430,'нижняя строка: доступный исходный контекст через весь пройденный стек','small');
+    T.mount(host,s,455,'Матрица локальных или глобальных связей и достижимые входные позиции');
+    document.getElementById('modern-layer-value').textContent=layer;
+    document.getElementById('modern-result').textContent=`Позиция ${this.modernToken}: через ${layer} сл. доступны ${reach.size} из 9 входных позиций. Учебное локальное окно: позиция и ближайшие соседи.`;
+  },
+  padding(host) {
+    const T=Transformer,off=document.getElementById('padding-off').checked,lengths=[5,2,4];
+    let s=ADD.text(380,25,off?'непустые позиции; границы документов сохранены':'батч с выравниванием по самому длинному документу','caption');
+    if(!off)lengths.forEach((n,row)=>{
+      for(let i=0;i<5;i++)s+=T.cell(150+i*85,65+row*55,75,35,i<n?`${'ABC'[row]}${i}`:'PAD',i<n?`--cls-${row}`:'--ink-3');
+    });
+    else {
+      let index=0;lengths.forEach((n,row)=>{for(let i=0;i<n;i++,index++)s+=T.cell(44+index*62,105,56,38,`${'ABC'[row]}${i}`,`--cls-${row}`);});
+      s+=ADD.text(380,185,'attention: A↔A · B↔B · C↔C','caption');
+    }
+    T.mount(host,s,255,'Документы разной длины с padding и без него');
+    document.getElementById('padding-result').textContent=`${off?11:15} позиций обрабатываются; содержательных позиций 11; документов 3.`;
+  },
+};
+Object.assign(QUIZ.values,{bert_width:BERT_DATA.body.d,bert_layers:BERT_DATA.body.layers,bert_context:BERT_DATA.body.maxPos,
+  mlm_rate:BERT_DATA.recipe.selected,mask_rate:BERT_DATA.recipe.mask,random_rate:BERT_DATA.recipe.random,keep_rate:BERT_DATA.recipe.unchanged,
+  global_every:BERT_DATA.modern.every,local_window:BERT_DATA.modern.window,modern_context:BERT_DATA.modern.context,modern_tokens:BERT_DATA.modern.trainingTokens});
+const bertDrawers={bert:h=>BERT.architecture(h),mlm:h=>BERT.mlm(h),nsp:h=>BERT.architecture(h,'nsp'),heads:h=>BERT.heads(h),evolution:h=>BERT.evolution(h),rope:h=>BERT.rope(h),ffn:h=>BERT.ffn(h),norm:h=>BERT.norm(h),modern:h=>BERT.modern(h),padding:h=>BERT.padding(h)};
+Object.assign(QUIZ.figs,bertDrawers);
+function redrawAll(){for(const host of document.querySelectorAll('[data-fig]'))bertDrawers[host.dataset.fig](host);BERT.predictions();}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('.add-controls select,.add-controls input').forEach(el=>{el.addEventListener('input',()=>{BERT.token=+document.getElementById('bert-token').value;redrawAll();});});
+  document.getElementById('mlm-check').onclick=()=>{BERT.checked=true;redrawAll();};
+  document.getElementById('mlm-reset').onclick=()=>{BERT.selected.clear();BERT.checked=false;redrawAll();};
+  document.getElementById('mask-next').onclick=()=>{BERT.maskRound++;redrawAll();};
+  const activate=e=>{
+    const node=e.target.closest('[data-token],[data-mlm],[data-modern]');if(!node)return;
+    if(node.hasAttribute('data-token')){BERT.token=+node.dataset.token;document.getElementById('bert-token').value=BERT.token;}
+    if(node.hasAttribute('data-mlm')){const i=+node.dataset.mlm;BERT.selected.has(i)?BERT.selected.delete(i):BERT.selected.add(i);BERT.checked=false;}
+    if(node.hasAttribute('data-modern'))BERT.modernToken=+node.dataset.modern;
+    redrawAll();
+  };
+  document.addEventListener('click',activate);document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-token],[data-mlm],[data-modern]')){e.preventDefault();activate(e);}});
+  BERT.predictions();
+});
+
+/* Схема DSBA week04, autumn-2026 e24968d5eaf0a7a721fd14c412bd7a98a3d335cf: исходная отрисовка и три режима. */
+(function dsbaBertPicture() {
+const $ = (selector, root) => (root || document).querySelector(selector);
+const $$ = (selector, root) => [...(root || document).querySelectorAll(selector)];
+const esc = ADD.esc;
+const NS = 'http://www.w3.org/2000/svg';
+const REDRAW = [];
+function svg(w, h) { const s = document.createElementNS(NS, "svg"); s.setAttribute("viewBox", `0 0 ${w} ${h}`); s.setAttribute("width", "100%"); return s; }
+const PAINT = { fill: 1, stroke: 1 };
+function el(tag, attrs, text) {
+  const n = document.createElementNS(NS, tag); let style = "";
+  for (const k in attrs) { const v = attrs[k]; if (PAINT[k] && typeof v === "string" && v.startsWith("var(")) style += `${k}:${v};`; else n.setAttribute(k, v); }
+  if (style) n.setAttribute("style", style); if (text != null) n.textContent = text; return n;
+}
+
+const TIP = $("#tip");
+function tipOn(node, html) {
+  node.addEventListener("pointerenter", e => { TIP.innerHTML = html; TIP.style.opacity = "1"; moveTip(e); });
+  node.addEventListener("pointermove", moveTip); node.addEventListener("pointerleave", () => { TIP.style.opacity = "0"; });
+}
+function moveTip(e) { const pad = 14, r = TIP.getBoundingClientRect(); let x = e.clientX + pad, y = e.clientY + pad; if (x + r.width > innerWidth - 8) x = e.clientX - r.width - pad; if (y + r.height > innerHeight - 8) y = e.clientY - r.height - pad; TIP.style.left = x + "px"; TIP.style.top = y + "px"; }
+function css(name) { return `var(${name})`; }
+
+function codeF(host, text, tagger, on) {
+  const h = $(host); h.innerHTML = text.split("\n").map(l => { const f = tagger(l); return `<span class="ln"${f ? ` data-f="${f}"` : ""}>${esc(l)}</span>`; }).join("");
+  if (on) h.addEventListener("pointerover", e => { const ln = e.target.closest(".ln[data-f]"); if (ln) on(ln.dataset.f); });
+}
+/* Подпись вписывается в прямоугольник; grow расширяет его вокруг центра. */
+const TEXT_W = (t, fs) => String(t).length * fs * 0.61 + 14;
+function box(s, x, y, w, h, label, o) { o = o || {}; let fs = o.fs || 14;
+  if (label != null && label !== "") { const need = TEXT_W(label, fs);
+    if (need > w) { if (o.grow) { const cx = x + w / 2; w = need; x = cx - w / 2; } else fs = Math.max(8, fs * (w - 6) / (need - 8)); } }
+  const r = el("rect", { x, y, width: w, height: h, rx: o.rx == null ? 6 : o.rx, fill: "none", stroke: o.stroke || css("--rule-strong"), "stroke-width": o.sw || 1.4, "stroke-dasharray": o.dash ? "5 4" : "none" }); r.style.fill = o.fill || "var(--panel-sunk)"; s.appendChild(r);
+  if (label != null) { const t = el("text", { x: x + w / 2, y: y + h / 2 + fs * .36, "font-size": fs, "text-anchor": "middle", fill: o.color || css("--ink"), "font-weight": o.bold ? "600" : "400" }, label); s.appendChild(t); if (fs < (o.fs || 14) - 2 && String(label).length > 6) tipOn(r, esc(label)); }
+  r.box = { x, y, w, h }; return r; }
+function txt(s, x, y, t, o) { o = o || {}; return s.appendChild(el("text", { x, y, "font-size": o.fs || 13.5, "text-anchor": o.anchor || "middle", fill: o.color || css("--ink-2"), "font-weight": o.bold ? "600" : "400", "font-style": o.italic ? "italic" : "normal" }, t)); }
+function arrow(s, x1, y1, x2, y2, o) { o = o || {}; const color = o.color || css("--ink-2"), id = "arr-" + String(color).replace(/[^a-z0-9]/gi, "");
+  if (!s.querySelector("#" + id)) { let defs = s.querySelector("defs"); if (!defs) { defs = el("defs", {}); s.appendChild(defs); } const m = el("marker", { id, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto-start-reverse" }); m.appendChild(el("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: color })); defs.appendChild(m); }
+  s.appendChild(el("path", { d: o.d || `M ${x1} ${y1} L ${x2} ${y2}`, fill: "none", stroke: color, "stroke-width": o.sw || 1.6, "stroke-dasharray": o.dash ? "4 4" : "none", "marker-end": `url(#${id})` })); }
+const TINT = (v, pct) => `color-mix(in srgb, var(${v}) ${pct}%, var(--panel))`;
+const SUNK = () => css("--panel-sunk");
+function states(btnsId, draw) {                       // Кнопки переключают выделенную часть схемы.
+  let mode = $(`#${btnsId} button.sel`).dataset.m; draw(mode); REDRAW.push(() => draw(mode));
+  $(`#${btnsId}`).addEventListener("click", e => { const b = e.target.closest("button[data-m]"); if (!b) return; mode = b.dataset.m; $$(`#${btnsId} button`).forEach(x => x.classList.toggle("sel", x === b)); draw(mode); });
+  return m => { mode = m; $$(`#${btnsId} button`).forEach(x => x.classList.toggle("sel", x.dataset.m === m)); draw(m); };
+}
+/* Блок энкодера: attention, FFN и пунктирные остаточные связи. */
+function encoderBlock(s, x, y, w, h, o) {
+  o = o || {}; box(s, x, y, w, h, null, { fill: TINT("--cls-1", 7), stroke: css("--cls-1") });
+  const iw = Math.min(260, w * .5), ix = x + w / 2 - iw / 2, hh = (h - 30) / 2;
+  box(s, ix, y + h - 10 - hh, iw, hh, "self-attention · 12 голов", { fill: css("--panel"), fs: 12.5 });
+  box(s, ix, y + 10, iw, hh, "FFN · 768 → 3072 → 768", { fill: css("--panel"), fs: 12.5 });
+  s.appendChild(el("path", { d: `M ${ix - 14} ${y + h - 6} C ${ix - 40} ${y + h - 6} ${ix - 40} ${y + h / 2} ${ix - 14} ${y + h / 2}`, fill: "none", stroke: css("--ink-3"), "stroke-dasharray": "3 3" }));
+  s.appendChild(el("path", { d: `M ${ix - 14} ${y + h / 2 - 2} C ${ix - 40} ${y + h / 2 - 2} ${ix - 40} ${y + 6} ${ix - 14} ${y + 6}`, fill: "none", stroke: css("--ink-3"), "stroke-dasharray": "3 3" }));
+  txt(s, ix - 46, y + h / 2 + 4, "+", { fs: 13, color: css("--ink-3") });
+  if (o.label) txt(s, x + w - 10, y + 16, o.label, { anchor: "end", fs: 12.5, color: css("--cls-1"), bold: 1 });
+}
+
+const BERT_TOKS = ["[CLS]", "the", "cat", "sat", "on", "[SEP]", "it", "was", "warm", "[SEP]"];
+function figBert(mode) {
+  const host = $("#fig-bert"); host.innerHTML = ""; const W = 1000, H = 560, s = svg(W, H); const n = BERT_TOKS.length, x0 = 90, cw = (W - x0 - 30) / n, X = i => x0 + cw * (i + 0.5);
+  const NOTE = {
+    in: TXT("fig-bert-note-in"),
+    mlm: TXT("fig-bert-note-mlm"),
+    nsp: TXT("fig-bert-note-nsp"),
+  };
+  const chosen = { 3: "mk", 8: "rnd", 2: "keep" };                          // sat → [MASK], warm → случайный токен, cat сохраняется
+  const shown = mode === "mlm" ? BERT_TOKS.map((t, i) => chosen[i] === "mk" ? "[MASK]" : chosen[i] === "rnd" ? "apple" : t) : BERT_TOKS;
+  // Токены и строки трёх таблиц эмбеддингов.
+  const yTok = 500, yE = [455, 425, 395];
+  shown.forEach((t, i) => { const sp = /^\[/.test(BERT_TOKS[i]) && t !== "[MASK]", c = mode === "mlm" ? chosen[i] : null;
+    box(s, X(i) - cw / 2 + 5, yTok, cw - 10, 32, t, { fill: c === "mk" ? TINT("--cls-3", 28) : c === "rnd" ? TINT("--cls-1", 28) : c === "keep" ? TINT("--cls-2", 28) : sp ? SUNK() : css("--panel"), stroke: c ? css(c === "mk" ? "--cls-3" : c === "rnd" ? "--cls-1" : "--cls-2") : css("--rule-strong"), fs: 13.5, bold: sp || !!c });
+    if (mode === "mlm" && c) txt(s, X(i), yTok + 48, "было: " + BERT_TOKS[i], { fs: 11.5, color: css("--ink-3") });
+    const seg = i <= 5 ? 0 : 1;
+    box(s, X(i) - cw / 2 + 5, yE[0], cw - 10, 22, "E(" + BERT_TOKS[i].replace(/[\[\]]/g, "").slice(0, 4) + ")", { fill: css("--panel"), fs: 10.5, color: css("--ink-2"), rx: 3 });
+    box(s, X(i) - cw / 2 + 5, yE[1], cw - 10, 22, seg ? "E_B" : "E_A", { fill: TINT(seg ? "--cls-2" : "--cls-0", mode === "nsp" || mode === "in" ? 22 : 10), fs: 11, color: css("--ink-2"), rx: 3 });
+    box(s, X(i) - cw / 2 + 5, yE[2], cw - 10, 22, "P" + i, { fill: css("--panel"), fs: 11, color: css("--ink-2"), rx: 3 });
+    s.appendChild(el("line", { x1: X(i), x2: X(i), y1: 395, y2: 372, stroke: css("--ink-3"), "stroke-width": 1.2 }));
+  });
+  txt(s, x0 - 8, yTok + 21, "токены", { anchor: "end", fs: 12.5 }); txt(s, x0 - 8, yE[0] + 15, "токен", { anchor: "end", fs: 12 }); txt(s, x0 - 8, yE[1] + 15, "сегмент", { anchor: "end", fs: 12 }); txt(s, x0 - 8, yE[2] + 15, "позиция", { anchor: "end", fs: 12 });
+  txt(s, x0 + 2, yE[0] - 6, "+", { anchor: "end", fs: 13, color: css("--ink-3") }); txt(s, x0 + 2, yE[1] - 6, "+", { anchor: "end", fs: 13, color: css("--ink-3") });
+  if (mode === "in") { txt(s, X(5), yTok + 48, "граница сегментов", { fs: 11.5, color: css("--cls-2") }); txt(s, X(0), yTok + 48, "служебный токен", { fs: 11.5, color: css("--ink-3") }); }
+  // Один блок энкодера развёрнут, остальные показаны стопкой.
+  encoderBlock(s, x0, 262, W - x0 - 30, 110, { label: "блок 1 · 7,1 млн" });
+  [0, 1, 2].forEach(k => box(s, x0, 236 - k * 22, W - x0 - 30, 16, null, { fill: TINT("--cls-1", 5), stroke: css("--cls-1"), rx: 4 }));
+  txt(s, W / 2, 205, "⋮  блоки 2 … 12  ⋮", { fs: 12.5, color: css("--cls-1") });
+  txt(s, x0 + 8, 182, "× 12 в bert-base · × 24 в bert-large · блоки одинаковой формы", { anchor: "start", fs: 12, color: css("--ink-3") });
+  // Выход: вектор каждой позиции.
+  const yH = 130;
+  BERT_TOKS.forEach((t, i) => { const on = mode === "in" || (mode === "mlm" && chosen[i]) || (mode === "nsp" && i === 0);
+    s.appendChild(el("line", { x1: X(i), x2: X(i), y1: 262, y2: yH + 30, stroke: css("--ink-3"), "stroke-width": 1.2 }));
+    box(s, X(i) - cw / 2 + 8, yH, cw - 16, 30, "h" + i, { fill: on ? TINT("--cls-1", 22) : SUNK(), stroke: on ? css("--cls-1") : css("--rule-strong"), fs: 12.5, color: on ? css("--ink") : css("--ink-3") }); });
+  txt(s, x0 - 8, yH + 20, "H", { anchor: "end", fs: 13, bold: 1 }); txt(s, x0 - 8, yH + 36, "[L, 768]", { anchor: "end", fs: 11, color: css("--ink-3") });
+  // Головы, которые читают H.
+  if (mode === "mlm") {
+    const hx = (X(0) + X(n - 1)) / 2, hw = 760;
+    box(s, hx - hw / 2, 24, hw, 34, "Голова MLM · Linear(768,768) + GELU + LayerNorm + Linear(768,30522) → softmax по словарю", { fill: TINT("--cls-3", 18), stroke: css("--cls-3"), fs: 12.5, bold: 1, grow: 1 });
+    Object.keys(chosen).forEach(i => { i = +i; arrow(s, X(i), yH, X(i), 62, { color: css("--cls-3") }); txt(s, X(i), 14, "→ " + BERT_TOKS[i], { fs: 12.5, color: css("--cls-3"), bold: 1 }); });
+    txt(s, x0, 14, "цели: исходные токены", { anchor: "start", fs: 11.5, color: css("--ink-3") });
+    txt(s, x0, 84, "Прямая ошибка — в выбранных позициях; градиент проходит и через контекст", { anchor: "start", fs: 12, color: css("--ink-3") });
+  } else if (mode === "nsp") {
+    const bx = X(0) - cw / 2 + 8, bw = 260;
+    const b1 = box(s, bx, 66, bw, 30, "pooler · tanh(W h₀ + b) · 768", { fill: TINT("--cls-2", 18), stroke: css("--cls-2"), fs: 12.5 });
+    const b2 = box(s, bx, 24, bw, 30, "Linear(768, 2) → подряд / случайно", { fill: TINT("--cls-2", 18), stroke: css("--cls-2"), fs: 12.5, bold: 1 });
+    arrow(s, X(0), yH, X(0), 100, { color: css("--cls-2") }); arrow(s, X(0), 66, X(0), 58, { color: css("--cls-2") });
+    txt(s, bx + bw + 16, 44, "перекрёстная энтропия по двум классам", { anchor: "start", fs: 12, color: css("--ink-3") });
+    txt(s, bx + bw + 16, 86, "NSP читает h₀ — представление [CLS]", { anchor: "start", fs: 12, color: css("--ink-3") });
+  } else {
+    txt(s, W / 2, 60, "на каждой позиции — вектор ширины 768; головы читают эти представления", { fs: 13, color: css("--ink-2") });
+    txt(s, W / 2, 84, "вход: сумма строк трёх таблиц · энкодер: 12 блоков · выход: H", { fs: 12, color: css("--ink-3") });
+  }
+  host.appendChild(s); $("#fig-bert-note").innerHTML = NOTE[mode];
+}
+const setBert = states("fig-bert-btns", figBert);
+codeF("#code-pretrain", `H = body(input_ids, token_type_ids, attention_mask).last_hidden_state     # [B, L, 768] — вектор каждой позиции
+
+# --- MLM: исходный токен в выбранных позициях; в остальных цель -100
+chosen = torch.rand(input_ids.shape) < 0.15                                 # служебные токены и PAD исключаются из выбора
+mlm_labels = torch.where(chosen, input_ids, -100)                           # цель — исходный токен; -100 исключает позицию из ошибки
+r = torch.rand(input_ids.shape)
+input_ids[chosen & (r < 0.8)] = MASK_ID                                     # 80%: [MASK]
+input_ids[chosen & (r >= 0.8) & (r < 0.9)] = random_token_id                # 10%: случайный токен
+#                                                                            # 10%: исходный токен сохраняется и тоже предсказывается
+mlm_logits = mlm_head(H)                                                    # Linear(768, 768) + GELU + LayerNorm + Linear(768, 30522): [B, L, V]
+mlm_loss = F.cross_entropy(mlm_logits.flatten(0, 1), mlm_labels.flatten(), ignore_index=-100)   # softmax по словарю; ошибка в выбранных позициях
+
+# --- NSP: читаем h_0, позицию [CLS], через pooler
+pooled = torch.tanh(pooler(H[:, 0]))                                        # [B, 768]
+nsp_logits = nsp_head(pooled)                                               # Linear(768, 2): [B, 2]
+nsp_loss = F.cross_entropy(nsp_logits, is_next)                             # softmax по двум классам; одна метка на пару
+
+loss = mlm_loss + nsp_loss                                                  # BertForPreTraining складывает две ошибки`,
+  l => /mlm|chosen|MASK_ID|random_token|10%|80%/.test(l) ? "mlm" : /nsp|pooled|pooler|is_next/.test(l) ? "nsp" : /^H = /.test(l) ? "in" : null, setBert);
+
+
+bertDrawers['bert-dsba'] = () => REDRAW.forEach(draw => draw());
+QUIZ.figs['bert-dsba'] = bertDrawers['bert-dsba'];
+})();
+
+</script>
+</body>
+</html>
+
+<!-- built from demo/ · sha256:08eb931f97a9a1ce29203c1ae4c0a450442b8688ba66c8575733f56b151b4efa -->

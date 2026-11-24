@@ -1,0 +1,12 @@
+{
+  "branch": "autumn-2026",
+  "commit": "e24968d5eaf0a7a721fd14c412bd7a98a3d335cf",
+  "paths": [
+    "week07_peft/demo",
+    "week07_peft/artifacts/demo_data.json",
+    "week08_training_alignment/demo",
+    "week08_training_alignment/artifacts/demo_data.json",
+    "week04_pretraining_transfer/artifacts/agnews_transfer.json",
+    "week04_pretraining_transfer/demo/demo.js"
+  ]
+}

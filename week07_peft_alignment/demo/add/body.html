@@ -1,0 +1,605 @@
+<div class="shell"><aside class="rail"><div><div class="rail-mark">NLP @ HSE DSBA · ADD-2026</div><div class="rail-eq">Занятие 7<br>PEFT и обучение по награде</div></div><nav id="nav"></nav><div class="rail-btns"><button id="btn-reset">Сбросить ответы</button><button id="btn-theme">Тема</button><button id="btn-present">На доску</button></div><div id="quiz-progress" class="quiz-progress"></div><div class="rail-foot"><a href="../week08/">Практика →</a><br><a href="https://xufana.github.io/dsba_nlp/week07/">DSBA · PEFT</a><br><a href="https://xufana.github.io/dsba_nlp/week08/">DSBA · alignment</a></div></aside><main><div class="wrap">
+<section id="hero"><p class="eyebrow">Author: Daria Andreeva</p><h1>Как дообучать модель</h1><p class="lede">{{inline:lede}}</p><div class="prose slide">{{text:s-intro}}</div><div class="prose">{{text:intro-route}}</div><details class="more"><summary>Какие варианты разберём</summary><div class="prose">{{text:intro}}</div></details></section>
+<div id="copy-peft"><div class="tooltip" id="p-tip"></div><div class="score copy-score" id="p-score"></div>
+<p id="p-hero-trained" class="small-note"></p><div id="p-hero-note" class="small-note"></div>
+<section id="p-probe">
+  <p class="eyebrow">Блок</p>
+  <h2>Линейная голова и полное дообучение</h2>
+  <div class="prose slide">
+    {{text:p-probe-p1}}
+  </div>
+  <h3>Сколько последних блоков BERT дообучать?</h3>
+  <div class="prose slide">{{text:p-bert-transfer-intro}}</div>
+  <div class="panel" id="p-bert-transfer">
+    <div class="panel-head"><span>BERT · классификация новостей AG News</span><span class="mono" id="p-bert-transfer-conditions"></span></div>
+    <div class="panel-body">
+      <div class="add-controls"><span>Обучаем:</span><span class="fig-states" id="p-bert-transfer-modes"></span></div>
+      <div class="dial"><div><div id="p-bert-transfer-stats" class="stat-row"></div><p class="small-note">{{inline:p-bert-transfer-action}}</p><button class="primary" id="p-btn-bert-transfer-reveal">Открыть результаты</button></div><div id="p-bert-transfer-fig"></div></div>
+      <div id="p-bert-transfer-results" hidden>
+        <div id="p-bert-transfer-result" class="stat-row" aria-live="polite"></div>
+        <div class="scroll-x"><table class="results" id="p-bert-transfer-table"></table></div>
+        <div class="grid-2"><div id="p-bert-transfer-chart"></div><div id="p-bert-transfer-bill"></div></div>
+      </div>
+    </div>
+    <div class="panel-note">{{inline:p-bert-transfer-conditions-note}}</div>
+    <div class="panel-note" id="p-bert-transfer-note" hidden></div>
+  </div>
+  <details class="more"><summary>Как заморозить нижние блоки</summary>{{code:bert-freeze}}</details>
+  <div class="prose">{{text:p-probe-p2}}</div>
+  <details class="more" id="p-kumar-details"><summary>LP-FT и проверка на сдвинутых данных · результат статьи</summary>
+    <div class="prose">{{text:p-kumar-context}}</div>
+    <div class="panel">
+      <div class="panel-head"><span>Linear probing, полное дообучение и LP-FT</span><span class="mono">Kumar et al. (2022)</span></div>
+      <div class="panel-body scroll-x"><table class="results" id="p-kumar-table"></table></div>
+      <div class="panel-note" id="p-kumar-note"></div>
+    </div>
+  </details>
+  <details class="more"><summary>Дополнительно: как обучение меняет признаки · учебный пример</summary>
+  <div class="prose">
+    {{text:p-toy-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Два входа, один признак и голова · обучение в браузере</span><span class="mono" id="p-toy-status">выберите способ обучения</span></div>
+    <div class="panel-body">
+      <div class="bet" id="p-bet-toy"><span class="q">{{inline:p-bet-toy}}</span></div>
+      <div class="btnrow" style="margin-bottom:8px"><span class="fig-states" id="p-toy-btns"><button data-m="pre" class="sel">готовые признаки, случайная голова</button><button data-m="lp">LP</button><button data-m="ft">FT</button><button data-m="lpft">LP → FT</button></span></div>
+      <div class="toy-grid"><div id="p-fig-toy"></div><div id="p-toy-out"></div></div>
+    </div>
+    <div class="panel-note" id="p-toy-note" hidden>{{inline:p-toy-note}}</div>
+  </div>
+  </details>
+</section>
+<section id="p-lora">
+  <p class="eyebrow">Блок</p>
+  <h2>LoRA</h2>
+  <div class="prose slide">
+    {{text:p-lora-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Один слой с LoRA</span><span class="mono">по Hu et al. (2021)</span></div>
+    <div class="panel-body">
+      <div class="btnrow" style="margin-bottom:8px"><span class="fig-states" id="p-lora-btns"><button data-m="init" class="sel">начало</button><button data-m="train">обучение</button><button data-m="merge">после слияния</button></span></div>
+      <div id="p-fig-lora"></div>
+    </div>
+    <div class="panel-note">{{inline:p-lora-note1}}</div>
+  </div>
+  <div class="formula"><span class="fn">Вычисление слоя</span>
+    <math display="block"><mrow>
+      <mrow class="fx" data-f="h"><mi>h</mi></mrow><mo>=</mo>
+      <mrow class="fx" data-f="w"><mi>W</mi><mi>x</mi></mrow><mo>+</mo>
+      <mrow class="fx" data-f="scale"><mfrac><mi>α</mi><mi>r</mi></mfrac></mrow>
+      <mrow class="fx" data-f="b"><mi>B</mi></mrow><mrow class="fx" data-f="a"><mi>A</mi><mi>x</mi></mrow>
+      <mo>,</mo><mspace width="1.4em"/>
+      <mrow class="fx" data-f="a"><mi>A</mi><mo>∼</mo><mi>𝒩</mi><mo>(</mo><mn>0</mn><mo>,</mo><msup><mi>σ</mi><mn>2</mn></msup><mo>)</mo></mrow><mo>,</mo><mspace width="0.6em"/>
+      <mrow class="fx" data-f="b"><mi>B</mi><mo>=</mo><mn>0</mn></mrow>
+    </mrow></math>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Инициализация и обучение слоя 16 × 16</span><span class="mono" id="p-init-status"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="p-bet-init"><span class="q">{{inline:p-bet-init}}</span></div>
+      <div class="btnrow"><button class="primary" id="p-btn-init-reveal">Обучить три варианта</button></div>
+      <div id="p-init-chart" style="margin-top:10px"></div>
+    </div>
+    <div class="panel-note" id="p-init-note" hidden>{{inline:p-init-note}}</div>
+  </div>
+  <h3>Что сохраняет малый ранг</h3>
+  <div class="prose">
+    {{text:p-lora-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>W и ΔW при уменьшении ранга <span class="illus">учебная иллюстрация</span></span><span class="mono" id="p-rank-meta"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="p-bet-rank"><span class="q">{{inline:p-bet-rank}}</span></div>
+      <div class="sliders" style="max-width:520px"><div><label class="field">ранг r <b id="p-rank-r-v"></b></label><input type="range" id="p-rank-r" min="1" max="48" step="1" value="4"></div></div>
+      <div class="reveal-wrap"><div class="veil">откройте приближения после выбора</div>
+        <div id="p-rank-out" hidden><div id="p-fig-rank"></div><div id="p-rank-spectrum"></div></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="p-btn-rank-reveal">Открыть</button></div>
+    </div>
+    <div class="panel-note" id="p-rank-note" hidden></div>
+  </div>
+  <h3>Код</h3>
+  <div class="prose">
+    {{text:p-lora-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Слой LoRA и настройка библиотеки</span><span class="mono" id="p-code-check"></span></div>
+    <div class="panel-body"><div class="fig-code"><pre class="code" id="p-code-lora"></pre><pre class="code" id="p-code-peft"></pre></div></div>
+    <div class="panel-note">{{inline:p-code-note}}</div>
+  </div>
+  <h3>Какие матрицы и какой ранг</h3>
+  <div class="panel">
+    <div class="panel-head"><span>GPT-3 · одинаковый бюджет, разные матрицы</span><span class="mono" id="p-where-src"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="p-bet-where"><span class="q">{{inline:p-bet-where}}</span></div>
+      <div class="reveal-wrap"><div class="veil">таблица 5 статьи Hu et al.</div>
+        <div id="p-where-out" hidden class="scroll-x"><table class="results" id="p-where-table"></table></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="p-btn-where-reveal">Открыть</button></div>
+    </div>
+    <div class="panel-note" id="p-where-note" hidden>{{inline:p-where-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>GPT-3 · точность в зависимости от ранга</span><span class="mono" id="p-r-src"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="p-bet-r"><span class="q">{{inline:p-bet-r}}</span></div>
+      <div class="reveal-wrap"><div class="veil">таблица 6 статьи Hu et al.</div>
+        <div id="p-r-out" hidden><div class="grid-2"><div id="p-r-chart-mnli"></div><div id="p-r-chart-wikisql"></div></div></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="p-btn-r-reveal">Открыть</button></div>
+    </div>
+    <div class="panel-note" id="p-r-note" hidden>{{inline:p-r-note}}</div>
+  </div>
+</section>
+<section id="p-map">
+  <p class="eyebrow">Блок</p>
+  <h2>Какие параметры обучаются</h2>
+  <div class="prose slide">
+    {{text:p-map-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Сначала расположите методы</span></div>
+    <div class="panel-body">
+      <div class="bet"><span class="q">{{inline:p-bet-sort}}</span></div>
+      <div class="orderpick" id="p-sort-pick"></div>
+      <div class="btnrow"><button class="primary" id="p-btn-sort-reveal">Открыть</button></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>GPT-2 small · обучаемые части</span><span class="mono" id="p-map-check"></span></div>
+    <div class="panel-body">
+      <div class="btnrow" style="margin-bottom:8px"><span class="fig-states" id="p-map-btns"><button data-m="ft">вся модель</button><button data-m="lp">только голова</button><button data-m="bitfit">BitFit</button><button data-m="adapter">адаптеры</button><button data-m="lora" class="sel">LoRA</button><button data-m="pt">обучаемый префикс</button></span></div>
+      <div class="sliders" id="p-map-sliders"><div id="p-map-r-wrap"><label class="field">ранг LoRA r <b id="p-map-r-v"></b></label><input type="range" id="p-map-r" min="1" max="64" step="1" value="8"></div><div id="p-map-m-wrap"><label class="field">ширина адаптера m <b id="p-map-m-v"></b></label><input type="range" id="p-map-m" min="8" max="256" step="8" value="64"></div><div id="p-map-n-wrap"><label class="field">виртуальных токенов <b id="p-map-n-v"></b></label><input type="range" id="p-map-n" min="1" max="100" step="1" value="12"></div></div>
+      <div class="btnrow" id="p-map-targets" style="margin:6px 0 0"><span class="mono" style="font-size:13px">LoRA в слоях</span><span class="fig-states" id="p-map-t"><button data-m="c_attn" class="sel">c_attn</button><button data-m="attn">c_attn + attn c_proj</button><button data-m="all">все линейные</button></span></div>
+      <div class="toy-grid wide"><div id="p-fig-map"></div><div id="p-map-out"></div></div>
+    </div>
+    <div class="panel-note">{{inline:p-map-note}}</div>
+  </div>
+</section>
+<section id="p-bill">
+  <p class="eyebrow">Блок</p>
+  <h2>Время, память и хранение</h2>
+  <div class="prose slide">
+    {{text:p-bill-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Скорость обучения · шагов в секунду</span><span class="mono" id="p-speed-meta"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="p-bet-speed"><span class="q" id="p-bet-speed-q"></span></div>
+      <div class="reveal-wrap"><div class="veil">скорости сохранённого прогона</div>
+        <div id="p-speed-out" hidden></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="p-btn-speed-reveal">Открыть</button></div>
+    </div>
+    <div class="panel-note" id="p-speed-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:p-bill-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Память: веса, градиенты, оптимизатор</span><span class="mono" id="p-mem-meta"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="p-bet-fit"><span class="q">{{inline:p-bet-fit}}</span></div>
+      <div class="picklist" id="p-fit-pick"></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="p-btn-fit-reveal">Открыть</button></div>
+      <div id="p-mem-out" hidden style="margin-top:12px">
+        <div class="sliders" style="max-width:520px"><div><label class="field">размер модели <b id="p-mem-n-v"></b></label><input type="range" id="p-mem-n" min="0" max="6" step="1" value="4"></div></div>
+        <div id="p-mem-chart"></div>
+      </div>
+    </div>
+    <div class="panel-note" id="p-fit-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:p-bill-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Хранение одной модели и нескольких задач</span></div>
+    <div class="panel-body">
+      <div class="sliders" style="max-width:520px"><div><label class="field">задач <b id="p-store-n-v"></b></label><input type="range" id="p-store-n" min="1" max="100" step="1" value="10"></div></div>
+      <div class="est" id="p-store-out"></div>
+    </div>
+    <div class="panel-note" id="p-store-note"></div>
+  </div>
+</section>
+<section id="p-prompt">
+  <p class="eyebrow">Блок</p>
+  <h2>Дополнительно: обучаемый префикс</h2><details class="optional"><summary>Открыть схемы и опыты</summary>
+  <div class="prose slide">
+    {{text:p-prompt-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Вход с обучаемым префиксом</span><span class="mono" id="p-prompt-n-out"></span></div>
+    <div class="panel-body">
+      <div class="sliders" style="max-width:520px"><div><label class="field">виртуальных токенов <b id="p-prompt-n-v"></b></label><input type="range" id="p-prompt-n" min="1" max="20" step="1" value="12"></div></div>
+      <div class="btnrow" style="margin:8px 0"><span class="fig-states" id="p-prompt-init"><button data-m="text" class="sel">начало из текста</button><button data-m="random">случайное начало</button></span></div>
+      <div id="p-fig-prompt"></div>
+    </div>
+    <div class="panel-note">{{inline:p-prompt-note1}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Обучаемый префикс и LoRA · проверка SST-2</span><span class="mono" id="p-prompt-meta"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="p-bet-prompt"><span class="q">{{inline:p-bet-prompt}}</span></div>
+      <div class="reveal-wrap"><div class="veil">результаты сохранённого прогона</div>
+        <div id="p-prompt-out" hidden></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="p-btn-prompt-reveal">Открыть</button></div>
+    </div>
+    <div class="panel-note" id="p-prompt-note" hidden></div>
+  </div>
+</details></section>
+<section id="p-adapters">
+  <p class="eyebrow">Блок</p>
+  <h2>Дополнительно: адаптеры</h2><details class="optional"><summary>Открыть схемы и опыты</summary>
+  <div class="prose slide">
+    {{text:p-adapters-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Последовательный адаптер и параллельная LoRA</span><span class="mono">по Houlsby et al. (2019), Hu et al. (2021)</span></div>
+    <div class="panel-body"><div id="p-fig-adapter"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Задержка прямого прохода · GPT-2 medium</span><span class="mono" id="p-latency-src"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="p-bet-latency"><span class="q">{{inline:p-bet-latency}}</span></div>
+      <div class="reveal-wrap"><div class="veil">таблица 1 статьи Hu et al.</div>
+        <div id="p-latency-out" hidden><table class="results" id="p-latency-table"></table></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="p-btn-latency-reveal">Открыть</button></div>
+    </div>
+    <div class="panel-note" id="p-latency-note" hidden></div>
+  </div>
+</details></section>
+<section id="p-end">
+  <p class="eyebrow">Блок</p>
+  <h2>Дополнительно: сравнение методов</h2><details class="optional"><summary>Открыть схемы и опыты</summary>
+  <div class="prose slide">
+    {{text:p-end-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Проверка SST-2 · GPT-2 small</span><span class="mono" id="p-board-meta"></span></div>
+    <div class="panel-body">
+      <div class="bet"><span class="q">{{inline:p-bet-board}}</span></div>
+      <div class="orderpick" id="p-board-pick"></div>
+      <div class="bet" id="p-bet-lpft"><span class="q">{{inline:p-bet-lpft}}</span></div>
+      <div class="reveal-wrap"><div class="veil">результаты пяти методов</div>
+        <div id="p-board-out" hidden><div id="p-board-chart"></div><div id="p-curves-head" class="small-note"></div><div id="p-curves-chart"></div></div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="p-btn-board-reveal">Открыть</button></div>
+    </div>
+    <div class="panel-note" id="p-board-note" hidden></div>
+  </div>
+  <div class="prose">
+    {{text:p-gpt3-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>GPT-3 175B · обучаемые параметры и точность</span><span class="mono" id="p-gpt3-src"></span></div>
+    <div class="panel-body tight scroll-x"><table class="results" id="p-gpt3-table"></table></div>
+  </div>
+  <div class="prose">
+    {{text:p-end-p2}}
+  </div>
+  </details></section>
+</div><div id="copy-alignment"><div class="tooltip" id="a-tip"></div>
+<section id="a-hero">
+  <h2>От языковой модели к ассистенту</h2>
+  <p class="lede">{{inline:a-lede}}</p>
+  <div class="prose slide">
+    {{text:a-hero-p1}}
+  </div>
+  <div class="formula"><span class="fn">Обучающие сигналы</span>
+    <math display="block"><mrow>
+      <mi>ℒ</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mo>−</mo>
+      <munder><mo>∑</mo><mrow><mi>t</mi><mo>∈</mo><mtext>целевые токены</mtext></mrow></munder>
+      <msub><mi>w</mi><mi>t</mi></msub><mspace width="0.2em"/><mi>log</mi><mspace width="0.15em"/>
+      <msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>∣</mo><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo stretchy="false">)</mo>
+    </mrow></math>
+  </div>
+  <div class="prose keep">
+    {{text:a-claim-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Стадии обучения: целевые токены и их веса<sub>t</sub></span></div>
+    <div class="panel-body"><div id="a-fig-stages"></div></div>
+  </div>
+  <div class="prose keep">
+    {{text:a-claim-p2}}
+  </div>
+  <div class="panel stagetab-panel">
+    <div class="panel-head"><span>Одна модель после разных стадий обучения</span><span class="mono">OLMo 2 1B · жадная генерация · первые 160 токенов</span></div>
+    <div class="panel-body">
+      <div class="bet" id="a-bet-refusal"><span class="q">{{inline:a-bet-refusal}}</span></div>
+      <div class="scroll-x"><table class="results stagetab" id="a-stagetab-0"></table></div>
+    </div>
+    <div class="panel-note" id="a-stagetab-note-0"></div>
+  </div>
+</section>
+<section id="a-sft">
+  <p class="eyebrow">Блок</p>
+  <h2>SFT: ошибка на токенах ответа</h2>
+  <div class="prose slide">
+    {{text:a-sft-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Один диалог · где целевые токены?</span><span class="mono" id="a-mask-count">отмечено 0</span></div>
+    <div class="panel-body">
+      <div class="bet" id="a-bet-mask"><span class="q">{{inline:a-bet-mask}}</span></div>
+      <div class="pieces" id="a-mask-tokens"></div>
+      <div class="btnrow" style="margin-top:12px"><button class="primary" id="a-btn-mask-reveal">Открыть маску</button>
+        <span class="fig-states" id="a-mask-mode" hidden><button data-m="on" class="sel">ошибка на ответе</button><button data-m="off">ошибка на всех токенах</button></span>
+        <span class="mono" id="a-mask-score" style="margin-left:auto"></span></div>
+    </div>
+    <div class="panel-note" id="a-mask-note" hidden></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>SFT · ошибка и градиент</span><span class="fig-states" id="a-flow-sft-st"><button data-m="fwd" class="sel">прямой проход</button><button data-m="bwd">обратный проход</button></span></div>
+    <div class="panel-body"><div id="a-flow-sft"></div>
+      <div class="flow-w" id="a-flow-sft-w"></div></div>
+    <div class="panel-note">{{inline:a-flow-sft}}</div>
+  </div>
+  <h3>Библиотечная настройка</h3>
+  <div class="prose">
+    {{text:a-trl-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>TRL · SFTTrainer</span><span class="mono">{{inline:a-trl-note}}</span></div>
+    <div class="panel-body">
+      <div class="two stacked">
+        <pre class="code" id="a-code-trl"></pre>
+        <div class="fstack" id="a-trl-cards"><div class="row"><span class="n">маска</span><div data-f="mask">Целевые метки находятся на токенах ответа.</div></div><div class="row"><span class="n">батч</span><div data-f="batch">Дополнение батча исключено из ошибки.</div></div><div class="row"><span class="n">цикл</span><div data-f="loop">В практике выполняется обычный шаг PyTorch.</div></div></div>
+      </div>
+      <div id="a-fig-collate" style="margin-top:16px"></div>
+    </div>
+    <div class="panel-note" id="a-collate-note"></div>
+  </div>
+  <div class="panel stagetab-panel">
+    <div class="panel-head"><span>Добавляем SFT</span><span class="mono">OLMo 2 1B · жадная генерация · первые 160 токенов</span></div>
+    <div class="panel-body">
+      <div class="scroll-x"><table class="results stagetab" id="a-stagetab-1"></table></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="a-btn-stagetab-1">Добавить SFT</button></div>
+    </div>
+    <div class="panel-note" id="a-stagetab-note-1" hidden></div>
+  </div>
+</section>
+<section id="a-pref">
+  <p class="eyebrow">Блок</p>
+  <h2>Предпочтения, модель награды и DPO</h2>
+  <div class="prose slide">
+    {{text:a-pref-p1}}
+  </div>
+  <h3>Выберите лучшие ответы</h3>
+  <div class="prose">
+    {{text:a-label-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Один запрос, четыре ответа · голоса группы</span><span class="mono" id="a-label-src"></span></div>
+    <div class="panel-body">
+      <div class="prose keep" style="margin-bottom:12px"><p class="uf-prompt" id="a-uf-prompt"></p></div>
+      <div class="uf-grid" id="a-uf-answers"></div>
+      <div class="uf-votes" id="a-uf-votes"></div>
+      <div class="stat-row" id="a-agree-out" style="margin-top:14px"></div>
+    </div>
+    <div class="panel-note" id="a-agree-note"></div>
+  </div>
+  <h3>Bradley–Terry по шагам</h3>
+  <div class="prose">
+    {{text:a-bt-p1}}
+  </div>
+  <div class="formula"><span class="fn">Bradley &amp; Terry (1952)</span>
+    <math display="block"><mrow><mi>P</mi><mo stretchy="false">(</mo><mi>A</mi><mo>≻</mo><mi>B</mi><mo stretchy="false">)</mo><mo>=</mo><mi>σ</mi><mo stretchy="false">(</mo><msub><mi>r</mi><mi>A</mi></msub><mo>−</mo><msub><mi>r</mi><mi>B</mi></msub><mo stretchy="false">)</mo><mo>,</mo><mspace width="1.6em"/>
+      <mi>ℒ</mi><mo>=</mo><mo>−</mo><munder><mo>∑</mo><mrow><mtext>голоса</mtext></mrow></munder><mi>log</mi><mspace width="0.15em"/><mi>σ</mi><mo stretchy="false">(</mo><msub><mi>r</mi><mtext>выбранный</mtext></msub><mo>−</mo><msub><mi>r</mi><mtext>отвергнутый</mtext></msub><mo stretchy="false">)</mo></mrow></math>
+  </div>
+  <div class="prose">
+    {{text:a-bt-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Обучаем оценки по голосам · один шаг за нажатие</span><span class="ck" id="a-bt-check"></span></div>
+    <div class="panel-body">
+      <div class="btnrow"><button class="primary" id="a-btn-bt-step">Шаг</button><button id="a-btn-bt-run">До сходимости</button><button id="a-btn-bt-reset">Сначала</button><span class="mono" id="a-bt-step-line" style="margin-left:auto"></span></div>
+      <div class="bt-grid" style="margin-top:12px">
+        <div id="a-bt-scores"></div>
+        <div id="a-bt-matrix"></div>
+      </div>
+      <div class="formula" style="margin:14px 0 0"><span class="fn">Шаг итерации Hunter (2004), p = exp(r)</span>
+        <math display="block"><mrow><msub><mi>p</mi><mi>i</mi></msub><mo>←</mo><mfrac><msub><mi>W</mi><mi>i</mi></msub><mrow><munder><mo>∑</mo><mrow><mi>j</mi><mo>≠</mo><mi>i</mi></mrow></munder><mfrac><msub><mi>n</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><msub><mi>p</mi><mi>i</mi></msub><mo>+</mo><msub><mi>p</mi><mi>j</mi></msub></mrow></mfrac></mrow></mfrac><mo>,</mo><mspace width="1.2em"/>
+          <msub><mi>W</mi><mi>i</mi></msub><mtext> = побед i,</mtext><mspace width="0.6em"/><msub><mi>n</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mtext> = голосов в паре (i, j)</mtext></mrow></math>
+      </div>
+      <div class="btnrow" style="margin-top:12px"><button class="primary" id="a-btn-bt-reveal">Открыть судью и модели</button></div>
+    </div>
+    <div class="panel-note" id="a-bt-note" hidden></div>
+  </div>
+  <h3>Модель награды, PPO и DPO</h3>
+  <div class="prose">
+    {{text:a-rm-p1}}
+  </div>
+  <div class="formula"><span class="fn">Цель RLHF · Ouyang et al. (2022)</span>
+    <math display="block"><mrow><munder><mi>max</mi><mi>π</mi></munder><mspace width="0.4em"/><msub><mi>𝔼</mi><mrow><mi>y</mi><mo>∼</mo><mi>π</mi></mrow></msub><mo stretchy="false">[</mo><mi>r</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo><mo>−</mo><mi>β</mi><mspace width="0.2em"/><mtext>KL</mtext><mo stretchy="false">(</mo><mi>π</mi><mo stretchy="false">(</mo><mo>·</mo><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mo>∥</mo><msub><mi>π</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><mo>·</mo><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></math>
+  </div>
+  <div class="prose slide">{{text:ppo-roles}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Обучаемые и замороженные части</span><span class="fig-states" id="a-roles-states"></span></div>
+    <div class="panel-body"><div id="a-fig-roles"></div></div>
+    <div class="panel-note" id="a-roles-note">{{inline:a-roles-note}}</div>
+  </div>
+  {{quiz:q-ppo-trained}}
+  <div class="prose">{{text:rm-training}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Модель награды · обучение на парах</span><span class="fig-states" id="a-flow-rm-st"><button data-m="fwd" class="sel">прямой проход</button><button data-m="bwd">обратный проход</button></span></div>
+    <div class="panel-body"><div id="a-flow-rm"></div></div>
+    <div class="panel-note">{{inline:a-flow-rm}}</div>
+  </div>
+  <h3>PPO: обновление по награде</h3>
+  <div class="prose slide">{{text:s-ppo}}</div><div class="prose">{{text:ppo-mechanism}}</div><details class="more"><summary>Подробнее: advantage, clipping и reference</summary><div class="prose">{{text:ppo-detail}}</div><div class="formula"><span class="fn">Ограниченное слагаемое PPO</span><math display="block"><mrow><msub><mi>ρ</mi><mi>t</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>π</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>∣</mo><mi>…</mi><mo>)</mo></mrow><mrow><msub><mi>π</mi><mtext>old</mtext></msub><mo>(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>∣</mo><mi>…</mi><mo>)</mo></mrow></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>ℓ</mi><mi>t</mi></msub><mo>=</mo><mi>min</mi><mo>(</mo><msub><mi>ρ</mi><mi>t</mi></msub><msub><mi>A</mi><mi>t</mi></msub><mo>,</mo><mi>clip</mi><mo>(</mo><msub><mi>ρ</mi><mi>t</mi></msub><mo>,</mo><mn>1</mn><mo>−</mo><mi>ε</mi><mo>,</mo><mn>1</mn><mo>+</mo><mi>ε</mi><mo>)</mo><msub><mi>A</mi><mi>t</mi></msub><mo>)</mo></mrow></math></div></details>
+<div class="panel">
+    <div class="panel-head"><span>PPO · ошибка и градиент</span><span class="fig-states" id="a-flow-ppo-st"><button data-m="fwd" class="sel">прямой проход</button><button data-m="bwd">обратный проход</button></span></div>
+    <div class="panel-body"><div id="a-flow-ppo"></div></div>
+    <div class="panel-note">{{inline:a-flow-ppo}}</div>
+  </div>
+  {{quiz:q-ppo-clip}}
+  <div class="prose">
+    {{text:a-dpo-p1}}
+  </div>
+  <div class="formula"><span class="fn">Rafailov et al. (2023) · награда и ошибка</span>
+    <math display="block"><mrow><mi>r</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mo>=</mo><mi>β</mi><mspace width="0.15em"/><mi>log</mi><mfrac><mrow><msup><mi>π</mi><mo>*</mo></msup><mo stretchy="false">(</mo><mi>y</mi><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mi>π</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><mi>y</mi><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>+</mo><mi>β</mi><mspace width="0.15em"/><mi>log</mi><mspace width="0.15em"/><mi>Z</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></math>
+    <math display="block"><mrow><msub><mi>ℒ</mi><mtext>DPO</mtext></msub><mo>=</mo><mo>−</mo><mi>log</mi><mspace width="0.15em"/><mi>σ</mi><mrow><mo>(</mo><mi>β</mi><mrow><mo>[</mo>
+      <munder><mrow><mi>log</mi><mfrac><mrow><mi>π</mi><mo stretchy="false">(</mo><msub><mi>y</mi><mi>c</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mi>π</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>c</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac></mrow><mtext style="font-size:.72em">изменение вероятности выбранного</mtext></munder>
+      <mo>−</mo>
+      <munder><mrow><mi>log</mi><mfrac><mrow><mi>π</mi><mo stretchy="false">(</mo><msub><mi>y</mi><mi>r</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mi>π</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>r</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac></mrow><mtext style="font-size:.72em">изменение вероятности отвергнутого</mtext></munder>
+      <mo>]</mo></mrow><mo>)</mo></mrow></mrow></math>
+  </div>
+  <div class="prose">
+    {{text:a-dpo-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>DPO · ошибка и градиент</span><span class="fig-states" id="a-flow-dpo-st"><button data-m="fwd" class="sel">прямой проход</button><button data-m="bwd">обратный проход</button></span></div>
+    <div class="panel-body"><div id="a-flow-dpo"></div>
+      <div class="flow-w" id="a-flow-dpo-w"></div></div>
+    <div class="panel-note">{{inline:a-flow-dpo}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Калькулятор DPO</span><span class="ck" id="a-dpo-check"></span></div>
+    <div class="panel-body">
+      <div class="fig-states" id="a-dpo-presets" style="margin-bottom:10px"><button data-m="b" class="sel">выбранный ↑, отвергнутый ↓</button><button data-m="c">обе вероятности ↓</button><button data-m="init">π = π<sub>ref</sub></button></div>
+      <div class="sliders" id="a-dpo-sliders"></div>
+      <div class="est" id="a-dpo-out"></div>
+      <div id="a-fig-dpo-bars" style="margin-top:12px"></div>
+    </div>
+    <div class="panel-note">{{inline:a-calc-p1}}</div>
+  </div>
+  <div class="prose">
+    {{text:a-calc-ln}}
+  </div>
+  <h3>Предпочтения реального чекпойнта</h3>
+  <div class="prose">
+    {{text:a-pairs-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Пары данных OLMo · изменение log π относительно SFT</span><span class="ck" id="a-pairs-check"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="a-bet-pairs"><span class="q">{{inline:a-bet-pairs}}</span></div>
+      <div class="reveal-wrap"><div class="veil">откройте пары после выбора</div>
+        <div id="a-pairs-out" hidden>
+          <div class="btnrow" style="margin-bottom:8px"><span class="fig-states" id="a-pairs-stage"><button data-m="DPO" class="sel">DPO</button><button data-m="RLVR">RLVR</button></span><span class="mono" style="font-size:13px;margin-left:10px">источник</span><select id="a-pairs-source" style="width:auto"></select></div>
+          <div class="att"><div id="a-fig-pairs"></div><div class="stat-row" id="a-pairs-stats" style="flex-direction:column;gap:14px"></div></div>
+        </div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="a-btn-pairs-reveal">Открыть</button></div>
+    </div>
+    <div class="panel-note" id="a-pairs-note" hidden></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Кто написал ответы в парах</span></div>
+    <div class="panel-body"><div id="a-fig-onoff"></div></div>
+    <div class="panel-note" id="a-policy-note"></div>
+  </div>
+  <div class="prose">
+    {{text:a-length-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Длина ответов до и после DPO</span></div>
+    <div class="panel-body"><div id="a-fig-length"></div></div>
+    <div class="panel-note" id="a-length-note"></div>
+  </div>
+  <div class="panel stagetab-panel">
+    <div class="panel-head"><span>Добавляем DPO</span><span class="mono">OLMo 2 1B · жадная генерация · первые 160 токенов</span></div>
+    <div class="panel-body">
+      <div class="scroll-x"><table class="results stagetab" id="a-stagetab-2"></table></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="a-btn-stagetab-2">Добавить DPO</button></div>
+    </div>
+    <div class="panel-note" id="a-stagetab-note-2" hidden></div>
+  </div>
+</section>
+<section id="a-rlvr">
+  <p class="eyebrow">Блок</p>
+  <h2>RLVR: награда от программы</h2>
+  <div class="prose slide">
+    {{text:a-rlvr-p1}}
+  </div>
+  <h3>GRPO: сравнение внутри группы</h3>
+  <div class="prose">
+    {{text:a-grpo-p1}}
+  </div>
+  <div class="formula"><span class="fn">Shao et al. (2024)</span>
+    <math display="block"><mrow><msub><mi>A</mi><mi>i</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>r</mi><mi>i</mi></msub><mo>−</mo><mtext>mean</mtext><mo stretchy="false">(</mo><msub><mi>r</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>r</mi><mi>G</mi></msub><mo stretchy="false">)</mo></mrow><mrow><mtext>std</mtext><mo stretchy="false">(</mo><msub><mi>r</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>r</mi><mi>G</mi></msub><mo stretchy="false">)</mo></mrow></mfrac><mo>,</mo><mspace width="1.4em"/>
+      <msub><mi>w</mi><mi>t</mi></msub><mo>=</mo><msub><mi>A</mi><mi>i</mi></msub><mtext> для каждого токена ответа i</mtext></mrow></math>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Один запрос, восемь ответов и проверка</span><span class="ck" id="a-grpo-check"></span></div>
+    <div class="panel-body">
+      <div class="bet"><span class="q">{{inline:a-grpo-bet}}</span></div>
+      <div id="a-fig-grpo"></div>
+      <div class="btnrow" style="margin-top:8px"><span class="mono" style="font-size:13px">примеры</span><span class="fig-states" id="a-grpo-presets"><button data-m="mixed" class="sel">3 of 8</button><button data-m="one right">1 of 8</button><button data-m="all right">8 of 8</button><button data-m="all wrong">0 of 8</button></span></div>
+    </div>
+    <div class="panel-note" id="a-grpo-note"></div>
+  </div>
+  <div class="prose">{{text:grpo-update}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>GRPO · ошибка и градиент</span><span class="fig-states" id="a-flow-grpo-st"><button data-m="fwd" class="sel">прямой проход</button><button data-m="bwd">обратный проход</button></span></div>
+    <div class="panel-body"><div id="a-flow-grpo"></div>
+      <div class="flow-w" id="a-flow-grpo-w"></div></div>
+    <div class="panel-note">{{inline:a-flow-grpo}}</div>
+  </div>
+  <h3>Проверяющая функция</h3>
+  <div class="prose">
+    {{text:a-checker-p1}}
+  </div>
+  {{quiz:q-grpo-flat}}
+  <div class="prose">{{text:grpo-kl}}</div>
+  <div class="panel">
+    <div class="panel-head"><span>Функции <code>final_number</code> and <code>reward</code>, в браузере · эталон = 4</span><span class="ck" id="a-checker-check"></span></div>
+    <div class="panel-body">
+      <div class="two stacked">
+        <pre class="code" id="a-code-checker"></pre>
+        <div>
+          <div class="io"><div><label class="field">введите ответ</label><input type="text" id="a-checker-in" value="Subtract 2 from both sides: n = 6 - 2 = 4. So the value of n is 4." style="width:100%"></div><div class="out" id="a-checker-out"></div></div>
+          <table class="results" id="a-checker-table" style="margin-top:12px"></table>
+        </div>
+      </div>
+      <div class="sliders" style="margin-top:14px"><div><label class="field">вес награды за формат <b id="a-fmt-w-v">0.1</b></label><input type="range" id="a-fmt-w" min="0" max="1" step="0.05" value="0.1"></div></div>
+      <table class="results" id="a-fmt-table"></table>
+    </div>
+    <div class="panel-note">{{inline:a-checker-note}}</div>
+  </div>
+  <h3>Какие задачи дают сигнал от награды</h3>
+  <div class="prose">
+    {{text:a-teach-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Учебные группы ответов · где различаются награды?</span><span class="ck" id="a-teach-check"></span></div>
+    <div class="panel-body">
+      <div class="sliders">
+        <div><label class="field">p · вероятность верного ответа <b id="a-teach-p-v">0.10</b></label><input type="range" id="a-teach-p" min="0.01" max="0.99" step="0.01" value="0.10"></div>
+        <div><label class="field">G · ответов на запрос <b id="a-teach-g-v">8</b></label><input type="range" id="a-teach-g" min="0" max="3" step="1" value="1"></div>
+      </div>
+      <div class="btnrow" style="margin-bottom:8px"><button id="a-btn-teach-redraw">Новые группы</button></div>
+      <div class="att"><div id="a-fig-teach"></div><div class="est" id="a-teach-out"></div></div>
+    </div>
+    <div class="panel-note">{{inline:a-teach-sim-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>GSM8K · число успешных попыток на задачу</span><span class="fig-states" id="a-teach-stage"><button data-m="base" class="sel">base</button><button data-m="SFT">SFT</button><button data-m="RLVR">RLVR</button></span></div>
+    <div class="panel-body"><div id="a-fig-teach-hist"></div></div>
+    <div class="panel-note" id="a-teach-note"></div>
+  </div>
+  <h3>Вероятность успеха за несколько попыток</h3>
+  <div class="prose">
+    {{text:a-passk-p1}}
+  </div>
+  <div class="formula"><span class="fn">Chen et al. (2021) · оценка по n попыткам, c успешных</span>
+    <math display="block"><mrow><mtext>pass@</mtext><mi>k</mi><mo>=</mo><mn>1</mn><mo>−</mo><mfrac><mrow><mo>(</mo><mtable><mtr><mtd><mi>n</mi><mo>−</mo><mi>c</mi></mtd></mtr><mtr><mtd><mi>k</mi></mtd></mtr></mtable><mo>)</mo></mrow><mrow><mo>(</mo><mtable><mtr><mtd><mi>n</mi></mtd></mtr><mtr><mtd><mi>k</mi></mtd></mtr></mtable><mo>)</mo></mrow></mfrac></mrow></math>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>GSM8K · <span id="a-passk-meta"></span></span><span class="ck" id="a-passk-check"></span></div>
+    <div class="panel-body">
+      <div class="bet" id="a-bet-passk"><span class="q">{{inline:a-bet-passk}}</span></div>
+      <div class="reveal-wrap"><div class="veil">откройте кривые после выбора</div>
+        <div id="a-passk-out" hidden>
+          <div class="att"><div id="a-fig-passk"></div><div><div class="sliders"><div><label class="field">k <b id="a-passk-k-v">1</b></label><input type="range" id="a-passk-k" min="0" max="5" step="1" value="0"></div></div><div class="est" id="a-passk-vals"></div><div id="a-passk-hist" style="margin-top:10px"></div></div></div>
+        </div></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="a-btn-passk-reveal">Открыть</button></div>
+    </div>
+    <div class="panel-note" id="a-passk-note" hidden></div>
+  </div>
+  <div class="panel stagetab-panel">
+    <div class="panel-head"><span>Добавляем RLVR</span></div>
+    <div class="panel-body">
+      <div class="scroll-x"><table class="results stagetab" id="a-stagetab-3"></table></div>
+      <div class="btnrow" style="margin-top:10px"><button class="primary" id="a-btn-stagetab-3">Добавить RLVR</button></div>
+    </div>
+    <div class="panel-note" id="a-stagetab-note-3" hidden></div>
+  </div>
+</section>
+</div><section id="policy"><p class="eyebrow">Связи между методами</p><h2>Откуда берутся данные и награда</h2><div class="prose slide">{{text:s-policy}}</div><div class="prose">{{text:policy-detail}}</div>{{quiz:q-methods}}</section><section id="design"><h2>Спроектируем систему</h2>{{quiz:q-design}}</section><section id="sources"><h2>Источники</h2><h3>References</h3><div class="prose footnote sources">{{text:end-refs}}</div></section></div></main></div>

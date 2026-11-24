@@ -1,0 +1,1595 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPT и развитие генеративных моделей · ADD-2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* The design system of the seminar pages, shared by every week (scripts/build_demo.py puts it in <style>).
+   A week adds its own rules in demo/week.css, appended after this file. */
+:root {
+  color-scheme: light;
+  --ground:        #f7f6f2;
+  --panel:         #fdfdfc;
+  --panel-sunk:    #f1efe9;
+  --ink:           #14161a;
+  --ink-2:         #55595f;
+  --ink-3:         #8b8e92;
+  --rule:          #dcdad3;
+  --rule-strong:   #bab7ad;
+  --cls-0: #2a78d6; --cls-1: #eb6834; --cls-2: #1baf7a; --cls-3: #4a3aa7;
+  --good:  #0ca30c; --bad: #d03b3b;
+  --seq-1: #5598e7; --seq-2: #3987e5; --seq-3: #2a78d6; --seq-4: #256abf; --seq-5: #104281;
+  --shadow: 0 1px 2px rgba(20,22,26,.05), 0 8px 24px -16px rgba(20,22,26,.28);
+
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground:      #131413;
+    --panel:       #1b1c1b;
+    --panel-sunk:  #232422;
+    --ink:         #f0efe9;
+    --ink-2:       #a8a79f;
+    --ink-3:       #7b7a73;
+    --rule:        #31322e;
+    --rule-strong: #4c4d47;
+    --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+    --good: #0ca30c; --bad: #d03b3b;
+    --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground:      #131413;
+  --panel:       #1b1c1b;
+  --panel-sunk:  #232422;
+  --ink:         #f0efe9;
+  --ink-2:       #a8a79f;
+  --ink-3:       #7b7a73;
+  --rule:        #31322e;
+  --rule-strong: #4c4d47;
+  --cls-0: #3987e5; --cls-1: #d95926; --cls-2: #199e70; --cls-3: #9085e9;
+  --good: #0ca30c; --bad: #d03b3b;
+  --seq-1: #2a78d6; --seq-2: #3987e5; --seq-3: #5598e7; --seq-4: #6da7ec; --seq-5: #9ec5f4;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 20.1px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+
+/* ---------------------------------------------------------------- shell */
+.shell { display: grid; grid-template-columns: 278px minmax(0, 1fr); gap: 0; }
+.rail {
+  position: sticky; top: 0; align-self: start; height: 100vh;
+  border-right: 1px solid var(--rule);
+  padding: 26px 18px 18px 26px;
+  display: flex; flex-direction: column; gap: 18px;
+  overflow-y: auto;
+}
+.rail-mark {
+  font-family: var(--mono); font-size: 14px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.rail-eq { font-family: var(--display); font-size: 17.7px; font-weight: 700; line-height: 1.3; }
+.rail nav { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
+.rail nav a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: baseline;
+  padding: 4px 6px 4px 0; text-decoration: none; color: var(--ink-2);
+  font-family: var(--display); font-size: 16.4px; line-height: 1.32;
+  border-radius: 3px;
+}
+.rail nav a span:first-child {
+  font-family: var(--mono); font-size: 13.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.rail nav a:hover { color: var(--ink); background: var(--panel-sunk); }
+.rail nav a.on { color: var(--ink); font-weight: 700; }
+.rail nav a.on span:first-child { color: var(--ink); }
+.rail-foot { margin-top: auto; font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.6; }
+.rail-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+main { padding: 0 0 140px; min-width: 0; }
+.wrap { max-width: 1160px; padding: 0 48px; margin: 0 auto; }
+section { padding: 64px 0 8px; scroll-margin-top: 20px; }
+.prose { max-width: none; }
+.prose p { margin: 0 0 1.05em; }
+.prose p + p { margin-top: -.15em; }
+
+/* --------------------------------------------------------------- type */
+h1 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(41px, 6.04vw, 72.9px); line-height: .98; letter-spacing: -.025em;
+  margin: 0 0 22px; text-wrap: balance;
+}
+h2 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(27.5px, 3.19vw, 37.8px); line-height: 1.08; letter-spacing: -.018em;
+  margin: 0 0 14px; text-wrap: balance;
+}
+h3 {
+  font-family: var(--display); font-weight: 700; font-size: 20.6px;
+  letter-spacing: -.008em; margin: 34px 0 10px;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 14px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px;
+}
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.lede { font-size: 23.5px; line-height: 1.52; color: var(--ink-2); max-width: none; }
+.prose strong { font-weight: 600; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.prose code { background: var(--panel-sunk); padding: .1em .34em; border-radius: 3px; }
+a { color: inherit; text-underline-offset: 2px; text-decoration-color: var(--rule-strong); }
+
+/* -------------------------------------------------------------- panels */
+.panel {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 4px; box-shadow: var(--shadow);
+  margin: 22px 0 26px; overflow: hidden;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 11px 16px; border-bottom: 1px solid var(--rule);
+  background: var(--panel-sunk);
+  font-family: var(--mono); font-size: 14px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-2); flex-wrap: wrap;
+}
+.panel-body { padding: 18px 16px; }
+.panel-body.tight { padding: 12px 16px; }
+.panel-note {
+  padding: 12px 16px; border-top: 1px solid var(--rule); background: var(--panel-sunk);
+  font-size: 17.7px; color: var(--ink-2); line-height: 1.55;
+}
+.scroll-x { overflow-x: auto; }
+
+/* ------------------------------------------------------------- controls */
+button, .btn {
+  font-family: var(--display); font-size: 16.4px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px;
+  padding: 6px 12px; cursor: pointer; line-height: 1.35;
+  transition: background .12s ease, border-color .12s ease;
+}
+button:hover { background: var(--panel-sunk); border-color: var(--ink-3); }
+button[disabled] { opacity: .42; cursor: not-allowed; }
+button.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+button.primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
+button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.btnrow { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+input[type="text"], textarea, select {
+  font-family: var(--mono); font-size: 16.4px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 3px; padding: 8px 10px;
+  width: 100%;
+}
+input[type="range"] { accent-color: var(--ink); width: 100%; }
+label.field { display: block; font-family: var(--mono); font-size: 14px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+
+/* ---------------------------------------------------------------- data */
+table { border-collapse: collapse; width: 100%; font-size: 16.4px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--mono); font-size: 15.4px; }
+th.data-th { text-transform: none; letter-spacing: 0; font-size: 14.5px; color: var(--ink-2); }
+tr:last-child td { border-bottom: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 14.5px; letter-spacing: .02em;
+  padding: 2px 8px; border-radius: 2px; border: 1px solid var(--rule-strong);
+  white-space: nowrap;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.c0 { background: var(--cls-0); } .c1 { background: var(--cls-1); }
+.c2 { background: var(--cls-2); } .c3 { background: var(--cls-3); }
+.t0 { color: var(--cls-0); } .t1 { color: var(--cls-1); }
+.t2 { color: var(--cls-2); } .t3 { color: var(--cls-3); }
+
+.stat-row { display: flex; gap: 34px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .v { font-family: var(--display); font-weight: 700; font-size: 32.5px;
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); }
+
+.reveal-wrap { position: relative; }
+.veil {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 26px 16px; background: var(--panel-sunk);
+  border: 1px dashed var(--rule-strong); border-radius: 3px;
+  font-family: var(--mono); font-size: 15.4px; color: var(--ink-2);
+  text-align: center; flex-wrap: wrap;
+}
+[hidden] { display: none !important; }
+
+.tok {
+  display: inline-block; font-family: var(--mono); font-size: 15.4px;
+  padding: 1px 6px; margin: 2px 3px 2px 0; border-radius: 2px;
+  background: var(--panel-sunk); border: 1px solid var(--rule);
+}
+.tok.diff { border-color: var(--ink-3); background: var(--panel); font-weight: 500; }
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+
+svg { display: block; max-width: 100%; }
+svg text { font-family: var(--mono); fill: var(--ink-2); }
+.axis line, .axis path { stroke: var(--rule); }
+.gridline { stroke: var(--rule); stroke-dasharray: 2 3; }
+
+.tooltip {
+  position: fixed; pointer-events: none; z-index: 50; opacity: 0;
+  background: var(--panel); border: 1px solid var(--rule-strong);
+  border-radius: 3px; box-shadow: var(--shadow); padding: 7px 10px;
+  font-family: var(--mono); font-size: 14.5px; line-height: 1.5; color: var(--ink);
+  transition: opacity .1s ease; max-width: 280px;
+}
+
+.footnote { font-size: 17.2px; color: var(--ink-2); max-width: none; }
+
+/* library pointers: a quiet line of names, with the actual call one click away */
+.codenote { margin: 16px 0 0; border-top: 1px solid var(--rule); padding-top: 9px; }
+.codenote > summary {
+  cursor: pointer; list-style: none; display: flex; gap: 9px;
+  align-items: baseline; flex-wrap: wrap; padding: 2px 0;
+}
+.codenote > summary::-webkit-details-marker { display: none; }
+.codenote > summary::before {
+  content: "+"; font-family: var(--mono); font-size: 15px; color: var(--ink-3);
+  width: 9px; flex: none;
+}
+.codenote[open] > summary::before { content: "−"; }
+.codenote > summary:hover .libs, .codenote[open] > summary .libs { color: var(--ink); }
+.codenote .k {
+  font-family: var(--mono); font-size: 13px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3); flex: none;
+}
+.codenote .libs {
+  font-family: var(--mono); font-size: 15px; line-height: 1.55; color: var(--ink-2);
+  transition: color .12s ease;
+}
+.codenote pre {
+  margin: 11px 0 0; padding: 13px 15px; background: var(--panel-sunk);
+  border-radius: 3px; font-family: var(--mono); font-size: 15.4px; line-height: 1.8;
+  white-space: pre-wrap; word-break: break-word; color: var(--ink);
+}
+.codenote .why { font-size: 16.4px; color: var(--ink-2); line-height: 1.55; margin-top: 10px; }
+.codenote .why code { font-family: var(--mono); font-size: 15.4px; }
+.kbd {
+  font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; color: var(--ink-2);
+}
+
+/* ------------------------------------------------------- week 2 additions */
+.michael { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); }
+.michael figcaption { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-top: 8px; line-height: 1.5; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+
+/* a bet: pick one option, then reveal */
+.bet { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 12px; }
+.bet .q { font-family: var(--body); font-size: 17.5px; font-weight: 600; color: var(--ink); flex-basis: 100%; line-height: 1.4; }
+.bet button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.bet button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.bet button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.bet .verdict { font-family: var(--mono); font-size: 15px; margin-left: 6px; }
+.bet .verdict.ok { color: var(--good); } .bet .verdict.no { color: var(--bad); }
+
+/* generated text */
+.gen { font-size: 19.5px; line-height: 1.75; margin: 0 0 12px; }
+.gen .t { padding: 1px 1px; border-radius: 2px; white-space: pre-wrap; }
+.gen .copied { background: color-mix(in srgb, var(--cls-1) 22%, transparent); border-bottom: 2px solid var(--cls-1); }
+.gen .dead { color: var(--bad); font-family: var(--mono); }
+.gen .prompt { color: var(--ink-3); }
+.gen-list { display: flex; flex-direction: column; gap: 10px; }
+.gen-list .gen { padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; margin: 0; }
+
+.merge-row { display: grid; grid-template-columns: 54px 1fr 110px; gap: 10px; font-family: var(--mono); font-size: 15px; padding: 3px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.merge-row .n { color: var(--ink-3); } .merge-row .c { text-align: right; color: var(--ink-2); }
+.merge-row .p { display: flex; gap: 6px; align-items: center; }
+.merge-row .p .tok { margin: 0; }
+.merge-row .tok.new { border-color: var(--ink); font-weight: 600; }
+.eow { color: var(--cls-1); }
+
+.pbar { display: grid; grid-template-columns: 150px 1fr 64px; gap: 10px; align-items: center; font-family: var(--mono); font-size: 14.5px; padding: 2px 0; }
+.pbar .lab { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pbar .bar { height: 14px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pbar .bar i { display: block; height: 100%; background: var(--cls-0); }
+.pbar.cut .bar i { background: var(--rule-strong); } .pbar.cut .lab { color: var(--ink-3); }
+.pbar .v { color: var(--ink-2); }
+
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 18px; margin: 12px 0; }
+.sliders label.field { display: flex; justify-content: space-between; }
+.sliders label.field b { color: var(--ink); font-weight: 500; }
+.sliders .off { opacity: .4; }
+
+.tr-row { display: grid; grid-template-columns: 64px 1fr; gap: 8px 14px; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 18.5px; line-height: 1.5; }
+.tr-row .k { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.tr-row .bleu { font-family: var(--mono); font-size: 14px; color: var(--ink-3); margin-left: 8px; }
+.tr-row:last-child { border-bottom: none; }
+.nowrap { white-space: nowrap; }
+.busy { opacity: .55; pointer-events: none; }
+
+/* formulas: native MathML, kept outside .prose so they survive presentation mode */
+math { font-family: "STIX Two Math", "Latin Modern Math", "Cambria Math", "Times New Roman", serif; }
+.prose math { font-size: 1.05em; }
+.formula {
+  margin: 12px 0 22px; padding: 14px 20px 12px; background: var(--panel-sunk);
+  border-left: 3px solid var(--rule-strong); border-radius: 3px; overflow-x: auto;
+}
+.formula .fn {
+  display: block; font-family: var(--mono); font-size: 13.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px;
+}
+.formula math { font-size: 1.25em; margin: 6px 0; }
+.formula math + math { margin-top: 10px; }
+.formula mtext { font-family: var(--body); font-size: .82em; color: var(--ink-2); }
+body.present .formula { margin-top: 10px; }
+
+/* the one-screen recipe */
+.recipe { padding: 4px 16px 6px; }
+.recipe .step { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--rule); }
+.recipe .step:first-child { border-top: none; }
+.recipe .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+.recipe .k b { display: block; font-family: var(--display); font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1; margin-bottom: 4px; }
+.recipe pre { margin: 0; font-family: var(--mono); font-size: 14.5px; line-height: 1.6; white-space: pre; overflow-x: auto; color: var(--ink); }
+.recipe .c { color: var(--ink-3); }
+
+/* --------------------------------------------------- presentation mode */
+body.present .prose:not(.keep) { display: none; }
+body.present .footnote { display: none; }
+body.present section { min-height: 100vh; padding-top: 40px; }
+body.present .panel { margin-top: 14px; }
+body.present .lede { display: none; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; border-right: none;
+    border-bottom: 1px solid var(--rule); padding: 18px 20px; }
+  .rail nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .wrap { padding: 0 20px; }
+  body { font-size: 18.6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+/* ------------------------------------------------------- week 3 additions */
+/* code next to the formula it implements: hover a line, the term lights up (and back) */
+.two { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .two { grid-template-columns: 1fr; } }
+/* wide code: the formulas go below it, as a row of cards */
+.two.stacked { grid-template-columns: 1fr; }
+.two.stacked .fstack { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 6px 22px; }
+.two.stacked .fstack .row { border-top: none; border-left: 2px solid var(--rule); padding: 4px 0 4px 12px; grid-template-columns: 1fr; gap: 2px; }
+.two.stacked .fstack .row .n { white-space: nowrap; }
+.hm svg rect.flat { stroke: none; }
+#masks-out > div { display: flex; flex-direction: column; justify-content: flex-end; }
+#masks-out .hm-title { min-height: 2.8em; }
+.temp-table td:first-child { white-space: nowrap; }
+pre.code { margin: 0; padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; white-space: normal; overflow-x: auto; color: var(--ink); counter-reset: ln; }
+pre.code .ln { display: block; white-space: pre; min-height: 1.5em; padding: 0 8px 0 40px; margin: 0 -8px; position: relative; border-radius: 2px; transition: background .12s ease; }
+pre.code .ln::before { counter-increment: ln; content: counter(ln); position: absolute; left: 8px; width: 24px; text-align: right; color: var(--ink-3); font-size: 12.5px; top: 1px; }
+pre.code .ln[data-f] { cursor: default; }
+pre.code .ln.hi, .fstack .fx.hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .c { color: var(--ink-3); }
+pre.code .kw { color: var(--cls-3); }
+.fstack .fx { padding: 2px 6px; border-radius: 3px; transition: background .12s ease; }
+.fstack .fx[data-f] { cursor: default; }
+.fstack .fx.dim { opacity: .35; }
+.fstack .row { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--rule); }
+.fstack .row:first-child { border-top: none; }
+.fstack .row .n { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .08em; }
+.fstack .row .say { font-size: 16.4px; color: var(--ink-2); line-height: 1.5; margin-top: 2px; }
+.fstack math { font-size: 1.1em; }
+.fstack .row > div { min-width: 0; overflow-x: auto; }
+.two:not(.stacked) .fstack math { font-size: 1em; }
+.two:not(.stacked) .fstack math[display="block"] { display: inline-block; margin: 2px 0; }
+.fstack .fx.hi math { color: var(--ink); }
+
+/* a redrawn schematic and its credit line */
+.fig { margin: 8px 0 0; }
+.figcap { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); line-height: 1.5; margin: 8px 0 2px; }
+.figcap a { color: var(--ink-2); }
+
+/* attention heatmaps */
+.hm-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.hm-title { font-family: var(--mono); font-size: 13.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.hm svg rect.cell { stroke: var(--panel); stroke-width: .6; }
+.hm svg rect.cell:hover { stroke: var(--ink); stroke-width: 1.5; }
+.headgrid { display: grid; grid-template-columns: 40px repeat(8, minmax(0, 1fr)); gap: 4px; align-items: center; }
+.headgrid .lab { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); text-align: center; }
+.headgrid svg { cursor: pointer; border: 1px solid var(--rule); border-radius: 2px; background: var(--panel); }
+.headgrid svg.on { outline: 2px solid var(--cls-1); }
+
+/* the score table */
+.scores td math { font-size: 1.1em; }
+.scores td:first-child { font-weight: 600; font-family: var(--display); }
+
+/* live text-in → text-out panels */
+.io { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.io .out { font-family: var(--mono); font-size: 22px; letter-spacing: .04em; padding: 8px 12px; background: var(--panel-sunk); border-radius: 3px; min-height: 46px; }
+.io .out.ok { border-left: 3px solid var(--good); } .io .out.no { border-left: 3px solid var(--bad); }
+.small-note { font-family: var(--mono); font-size: 13.5px; color: var(--ink-3); margin-top: 6px; }
+.toggle { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 3px; overflow: hidden; }
+.toggle button { border: none; border-radius: 0; }
+.toggle button.sel { background: var(--ink); color: var(--ground); }
+.ck { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.ck b { color: var(--good); font-weight: 500; } .ck b.no { color: var(--bad); }
+.results th.data-th, .results td { font-size: 15.4px; }
+.results tr.hl td { background: color-mix(in srgb, var(--cls-0) 10%, transparent); }
+
+/* ------------------------------------------------------- week 4 additions */
+/* token strips: WordPiece pieces, with the continuation marker and special tokens coloured */
+.pieces { display: flex; flex-wrap: wrap; gap: 4px 3px; align-items: center; line-height: 1.3; }
+.pieces .tok { margin: 0; }
+.pieces .tok.cont { border-color: color-mix(in srgb, var(--cls-1) 60%, var(--rule)); background: color-mix(in srgb, var(--cls-1) 10%, var(--panel)); }
+.pieces .tok.sp { border-color: var(--ink-3); color: var(--ink-2); font-weight: 600; }
+.pieces .tok.unk { border-color: var(--bad); color: var(--bad); font-weight: 600; }
+.pieces .tok.eow { color: var(--cls-1); }
+.pieces .tok.seg1 { background: color-mix(in srgb, var(--cls-2) 12%, var(--panel)); }
+.pieces .tok.mk { background: color-mix(in srgb, var(--cls-3) 22%, var(--panel)); border-color: var(--cls-3); }
+.pieces .tok.rnd { background: color-mix(in srgb, var(--cls-1) 22%, var(--panel)); border-color: var(--cls-1); }
+.pieces .tok.keep { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.pieces .tok.ans { background: color-mix(in srgb, var(--good) 22%, var(--panel)); border-color: var(--good); font-weight: 600; }
+.pieces .tok.ent { font-weight: 600; }
+.pieces .tok.dim { opacity: .45; }
+.pieces .tok.word { border-style: dashed; }
+.pieces .gap { flex-basis: 100%; height: 0; }
+.pieces .lab { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin-right: 6px; letter-spacing: .06em; text-transform: uppercase; }
+/* the merge stepper */
+.merge-row.wp { grid-template-columns: 54px 1fr 190px; }
+.merge-row .c small { color: var(--ink-3); }
+.merge-list { max-height: 330px; overflow-y: auto; }
+.merge-row.now { background: color-mix(in srgb, var(--cls-1) 12%, transparent); }
+/* the two encoders side by side */
+.enc-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.enc-row .k { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.enc-row:last-child { border-bottom: none; }
+.enc-row.diff .k { color: var(--cls-1); }
+/* segmentation lattice rows */
+.seg-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.seg-row .p { font-family: var(--mono); font-size: 14.5px; text-align: right; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.seg-row.best .p { color: var(--ink); font-weight: 600; }
+.seg-row:last-child { border-bottom: none; }
+/* a small legend line */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin: 8px 0 0; align-items: center; }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; border: 1px solid var(--rule-strong); }
+/* zero-shot label pickers */
+.zs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 14px; }
+.zs-grid label.field b { color: var(--ink); }
+.zs-grid select { width: 100%; }
+.conf { border-collapse: collapse; font-family: var(--mono); font-size: 14px; }
+.conf td, .conf th { padding: 4px 9px; text-align: right; border-bottom: none; }
+.conf th { font-size: 12.5px; }
+.conf td.hit { background: color-mix(in srgb, var(--good) 18%, transparent); }
+.conf td.miss { color: var(--ink-3); }
+/* the head figure toggle and the task tables */
+.task-table td:first-child { font-weight: 600; font-family: var(--display); white-space: nowrap; }
+.task-table td { vertical-align: top; font-size: 15.4px; }
+.task-table code { white-space: nowrap; }
+/* a load report */
+pre.report { margin: 0; font-family: var(--mono); font-size: 13.5px; line-height: 1.55; white-space: pre; overflow-x: auto; color: var(--ink-2); padding: 10px 14px; background: var(--panel-sunk); border-radius: 3px; }
+pre.report .miss { color: var(--bad); font-weight: 600; } pre.report .unex { color: var(--ink-3); }
+/* the dial */
+.dial { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .dial { grid-template-columns: 1fr; } }
+.dial .knob { display: flex; gap: 6px; flex-wrap: wrap; }
+.dial .knob button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the MLM variants, under a toggle */
+details.variants { margin: 12px 0 0; }
+details.variants > summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 18px; padding: 8px 0; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+details.variants > summary::-webkit-details-marker { display: none; }
+details.variants > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.variants[open] > summary::before { content: "−"; }
+.variant { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: center; padding: 14px 0; border-top: 1px solid var(--rule); }
+@media (max-width: 1000px) { .variant { grid-template-columns: 1fr; } }
+.variant .say { font-size: 17px; line-height: 1.55; color: var(--ink-2); }
+.variant .say b { color: var(--ink); }
+/* NER entity chips */
+.ent-line { font-size: 18.5px; line-height: 2.1; margin: 0 0 8px; }
+.ent { padding: 2px 6px; border-radius: 3px; border-bottom: 2px solid; white-space: nowrap; }
+.ent i { font-family: var(--mono); font-style: normal; font-size: 11.5px; letter-spacing: .06em; margin-left: 5px; opacity: .8; }
+.ent.PER { background: color-mix(in srgb, var(--cls-0) 16%, transparent); border-color: var(--cls-0); }
+.ent.ORG { background: color-mix(in srgb, var(--cls-1) 16%, transparent); border-color: var(--cls-1); }
+.ent.LOC { background: color-mix(in srgb, var(--cls-2) 16%, transparent); border-color: var(--cls-2); }
+.ent.MISC { background: color-mix(in srgb, var(--cls-3) 16%, transparent); border-color: var(--cls-3); }
+.ent.wrong { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* alignment table */
+.align { font-family: var(--mono); font-size: 14.5px; border-collapse: collapse; }
+.align td, .align th { padding: 3px 10px; }
+.align td.ign { color: var(--ink-3); }
+.align tr.cont td:first-child { color: var(--cls-1); }
+/* QA */
+.ctx { font-size: 18px; line-height: 1.7; }
+.ctx mark { background: color-mix(in srgb, var(--good) 28%, transparent); color: inherit; padding: 1px 2px; border-radius: 2px; }
+.ctx mark.gold { background: none; box-shadow: inset 0 -2px 0 var(--cls-0); }
+.ctx .q { color: var(--ink-3); }
+.window { border: 1px solid var(--rule); border-radius: 3px; padding: 8px 10px; margin: 8px 0; }
+.window .wh { font-family: var(--mono); font-size: 13px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+.window .wh b { color: var(--ink); font-weight: 500; }
+.qa-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px 14px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; align-items: baseline; }
+.qa-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: block; }
+.qa-row:last-child { border-bottom: none; }
+.qa-row .ok { color: var(--good); } .qa-row .no { color: var(--bad); }
+
+/* ------------------------------------------------ week 4, second pass (2026-09-30) */
+/* a schematic with states: the buttons switch what the same picture highlights */
+.fig-states { display: flex; gap: 6px; flex-wrap: wrap; }
+.fig-states button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* the variants footnote: three small pictures, each with its paragraph */
+.variant .fig svg { max-width: 560px; }
+/* clickable tokens (the MLM picker): the chosen one is outlined */
+.pieces .tok.pick { cursor: pointer; }
+.pieces .tok.pick:hover { border-color: var(--ink); }
+.pieces .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* the scoreboard in the rail: rows light up as reveals happen */
+.score { margin-top: 12px; border-top: 1px solid var(--rule); padding-top: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+.score .row { display: grid; grid-template-columns: 1fr 52px; gap: 6px; padding: 2px 0; line-height: 1.35; align-items: baseline; }
+.score .row.off { opacity: .38; }
+.score .row.on { color: var(--ink); }
+.score .row.line { color: var(--bad); border-bottom: 1px dashed var(--bad); margin-bottom: 3px; }
+.score .row .v { text-align: right; font-variant-numeric: tabular-nums; }
+.score .row.pass .v { color: var(--good); font-weight: 600; }
+.score .t { letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+/* the results table sorters */
+.sorters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.sorters button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+/* a bare figure caption line under a schematic */
+.figline { font-family: var(--mono); font-size: 13px; color: var(--ink-3); margin: 6px 0 0; line-height: 1.5; }
+/* two-column figure + code */
+.fig-code { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+/* the QA score rows: hover a token to read both scores */
+.qa-pick { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.qa-pick button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.qa-pick button.noans { border-style: dashed; }
+
+/* ------------------------------------------------------- week 5 additions */
+/* the two tables, growing: a row that has just been written */
+.results tr.new td, .costs tr.new td { animation: rowin .9s ease; }
+@keyframes rowin { from { background: color-mix(in srgb, var(--cls-1) 30%, transparent); } to { background: transparent; } }
+.costs td, .costs th { font-size: 14.5px; }
+.costs td.mono { font-size: 13.5px; }
+/* the logit-lens strip: one column per layer, five guesses each */
+.lens { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); gap: 4px; overflow-x: auto; }
+.lens .col { display: flex; flex-direction: column; gap: 2px; }
+.lens .col .h { font-family: var(--mono); font-size: 12px; color: var(--ink-3); text-align: center; letter-spacing: .06em; padding-bottom: 3px; border-bottom: 1px solid var(--rule); margin-bottom: 2px; }
+.lens .g { font-family: var(--mono); font-size: 13px; padding: 1px 5px; border-radius: 2px; white-space: pre; overflow: hidden; text-overflow: ellipsis; background: var(--panel-sunk); }
+.lens .g.gold { background: color-mix(in srgb, var(--good) 28%, transparent); font-weight: 600; }
+.lens .g.same { box-shadow: inset 0 0 0 1px var(--cls-1); }
+.lens .g i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+.tokrow { display: flex; flex-wrap: wrap; gap: 3px; margin: 8px 0; }
+.tokrow .tok { cursor: pointer; margin: 0; }
+.tokrow .tok.on { outline: 2px solid var(--cls-1); outline-offset: 1px; font-weight: 600; }
+/* attention: the heatmap and its controls */
+.att { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .att { grid-template-columns: 1fr; } }
+.att canvas { width: 100%; image-rendering: pixelated; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+.att .hm-box { position: relative; }
+.att .ax { font-family: var(--mono); font-size: 12px; color: var(--ink-3); display: flex; justify-content: space-between; }
+/* RoPE dials */
+.dials { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin: 8px 0 14px; }
+.clocks svg { max-width: 760px; }
+.rope-out { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rope-out .box { padding: 12px 14px; background: var(--panel-sunk); border-radius: 3px; }
+.rope-out .box .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.rope-out .box .v { font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; transition: color .15s; }
+.rope-out .box.moved .v { color: var(--bad); } .rope-out .box.still .v { color: var(--good); }
+/* the KV stepper */
+.stepper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.stepper .cnt { font-family: var(--mono); font-size: 14.5px; color: var(--ink-2); }
+.stepper .cnt b { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* the verbalizer builder */
+.vb { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; }
+@media (max-width: 900px) { .vb { grid-template-columns: repeat(2, 1fr); } }
+.vb .cls { border-top: 3px solid; padding-top: 6px; }
+.vb .cls.c0 { border-color: var(--cls-0); background: none; } .vb .cls.c1 { border-color: var(--cls-1); background: none; }
+.vb .cls.c2 { border-color: var(--cls-2); background: none; } .vb .cls.c3 { border-color: var(--cls-3); background: none; }
+.vb .cls .h { font-family: var(--display); font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.vb .words { display: flex; flex-wrap: wrap; gap: 4px; }
+.vb .words button { font-family: var(--mono); font-size: 13px; padding: 2px 7px; }
+.vb .words button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.vb .words button i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 3px; }
+.vb .words button.on i { color: var(--ground); opacity: .7; }
+.vb-acc { display: flex; gap: 30px; align-items: baseline; flex-wrap: wrap; margin-top: 12px; }
+/* the design card as a form */
+.card { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px 16px; align-items: center; }
+.card .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.card select, .card input { width: auto; min-width: 200px; }
+.card .row-btns button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.card-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.card-tabs button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.est { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+.est .stat .v { font-size: 26px; }
+/* label-it-yourself over words */
+.words-pick { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: flex-end; }
+.words-pick .w { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.words-pick .w .s { font-family: var(--mono); font-size: 14px; }
+.words-pick .w select { font-size: 12.5px; padding: 2px 4px; width: auto; }
+.words-pick .w.hit select { border-color: var(--good); } .words-pick .w.miss select { border-color: var(--bad); }
+.words-pick .w .g { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+.words-pick .w.unx .s { text-decoration: underline dotted var(--bad); }
+/* unexpressible words in a typed sentence */
+.wl { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.wl .tok.unx { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+.wl .tok i { font-style: normal; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+/* per-row bets over a table */
+table.rowbet td.b { white-space: nowrap; }
+table.rowbet td.b button { font-size: 13px; padding: 2px 8px; }
+table.rowbet td.b button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.rowbet td.b button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.rowbet td.b button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.rowbet td.zero { color: var(--bad); font-weight: 600; }
+/* horizontal bar pairs for the breakdowns */
+.pair { display: grid; grid-template-columns: 90px 1fr 1fr 150px; gap: 8px; align-items: center; font-family: var(--mono); font-size: 13.5px; padding: 2px 0; }
+.pair .lab { text-align: right; color: var(--ink-2); }
+.pair .bar { height: 12px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pair .bar i { display: block; height: 100%; }
+.pair .bar.e i { background: var(--cls-0); } .pair .bar.d i { background: var(--cls-1); }
+.pair .n { color: var(--ink-3); }
+.pair.hl .lab { color: var(--bad); font-weight: 600; }
+/* generated text against gold: dropped words */
+.diffline { font-size: 17px; line-height: 1.8; }
+.diffline .drop { color: var(--bad); text-decoration: line-through; }
+.diffline .chg { background: color-mix(in srgb, var(--cls-1) 24%, transparent); border-radius: 2px; }
+/* NER writer */
+.ner-write textarea { min-height: 64px; }
+.ner-parse { margin-top: 8px; }
+.ent.inv { outline: 2px dashed var(--bad); outline-offset: 1px; }
+/* QA */
+.ctx mark.pred { background: color-mix(in srgb, var(--good) 28%, transparent); }
+.ctx .nosub { color: var(--bad); font-weight: 600; }
+.order-row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 16.4px; }
+.order-row .k { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.order-row:last-child { border-bottom: none; }
+/* lightning round */
+.lr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.lr:last-child { border-bottom: none; }
+.lr .pick { display: flex; gap: 4px; flex-wrap: wrap; }
+.lr .pick button { font-family: var(--mono); font-size: 13px; padding: 2px 8px; }
+.lr .pick button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.lr .pick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.lr .pick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.lr .ans { grid-column: 1 / -1; font-size: 16px; color: var(--ink-2); line-height: 1.5; }
+/* the course table */
+.course td:first-child { font-family: var(--mono); }
+.course tr.now td { background: color-mix(in srgb, var(--cls-1) 10%, transparent); font-weight: 600; }
+.big-num { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: -.03em; line-height: 1; }
+
+/* ------------------------------------------------------- week 6 additions */
+/* the meme, kept: an image with a caption beside it */
+.michael { display: grid; grid-template-columns: minmax(0, .9fr) minmax(280px, 1.1fr); gap: 26px; align-items: center; }
+.michael img { width: 100%; max-width: 452px; border-radius: 4px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+.michael figcaption { font-family: var(--body); font-size: 17.7px; color: var(--ink-2); line-height: 1.55; }
+@media (max-width: 900px) { .michael { grid-template-columns: 1fr; } }
+/* pick three changes */
+.picklist { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.picklist button { font-size: 15px; padding: 4px 11px; }
+.picklist button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.picklist button.yes { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.picklist button.no { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.picklist button .why { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+/* the N–D plane */
+.plane-wrap { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .plane-wrap { grid-template-columns: 1fr; } }
+.plane-models { display: flex; flex-direction: column; gap: 6px; }
+.plane-models button { text-align: left; font-size: 14.5px; display: flex; justify-content: space-between; gap: 8px; }
+.plane-models button.sel { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.plane-models button .st { font-family: var(--mono); font-size: 12px; opacity: .7; }
+#plane svg { max-width: 760px; cursor: crosshair; }
+#plane svg.done { cursor: default; }
+/* the bill table */
+table.bill td, table.bill th { font-size: 14px; white-space: nowrap; }
+table.bill td:first-child { font-weight: 600; font-family: var(--display); }
+/* passports as a diff */
+.pp-row { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 6px 14px; padding: 6px 0; border-bottom: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; align-items: baseline; }
+.pp-row:last-child { border-bottom: none; }
+.pp-row .k { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pp-row.head { font-family: var(--display); font-weight: 700; font-size: 16px; }
+.pp-row.diff { background: color-mix(in srgb, var(--cls-1) 9%, transparent); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 3px; }
+.pp-row.diff .k { color: var(--cls-1); }
+.pp-row .sec { font-size: 11.5px; color: var(--ink-3); margin-left: 6px; }
+/* norm grid and rope grid: controls beside the picture */
+.norm-grid, .rope-grid { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .norm-grid, .rope-grid { grid-template-columns: 1fr; } }
+#fig-norm svg { max-width: 620px; } #fig-rope-matrix svg { max-width: 560px; display: block; margin: 0 auto; }
+#fig-rope-coords svg, #fig-slow svg, #fig-gqa svg, #fig-ffn svg, #fig-stack svg, #fig-prenorm svg, #fig-regimes svg, #fig-queue svg, #fig-roundtrip svg, #fig-moe svg, #fig-scatter svg, #fig-linear svg, #fig-masks svg { max-width: 920px; display: block; }
+#ffn-curves svg, #ffn-gate svg, #scaling-chart svg, #steps-chart svg, #tpp-chart svg, #serving-chart svg, #decode-chart svg, #xover-chart svg, #lin-chart svg { max-width: 640px; }
+/* order-the-models bet */
+.orderpick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+.orderpick button { font-size: 15px; }
+.orderpick button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.orderpick button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.orderpick button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.orderpick button i { font-style: normal; font-family: var(--mono); font-size: 11.5px; margin-right: 6px; opacity: .7; }
+.orderpick .arrow { color: var(--ink-3); }
+/* heatmap cells for the per-class table */
+.conf td.v { font-variant-numeric: tabular-nums; }
+/* small inline stat row */
+.est .stat .v small { font-size: 13px; font-weight: 400; color: var(--ink-3); margin-left: 4px; }
+.small-note { font-family: var(--mono); font-size: 13px; color: var(--ink-3); line-height: 1.5; margin-top: 8px; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 18px; margin-bottom: 10px; }
+.bet .q input { vertical-align: middle; }
+#bpb-out .pbar { grid-template-columns: 190px 1fr 70px; }
+#bpb-out .pbar .lab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prose.footnote ul { padding-left: 1.2em; line-height: 1.6; }  /* reference lists */
+
+/* ------------------------------------------------- lecture pages (demo_base/quiz.js) */
+/* one question: number + kind, the question, the answering UI, the answer (hidden until committed) */
+.qz { border-top: 1px solid var(--rule); padding: 22px 0 26px; }
+.qz:last-of-type { border-bottom: 1px solid var(--rule); }
+.qz-head { display: flex; gap: 12px; align-items: baseline; font-family: var(--mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.qz-n { font-weight: 500; color: var(--ink-2); }
+.qz.done .qz-n::after { content: " ✓"; color: var(--good); }
+.qz-q { font-family: var(--display); font-size: 21.5px; font-weight: 600; line-height: 1.35; color: var(--ink); margin-bottom: 12px; }
+.qz-q p { margin: 0 0 .55em; } .qz-q p:last-child { margin-bottom: 0; }
+.qz-q code { font-size: .82em; font-weight: 500; background: var(--panel-sunk); padding: .05em .3em; border-radius: 3px; }
+.qz-q [data-fig] { margin: 14px 0 10px; }
+.qz-q [data-fig] svg, .qz-a [data-fig] svg, .panel [data-fig] svg { width: 100%; max-width: 820px; height: auto; display: block; margin: 0 auto; }
+.qz-q table { font-family: var(--body); font-weight: 400; font-size: 16.4px; margin: 10px 0; width: auto; }
+.qz-ui { margin: 0 0 6px; }
+.qz-row { margin-top: 10px; min-height: 28px; }
+.qz-verdict { font-family: var(--mono); font-size: 15px; color: var(--ink-2); }
+.qz-verdict.ok { color: var(--good); } .qz-verdict.no { color: var(--bad); }
+.qz-opts button.missed { border-style: dashed; border-color: var(--good); }
+.qz-opts button[disabled] { opacity: 1; cursor: default; }
+.qz-opts button[disabled]:not(.right):not(.wrong):not(.missed) { opacity: .5; }
+/* clickable parts of a figure: lecture.js draws a rect.hit as the last child of every [data-pick] group */
+svg rect.hit { fill: transparent; stroke: none; }  /* a figure drawn outside a question: its click targets stay invisible */
+.qz-pickable { cursor: pointer; }
+.qz-pickable rect.hit { fill: transparent; stroke: transparent; stroke-width: 2; stroke-dasharray: 4 3; transition: stroke .12s ease; }
+.qz-pickable:hover rect.hit { stroke: var(--ink-3); }
+.qz-pickable.pick rect.hit { stroke: var(--ink); stroke-dasharray: none; fill: color-mix(in srgb, var(--ink) 8%, transparent); }
+.qz-pickable.right rect.hit { stroke: var(--good); stroke-dasharray: none; fill: color-mix(in srgb, var(--good) 12%, transparent); }
+.qz-pickable.wrong rect.hit { stroke: var(--bad); stroke-dasharray: none; fill: color-mix(in srgb, var(--bad) 12%, transparent); }
+.qz-pickable.missed rect.hit { stroke: var(--good); }
+/* sort: one row per item, the bins as buttons */
+table.qz-sort td { padding: 7px 10px 7px 0; vertical-align: top; }
+table.qz-sort td.qz-item { font-size: 17.5px; width: 38%; }
+table.qz-sort td.qz-bins { display: flex; flex-wrap: wrap; gap: 5px 6px; }
+table.qz-sort td.qz-bins button { font-size: 14.5px; padding: 3px 10px; }
+table.qz-sort button.pick { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+table.qz-sort button.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+table.qz-sort button.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+table.qz-sort button.ans { border-color: var(--good); border-style: dashed; }
+table.qz-sort button[disabled] { opacity: 1; cursor: default; }
+table.qz-sort button[disabled]:not(.right):not(.wrong):not(.ans) { opacity: .45; }
+.qz-count { font-size: 14px; color: var(--ink-3); }
+/* fill: inputs inline in the question */
+input.qz-blank { width: auto; display: inline-block; font-size: .85em; padding: 1px 8px; margin: 0 2px; text-align: center; vertical-align: baseline; border-radius: 3px; }
+input.qz-blank.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+input.qz-blank.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); text-decoration: line-through; color: var(--ink-3); }
+.qz-exp { font-family: var(--mono); font-size: .8em; color: var(--good); margin: 0 6px 0 2px; font-weight: 500; }
+/* write: a textarea, then a checklist */
+textarea.qz-text { font-family: var(--body); font-size: 17.5px; line-height: 1.5; min-height: 80px; resize: vertical; }
+.qz-ticks { margin-top: 14px; display: flex; flex-direction: column; gap: 5px; }
+.qz-ticks-k { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px; }
+.qz-ticks label { display: flex; gap: 10px; align-items: baseline; font-size: 17.2px; line-height: 1.45; cursor: pointer; }
+.qz-ticks input { accent-color: var(--ink); flex: none; }
+/* the answer */
+.qz-a { margin-top: 16px; padding: 14px 18px 14px 18px; background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--ink); border-radius: 4px; font-size: 18.6px; line-height: 1.62; }
+.qz-a p { margin: 0 0 .75em; } .qz-a p:last-child { margin-bottom: 0; }
+.qz-a ul, .qz-a ol { margin: 0 0 .75em; padding-left: 1.3em; }
+.qz-a code { background: var(--panel-sunk); padding: .08em .32em; border-radius: 3px; font-size: .86em; }
+.qz-a table { font-size: 16px; margin: 8px 0 12px; width: auto; }
+.qz-a [data-fig] { margin: 10px 0 12px; }
+.qz-miss { color: var(--ink-2); font-size: 17.2px; line-height: 1.55; border-top: 1px dashed var(--rule); padding-top: 10px; margin-top: .9em !important; }
+.qz-miss b { font-family: var(--mono); font-size: 12.8px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--ink-3); margin-right: 8px; }
+.qz-nofig { font-family: var(--mono); font-size: 14px; color: var(--bad); padding: 8px 0; }
+/* optional depth under a toggle; its questions do not count toward the page's progress */
+details.optional { margin: 20px 0 0; border: 1px dashed var(--rule-strong); border-radius: 4px; padding: 0 18px; }
+details.optional > summary { cursor: pointer; list-style: none; display: flex; gap: 10px; align-items: baseline; padding: 12px 0; font-family: var(--display); font-weight: 600; font-size: 18px; }
+details.optional > summary::-webkit-details-marker { display: none; }
+details.optional > summary::before { content: "+"; font-family: var(--mono); color: var(--ink-3); }
+details.optional[open] > summary::before { content: "−"; }
+details.optional > summary .optional-count { margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--ink-3); font-weight: 400; }
+details.optional > .prose { padding-top: 4px; }
+details.optional .qz:last-of-type { border-bottom: none; }
+.rail .quiz-progress { font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); margin-top: 8px; }
+.rail a.back { display: inline-block; margin-top: 8px; font-family: var(--display); font-size: 16px; color: var(--ink-2); }
+.sources { font-size: 17.2px; color: var(--ink-2); }
+.sources ul { padding-left: 1.2em; line-height: 1.6; }
+@media (max-width: 760px) {
+  .qz-q { font-size: 19px; }
+  table.qz-sort td.qz-item { width: 100%; display: block; padding-bottom: 2px; }
+  table.qz-sort td.qz-bins { display: flex; padding-top: 0; }
+  table.qz-sort tr { display: block; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+}
+
+/* --- this week --- */
+/* Связи схем, формул и кода на страницах ADD. */
+[data-link-scope] { margin: 18px 0; }
+[data-link-scope] svg { width: 100%; max-width: 760px; height: auto; display: block; margin: 0 auto; }
+[data-link-scope] svg text { fill: var(--ink); font-family: var(--mono); font-size: 14px; }
+[data-link-scope] svg .caption { fill: var(--ink-2); font-family: var(--body); font-size: 16px; }
+[data-link-scope] svg rect { fill: var(--panel-sunk); stroke: var(--rule-strong); }
+[data-link-scope] svg path, [data-link-scope] svg line { stroke: var(--ink-3); fill: none; }
+[data-link-scope] svg .accent { fill: color-mix(in srgb, var(--cls-0) 15%, var(--panel)); }
+[data-f] { transition: background .12s, fill .12s; }
+svg [data-f] { cursor: pointer; }
+svg [data-f].hi rect, svg rect[data-f].hi { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)); stroke: var(--cls-1); }
+.formula [data-f].hi { background: color-mix(in srgb, var(--cls-1) 22%, transparent); }
+pre.code .ln { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre.code { overflow-x: hidden; }
+.add-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.add-controls label { display: flex; gap: 8px; align-items: center; font-size: 16px; }
+.add-controls output { font-family: var(--mono); }
+.add-result { font-family: var(--mono); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.add-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.add-table td, .add-table th { padding: 8px 10px; border-bottom: 1px solid var(--rule); text-align: left; }
+.add-table button { padding: 3px 8px; }
+.add-links { display: flex; gap: 8px 18px; flex-wrap: wrap; font-size: 16px; }
+.sources { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .add-table td, .add-table th { padding: 6px 3px; font-size: 13px; } }
+svg text[data-f].hi, svg [data-f].hi > text { fill: var(--cls-1); }
+[data-link-scope] svg rect.hit { fill: transparent; stroke: none; }
+.panel-body > [data-fig], .qz-q > [data-link-scope] { overflow-x: auto; }
+@media (max-width: 600px) { [data-link-scope] svg { min-width: 620px; } }
+.add-controls label { white-space: nowrap; }
+#normalization-table { overflow-x: auto; }
+svg.word2vec-diagram [data-f].hi > rect:not(.hit) { stroke: var(--cls-1) !important; stroke-width: 2; }
+svg.word2vec-diagram [data-f].hi > text { fill: var(--cls-1) !important; }
+
+svg [data-f].hi circle { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)) !important; stroke: var(--cls-1) !important; }
+
+
+#ppl-after-link { display: none; }
+#loss:has(.qz[data-q="q-ppl-link"].done) #ppl-after-link { display: block; }
+#ppl-jokes-table { overflow-x: auto; }
+
+
+/* Отдельные выражения центрируются; длинная строка прокручивается внутри блока. */
+.equation { display: flex; overflow-x: auto; padding: 10px 2px; margin: 10px 0; }
+.equation > span { flex: 0 0 auto; margin-inline: auto; }
+.equation math { math-style: normal; font-size: 1.15em; }
+.equation munder, .equation munderover { math-style: normal; }
+.formula .equation math { font-size: 1.15em; margin: 0; }
+.formula p { font-size: 17px; line-height: 1.6; margin: 8px 0 18px; }
+@media (max-width: 600px) { .equation math, .formula .equation math { font-size: 1em; } }
+
+/* Схемы занятия 3: подписи разных ролей и подсветка прямоугольников с заданной заливкой. */
+[data-link-scope] svg .label { font-family: var(--body); font-size: 15px; fill: var(--ink-2); }
+[data-link-scope] svg .small { font-size: 12.5px; fill: var(--ink-2); }
+[data-link-scope] svg .num { font-size: 12.5px; }
+[data-link-scope] svg .strong { font-weight: 600; fill: var(--ink); }
+[data-link-scope] svg .warn { font-size: 12.5px; fill: var(--cls-1); }
+.w3fig svg [data-f].hi > rect:not(.hit), .w3fig svg [data-f].hi > g > rect { fill: color-mix(in srgb, var(--cls-1) 28%, var(--panel)) !important; stroke: var(--cls-1) !important; }
+.w3fig svg [data-f].hi > path { stroke: var(--cls-1) !important; }
+.w3fig svg [data-cell], .w3fig svg [data-query] { cursor: pointer; }
+
+/* Калькулятор BLEU: n-граммы перевода и их совпадения с эталоном. */
+.bleu .row { display: flex; gap: 6px 12px; align-items: baseline; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.bleu .k { font-family: var(--mono); font-size: 13px; color: var(--ink-3); min-width: 84px; }
+.bleu .g { flex: 1; min-width: 0; }
+.bleu .p { font-family: var(--mono); font-size: 14px; white-space: nowrap; margin-left: auto; }
+.bleu .tok.hit { background: color-mix(in srgb, var(--cls-2) 22%, var(--panel)); border-color: var(--cls-2); }
+.bleu .tok.clip { text-decoration: line-through; border-color: var(--cls-1); color: var(--ink-2); }
+.bleu .tok.miss { color: var(--ink-2); }
+.bleu .none { font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
+.bleu .total { font-family: var(--mono); font-size: 15px; margin-top: 12px; }
+.bleu-input input { flex: 1; min-width: 0; font-family: var(--mono); }
+.bleu-input { flex-wrap: nowrap; }
+</style>
+<style>
+/* Схемы и тезисы лекций о BERT и GPT. */
+.transformer-fig svg [role="button"] { cursor: pointer; }
+.transformer-fig svg [role="button"]:focus { outline: 2px solid var(--cls-1); outline-offset: 3px; }
+.transformer-fig svg text.small, .transformer-fig svg text.num { font-size: 12px; }
+.transformer-fig svg [data-f].hi > rect { stroke: var(--cls-1) !important; stroke-width: 2; }
+.prose.slide { font-size: 23px; line-height: 1.5; }
+.prose.slide p { margin-bottom: 14px; }
+details.more { margin: 10px 0 20px; }
+details.more > summary { color: var(--ink-2); font-size: 16px; cursor: pointer; }
+.panel-body:has(> .transformer-fig) { overflow-x: auto; }
+.panel-body select { max-width: 100%; }
+@media (max-width:600px) { .prose.slide { font-size: 20px; } .add-controls label { white-space: normal; flex-wrap: wrap; } }
+
+</style>
+<style>
+.generation-text { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); font-size: 15px; line-height: 1.65; }
+.generation-text { padding-top: 14px; }
+.generation-text mark { background: color-mix(in srgb,var(--cls-1) 20%,var(--panel)); color: var(--ink); }
+#model-passports { overflow-x: auto; }
+.flash-flow svg { max-width: 1040px; min-width: 900px; }
+.flash-flow svg text { font-size: 14px; }
+.flash-flow svg text.num { font-size: 13px; }
+.flash-flow svg text.small { font-size: 13px; }
+
+</style>
+<meta name="quiz-store" content="add2026_week06">
+
+</head>
+<body>
+<div class="shell"><aside class="rail"><div><div class="rail-mark">NLP @ HSE DSBA · ADD-2026</div><div class="rail-eq">Занятие 6<br>GPT и генеративные модели</div></div><nav id="nav"></nav><div class="rail-btns"><button id="btn-reset">Сбросить ответы</button><button id="btn-theme">Тема</button></div><div class="quiz-progress" id="quiz-progress"></div><div class="rail-foot"><a href="https://xufana.github.io/dsba_nlp/week05/">Семинар DSBA · GPT</a><br><a href="https://xufana.github.io/dsba_nlp/week06/">Семинар DSBA · современные модели</a></div></aside><main><div class="wrap">
+<section id="hero"><p class="eyebrow">Author: Daria Andreeva</p><h1>GPT и развитие генеративных моделей</h1><p class="lede">Как обучение следующему токену превращается в генерацию, что хранится в KV-кэше и зачем считать attention плитками.</p><div class="prose"><p><strong>Авторегрессионная модель предсказывает следующий токен по уже известному префиксу.</strong> Посмотрим, как устроено вычисление и что позволяет работать с длинным контекстом.</p></div></section>
+<section id="gpt"><p class="eyebrow">блок 01</p><h2>Трансформер предсказывает следующий токен</h2><div class="prose slide"><p><strong>GPT использует стек с причинным self-attention и головой над словарём.</strong></p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>От декодера переводчика остаются self-attention и FFN. Cross-attention отсутствует; весь доступный текст находится в одной последовательности. Запрос каждой позиции читает только саму позицию и позиции слева.</p>
+<p>Тело возвращает вектор для каждого токена. Финальная нормировка и проекция на словарь превращают его в оценки следующего токена; softmax даёт распределение. В GPT-2 матрица проекции связана с таблицей токенов. Нормы, RoPE и gated FFN мы разобрали в лекции об энкодерах; здесь используем их как знакомые части блока.</p></div></details><div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Модель <select id="architecture-mode"><option value="gpt">GPT</option><option value="bert">BERT</option></select></label><label>Позиция <input id="architecture-query" type="range" min="0" max="4" value="2"></label></div><div data-fig="architecture"></div></div><div class="panel-note"><p>Переключите BERT/GPT и выберите позицию. Цветные ячейки — разрешённые пары запроса и ключа; строка соответствует выбранному запросу. Внизу видны столбцы представлений и выход для каждой позиции.</p></div></div><div class="qz" data-q="q-causal"></div></section>
+<section id="training"><p class="eyebrow">блок 02</p><h2>Обучение параллельно, генерация по шагам</h2><div class="prose slide"><p><strong>Обучение:</strong> известны все правильные токены. <strong>Генерация:</strong> очередной токен становится известен после выбора.</p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>В обучении вход и цели сдвинуты относительно друг друга: выход над текущим токеном предсказывает следующий. Причинная маска не даёт подсмотреть целевой токен справа. Все позиции одного слоя можно вычислить параллельно.</p>
+<p>При генерации сначала обрабатывается весь запрос. Распределение над последней позицией даёт следующий токен. Выбранный токен добавляем ко входу и повторяем шаг до условия остановки. Способ выбора — argmax, температура, top-k или top-p — задаёт отдельную часть алгоритма.</p></div></details><div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Режим <select id="training-mode"><option value="train">обучение</option><option value="generate">генерация</option></select></label><label>Цель над текущим токеном <select id="training-shift"><option value="0">текущий токен</option><option value="1">следующий токен</option></select></label><button id="training-reveal">Проверить сдвиг</button><button id="generation-next">Следующий токен</button><button id="generation-reset">Сначала</button></div><div data-fig="training"></div><div id="training-result" class="add-result" aria-live="polite"></div><div id="generation-text" class="generation-text"></div></div><div class="panel-note"><p>В режиме обучения сначала сопоставьте входы и цели, затем откройте правильный сдвиг. В генерации кнопка добавляет один токен из сохранённого продолжения GPT-2; полное продолжение не вычисляется в браузере. Пробелы входят в строки подсловных токенов.</p></div></div><div class="qz" data-q="q-training"></div></section>
+<section id="cache"><p class="eyebrow">блок 03</p><h2>Что можно сохранить между шагами</h2><div class="prose slide"><p><strong>KV-cache сохраняет ключи и значения прошлых позиций в каждом слое.</strong></p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>В причинной модели представление старой позиции не зависит от добавленного справа токена. Поэтому её K и V можно использовать повторно. Новая позиция получает свой Q, K и V; её Q сравнивается с ключами всего доступного префикса, затем веса смешивают значения.</p>
+<p><strong>Prefill</strong> обрабатывает запрос целиком и заполняет кэш. Его последняя позиция уже даёт распределение для первого нового токена. <strong>Decode</strong> подаёт выбранный токен и дописывает его K,V; распределение этого шага выбирает следующий токен. Для повторного использования кэша должны совпадать префикс, позиции и параметры модели.</p></div></details><div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Вычисление <select id="cache-mode"><option value="cache">с KV-кэшем</option><option value="full">весь префикс заново</option></select></label><button id="cache-next">Обработать запрос</button><button id="cache-reset">Сначала</button></div><div data-fig="cache"></div><div id="cache-result" class="add-result" aria-live="polite"></div></div><div class="panel-note"><p>Сначала нажмите «Обработать запрос», затем двигайтесь по одному токену. Серые ячейки сохранены с прошлого шага, цветные вычисляются сейчас. Показан один слой; такой кэш есть в каждом слое. Счётчики считают обработанные позиции, а не миллисекунды.</p></div><pre class="code"><code><span class="ln">q = q_proj(x_new)</span><span class="ln" data-f="new" tabindex="0">k_new, v_new = k_proj(x_new), v_proj(x_new)</span><span class="ln" data-f="keys" tabindex="0">k = torch.cat((k_cache, k_new), dim=-2)</span><span class="ln" data-f="values" tabindex="0">v = torch.cat((v_cache, v_new), dim=-2)</span><span class="ln" data-f="read" tabindex="0">output = (q @ k.transpose(-2, -1) / math.sqrt(d)).softmax(-1) @ v</span></code></pre></div><div class="qz" data-q="q-cache"></div></section>
+<section id="gqa"><p class="eyebrow">блок 04</p><h2>Кэш растёт с длиной — что уменьшить?</h2><div class="prose slide"><p><strong>GQA: несколько голов Q используют общую пару голов K,V.</strong></p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>В MHA у каждой головы запросов свои K,V. В MQA все головы запросов используют одну пару K,V. GQA располагается между ними: головы запросов разбиты на группы с общими K,V. Выход каждой головы запроса вычисляется отдельно.</p>
+<p>Объём KV-кэша равен произведению: два тензора × слои × длина × головы K,V × ширина головы × байты на число. Число голов Q в эту формулу не входит. Менять число голов K,V у готового чекпойнта простым переключателем нельзя: требуется соответствующее обучение или преобразование с дообучением.</p></div></details><div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Головы K,V <select id="gqa-heads"><option value="8">8 · MHA</option><option value="2" selected>2 · GQA</option><option value="1">1 · MQA</option></select></label><label>Токены <input id="gqa-length" type="range" min="1" max="8192" value="1024"><output id="gqa-length-value"></output></label></div><div data-fig="gqa"></div><div id="gqa-result" class="add-result" aria-live="polite"></div></div><div class="panel-note"><p>Учебная конфигурация: {cache_layers} слоя, {query_heads} голов Q, ширина головы {head_width}, FP16. Меняется только число голов K,V и длина. Схема показывает соответствие голов; счётчик вычисляет память кэша одного запроса, без весов и служебных буферов. Это сравнение конфигураций, а не переключение весов работающей модели.</p></div><pre class="code"><code><span class="ln">group_size = query_heads // kv_heads</span><span class="ln" data-f="group" tabindex="0">kv_head = query_head // group_size</span><span class="ln" data-f="shared" tabindex="0">keys, values = k[kv_head], v[kv_head]</span></code></pre></div><div class="qz" data-q="q-gqa"></div></section>
+<section id="flash"><p class="eyebrow">блок 05</p><h2>Attention и память GPU</h2><div class="prose slide"><p><strong>FlashAttention обрабатывает Q,K,V плитками и накапливает результат в быстрой памяти GPU.</strong></p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>Обычная реализация вычисляет оценки S, записывает их в основную память GPU (HBM), затем читает S для softmax и записывает веса P. Для последнего умножения снова читаются P и V, после чего записывается выход O.</p>
+<p>FlashAttention загружает плитки K,V и Q вместе с текущим выходом O и статистиками softmax. Операции объединены в одну программу GPU (kernel): оценки, экспоненты и частичный результат вычисляются на чипе, с использованием быстрой памяти SRAM и регистров. Между плитками сохраняются выход O и статистики m,ℓ. Показан обход плиток исходного алгоритма FlashAttention.</p>
+<p>Чтобы softmax по частям совпал с softmax по всей строке, для каждого запроса сохраняются текущий максимум, сумма экспонент и взвешенная сумма значений. При новом максимуме старые суммы масштабируются. В конце взвешенную сумму делим на знаменатель.</p>
+<p>Метод считает тот же softmax-attention с учётом округления. Число сравниваемых пар при полном attention по-прежнему квадратично по длине. Уменьшаются обмены с памятью и память для промежуточных матриц. Метод применим к энкодерам и к причинному attention; особенно полезен при обработке длинного запроса и обучении.</p></div></details><div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><button id="flash-flow-next">Следующий этап</button><button id="flash-flow-reset">Весь расчёт</button></div><div data-fig="flash-flow"></div><div id="flash-flow-state" class="add-result" aria-live="polite"></div></div><div class="panel-note"><p>Слева — полные матрицы S и P, справа — вычисление по плиткам. i обозначает плитку запросов Q, j — плитку K,V. По схеме Dao et al. (2022).</p></div></div><details class="optional"><summary>Численный пример: пройти по плиткам</summary><div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Алгоритм <select id="flash-mode"><option value="tiles">плитками</option><option value="naive">полные S и A</option></select></label><label>Маска <select id="flash-mask"><option value="full">полная</option><option value="causal">причинная</option></select></label><label>Плитка <select id="flash-tile"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select></label><label>Запрос <select id="flash-query"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option></select></label><button id="flash-next">Следующая плитка</button><button id="flash-reset">Сначала</button></div><div data-fig="flash"></div><div id="flash-result" class="add-result" aria-live="polite"></div></div><div class="panel-note"><p>Карта слева подсвечивает текущую плитку; справа обновляются максимум m, знаменатель l и взвешенная сумма acc. После последней плитки выход равен acc / l.</p></div><details class="optional"><summary>Численный расчёт и условия примера</summary><div class="prose"><p>В численном примере отдельно хранится числитель acc = ℓO; выход O получаем делением на ℓ. Браузер исполняет учебный алгоритм на CPU; скорость GPU здесь не измеряется. Матрица слева служит картой на рисунке. Счётчики относятся только к записи и чтению промежуточных S,P в наивном варианте, без учёта остальных обменов. Числа хранятся в FP64; в GPU-ядрах часто используются другие форматы.</p></div><pre class="code"><code><span class="ln" data-f="maximum" tabindex="0">m_new = max(m, scores.max())</span><span class="ln">alpha = exp(m - m_new) <b class="kw">if</b> m != -inf <b class="kw">else</b> 0</span><span class="ln">p = exp(scores - m_new)</span><span class="ln" data-f="accumulator" tabindex="0">acc = alpha * acc + p @ v_tile</span><span class="ln" data-f="denominator" tabindex="0">l = alpha * l + p.sum()</span><span class="ln">m = m_new</span><span class="ln" data-f="output" tabindex="0">output = acc / l</span></code></pre></details></div></details><div class="qz" data-q="q-flash"></div></section>
+<section id="growth"><p class="eyebrow">блок 06</p><h2>Архитектура, данные и бюджет</h2><div class="prose slide"><p><strong>Результат модели зависит от архитектуры, данных и бюджета обучения.</strong></p></div><details class="more"><summary>Подробнее</summary><div class="prose"><p>GPT-2 и GPT-3 сделали продолжение текста способом задавать разные задачи. Дальнейшее развитие включает масштаб обучения, качество и состав данных, устройство блоков и организацию вычислений. Сравнение готовых моделей одновременно меняет несколько условий; выделить причинный эффект одной детали можно контролируемым опытом.</p>
+<p>У GPT-2 и SmolLM2 близкий порядок числа параметров, но различаются данные, токенизация и обучение. В таблице показаны параметры устройства из чекпойнтов; по ней нельзя заключить, сколько качества добавил отдельный компонент.</p></div></details><div class="panel"><div class="panel-body"><div id="model-passports"></div></div></div>
+<div class="prose slide"><p><strong>MoE заменяет FFN набором экспертов и маршрутизатором для каждого токена.</strong></p></div><details class="optional"><summary>Эксперты и активные параметры</summary><div class="prose"><p>Маршрутизатор выбирает несколько экспертов, вычисляет их выходы и смешивает их с весами. Attention и другие общие части блока работают для каждого токена. Общее число параметров включает всех экспертов; активное число на токен включает только выбранных экспертов и общие части.</p>
+<p>Меньшее число активных параметров не отменяет хранения весов всех экспертов и стоимости передачи данных. Схема ниже — учебное распределение маршрутов; экспертам не назначены готовые темы или языки.</p></div><div class="panel" data-link-scope><div class="panel-body"><div class="add-controls"><label>Активных экспертов <select id="moe-active"><option value="1">1</option><option value="2" selected>2</option></select></label></div><div data-fig="moe"></div><div id="moe-result" class="add-result"></div></div><div class="panel-note"><p>Нажмите токен: подсветятся выбранные для него эксперты. Измените число активных экспертов и сравните общие и используемые параметры. Параметры общих частей вынесены отдельно.</p></div></div></details></section>
+<section id="design"><p class="eyebrow">блок 07</p><h2>Спроектируем систему</h2><div class="qz" data-q="q-design"></div></section><section id="sources"><p class="eyebrow">блок 08</p><h2>Источники</h2><h3>References</h3><div class="prose footnote sources"><ul>
+<li>Radford et al. (2019). <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf"><em>Language Models are Unsupervised Multitask Learners.</em></a> OpenAI.</li>
+<li>Brown et al. (2020). <a href="https://arxiv.org/abs/2005.14165"><em>Language Models are Few-Shot Learners.</em></a> NeurIPS.</li>
+<li>Hoffmann et al. (2022). <a href="https://arxiv.org/abs/2203.15556"><em>Training Compute-Optimal Large Language Models.</em></a> NeurIPS.</li>
+<li>Ainslie et al. (2023). <a href="https://arxiv.org/abs/2305.13245"><em>GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints.</em></a> EMNLP.</li>
+<li>Dao et al. (2022). <a href="https://arxiv.org/abs/2205.14135"><em>FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness.</em></a> NeurIPS.</li>
+<li>Jiang et al. (2024). <a href="https://arxiv.org/abs/2401.04088"><em>Mixtral of Experts.</em></a> arXiv.</li>
+<li>Ben Allal et al. (2025). <a href="https://arxiv.org/abs/2502.02737"><em>SmolLM2: When Smol Goes Big — Data-Centric Training of a Small Language Model.</em></a> arXiv.</li>
+</ul></div></section>
+</div></main></div>
+
+<div hidden id="text-chunks">
+<template data-text="topics"><ul>
+<li>GPT: причинная маска и следующий токен</li>
+<li>Обучение и пошаговая генерация</li>
+<li>Prefill, decode, KV-cache и GQA</li>
+<li>FlashAttention и память GPU</li>
+<li>Масштаб обучения и MoE</li>
+</ul></template>
+</div>
+<script type="application/json" id="quiz-data">{"q-causal":{"key":"q-causal","type":"pick","q":"<p>Вход: «Документ: … Вопрос: …». Может ли представление токена документа в обычном GPT зависеть от вопроса, стоящего после документа?<\/p>","a":"<p>Параллельное вычисление входа сохраняет причинные ограничения. Более поздние позиции вопроса читают документ, но позиции документа не читают вопрос справа.<\/p>","miss":"","opts":[{"k":"o0","label":"да, весь вход обрабатывается одновременно","right":false},{"k":"o1","label":"нет, причинная маска закрывает правый контекст","right":true},{"k":"o2","label":"да, если включить KV-кэш","right":false}],"multi":false,"n":1},"q-training":{"key":"q-training","type":"pick","q":"<p>Почему можно вычислять обучающие предсказания для всех позиций параллельно, хотя генерация идёт по шагам?<\/p>","a":"<p>В обучении входные токены берутся из корпуса. При генерации следующий вход зависит от только что выбранного выхода модели.<\/p>","miss":"","opts":[{"k":"o0","label":"обучающий текст известен целиком, а причинная маска закрывает будущие цели","right":true},{"k":"o1","label":"при обучении разрешено читать правильный следующий токен","right":false},{"k":"o2","label":"параллельность появляется только после включения KV-кэша","right":false}],"multi":false,"n":2},"q-cache":{"key":"q-cache","type":"pick","q":"<p>Пользователь исправил токен в середине уже закэшированного запроса. Что можно безопасно сохранить при тех же позициях и весах модели?<\/p>","a":"<p>Исправленный токен может изменить представления всех следующих позиций. Позиции перед исправлением причинно от него не зависят.<\/p>","miss":"","opts":[{"k":"o0","label":"весь кэш: длина запроса не изменилась","right":false},{"k":"o1","label":"кэш неизменившегося префикса до исправления; остаток нужно пересчитать","right":true},{"k":"o2","label":"только значения V, а все K пересчитать","right":false}],"multi":false,"n":3},"q-gqa":{"key":"q-gqa","type":"pick","q":"<p>Сохранили число голов запросов, вдвое сократили число голов K,V, остальные размеры прежние. Что произойдёт с KV-кэшем?<\/p>","a":"<p>Кэш хранит K и V. Его объём пропорционален числу голов K,V; головы запросов остаются отдельными.<\/p>","miss":"","opts":[{"k":"o0","label":"его объём уменьшится вдвое","right":true},{"k":"o1","label":"объём сохранится, потому что число запросов прежнее","right":false},{"k":"o2","label":"нужно будет хранить только K","right":false}],"multi":false,"n":4},"q-flash":{"key":"q-flash","type":"pick","q":"<p>Какая перемена объясняет выигрыш FlashAttention при полном attention?<\/p>","a":"<p>Полный набор разрешённых пар сохраняется. Меняется организация вычислений и доступа к памяти.<\/p>","miss":"","opts":[{"k":"o0","label":"дальние токены перестают участвовать","right":false},{"k":"o1","label":"промежуточные матрицы обрабатываются плитками с меньшим обменом с основной памятью","right":true},{"k":"o2","label":"softmax заменён линейной функцией","right":false}],"multi":false,"n":5},"q-design":{"key":"q-design","type":"write","q":"<p>Помощник отвечает по длинным инструкциям. Пользователь уточняет вопрос в нескольких сообщениях, затем исправляет начало диалога. Опишите: задача / данные / представление / модель / метрика / что сломается первым. Где используются prefill, KV-cache, GQA и FlashAttention?<\/p>","a":"<p>Prefill строит кэш запроса и даёт распределение первого токена. Decode дописывает K,V новых токенов. Исправление начала диалога делает последующую часть кэша недействительной. Длинный контекст требует проверки качества и ресурса; экономия памяти не гарантирует точный ответ.<\/p>","miss":"","check":["Указали, как документы и вопрос попадают во вход и как проверяется опора ответа на документ.","Различили обработку запроса, выбор первого токена и последующие шаги.","Объяснили, что хранит кэш и какую часть нужно пересчитать после исправления.","Связали GQA с объёмом кэша, FlashAttention — с организацией attention и памяти.","Указали ограничения длины, памяти, времени ответа и условий остановки.","Предложили отложенные вопросы, проверку фактов, отсутствие ответа и метрики времени и памяти."],"n":6}}</script>
+<script type="application/json" id="add-data">{"source":{"branch":"autumn-2026","commit":"e24968d5eaf0a7a721fd14c412bd7a98a3d335cf","path":"week05_decoder_only/artifacts/demo_data.json"},"generation":{"prompt":["The"," Race"," is"," On",":"," Second"," Private"," Team"," Sets"," Launch"," Date"," for"," Human"," Space","flight"," (","SP","ACE",".","com",")"," SPACE",".","com"," TOR","ON","TO",","," Canada"," A"," second"," team"],"tokens":[" of"," astronauts"," has"," set"," a"," new"," record"," for"," the"," number"," of"," launches"," of"," a"," human"," space","flight"," vehicle","."," The"],"model":"gpt2"},"passports":{"rows":["layers","d_model","query heads","key/value heads","FFN hidden","FFN","norm","positions","context","vocabulary","biases","parameters"],"cols":["GPT-2 small, 2019","SmolLM2-135M, 2024"],"cells":{"GPT-2 small, 2019":{"layers":12,"d_model":768,"query heads":12,"key/value heads":12,"FFN hidden":3072,"FFN":"up, GELU, down","norm":"LayerNorm, before each sublayer","positions":"learned table, 1,024 rows","context":1024,"vocabulary":50257,"biases":"everywhere","parameters":124439808},"SmolLM2-135M, 2024":{"layers":30,"d_model":576,"query heads":9,"key/value heads":3,"FFN hidden":1536,"FFN":"up × SiLU(gate), down","norm":"RMSNorm, before each sublayer","positions":"rotation, θ = 100,000","context":8192,"vocabulary":49152,"biases":"none","parameters":134515008}}},"reference":{"engine":"PyTorch 2.14.1, float64, CPU","attention":[{"q":[[0.36554577027235113,1.906460216715314]],"k":[[0.21686490700497604,0.2963348599085515]],"v":[[-1.0159963149674585,-0.6064354392511645,0.1744102131787662]],"causal":false,"output":[[-1.0159963149674585,-0.6064354392511645,0.1744102131787662]]},{"q":[[0.36554577027235113,1.906460216715314]],"k":[[0.21686490700497604,0.2963348599085515]],"v":[[-1.0159963149674585,-0.6064354392511645,0.1744102131787662]],"causal":true,"output":[[-1.0159963149674585,-0.6064354392511645,0.1744102131787662]]},{"q":[[0.04577552402506183,0.2533223778040435,-0.4929897216908099,1.3964470621057274],[-1.145740204618908,0.8323134637675728,-0.9230040210018069,-1.1738815664955213],[1.2420977456665379,-1.0392359502586292,0.4511398488654344,0.6442886786430755],[-0.10207022657303741,-2.0799003074166103,2.5820152734651547,0.7496990308087904],[-0.20227195472148274,0.18728734763797683,0.3697084439144423,0.8668372809856406]],"k":[[0.37448928093907097,-0.9476965516359862,-0.09379117728630024,0.4532623417625882],[0.8591588052848662,0.131708434219548,0.18171989845557426,0.6169854152261445],[-0.5506769252007522,-2.172172430961457,0.7228580496534575,0.8614344243878715],[1.2213280880148365,-0.2884349166409215,-1.7051673680166202,-1.5803705962322974],[1.0192166613777893,0.6070967295299772,1.4047543731774188,-0.5734475671306899]],"v":[[-0.6306138999285164,0.8299370256884131,-0.6974401329803818],[0.013501545924582662,-0.01092111487558144,-0.15585165487678887],[-0.3701898112650189,1.2526381393021804,0.4629261902123803],[0.13819661899458857,1.1187301812157384,-0.048145520762375243],[-0.9536663835951197,-1.2022665182925345,0.8924611119433649]],"causal":false,"output":[[-0.32837584302142825,0.4828201226283569,-0.028339109902650948],[-0.12827585762244062,0.680235143570958,0.023243230571546866],[-0.39255631985256195,0.5255768263027253,0.09489192243974899],[-0.4096217422593526,1.034698757381504,0.390364258822328],[-0.40916674916578955,0.3680193462360074,0.11528703328262253]]},{"q":[[0.04577552402506183,0.2533223778040435,-0.4929897216908099,1.3964470621057274],[-1.145740204618908,0.8323134637675728,-0.9230040210018069,-1.1738815664955213],[1.2420977456665379,-1.0392359502586292,0.4511398488654344,0.6442886786430755],[-0.10207022657303741,-2.0799003074166103,2.5820152734651547,0.7496990308087904],[-0.20227195472148274,0.18728734763797683,0.3697084439144423,0.8668372809856406]],"k":[[0.37448928093907097,-0.9476965516359862,-0.09379117728630024,0.4532623417625882],[0.8591588052848662,0.131708434219548,0.18171989845557426,0.6169854152261445],[-0.5506769252007522,-2.172172430961457,0.7228580496534575,0.8614344243878715],[1.2213280880148365,-0.2884349166409215,-1.7051673680166202,-1.5803705962322974],[1.0192166613777893,0.6070967295299772,1.4047543731774188,-0.5734475671306899]],"v":[[-0.6306138999285164,0.8299370256884131,-0.6974401329803818],[0.013501545924582662,-0.01092111487558144,-0.15585165487678887],[-0.3701898112650189,1.2526381393021804,0.4629261902123803],[0.13819661899458857,1.1187301812157384,-0.048145520762375243],[-0.9536663835951197,-1.2022665182925345,0.8924611119433649]],"causal":true,"output":[[-0.6306138999285164,0.8299370256884131,-0.6974401329803818],[-0.31687882219486024,0.4203727219735356,-0.4336437834728198],[-0.3486816852692064,0.7965762374340303,-0.04726733014513165],[-0.3745541810827719,1.178887139537027,0.3580005320697582],[-0.40916674916578955,0.3680193462360074,0.11528703328262253]]},{"q":[[40.601560711949546,24.963536720269218],[14.561186840748718,-34.123161722203164],[63.73844075240444,-22.79585242496378],[7.155779461847161,-0.1052942782331357],[-3.1375880483401377,10.583965290842038],[28.057551380503963,57.454097818762186]],"k":[[48.461858703517194,1.4248957707599026],[-5.580239134366503,28.615473322917172],[-28.126399946487272,-3.1419562300652535],[31.82307403712234,-0.14296279427537442],[47.85423813821633,30.284292538141372],[-17.274234377679722,9.631058870242146]],"v":[[2.104681429883031,-0.7899888662436667,-0.602679356041342],[-0.1270265247766145,0.034373098383731426,-0.06832410777737885],[-1.899316865780539,0.06211248985119584,2.2417928657910617],[0.42915618739231265,3.0258023372382503,0.6025635299827675],[-2.1933747308847344,-0.020947475669993176,-1.0898700641415375],[1.477008001856772,1.674291045652835,-1.110471794564106]],"causal":false,"output":[[-2.1933747308847344,-0.020947475669993176,-1.0898700641415375],[2.104681429883031,-0.7899888662436667,-0.602679356041342],[2.104681429883031,-0.7899888662436667,-0.602679356041342],[2.0816390055306826,-0.7858659377840829,-0.6052912472350953],[-0.1270265247766145,0.034373098383731426,-0.06832410777737885],[-2.1933747308847344,-0.020947475669993176,-1.0898700641415375]]},{"q":[[40.601560711949546,24.963536720269218],[14.561186840748718,-34.123161722203164],[63.73844075240444,-22.79585242496378],[7.155779461847161,-0.1052942782331357],[-3.1375880483401377,10.583965290842038],[28.057551380503963,57.454097818762186]],"k":[[48.461858703517194,1.4248957707599026],[-5.580239134366503,28.615473322917172],[-28.126399946487272,-3.1419562300652535],[31.82307403712234,-0.14296279427537442],[47.85423813821633,30.284292538141372],[-17.274234377679722,9.631058870242146]],"v":[[2.104681429883031,-0.7899888662436667,-0.602679356041342],[-0.1270265247766145,0.034373098383731426,-0.06832410777737885],[-1.899316865780539,0.06211248985119584,2.2417928657910617],[0.42915618739231265,3.0258023372382503,0.6025635299827675],[-2.1933747308847344,-0.020947475669993176,-1.0898700641415375],[1.477008001856772,1.674291045652835,-1.110471794564106]],"causal":true,"output":[[2.104681429883031,-0.7899888662436667,-0.602679356041342],[2.104681429883031,-0.7899888662436667,-0.602679356041342],[2.104681429883031,-0.7899888662436667,-0.602679356041342],[2.104681429883031,-0.7899888662436667,-0.602679356041342],[-0.1270265247766145,0.034373098383731426,-0.06832410777737885],[-2.1933747308847344,-0.020947475669993176,-1.0898700641415375]]},{"q":[[-0.11322442793339735,0.6142021599971459,-1.6459977147280438,-2.221224023737628],[-0.44084569794528516,0.06199968018365251,-0.5683098795324047,0.6929185947616869],[-0.8606067472887722,0.5770616339642819,1.2949992665603764,1.5898955355476483],[0.6465842310216101,0.08610764882842352,0.8973770176345724,0.4797062865939313],[-1.6207383562057216,-1.4865312519036862,0.8496792435894965,-1.1462265780384053],[0.630921692501605,-1.2889217587130062,-1.3541134377032817,-0.34119979121241173],[-1.8890316815988646,-0.5489024591242787,1.6845759123805837,0.4709144301102559]],"k":[[0.32238988495137266,1.167926790701921,-0.11691201243507184,1.8349260270566028],[0.34874230231263365,-0.7124198211311915,-0.9054179012260697,-1.0323478843846265],[1.1037248115644052,-1.4494086598643514,0.24358836960774882,0.8295465756404582],[0.0007165514554352532,-1.1406707715045303,-1.8889033185106097,-0.11755570455633502],[1.9050287011012694,1.4515999543666023,-0.5314265496209744,0.8600498912309077],[0.01477878443725429,-0.5996855019602174,-1.1033180804815859,-1.932652356445374],[-0.08875693734455653,0.20456263984663256,1.5332632395491455,-0.32230891083612345]],"v":[[-0.9296661400227608,-0.151260188463782,-0.9372496823767221],[-0.40002573187322643,0.8889983732205177,1.1291233766293818],[-1.3465456339093114,-0.7600481383308078,0.24165654679446777],[1.7369748644243312,1.0981344979169236,1.0505776765809811],[0.5337804380305784,-0.9243902500248234,0.14844575976993635],[-1.2330291133671607,-0.44680915584011466,0.4224041534144453],[1.0355757169531845,0.8754176250461351,-1.04664442309921]],"causal":false,"output":[[-0.5926677048628073,0.012970705524068218,0.5955509818848359],[-0.031465022989740674,0.09144729249083502,0.1156497947322018],[-0.28719152015955113,0.0032772848256881473,-0.6504589715953588],[-0.1361447972717427,-0.12360115541568745,-0.18190475584647997],[-0.1469741500074924,0.2877717349545996,0.23670143747171224],[0.15990497256349528,0.36220343822110257,0.7103117874809425],[0.31352028926176445,0.4522019008126817,-0.5628083276367161]]},{"q":[[-0.11322442793339735,0.6142021599971459,-1.6459977147280438,-2.221224023737628],[-0.44084569794528516,0.06199968018365251,-0.5683098795324047,0.6929185947616869],[-0.8606067472887722,0.5770616339642819,1.2949992665603764,1.5898955355476483],[0.6465842310216101,0.08610764882842352,0.8973770176345724,0.4797062865939313],[-1.6207383562057216,-1.4865312519036862,0.8496792435894965,-1.1462265780384053],[0.630921692501605,-1.2889217587130062,-1.3541134377032817,-0.34119979121241173],[-1.8890316815988646,-0.5489024591242787,1.6845759123805837,0.4709144301102559]],"k":[[0.32238988495137266,1.167926790701921,-0.11691201243507184,1.8349260270566028],[0.34874230231263365,-0.7124198211311915,-0.9054179012260697,-1.0323478843846265],[1.1037248115644052,-1.4494086598643514,0.24358836960774882,0.8295465756404582],[0.0007165514554352532,-1.1406707715045303,-1.8889033185106097,-0.11755570455633502],[1.9050287011012694,1.4515999543666023,-0.5314265496209744,0.8600498912309077],[0.01477878443725429,-0.5996855019602174,-1.1033180804815859,-1.932652356445374],[-0.08875693734455653,0.20456263984663256,1.5332632395491455,-0.32230891083612345]],"v":[[-0.9296661400227608,-0.151260188463782,-0.9372496823767221],[-0.40002573187322643,0.8889983732205177,1.1291233766293818],[-1.3465456339093114,-0.7600481383308078,0.24165654679446777],[1.7369748644243312,1.0981344979169236,1.0505776765809811],[0.5337804380305784,-0.9243902500248234,0.14844575976993635],[-1.2330291133671607,-0.44680915584011466,0.4224041534144453],[1.0355757169531845,0.8754176250461351,-1.04664442309921]],"causal":true,"output":[[-0.9296661400227608,-0.151260188463782,-0.9372496823767221],[-0.7692278638378857,0.16385415676960946,-0.3113055013047096],[-0.9792507272035333,-0.21598790655530803,-0.6943930617907809],[-0.7976400538010572,-0.15778371578283604,-0.025764022315058133],[0.03211981913371508,0.5322607185679178,0.8345540229548929],[0.14582234309586947,0.3539498734230425,0.7385673429656571],[0.31352028926176445,0.4522019008126817,-0.5628083276367161]]}],"prefixes":[[-0.6306138999285164,0.8299370256884131,-0.6974401329803818],[-0.31687882219486024,0.4203727219735356,-0.4336437834728198],[-0.3486816852692064,0.7965762374340303,-0.04726733014513165],[-0.3745541810827719,1.178887139537027,0.3580005320697582],[-0.40916674916578955,0.3680193462360074,0.11528703328262253]],"cache":[{"layers":32,"heads":1,"width":128,"length":1,"bytes":16384},{"layers":32,"heads":1,"width":128,"length":1024,"bytes":16777216},{"layers":32,"heads":1,"width":128,"length":8192,"bytes":134217728},{"layers":32,"heads":2,"width":128,"length":1,"bytes":32768},{"layers":32,"heads":2,"width":128,"length":1024,"bytes":33554432},{"layers":32,"heads":2,"width":128,"length":8192,"bytes":268435456},{"layers":32,"heads":8,"width":128,"length":1,"bytes":131072},{"layers":32,"heads":8,"width":128,"length":1024,"bytes":134217728},{"layers":32,"heads":8,"width":128,"length":8192,"bytes":1073741824}]}}</script>
+<script>
+/* Shared by every week's demo.js; scripts/build_demo.py puts this in front of it. */
+
+// TXT("key", {n: 12}) — a text chunk from demo/text/*.md with its {n} placeholders filled; see scripts/demo_text.py
+function TXT(key, vars) {
+  const t = document.querySelector(`template[data-text="${key}"]`);
+  if (!t) throw new Error("no text chunk '" + key + "' — add it to demo/text/");
+  let s = t.innerHTML;
+  if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
+  return s;
+}
+
+// reference lists (demo/text, `## end-refs`): external links open in a new tab
+document.querySelectorAll('.prose.footnote a[href^="http"]').forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
+
+/* The questions of a lecture page. scripts/build_demo.py puts this in front of the week's demo/lecture/lecture.js;
+   the questions themselves are parsed from demo/lecture/text/*.md by scripts/quiz_text.py into #quiz-data.
+
+   lecture.js registers what the markdown cannot hold:
+     QUIZ.figs.name = host => { ...draw an SVG into host... }   for every <div data-fig="name"></div> in a question
+                                                                 or an answer; a `point` question's clickable parts
+                                                                 carry data-pick="key" matching its options
+     QUIZ.values.name = 0.631                                     for a fill answer written as `@name`
+   Answers are kept in localStorage per page (meta[name=quiz-store]) so a student can leave and come back;
+   "Reset answers" in the rail clears them. Nothing here depends on the seminar's demo_data. */
+"use strict";
+const quizRu = document.documentElement.lang === "ru";
+const qt = (en, ru) => quizRu ? ru : en;
+const QUIZ = { figs: {}, values: {}, data: null, state: null };
+
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const DATA = JSON.parse($("#quiz-data").textContent);
+  const STORE = "quiz:" + (($('meta[name="quiz-store"]') || {}).content || location.pathname);
+  const load = () => { try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { return {}; } };
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* private window: answers live until reload */ } };
+  let state = load();
+  QUIZ.data = DATA; QUIZ.state = () => state;
+
+  /* ------------------------------------------------------------- figures */
+  function drawFigs(root) {
+    $$("[data-fig]", root).forEach(h => {
+      if (h.dataset.drawn) return;
+      const f = QUIZ.figs[h.dataset.fig];
+      if (f) { f(h); h.dataset.drawn = "1"; }
+      else h.innerHTML = `<div class="qz-nofig">figure “${esc(h.dataset.fig)}” is not drawn in lecture.js</div>`;
+    });
+  }
+
+  /* -------------------------------------------------------------- answers */
+  const norm = s => String(s).toLowerCase().replace(/[×*]/g, "x").replace(/\s+/g, " ").replace(/[.,;:]+$/, "").trim();
+  const num = s => { const v = parseFloat(String(s).replace(",", ".").replace(/[^0-9eE+.\-]/g, "")); return isNaN(v) ? null : v; };
+  function expected(alt) {
+    if (alt.startsWith("@")) {
+      const v = QUIZ.values[alt.slice(1)];
+      if (v === undefined) throw new Error(`QUIZ.values.${alt.slice(1)} is not set in lecture.js`);
+      return v;
+    }
+    return alt;
+  }
+  function matches(given, blank) {
+    for (const alt of blank.alts) {
+      const e = expected(alt);
+      const en = typeof e === "number" ? e : num(e);
+      if (en !== null && (blank.tol != null || typeof e === "number" || /^[-+]?[0-9.,eE]+$/.test(String(e).trim()))) {
+        const g = num(given); if (g === null) continue;
+        const dec = (String(e).split(".")[1] || "").length;
+        const tol = Math.max(blank.tol || 0, dec ? 0.5 * Math.pow(10, -dec) : 0, Math.abs(en) * 1e-9);
+        if (Math.abs(g - en) <= tol) return true;
+      } else if (norm(given) === norm(e)) return true;
+    }
+    return false;
+  }
+  const shown = blank => { const e = expected(blank.alts[0]); return typeof e === "number" ? (blank.tol != null ? +e.toFixed(Math.max(0, Math.ceil(-Math.log10(blank.tol)))) : +e.toFixed(3)) : e; };
+
+  /* `{name}` in a question, an option or an answer -> QUIZ.values.name (a number the browser computed), so the
+     markdown holds the sentence and never the number */
+  const fmtv = v => typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(3)) : String(v);
+  const fill = html => html.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? esc(fmtv(QUIZ.values[k])) : m);
+
+  /* ------------------------------------------------------------ rendering */
+  const KIND = {
+    pick: q => q.multi ? qt("tick all that apply", "выберите всё подходящее") : qt("pick one", "выберите один ответ"),
+    point: q => q.multi ? qt("click everything that fits", "отметьте части схемы") : qt("click in the picture", "выберите на схеме"),
+    sort: () => qt("sort into bins", "распределите по группам"), fill: () => qt("fill in", "заполните пропуски"), write: () => qt("write, then reveal", "ответьте, затем откройте разбор"),
+  };
+  const pad = n => String(n).padStart(2, "0");
+
+  function render(q) {
+    const host = $(`.qz[data-q="${q.key}"]`);
+    const st = state[q.key] || (state[q.key] = {});
+    host.dataset.type = q.type;
+    host.classList.toggle("done", !!st.done);
+    host.innerHTML = `<div class="qz-head"><span class="qz-n">${pad(q.n)}</span><span class="qz-kind">${KIND[q.type](q)}</span></div>
+      <div class="qz-q">${fill(q.q)}</div><div class="qz-ui"></div>
+      <div class="qz-a" hidden>${fill(q.a)}${q.miss ? `<p class="qz-miss"><b>${qt("if the answer is", "если ответили так:")}</b>${fill(q.miss)}</p>` : ""}</div>`;
+    drawFigs(host);
+    UI[q.type](q, host, st);
+    if (st.done) finish(q, host, st, true);
+  }
+
+  function row(extra) { return `<div class="btnrow qz-row">${extra || ""}<span class="qz-verdict"></span></div>`; }
+  const verdict = (host, text, ok) => { const v = $(".qz-verdict", host); v.textContent = text; v.className = "qz-verdict " + (ok === true ? "ok" : ok === false ? "no" : ""); };
+
+  const UI = {
+    pick(q, host, st) { UI.point(q, host, st); },
+    point(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<div class="picklist qz-opts">${q.opts.map(o => `<button data-k="${esc(o.k)}">${fill(o.label)}</button>`).join("")}</div>`
+        + row(q.multi ? `<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>` : "");
+      st.sel = st.sel || [];
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      parts.forEach(p => p.classList.add("qz-pickable"));
+      const btns = $$(".qz-opts button", host);
+      const keyOf = el => el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+      const paint = () => {
+        [...btns, ...parts].forEach(el => el.classList.toggle("pick", st.sel.includes(keyOf(el))));
+        const ck = $(".qz-check", host); if (ck) ck.disabled = !st.sel.length;
+      };
+      const choose = k => {
+        if (st.done) return;
+        if (q.multi) { st.sel = st.sel.includes(k) ? st.sel.filter(x => x !== k) : [...st.sel, k]; paint(); save(); }
+        else { st.sel = [k]; finish(q, host, st); }
+      };
+      btns.forEach(b => b.addEventListener("click", () => choose(b.dataset.k)));
+      parts.forEach(p => p.addEventListener("click", () => choose(p.dataset.pick)));
+      const ck = $(".qz-check", host); if (ck) ck.addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    sort(q, host, st) {
+      const ui = $(".qz-ui", host);
+      st.sel = st.sel || {};
+      ui.innerHTML = `<table class="qz-sort"><tbody>${q.items.map((it, i) => `<tr data-i="${i}"><td class="qz-item">${fill(it.label)}</td>
+        <td class="qz-bins">${q.bins.map(b => `<button data-b="${esc(b)}">${esc(b)}</button>`).join("")}</td></tr>`).join("")}</tbody></table>`
+        + row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button><span class="qz-count mono"></span>`);
+      const paint = () => {
+        $$("tr", ui).forEach(tr => $$("button", tr).forEach(b => b.classList.toggle("pick", st.sel[tr.dataset.i] === b.dataset.b)));
+        const n = Object.keys(st.sel).length;
+        $(".qz-check", host).disabled = n < q.items.length;
+        $(".qz-count", host).textContent = st.done ? "" : qt(`${n} / ${q.items.length} placed`, `${n} / ${q.items.length} распределено`);
+      };
+      ui.addEventListener("click", e => {
+        const b = e.target.closest("button[data-b]"); if (!b || st.done) return;
+        st.sel[b.closest("tr").dataset.i] = b.dataset.b; paint(); save();
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    fill(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = row(`<button class="primary qz-check" disabled>${qt("Check", "Проверить")}</button>`);
+      st.vals = st.vals || {};
+      const inputs = $$("input.qz-blank", host);
+      const paint = () => { $(".qz-check", host).disabled = inputs.some(i => !i.value.trim()); };
+      inputs.forEach(i => {
+        i.value = st.vals[i.dataset.blank] || "";
+        i.addEventListener("input", () => { st.vals[i.dataset.blank] = i.value; paint(); save(); });
+        i.addEventListener("keydown", e => { if (e.key === "Enter" && !$(".qz-check", host).disabled) finish(q, host, st); });
+      });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+      paint();
+    },
+    write(q, host, st) {
+      const ui = $(".qz-ui", host);
+      ui.innerHTML = `<textarea class="qz-text" rows="3" placeholder="${qt("Your answer, in a few sentences — then reveal.", "Ваш ответ в нескольких предложениях")}"></textarea>`
+        + row(`<button class="primary qz-check">${qt("Reveal", "Открыть разбор")}</button>`);
+      const ta = $("textarea", ui);
+      ta.value = st.text || "";
+      ta.addEventListener("input", () => { st.text = ta.value; save(); });
+      $(".qz-check", host).addEventListener("click", () => finish(q, host, st));
+    },
+  };
+
+  function finish(q, host, st, restoring) {
+    st.done = true;
+    host.classList.add("done");
+    const ck = $(".qz-check", host); if (ck) ck.remove();
+    if (q.type === "pick" || q.type === "point") {
+      const right = new Set(q.opts.filter(o => o.right).map(o => o.k));
+      const parts = $$("[data-pick]", $(".qz-q", host));
+      [...$$(".qz-opts button", host), ...parts].forEach(el => {
+        const k = el.dataset.k !== undefined ? el.dataset.k : el.dataset.pick;
+        el.classList.remove("pick");
+        el.classList.toggle("right", right.has(k));
+        el.classList.toggle("wrong", st.sel.includes(k) && !right.has(k));
+        el.classList.toggle("missed", right.has(k) && !st.sel.includes(k));
+        el.disabled = true;
+      });
+      const hit = st.sel.filter(k => right.has(k)).length, wrong = st.sel.length - hit, missed = right.size - hit;
+      if (!q.multi) verdict(host, hit ? qt("right", "верно") : qt("not quite", "не совсем"), !!hit);
+      else verdict(host, wrong + missed === 0 ? qt("all of them", "всё верно") : qt(`${hit} right · ${wrong} wrong · ${missed} missed`, `${hit} верно · ${wrong} ошибочно · ${missed} пропущено`), wrong + missed === 0);
+    } else if (q.type === "sort") {
+      let agree = 0;
+      $$("table.qz-sort tr", host).forEach(tr => {
+        const it = q.items[+tr.dataset.i], chosen = st.sel[tr.dataset.i], ok = it.bins.includes(chosen);
+        agree += ok ? 1 : 0;
+        $$("button", tr).forEach(b => {
+          b.classList.remove("pick"); b.disabled = true;
+          b.classList.toggle("right", b.dataset.b === chosen && ok);
+          b.classList.toggle("wrong", b.dataset.b === chosen && !ok);
+          b.classList.toggle("ans", it.bins.includes(b.dataset.b) && b.dataset.b !== chosen);
+        });
+      });
+      $(".qz-count", host).textContent = "";
+      verdict(host, qt(`${agree} of ${q.items.length} agree with the answer`, `${agree} / ${q.items.length} верно`), agree === q.items.length ? true : agree >= q.items.length * 0.7 ? null : false);
+    } else if (q.type === "fill") {
+      let ok = 0;
+      $$("input.qz-blank", host).forEach(i => {
+        const b = q.blanks.find(x => x.id === i.dataset.blank), good = matches(i.value, b);
+        ok += good ? 1 : 0;
+        i.classList.toggle("right", good); i.classList.toggle("wrong", !good); i.readOnly = true;
+        if (!good && !i.nextElementSibling?.classList.contains("qz-exp")) i.insertAdjacentHTML("afterend", `<span class="qz-exp">${esc(shown(b))}</span>`);
+      });
+      verdict(host, ok === q.blanks.length ? qt("right", "верно") : `${ok} / ${q.blanks.length}`, ok === q.blanks.length);
+    } else if (q.type === "write") {
+      $("textarea", host).readOnly = false;
+      if (q.check.length && !$(".qz-ticks", host)) {
+        st.ticks = st.ticks || [];
+        $(".qz-ui", host).insertAdjacentHTML("beforeend", `<div class="qz-ticks"><div class="qz-ticks-k">${qt("tick what your answer had", "отметьте, что было в вашем ответе")}</div>${q.check.map((c, i) =>
+          `<label><input type="checkbox" data-i="${i}" ${st.ticks.includes(i) ? "checked" : ""}> <span>${fill(c)}</span></label>`).join("")}</div>`);
+        $(".qz-ticks", host).addEventListener("change", e => {
+          const i = +e.target.dataset.i; st.ticks = e.target.checked ? [...new Set([...st.ticks, i])] : st.ticks.filter(x => x !== i); save();
+        });
+      }
+    }
+    const a = $(".qz-a", host); a.hidden = false; drawFigs(a);
+    if (!restoring) save();
+    progress();
+  }
+
+  /* ------------------------------------------------------------- progress */
+  const isOptional = host => !!host.closest("details.optional");
+  function progress() {
+    const hosts = $$(".qz"), main = hosts.filter(h => !isOptional(h)), opt = hosts.filter(isOptional);
+    const done = l => l.filter(h => h.classList.contains("done")).length;
+    const el = $("#quiz-progress"); if (!el) return;
+    el.textContent = qt(`answered ${done(main)} / ${main.length}`, `отвечено ${done(main)} / ${main.length}`) + (opt.length ? qt(` · ${done(opt)} / ${opt.length} optional`, ` · ${done(opt)} / ${opt.length} дополнительно`) : "");
+    $$(".optional-count").forEach(c => { const l = $$(".qz", c.closest("details")); c.textContent = `${done(l)} / ${l.length}`; });
+  }
+
+  /* ----------------------------------------------------------------- rail */
+  const nav = $("#nav");
+  if (nav) {
+    const secs = $$("main section").filter(s => s.id && $("h2", s));
+    nav.innerHTML = secs.map((s, i) => `<a href="#${s.id}"><span>${pad(i + 1)}</span><span>${esc($("h2", s).textContent)}</span></a>`).join("");
+    const links = $$("a", nav);
+    const onScroll = () => {
+      const y = window.scrollY + 120; let cur = 0;
+      secs.forEach((s, i) => { if (s.offsetTop <= y) cur = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === cur));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  }
+  const theme = $("#btn-theme");
+  if (theme) theme.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+  const reset = $("#btn-reset");
+  if (reset) {
+    let armed = 0;
+    reset.addEventListener("click", () => {
+      if (Date.now() - armed > 4000) { armed = Date.now(); reset.textContent = qt("Click again to reset", "Ещё раз для сброса"); setTimeout(() => { reset.textContent = qt("Reset answers", "Сбросить ответы"); }, 4000); return; }
+      QUIZ.reset();
+      reset.textContent = qt("Reset answers", "Сбросить ответы");
+    });
+  }
+  QUIZ.reset = () => { state = {}; save(); $$("[data-fig]").forEach(h => delete h.dataset.drawn); Object.values(DATA).forEach(render); progress(); };
+
+  /* ----------------------------------------------------------------- go */
+  (function fillProse() {   // `{name}` in the page's own prose, text nodes only, so markup and figures are untouched
+    const walker = document.createTreeWalker(document.querySelector("main") || document.body, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walker.nextNode()) if (/\{[a-z][a-z0-9_]*\}/.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+    nodes.forEach(n => { n.nodeValue = n.nodeValue.replace(/\{([a-z][a-z0-9_]*)\}/g, (m, k) => k in QUIZ.values ? fmtv(QUIZ.values[k]) : m); });
+  })();
+  drawFigs(document);
+  Object.values(DATA).sort((a, b) => a.n - b.n).forEach(render);
+  progress();
+});
+
+/* Схемы и связи со строками кода для страниц ADD. */
+const ADD = {
+  esc: s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
+  svg(content, width=760, height=180, label='Схема') {
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${this.esc(label)}"><defs><marker id="arrow-${++this.serial}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" style="fill:var(--ink-3)"/></marker></defs>${content.replaceAll('MARKER', 'arrow-'+this.serial)}</svg>`;
+  },
+  serial: 0,
+  text(x,y,label,cls='',anchor='middle') {
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" class="${cls}">${this.esc(label)}</text>`;
+  },
+  box(x,y,w,h,lines,key='',pick='') {
+    return `<g ${key?`data-f="${key}" tabindex="0"`:''} ${pick?`data-pick="${pick}"`:''}><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/>${lines.map((line,i)=>this.text(x+w/2,y+h/2+(i-(lines.length-1)/2)*23+5,line)).join('')}${pick?`<rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/>`:''}</g>`;
+  },
+  arrow(x1,y1,x2,y2) { return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#MARKER)"/>`; },
+  flow(items, label='Последовательность преобразований') {
+    const w=760/items.length;
+    return this.svg(items.map((a,i)=>this.box(i*w+6,30,w-30,90,a.lines,a.key,a.pick)+(i<items.length-1?this.arrow((i+1)*w-24,75,(i+1)*w+1,75):'')).join(''),760,150,label);
+  },
+  table(headers, rows) {
+    return '<table class="add-table"><thead><tr>'+headers.map(h=>'<th>'+this.esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(v=>'<td>'+this.esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+  },
+  softmax(values) { const m=Math.max(...values), ex=values.map(v=>Math.exp(v-m)), z=ex.reduce((a,b)=>a+b,0); return ex.map(v=>v/z); },
+  link(scope,key,on) { scope.querySelectorAll('[data-f]').forEach(n=>n.classList.toggle('hi',on && n.dataset.f===key)); },
+};
+for(const event of ['pointerover','focusin']) document.addEventListener(event,e=>{
+  const node=e.target.closest('[data-f]'), scope=node?.closest('[data-link-scope]');
+  if(scope) ADD.link(scope,node.dataset.f,true);
+});
+for(const event of ['pointerout','focusout']) document.addEventListener(event,e=>{
+  const node=e.target.closest('[data-f]'), scope=node?.closest('[data-link-scope]');
+  if(scope) ADD.link(scope,node.dataset.f,false);
+});
+
+/* Расчёты и отрисовка учебных примеров двух лекций о трансформерах. */
+const Transformer = {
+  dot: (a, b) => a.reduce((s, x, i) => s + x * b[i], 0),
+  rotate(x, position, theta = 10000) {
+    const out = [];
+    for (let i = 0; i < x.length; i += 2) {
+      const angle = position / theta ** (i / x.length), c = Math.cos(angle), s = Math.sin(angle);
+      out.push(x[i] * c - x[i + 1] * s, x[i] * s + x[i + 1] * c);
+    }
+    return out;
+  },
+  norm(x, rms = false, eps = 1e-5) {
+    const mean = rms ? 0 : x.reduce((s, v) => s + v, 0) / x.length;
+    const scale = Math.sqrt(x.reduce((s, v) => s + (v - mean) ** 2, 0) / x.length + eps);
+    return x.map(v => (v - mean) / scale);
+  },
+  silu: x => x / (1 + Math.exp(-x)),
+  gelu: x => x / 2 * (1 + Math.tanh(Math.sqrt(2 / Math.PI) * (x + 0.044715 * x ** 3))),
+  gate(value, gate, kind) { return value.map((x, i) => x * this[kind](gate[i])); },
+  cacheBytes(layers, heads, width, length, bytes = 2) { return 2 * layers * heads * width * length * bytes; },
+  group(query, queryHeads, kvHeads) { return Math.floor(query / (queryHeads / kvHeads)); },
+  attention(q, k, v, causal = false) {
+    return q.map((row, i) => {
+      const scores = k.map((key, j) => causal && j > i ? -Infinity : this.dot(row, key) / Math.sqrt(row.length));
+      const weights = ADD.softmax(scores);
+      return v[0].map((_, d) => weights.reduce((s, a, j) => s + a * v[j][d], 0));
+    });
+  },
+  /* Плиточный softmax с накоплением максимума, знаменателя и взвешенной суммы. */
+  tiled(q, k, v, causal = false, tile = 2) {
+    const trace = [], width = v[0].length;
+    const output = q.map((row, i) => {
+      let m = -Infinity, l = 0, acc = Array(width).fill(0);
+      for (let start = 0; start < k.length; start += tile) {
+        const stop = Math.min(k.length, start + tile);
+        const scores = k.slice(start, stop).map((key, j) => causal && start + j > i ? -Infinity : this.dot(row, key) / Math.sqrt(row.length));
+        const next = Math.max(m, ...scores);
+        if (next === -Infinity) continue;
+        const alpha = m === -Infinity ? 0 : Math.exp(m - next);
+        const p = scores.map(s => Math.exp(s - next));
+        acc = acc.map((a, d) => alpha * a + p.reduce((sum, weight, j) => sum + weight * v[start + j][d], 0));
+        l = alpha * l + p.reduce((a, b) => a + b, 0); m = next;
+        trace.push({row: i, start, stop, m, l, acc: [...acc], output: acc.map(a => a / l)});
+      }
+      return acc.map(a => a / l);
+    });
+    return {output, trace};
+  },
+  fill: (c = '--cls-0', p = 20) => `color-mix(in srgb,var(${c}) ${p}%,var(--panel))`,
+  rect(x, y, w, h, color = '--cls-0', selected = false) {
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" style="fill:${this.fill(color, selected ? 40 : 15)};stroke:var(${selected ? color : '--rule-strong'});stroke-width:${selected ? 2 : 1}"/>`;
+  },
+  cell(x, y, w, h, label, color = '--cls-0', selected = false) {
+    return this.rect(x,y,w,h,color,selected) + ADD.text(x+w/2,y+h/2+5,label);
+  },
+  vec(x, y, values, color = '--cls-0', selected = false, cw = 28, ch = 24) {
+    return values.map((v, i) => this.rect(x+i*cw,y,cw,ch,color,selected) + (v === '' ? '' : ADD.text(x+(i+.5)*cw,y+ch/2+4,typeof v === 'number' ? v.toFixed(2) : v,'num'))).join('');
+  },
+  path(d, color = '--ink-3', arrow = true) {
+    return `<path d="${d}" style="fill:none;stroke:var(${color})"${arrow ? ' marker-end="url(#MARKER)"' : ''}/>`;
+  },
+  clickable(content, attribute, value) {
+    return `<g ${attribute}="${value}" tabindex="0" role="button">${content}</g>`;
+  },
+  mount(host, content, height, label) { host.classList.add('transformer-fig'); host.innerHTML = ADD.svg(content,760,height,label); },
+};
+
+/* Причинный трансформер, пошаговая генерация, кэш, GQA и плиточный attention. */
+const GPT_DATA=JSON.parse(document.getElementById('add-data').textContent);
+const GPT={
+  generated:0,trainingRevealed:false,cacheStage:0,flashStep:0,flashPhase:0,moeToken:0,
+  allowed(mode,i,j){return mode==='bert'||j<=i;},
+  architecture(host){
+    const T=Transformer,mode=document.getElementById('architecture-mode').value,i=+document.getElementById('architecture-query').value;
+    let s=ADD.text(200,25,mode==='gpt'?'причинная маска':'двунаправленная маска','caption');
+    for(let r=0;r<5;r++)for(let c=0;c<5;c++)s+=T.rect(65+c*48,58+r*36,44,32,this.allowed(mode,r,c)?'--cls-0':'--ink-3',this.allowed(mode,r,c)&&r===i);
+    s+=ADD.text(200,270,'строки: запросы · столбцы: ключи','small');
+    const tokens=['the','cat','is','at','home'];
+    tokens.forEach((t,j)=>{
+      const x=370+j*76;
+      s+=T.cell(x,400,68,32,t,'--cls-0',j===i)+T.path(`M ${x+34} 399 V 369`)+T.vec(x+10,342,['','',''],'--cls-0',j===i,16,20)+T.path(`M ${x+34} 341 V 321`);
+      s+=T.vec(x+10,170,['','',''],'--cls-0',j===i,16,20)+T.path(`M ${x+34} 169 V 148`);
+      s+=T.cell(x,103,68,33,mode==='gpt'?'P(next)':'hᵢ','--cls-1',j===i);
+    });
+    s+=T.cell(370,278,372,36,mode==='gpt'?'causal self-attention':'self-attention','--cls-2');
+    tokens.forEach((_,j)=>s+=T.cell(370+j*76,220,68,32,'FFN','--cls-3',j===i));
+    s+=ADD.text(550,67,mode==='gpt'?'финальная норма → словарь':'контекстные представления','small');
+    s+=ADD.text(380,475,'тело возвращает векторы; словарная голова GPT предсказывает следующий токен','small');
+    T.mount(host,s,505,'Маска attention, столбцы токенов и выходная голова BERT или GPT');
+  },
+  training(host){
+    const T=Transformer,mode=document.getElementById('training-mode').value,shift=+document.getElementById('training-shift').value;
+    let s='';
+    const showTrain=mode==='train';
+    if(showTrain){
+      const input=['BOS','the','cat','sleeps','.'],targets=['the','cat','sleeps','.','EOS'];
+      s+=ADD.text(380,25,'цель над позицией — ваш выбор сдвига','caption');
+      input.forEach((t,i)=>{
+        const x=95+i*120;
+        s+=T.cell(x,220,102,35,t,'--cls-0')+T.path(`M ${x+51} 219 V 180`)+T.vec(x+21,145,['','',''],'--cls-2',false,20,24)+T.path(`M ${x+51} 144 V 112`);
+        s+=T.cell(x,65,102,35,shift?targets[i]:t,this.trainingRevealed?(shift?'--cls-2':'--cls-1'):'--cls-3',this.trainingRevealed);
+      });
+      s+=ADD.text(380,300,'все входные токены известны; будущие позиции закрыты причинной маской','small');
+    }else{
+      const n=this.generated,start=Math.max(0,n-5),tokens=GPT_DATA.generation.tokens.slice(start,n);
+      s+=ADD.text(380,25,'запрос → выбор токена → добавить ко входу','caption');
+      s+=T.cell(38,80,165,40,'известный запрос','--cls-0');
+      tokens.forEach((t,i)=>{const x=220+i*82;s+=T.cell(x,80,76,40,t.replaceAll('\n','↵'),'--cls-1',start+i===n-1);});
+      s+=T.cell(210,170,340,40,'причинный трансформер → P(next)','--cls-2')+T.path('M 380 121 V 168');
+      s+=ADD.text(380,265,`${n} из ${GPT_DATA.generation.tokens.length} сохранённых новых токенов`,'caption');
+    }
+    T.mount(host,s,335,'Сдвинутые цели обучения и последовательное добавление токенов');
+    document.getElementById('training-result').textContent=showTrain?(this.trainingRevealed?(shift?'Верно: предсказываем следующий токен.':'Текущий токен уже находится во входе. Нужен сдвиг на следующий токен.'):'Сопоставьте входы и цели, затем проверьте.'): 'Сохранённое продолжение GPT-2; это чтение результата из артефакта.';
+    const gen=GPT_DATA.generation;
+    document.getElementById('generation-text').innerHTML=showTrain?'':ADD.esc(gen.prompt.join(''))+'<mark>'+ADD.esc(gen.tokens.slice(0,this.generated).join(''))+'</mark>';
+    document.getElementById('generation-next').disabled=showTrain||this.generated===gen.tokens.length;
+    document.getElementById('training-reveal').disabled=!showTrain;
+    document.getElementById('training-shift').disabled=!showTrain;
+  },
+  cacheCounts(stage=this.cacheStage,cache=true){
+    if(!stage)return {length:4,newPositions:0,total:0,stored:0};
+    const length=stage+3,newPositions=cache&&stage>1?1:length;
+    const total=cache?length:stage*4+stage*(stage-1)/2;
+    return {length,newPositions,total,stored:cache&&stage>1?length-1:0};
+  },
+  cache(host){
+    const T=Transformer,on=document.getElementById('cache-mode').value==='cache',stage=this.cacheStage,state=this.cacheCounts(stage,on),n=state.length;
+    let s=ADD.text(380,25,stage===0?'запрос ещё не обработан':stage===1?'prefill: все позиции запроса':'decode: подаём выбранный токен','caption');
+    const tokens=['The','cat','is','asleep','.','It','dreams','now'];
+    for(let i=0;i<n;i++){
+      const x=65+i*84,old=i<state.stored,color=old?'--ink-3':'--cls-1';
+      s+=T.cell(x,70,74,32,tokens[i],'--cls-0');
+      if(stage){
+        s+=`<g data-f="keys">${T.cell(x,155,74,32,`K${i}`,color,!old)}</g>`;
+        s+=`<g data-f="values">${T.cell(x,205,74,32,`V${i}`,color,!old)}</g>`;
+        if(!old)s+=`<g data-f="new">${T.path(`M ${x+37} 104 V 150`,color)}</g>`;
+      }
+    }
+    if(stage){
+      for(let i=0;i<n;i++)s+=T.path(`M ${102+i*84} 239 V 261`,'--cls-2',false);
+      s+=T.path(`M 102 261 H ${102+(n-1)*84}`,'--cls-2',false)+T.path(`M ${102+(n-1)*42} 261 V 282 H 380 V 298`,'--cls-2');
+      s+=`<g data-f="new">${T.cell(65,300,74,40,`Q${n-1}`,'--cls-1',true)}</g>`+T.path('M 141 320 H 198','--cls-1');
+      s+=`<g data-f="read">${T.cell(200,300,360,40,'softmax(Q Kᵀ / √d) @ V','--cls-2')}</g>`;
+      s+=T.path('M 380 342 V 365')+T.cell(160,370,440,38,'P(next) → выбираем следующий токен','--cls-1');
+    }
+    s+=ADD.text(380,450,on?'K,V хранятся отдельно в каждом слое':'на этом шаге K,V вычислены для всего префикса','small');
+    T.mount(host,s,478,'Новые и сохранённые ключи и значения в prefill и decode');
+    document.getElementById('cache-next').textContent=stage?'Подать выбранный токен':'Обработать запрос';
+    document.getElementById('cache-next').disabled=stage>=5;
+    document.getElementById('cache-result').textContent=stage?`Позиций на шаге: ${state.newPositions}; всего обработано: ${state.total}; позиций K,V сейчас: ${on?n:0}. Распределений нового токена получено: ${stage}.`:'Нажмите «Обработать запрос»: prefill даст распределение первого нового токена.';
+  },
+  gqa(host){
+    const T=Transformer,heads=+document.getElementById('gqa-heads').value,length=+document.getElementById('gqa-length').value;
+    let s=ADD.text(380,25,heads===8?'MHA · K,V для каждой головы Q':heads===1?'MQA · одна пара K,V для всех Q':'GQA · общая пара K,V внутри группы','caption');
+    for(let i=0;i<8;i++){
+      const x=35+i*88,group=T.group(i,8,heads),gx=35+(group+.5)*(704/heads);
+      s+=`<g data-f="group">${T.cell(x,65,74,35,`Q${i}`,`--cls-${group%4}`)}</g>`;
+      s+=T.path(`M ${x+37} 101 V 135 L ${gx} 185`,`--cls-${group%4}`);
+    }
+    for(let g=0;g<heads;g++){
+      const x=35+(g+.5)*704/heads-35;
+      s+=`<g data-f="shared">${T.cell(x,190,70,34,`K${g}`,`--cls-${g%4}`)}${T.cell(x,245,70,34,`V${g}`,`--cls-${g%4}`)}</g>`;
+    }
+    s+=ADD.text(380,330,'головы Q остаются отдельными; K,V разделяются внутри группы','small');
+    T.mount(host,s,355,'Соответствие восьми голов Q общим головам K и V');
+    document.getElementById('gqa-length-value').textContent=length;
+    const bytes=T.cacheBytes(32,heads,128,length);
+    document.getElementById('gqa-result').textContent=`2 × 32 × ${length} × ${heads} × 128 × 2 = ${bytes.toLocaleString('ru-RU')} байт · ${(bytes/2**20).toFixed(2)} MiB на один запрос.`;
+  },
+  flashData(){return GPT_DATA.reference.attention[2];},
+  flashFlow(host){
+    const T=Transformer,phase=this.flashPhase;
+    const part=(n,content)=>`<g data-flash-phase="${n}" opacity="${phase && phase !== n ? 0.23 : 1}">${content}</g>`;
+    const pillar=(x,w,color)=>T.rect(x,72,w,430,color).replace('rx="4"','rx="22"');
+    const arrow=(x1,x2,y,label,n,second='')=>part(n,
+      ADD.text((x1+x2)/2,y-(second?32:14),label,'small')+
+      (second?ADD.text((x1+x2)/2,y-14,second,'small'):'')+
+      T.path(`M ${x1} ${y} H ${x2}`,`--cls-${n===1?0:n===2?2:3}`));
+    let s=ADD.text(254,29,'Обычный attention','caption')+ADD.text(786,29,'FlashAttention','caption');
+    s+=T.path('M 520 55 V 512','--rule-strong',false);
+    for(const [memory,compute] of [[18,280],[550,812]]){
+      s+=pillar(memory,100,'--cls-0')+pillar(compute,210,'--cls-1');
+      s+=ADD.text(memory+50,106,'HBM','strong')+ADD.text(memory+50,131,'память','small');
+      s+=ADD.text(compute+105,106,'Вычисления','strong');
+    }
+    s+=ADD.text(385,130,'отдельные запуски','small')+ADD.text(917,130,'один kernel','small');
+    s+=ADD.text(68,169,'Q, K, V','num');
+    s+=part(1,T.cell(31,199,74,34,'S','--cls-0',phase===1)+ADD.text(68,253,'N × N','num'));
+    s+=part(2,T.cell(31,324,74,34,'P','--cls-2',phase===2)+ADD.text(68,378,'N × N','num'));
+    s+=part(3,T.cell(31,450,74,34,'O','--cls-3',phase===3));
+    s+=arrow(120,278,154,'Чтение Q, K',1)+arrow(278,120,217,'Запись S',1);
+    s+=arrow(120,278,279,'Чтение S',2)+arrow(278,120,342,'Запись P',2);
+    s+=arrow(120,278,404,'Чтение P, V',3)+arrow(278,120,467,'Запись O',3);
+    s+=part(1,T.cell(291,156,188,45,'S = QKᵀ / √d','--cls-0',phase===1));
+    s+=part(2,T.cell(291,281,188,45,'P = softmax(S)','--cls-2',phase===2));
+    s+=part(3,T.cell(291,406,188,45,'O = PV','--cls-3',phase===3));
+    s+=ADD.text(385,484,'полные матрицы S и P','small');
+    s+=T.cell(563,166,74,34,'K, V','--cls-0');
+    s+=T.cell(563,267,74,34,'Q','--cls-0');
+    s+=T.cell(563,369,74,34,'O, ℓ, m','--cls-3');
+    s+=arrow(652,810,164,'Чтение Kⱼ, Vⱼ',1);
+    s+=arrow(652,810,241,'Чтение Qᵢ, Oᵢ',1,'и ℓᵢ, mᵢ');
+    s+=arrow(810,652,451,'Запись Oᵢ,',3,'ℓᵢ, mᵢ');
+    s+=part(1,T.rect(823,156,188,48,'--cls-0',phase===1)+ADD.text(917,185,'Sᵢⱼ = QᵢKⱼᵀ / √d','num'));
+    s+=part(2,T.rect(823,226,188,112,'--cls-2',phase===2)+
+      `<g data-f="maximum">${ADD.text(917,249,'m′ = max(m, max Sᵢⱼ)','num')}${ADD.text(917,273,'α = exp(m − m′)','num')}</g>`+
+      ADD.text(917,297,'Pᵢⱼ = exp(Sᵢⱼ − m′)','num')+
+      `<g data-f="denominator">${ADD.text(917,321,'ℓ′ = αℓ + ΣPᵢⱼ','num')}</g>`);
+    s+=part(3,T.rect(823,360,188,94,'--cls-3',phase===3)+
+      `<g data-f="accumulator">${ADD.text(917,386,'acc′ = αℓOᵢ + PᵢⱼVⱼ','num')}</g>`+
+      `<g data-f="output">${ADD.text(917,412,'Oᵢ ← acc′ / ℓ′','num')}</g>`+
+      ADD.text(917,438,'m ← m′ · ℓ ← ℓ′','num'));
+    s+=ADD.text(917,475,'SRAM и регистры','small');
+    s+=ADD.text(254,535,'S и P проходят через HBM','caption');
+    s+=ADD.text(786,535,'Sᵢⱼ и Pᵢⱼ остаются на чипе','caption');
+    s+=ADD.text(786,561,'чтения и записи повторяются для очередных плиток','small');
+    host.classList.add('transformer-fig','flash-flow');
+    host.innerHTML=ADD.svg(s,1040,585,'Обычный attention и FlashAttention: обмен данными между HBM и вычислениями на чипе');
+    const descriptions=[
+      'Показан весь расчёт. Кнопка выделяет один и тот же этап в двух реализациях.',
+      'Оценки QKᵀ: обычный вариант записывает всю S в HBM; FlashAttention получает Sᵢⱼ для текущих плиток на чипе.',
+      'Softmax: обычный вариант читает S и записывает P; FlashAttention обновляет максимум m и знаменатель ℓ внутри объединённого вычисления.',
+      'Выход: обычный вариант читает P,V и записывает O; FlashAttention обновляет Oᵢ и сохраняет Oᵢ,ℓᵢ,mᵢ для продолжения по плиткам.',
+    ];
+    document.getElementById('flash-flow-state').textContent=descriptions[phase];
+  },
+  flash(host){
+    const T=Transformer,data=this.flashData(),causal=document.getElementById('flash-mask').value==='causal',tile=+document.getElementById('flash-tile').value,row=+document.getElementById('flash-query').value,naive=document.getElementById('flash-mode').value==='naive';
+    const run=T.tiled(data.q,data.k,data.v,causal,tile),trace=run.trace.filter(t=>t.row===row),step=Math.min(this.flashStep,trace.length),current=step?trace[step-1]:null;
+    let s=ADD.text(165,25,'карта оценок S','caption')+ADD.text(525,25,'основная память GPU · HBM','caption');
+    for(let i=0;i<data.q.length;i++)for(let j=0;j<data.k.length;j++){
+      const allowed=!causal||j<=i,selected=current&&i===row&&j>=current.start&&j<current.stop;
+      s+=T.cell(35+j*51,70+i*41,48,37,allowed?(T.dot(data.q[i],data.k[j])/2).toFixed(2):'×',allowed?'--cls-0':'--ink-3',!!selected);
+    }
+    s+=T.rect(330,55,390,120,'--cls-0');
+    s+=ADD.text(525,83,'Q, K, V хранятся здесь','caption');
+    s+=ADD.text(525,112,`Q${row} = [${data.q[row].map(x=>x.toFixed(2)).join(', ')}]`,'num');
+    s+=ADD.text(525,146,naive?'S и P записываются сюда целиком':'S и P целиком сюда не записываются','small');
+    s+=T.path('M 525 177 V 214','--cls-1');
+    s+=T.rect(330,220,390,230,'--cls-2');
+    s+=ADD.text(525,249,'быстрая память на чипе · SRAM','caption');
+    if(naive){
+      const scores=data.k.map((key,j)=>causal&&j>row?-Infinity:T.dot(data.q[row],key)/2),weights=ADD.softmax(scores);
+      s+=ADD.text(525,287,`S${row}: ${scores.map(v=>v===-Infinity?'−∞':v.toFixed(2)).join(' · ')}`,'num');
+      s+=ADD.text(525,322,`P${row}: ${weights.map(v=>v.toFixed(3)).join(' · ')}`,'num');
+      s+=ADD.text(525,361,'softmax по полной строке → P @ V','small');
+      s+=ADD.text(525,407,`S,P: ${2*25} чисел · ${(2*25*8)} байт, FP64`,'num');
+    }else if(current){
+      const scores=data.k.slice(current.start,current.stop).map((key,j)=>causal&&current.start+j>row?-Infinity:T.dot(data.q[row],key)/2);
+      s+=ADD.text(525,284,`K,V: позиции ${current.start}…${current.stop-1}`,'num');
+      s+=ADD.text(525,316,`оценки плитки: ${scores.map(v=>v===-Infinity?'−∞':v.toFixed(3)).join(' · ')}`,'num');
+      s+=`<g data-f="maximum">${ADD.text(525,352,`m = ${current.m.toFixed(4)}`,'num')}</g>`;
+      s+=`<g data-f="denominator">${ADD.text(525,384,`l = ${current.l.toFixed(4)}`,'num')}</g>`;
+      s+=`<g data-f="accumulator">${ADD.text(525,418,`acc = [${current.acc.map(v=>v.toFixed(3)).join(', ')}]`,'num')}</g>`;
+    }else s+=ADD.text(525,320,'нажмите «Следующая плитка»','small');
+    const out=naive?T.attention(data.q,data.k,data.v,causal)[row]:current?.output;
+    s+=`<g data-f="output">${ADD.text(380,500,out?`выход${!naive&&step<trace.length?' после части ключей':''}: [${out.map(v=>v.toFixed(4)).join(', ')}]`:'накопитель пуст; выход ещё не получен','num')}</g>`;
+    s+=ADD.text(380,545,naive?'учёт только S,P: 2 записи + 2 чтения полной матрицы':'учёт только S,P: полные матрицы не передаются в HBM','small');
+    T.mount(host,s,573,'Плитки attention в HBM и SRAM с численным накопителем softmax');
+    const diff=Math.max(...run.output.flat().map((v,i)=>Math.abs(v-T.attention(data.q,data.k,data.v,causal).flat()[i])));
+    document.getElementById('flash-result').textContent=`${naive?'Полная строка':`Плиток запроса ${row}: ${step}/${trace.length}`} · max|Δ| полного результата: ${diff.toExponential(2)}. Обмен S,P в HBM: ${naive?4*25*8:0} байт в этой учебной задаче (FP64).`;
+    document.getElementById('flash-next').disabled=naive||step>=trace.length;
+  },
+  moe(host){
+    const T=Transformer,active=+document.getElementById('moe-active').value,routes=[[0,2],[1,3],[2,3]],chosen=routes[this.moeToken].slice(0,active);
+    let s=ADD.text(380,25,'учебный MoE: четыре FFN, маршрут выбирается для каждого токена','caption');
+    ['the','cat','sleeps'].forEach((token,i)=>{s+=T.clickable(T.cell(185+i*135,65,110,34,token,'--cls-0',this.moeToken===i),'data-moe-token',i);});
+    s+=T.path(`M ${240+this.moeToken*135} 101 V 125 H 380 V 145`)+T.cell(275,150,210,35,'маршрутизатор','--cls-1');
+    for(let i=0;i<4;i++){
+      const x=50+i*180,selected=chosen.includes(i);
+      s+=T.cell(x,265,140,45,`FFN ${i}`,selected?'--cls-2':'--ink-3',selected);
+      if(selected)s+=T.path(`M 380 187 V 219 H ${x+70} V 262`,'--cls-2')+T.path(`M ${x+70} 312 V 345 H 380 V 367`,'--cls-2');
+    }
+    s+=T.cell(230,370,300,35,'взвешенная сумма выходов','--cls-3');
+    T.mount(host,s,435,'Токен, выбранные FFN-эксперты и объединение выходов');
+    const d=8,h=16,expert=3*d*h,shared=4*d*d+d*4;
+    document.getElementById('moe-result').textContent=`Учебный блок: d=${d}, h=${h}; attention и router ${shared}, эксперт ${expert}. Всего ${shared+4*expert}; активны на токен ${shared+active*expert}. Нормы и эмбеддинги в этот расчёт не входят.`;
+  },
+  passports(){
+    const p=GPT_DATA.passports,keys=['layers','d_model','query heads','key/value heads','FFN','norm','positions','parameters'];
+    const labels=['слои','ширина','головы Q','головы K,V','FFN','норма','позиции','параметры'];
+    const label=(key,value)=>{
+      if(typeof value==='number')return value.toLocaleString('ru-RU');
+      if(key==='FFN')return value.includes('gate')?'SwiGLU → линейный':'линейный → GELU → линейный';
+      return value.replace('before each sublayer','перед подслоем').replace('learned table','обучаемая таблица').replace('rows','строк').replace('rotation','поворот').replace(/\d[\d,]*/g,n=>Number(n.replaceAll(',','')).toLocaleString('ru-RU'));
+    };
+    document.getElementById('model-passports').innerHTML=ADD.table(['Устройство',...p.cols],keys.map((key,i)=>[labels[i],...p.cols.map(c=>label(key,p.cells[c][key]))]));
+  },
+};
+Object.assign(QUIZ.values,{cache_layers:32,query_heads:8,head_width:128});
+const gptDrawers={architecture:h=>GPT.architecture(h),training:h=>GPT.training(h),cache:h=>GPT.cache(h),gqa:h=>GPT.gqa(h),'flash-flow':h=>GPT.flashFlow(h),flash:h=>GPT.flash(h),moe:h=>GPT.moe(h)};
+Object.assign(QUIZ.figs,gptDrawers);
+function redrawAll(){for(const host of document.querySelectorAll('[data-fig]'))gptDrawers[host.dataset.fig](host);GPT.passports();}
+document.addEventListener('DOMContentLoaded',()=>{
+  for(const el of document.querySelectorAll('.add-controls select,.add-controls input'))el.addEventListener('input',()=>{
+    if(el.id==='training-shift')GPT.trainingRevealed=false;
+    if(el.id.startsWith('flash-'))GPT.flashStep=0;
+    redrawAll();
+  });
+  const actions={
+    'training-reveal':()=>GPT.trainingRevealed=true,'generation-next':()=>GPT.generated=Math.min(GPT.generated+1,GPT_DATA.generation.tokens.length),
+    'generation-reset':()=>{GPT.generated=0;GPT.trainingRevealed=false;},
+    'cache-next':()=>GPT.cacheStage=Math.min(5,GPT.cacheStage+1),'cache-reset':()=>GPT.cacheStage=0,
+    'flash-flow-next':()=>GPT.flashPhase=(GPT.flashPhase+1)%4,'flash-flow-reset':()=>GPT.flashPhase=0,
+    'flash-next':()=>GPT.flashStep++,'flash-reset':()=>GPT.flashStep=0,
+  };
+  for(const [id,action] of Object.entries(actions))document.getElementById(id).onclick=()=>{action();redrawAll();};
+  const activate=e=>{const node=e.target.closest('[data-moe-token]');if(node){GPT.moeToken=+node.dataset.moeToken;redrawAll();}};
+  document.addEventListener('click',activate);document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-moe-token]')){e.preventDefault();activate(e);}});
+  GPT.passports();
+});
+
+</script>
+</body>
+</html>
+
+<!-- built from demo/ · sha256:b0d6a459dbe6458c9dff880b2ac35cee504b53bf4dd127bc029f93dc76b06328 -->

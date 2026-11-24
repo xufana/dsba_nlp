@@ -1,0 +1,153 @@
+{
+  "steps": [
+    {
+      "name": "ready",
+      "expr": "return new Promise(r=>{const tick=()=>window.READY?r(\"ready\"):setTimeout(tick,30);tick();})"
+    },
+    {
+      "name": "copied checks",
+      "expr": "return COPIED.alignment.CHECKS.map(x=>(x.ok?\"PASS \":\"FAIL \")+x.id).join(\" | \")"
+    },
+    {
+      "name": "strict PyTorch parity",
+      "expr": "const close=(a,b)=>Math.abs(a-b)<1e-9;const c=DATA.checks;const a=COPIED.alignment;const bad=[];for(const e of c.dpo){if(!close(a.dpoLoss(...e.input).loss,e.loss))bad.push(\"DPO\");}for(const e of c.grpo){const out=a.advantages(e.rewards);if(!out.every((v,i)=>close(v,e.advantages[i])))bad.push(\"GRPO\");}for(const e of c.lora){if(COPIED.peft.trainable(\"lora\",{r:e.rank})!==e.trainable)bad.push(\"LoRA\");}return bad.length?\"FAIL \"+bad.join(\", \"):\"PASS: DPO/GRPO 1e-9, LoRA exact\";"
+    },
+    {
+      "name": "BERT transfer selection and measured results",
+      "expr": "const q=s=>document.querySelector(s),B=DATA.bertTransfer,T=B.transfer; if(!q('#p-bert-transfer-results').hidden)throw Error('results visible before reveal');for(const [key,r] of Object.entries(T.runs)){q('#p-bert-transfer-modes [data-k=\"'+key+'\"]').click();const top=r.top_blocks==='all'?B.layers:r.top_blocks;const count=document.querySelectorAll('#p-bert-transfer-fig [data-part=\"block\"][data-trainable=\"true\"]').length;if(count!==top)throw Error('blocks '+key);if(q('#p-bert-transfer-fig [data-part=\"embeddings\"]').dataset.trainable!==String(r.top_blocks==='all'))throw Error('embeddings '+key);if(!q('#p-bert-transfer-stats').textContent.includes(r.trainable_params.toLocaleString('ru-RU')))throw Error('parameters '+key);if(!q('#p-bert-transfer-results').hidden)throw Error('selection leaked results');}q('#p-btn-bert-transfer-reveal').click();for(const [key,r] of Object.entries(T.runs)){q('#p-bert-transfer-modes [data-k=\"'+key+'\"]').click();const cells=q('#p-bert-transfer-table tr.hl').cells; if(cells[1].textContent!==r.trainable_params.toLocaleString('ru-RU'))throw Error('table parameters');if(cells[3].textContent!==(100*r.accuracy.at(-1)).toFixed(2)+'%')throw Error('accuracy');if(cells[4].textContent!==r.seconds.at(-1).toLocaleString('ru-RU'))throw Error('time');if(q('#p-bert-transfer-result').textContent.indexOf(cells[3].textContent)<0)throw Error('selected result');}if(q('#p-kumar-details').open||q('#p-bet-kumar-id'))throw Error('article bets remain');q('#p-bert-transfer-modes button').click();return 'PASS: four modes, frozen layers, hidden results, artifact parameters/accuracy/time';"
+    },
+    {
+      "name": "questions follow their topics",
+      "expr": "const at=(key,id)=>{const q=document.querySelector('[data-q=\"'+key+'\"]');if(q.closest('section').id!==id)throw Error('misplaced '+key);};at('q-ppo-trained','a-pref');at('q-ppo-clip','a-pref');at('q-grpo-flat','a-rlvr');at('q-methods','policy');if(document.querySelectorAll('#policy .qz').length!==1)throw Error('unrelated questions in summary');for(const id of ['policy','design','sources'])if(!document.getElementById(id).closest('main .wrap'))throw Error('outside layout: '+id);const ids=[...document.querySelectorAll('[id]')].map(n=>n.id);if(new Set(ids).size!==ids.length)throw Error('duplicate IDs');return 'PASS: PPO and GRPO questions are in their own blocks';"
+    },
+    {
+      "name": "all reveals",
+      "expr": "const ids=[...document.querySelectorAll(\"button[id]\")].filter(b=>/reveal|stagetab/.test(b.id));ids.forEach(b=>b.click());return ids.map(b=>b.id+\":\"+b.textContent).join(\" | \")"
+    },
+    {
+      "name": "all switches",
+      "expr": "let n=0;document.querySelectorAll(\".fig-states button[data-m]\").forEach(b=>{b.click();n++;});return n+\" states\";"
+    },
+    {
+      "name": "all sliders",
+      "expr": "let n=0;document.querySelectorAll(\"input[type=range]\").forEach(i=>{for(const v of [i.min,i.max]){i.value=v;i.dispatchEvent(new Event(\"input\",{bubbles:true}));n++;}});return n+\" endpoints\";"
+    },
+    {
+      "name": "no missing text",
+      "expr": "const a=[...document.querySelectorAll(\".panel-note,.stat,.prose\")].filter(n=>/undefined|NaN|\\{[a-zA-Z_]+\\}/.test(n.textContent));return a.length?a.map(n=>n.id+\":\"+n.textContent.slice(0,120)).join(\" | \"):\"PASS\";"
+    },
+    {
+      "name": "localization audit",
+      "expr": "const texts=[...document.querySelectorAll(\"h1,h2,h3,button,label,.panel-note,svg text,.stat .k\")].filter(n=>n.getBoundingClientRect().width&&/[A-Za-z]{3}/.test(n.textContent)&&!/[А-Яа-яЁё]/.test(n.textContent));return [...new Set(texts.map(n=>n.textContent.trim()))].join(\" | \");"
+    },
+    {
+      "name": "svg bounds",
+      "expr": "const bad=[];document.querySelectorAll(\"svg\").forEach(s=>{if(!s.getBoundingClientRect().width)return;const v=s.viewBox.baseVal,root=s.getScreenCTM();if(!root)return;s.querySelectorAll(\"text\").forEach(t=>{const b=t.getBBox(),m=t.getScreenCTM();if(!b.width||!m)return;const transform=root.inverse().multiply(m);const p=[[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]].map(([x,y])=>new DOMPoint(x,y).matrixTransform(transform));if(p.some(q=>q.x<v.x-2||q.x>v.x+v.width+2||q.y<v.y-2||q.y>v.y+v.height+2))bad.push(s.parentElement.id+\":\"+t.textContent);});});return bad.length?bad.slice(0,30).join(\" | \"):\"PASS\";"
+    },
+    {
+      "name": "quiz answers and persistence",
+      "expr": "for(const q of Object.values(QUIZ.data)){const h=document.querySelector('[data-q=\"'+q.key+'\"]');if(q.type==='pick'||q.type==='point'){for(const o of q.opts.filter(o=>o.right))h.querySelector('[data-k=\"'+o.k+'\"]').click();h.querySelector('.qz-check')?.click();}else if(q.type==='sort'){[...h.querySelectorAll('tr')].forEach((tr,i)=>{[...tr.querySelectorAll('button')].find(b=>b.dataset.b===q.items[i].bins[0]).click();});h.querySelector('.qz-check').click();}else if(q.type==='write'){h.querySelector('textarea').value='проверка';h.querySelector('textarea').dispatchEvent(new Event('input'));h.querySelector('.qz-check').click();}if(!h.classList.contains('done'))throw Error('not finished '+q.key);if(h.querySelector('.qz-verdict.no'))throw Error('wrong grading '+q.key);}const key='quiz:'+document.querySelector('meta[name=\"quiz-store\"]').content;const state=JSON.parse(localStorage.getItem(key));if(Object.values(state).filter(s=>s.done).length!==Object.keys(QUIZ.data).length)throw Error('persistence');return document.querySelector('#quiz-progress').textContent;"
+    },
+    {
+      "name": "quiz and board mode",
+      "expr": "const total=document.querySelectorAll(\".qz\").length;QUIZ.reset();document.getElementById(\"btn-present\").click();const visible=[...document.querySelectorAll(\".prose.slide\")].every(p=>getComputedStyle(p).display!==\"none\");document.getElementById(\"btn-present\").click();return total+\" questions, reset OK, board theses visible: \"+visible;"
+    }
+  ],
+  "screens": [
+    {
+      "sel": "#p-bert-transfer",
+      "file": "07_bert_transfer_light.png",
+      "expr": "document.documentElement.dataset.theme=\"light\";redrawAll();",
+      "height": 1350
+    },
+    {
+      "sel": "#p-bert-transfer",
+      "file": "07_bert_transfer_dark.png",
+      "expr": "document.documentElement.dataset.theme=\"dark\";document.querySelector('#p-bert-transfer-modes [data-k=\"top 2 blocks\"]').click();redrawAll();"
+    },
+    {
+      "sel": "#p-bert-transfer",
+      "file": "07_bert_transfer_mobile.png",
+      "width": 390,
+      "expr": "document.documentElement.dataset.theme=\"light\";redrawAll();"
+    },
+    {
+      "sel": "#p-lora",
+      "file": "07_lora_light.png",
+      "expr": "document.documentElement.dataset.theme=\"light\";redrawAll();"
+    },
+    {
+      "sel": "#a-flow-ppo",
+      "file": "07_ppo_light.png"
+    },
+    {
+      "sel": "#a-dpo-sliders",
+      "file": "07_dpo_light.png"
+    },
+    {
+      "sel": "#a-fig-grpo",
+      "file": "07_grpo_light.png"
+    },
+    {
+      "sel": "#a-flow-ppo",
+      "file": "07_ppo_dark.png",
+      "expr": "document.documentElement.dataset.theme=\"dark\";redrawAll();"
+    },
+    {
+      "sel": "#a-dpo-sliders",
+      "file": "07_mobile.png",
+      "width": 390,
+      "expr": "document.documentElement.dataset.theme=\"light\";redrawAll();"
+    },
+    {
+      "sel": "#policy",
+      "file": "07_summary_light.png",
+      "expr": "document.documentElement.dataset.theme=\"light\";redrawAll();"
+    },
+    {
+      "sel": "#policy",
+      "file": "07_summary_dark.png",
+      "expr": "document.documentElement.dataset.theme=\"dark\";redrawAll();"
+    },
+    {
+      "sel": "#policy",
+      "file": "07_summary_mobile.png",
+      "width": 390,
+      "expr": "document.documentElement.dataset.theme=\"light\";redrawAll();"
+    },
+    {
+      "sel": "[data-q=\"q-ppo-clip\"]",
+      "file": "07_ppo_question.png",
+      "expr": "document.documentElement.dataset.theme=\"light\";redrawAll();",
+      "dy": -700,
+      "height": 1300
+    }
+  ],
+  "figures": [
+    {
+      "sel": "#p-fig-lora",
+      "file": "lora.png",
+      "expr": "document.querySelector(\"#p-lora-btns [data-m=train]\").click();"
+    },
+    {
+      "sel": "#a-flow-sft",
+      "file": "sft.png",
+      "expr": "document.querySelector(\"#a-flow-sft-st [data-m=fwd]\").click();"
+    },
+    {
+      "sel": "#a-flow-ppo",
+      "file": "ppo.png",
+      "expr": "document.querySelector(\"#a-flow-ppo-st [data-m=fwd]\").click();"
+    },
+    {
+      "sel": "#a-flow-dpo",
+      "file": "dpo.png",
+      "expr": "document.querySelector(\"#a-flow-dpo-st [data-m=fwd]\").click();"
+    },
+    {
+      "sel": "#a-flow-grpo",
+      "file": "grpo.png",
+      "expr": "document.querySelector(\"#a-flow-grpo-st [data-m=fwd]\").click();"
+    }
+  ]
+}

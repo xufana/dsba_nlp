@@ -1,0 +1,99 @@
+{
+  "steps": [
+    {
+      "name": "ready",
+      "expr": "return window.READY?\"ready\":\"FAIL\";"
+    },
+    {
+      "name": "page contract",
+      "expr": "const ids=[...document.querySelectorAll(\"[id]\")].map(n=>n.id);if(ids.length!==new Set(ids).size)throw Error(\"duplicate IDs\");if(document.documentElement.lang!==\"ru\")throw Error(\"lang\");const bad=[...document.querySelectorAll(\".prose,.panel-head,.small-note\")].find(n=>/\\{[a-z][a-z0-9_]*\\}|undefined|NaN/.test(n.textContent));if(bad)throw Error(bad.textContent);return \"PASS: language, IDs and substituted values\";"
+    },
+    {
+      "name": "all reveals",
+      "expr": "document.querySelectorAll(\"button[id*=reveal]\").forEach(b=>b.click());return \"opened\";"
+    },
+    {
+      "name": "all switches",
+      "expr": "let n=0;document.querySelectorAll(\".fig-states button[data-m],#b-dial-knob button,#b-mlm-toks .tok,#b-qa-win-btns button\").forEach(b=>{b.click();n++;});return n+\" states\";"
+    },
+    {
+      "name": "zero-shot parity",
+      "expr": "const word=document.querySelector(\"#b-zs-pick select\");word.value=\"politics\";word.dispatchEvent(new Event(\"change\",{bubbles:true}));const actual=window.zsScore();const expected=COPIED.bert.D.zeroShot.browserReference.v2.accuracy;return Math.abs(actual-expected)<1e-9?\"PASS: zero-shot = Python to 1e-9\":\"FAIL \"+actual+\" vs \"+expected;"
+    },
+    {
+      "name": "saved stage and prompt controls",
+      "expr": "let n=0;for(const id of [\"stage-prompt\",\"stage-model\",\"prompt-format\"]){const s=document.getElementById(id);for(const o of s.options){s.value=o.value;s.dispatchEvent(new Event(\"change\",{bubbles:true}));n++;}}document.getElementById(\"prompt-reveal\").click();return n+\" variants\";"
+    },
+    {
+      "name": "localization audit",
+      "expr": "const texts=[...document.querySelectorAll(\"h1,h2,h3,button,label,.panel-note,svg text,.stat .k\")].filter(n=>n.getBoundingClientRect().width&&/[A-Za-z]{3}/.test(n.textContent)&&!/[А-Яа-яЁё]/.test(n.textContent));return [...new Set(texts.map(n=>n.textContent.trim()))].join(\" | \");"
+    },
+    {
+      "name": "svg bounds",
+      "expr": "const bad=[];document.querySelectorAll(\"svg\").forEach(s=>{if(!s.getBoundingClientRect().width)return;const v=s.viewBox.baseVal,root=s.getScreenCTM();if(!root)return;s.querySelectorAll(\"text\").forEach(t=>{const b=t.getBBox(),m=t.getScreenCTM();if(!b.width||!m)return;const transform=root.inverse().multiply(m);const p=[[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]].map(([x,y])=>new DOMPoint(x,y).matrixTransform(transform));if(p.some(q=>q.x<v.x-2||q.x>v.x+v.width+2||q.y<v.y-2||q.y>v.y+v.height+2))bad.push(s.parentElement.id+\":\"+t.textContent);});});return bad.length?bad.slice(0,30).join(\" | \"):\"PASS\";"
+    },
+    {
+      "name": "quiz answers and persistence",
+      "expr": "for(const q of Object.values(QUIZ.data)){const h=document.querySelector('[data-q=\"'+q.key+'\"]');if(q.type==='pick'||q.type==='point'){for(const o of q.opts.filter(o=>o.right))h.querySelector('[data-k=\"'+o.k+'\"]').click();h.querySelector('.qz-check')?.click();}else if(q.type==='sort'){[...h.querySelectorAll('tr')].forEach((tr,i)=>{[...tr.querySelectorAll('button')].find(b=>b.dataset.b===q.items[i].bins[0]).click();});h.querySelector('.qz-check').click();}else if(q.type==='write'){h.querySelector('textarea').value='проверка';h.querySelector('textarea').dispatchEvent(new Event('input'));h.querySelector('.qz-check').click();}if(!h.classList.contains('done'))throw Error('not finished '+q.key);if(h.querySelector('.qz-verdict.no'))throw Error('wrong grading '+q.key);}const key='quiz:'+document.querySelector('meta[name=\"quiz-store\"]').content;const state=JSON.parse(localStorage.getItem(key));if(Object.values(state).filter(s=>s.done).length!==Object.keys(QUIZ.data).length)throw Error('persistence');return document.querySelector('#quiz-progress').textContent;"
+    },
+    {
+      "name": "quiz and board mode",
+      "expr": "const total=document.querySelectorAll(\".qz\").length;QUIZ.reset();document.getElementById(\"btn-present\").click();const visible=[...document.querySelectorAll(\".prose.slide\")].every(p=>getComputedStyle(p).display!==\"none\");document.getElementById(\"btn-present\").click();return total+\" questions, reset OK, board theses visible: \"+visible;"
+    }
+  ],
+  "screens": [
+    {
+      "sel": "#b-fig-heads",
+      "file": "08_heads_light.png",
+      "expr": "document.documentElement.dataset.theme=\"light\";redrawAll();"
+    },
+    {
+      "sel": "#b-zs-pick",
+      "file": "08_zero_shot.png"
+    },
+    {
+      "sel": "#b-fig-ner",
+      "file": "08_ner_light.png"
+    },
+    {
+      "sel": "#b-fig-qa",
+      "file": "08_qa_dark.png",
+      "expr": "document.documentElement.dataset.theme=\"dark\";redrawAll();"
+    },
+    {
+      "sel": "#gpt",
+      "file": "08_gpt_mobile.png",
+      "width": 390,
+      "expr": "document.documentElement.dataset.theme=\"light\";redrawAll();"
+    }
+  ],
+  "figures": [
+    {
+      "sel": "#b-fig-bert",
+      "file": "bert.png",
+      "expr": "document.querySelector(\"#b-fig-bert-btns [data-m=in]\").click();"
+    },
+    {
+      "sel": "#b-fig-heads",
+      "file": "heads.png",
+      "expr": "document.querySelector(\"#b-fig-heads-btns [data-m=span]\").click();"
+    },
+    {
+      "sel": "#b-fig-ner",
+      "file": "ner.png",
+      "expr": "document.querySelector(\"#b-fig-ner-btns [data-m=ignore]\").click();"
+    },
+    {
+      "sel": "#b-fig-coll-ner",
+      "file": "collator_ner.png"
+    },
+    {
+      "sel": "#b-fig-qa",
+      "file": "qa.png"
+    },
+    {
+      "sel": "#b-fig-coll-qa",
+      "file": "collator_qa.png"
+    }
+  ]
+}

@@ -1,0 +1,1250 @@
+{
+  "source": {
+    "branch": "autumn-2026",
+    "commit": "e24968d5eaf0a7a721fd14c412bd7a98a3d335cf",
+    "path": "week04_pretraining_transfer/artifacts/demo_data.json"
+  },
+  "body": {
+    "layers": 12,
+    "heads": 12,
+    "d": 768,
+    "ffn": 3072,
+    "vocab": 30522,
+    "maxPos": 512,
+    "act": "gelu"
+  },
+  "mlm": [
+    {
+      "text": "She went to the [MASK] to buy some milk.",
+      "word": "[MASK]",
+      "top": [
+        [
+          "store",
+          0.36
+        ],
+        [
+          "fridge",
+          0.18
+        ],
+        [
+          "kitchen",
+          0.12
+        ],
+        [
+          "refrigerator",
+          0.08
+        ],
+        [
+          "counter",
+          0.04
+        ]
+      ]
+    },
+    {
+      "text": "She went to the banana to buy some milk.",
+      "word": "banana",
+      "top": [
+        [
+          "banana",
+          0.48
+        ],
+        [
+          "store",
+          0.15
+        ],
+        [
+          "house",
+          0.03
+        ],
+        [
+          "shop",
+          0.02
+        ],
+        [
+          "road",
+          0.01
+        ]
+      ]
+    },
+    {
+      "text": "She went to the store to buy some milk.",
+      "word": "store",
+      "top": [
+        [
+          "store",
+          0.99
+        ],
+        [
+          "outlet",
+          0.0
+        ],
+        [
+          "counter",
+          0.0
+        ],
+        [
+          "grocery",
+          0.0
+        ],
+        [
+          "stores",
+          0.0
+        ]
+      ]
+    }
+  ],
+  "recipe": {
+    "selected": 15,
+    "mask": 80,
+    "random": 10,
+    "unchanged": 10
+  },
+  "modern": {
+    "context": 8192,
+    "window": 128,
+    "every": 3,
+    "trainingTokens": "2 трлн"
+  },
+  "reference": {
+    "engine": "PyTorch 2.14.1, float64, CPU",
+    "norms": [
+      {
+        "x": [
+          3,
+          -1,
+          2,
+          0
+        ],
+        "ln": [
+          1.264908534252813,
+          -1.264908534252813,
+          0.6324542671264065,
+          -0.6324542671264065
+        ],
+        "rms": [
+          1.6035651606688104,
+          -0.5345217202229368,
+          1.0690434404458735,
+          0.0
+        ]
+      },
+      {
+        "x": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "ln": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rms": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "x": [
+          7,
+          7,
+          7,
+          7
+        ],
+        "ln": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rms": [
+          0.9999998979591993,
+          0.9999998979591993,
+          0.9999998979591993,
+          0.9999998979591993
+        ]
+      },
+      {
+        "x": [
+          -4,
+          -3,
+          -2,
+          -1
+        ],
+        "ln": [
+          -1.3416354199689269,
+          -0.447211806656309,
+          0.447211806656309,
+          1.3416354199689269
+        ],
+        "rms": [
+          -1.4605925129524255,
+          -1.0954443847143192,
+          -0.7302962564762128,
+          -0.3651481282381064
+        ]
+      }
+    ],
+    "rope": [
+      {
+        "p": 0,
+        "r": 0,
+        "q": [
+          1.0,
+          0.0,
+          0.5,
+          -1.0
+        ],
+        "k": [
+          0.5,
+          1.0,
+          -1.0,
+          0.5
+        ],
+        "score": -0.5
+      },
+      {
+        "p": 3,
+        "r": 8,
+        "q": [
+          -0.9899924966004454,
+          0.1411200080598672,
+          0.5297705170769894,
+          -0.9845522836477397
+        ],
+        "k": [
+          -1.0621082635276886,
+          0.34917908950307736,
+          -1.0367590532872057,
+          0.41848615918213705
+        ],
+        "score": 0.13948948395279404
+      },
+      {
+        "p": 19,
+        "r": 24,
+        "q": [
+          0.9887046181866692,
+          0.14987720966295234,
+          0.6798610125351358,
+          -0.88757478762902
+        ],
+        "k": [
+          1.1176678656751224,
+          -0.028610173666314964,
+          -1.0901892880655968,
+          0.2479663609988802
+        ],
+        "score": 0.13948948395279426
+      },
+      {
+        "p": 1000,
+        "r": 1005,
+        "q": [
+          0.5623790762907029,
+          0.8268795405320025,
+          -0.963556875427596,
+          0.5670609736317676
+        ],
+        "k": [
+          0.7809447609745774,
+          0.800078296360025,
+          1.1034718470386649,
+          0.17986073165946298
+        ],
+        "score": 0.1394894839527946
+      }
+    ],
+    "ffn": [
+      {
+        "kind": "gelu",
+        "coordinate": 0,
+        "raw": -4.0,
+        "hidden": [
+          -0.00014049189638454251,
+          -0.8411919906082768,
+          0.9772988470438875
+        ],
+        "output": [
+          -1.3980353342444105,
+          -0.5967970328991126
+        ]
+      },
+      {
+        "kind": "gelu",
+        "coordinate": 0,
+        "raw": 0.0,
+        "hidden": [
+          0.0,
+          -0.8411919906082768,
+          0.9772988470438875
+        ],
+        "output": [
+          -1.397894842348026,
+          -0.5968672788473048
+        ]
+      },
+      {
+        "kind": "gelu",
+        "coordinate": 0,
+        "raw": 1.0,
+        "hidden": [
+          1.6823839812165535,
+          -0.8411919906082768,
+          0.9772988470438875
+        ],
+        "output": [
+          0.28448913886852767,
+          -1.4380592694555816
+        ]
+      },
+      {
+        "kind": "gelu",
+        "coordinate": 0,
+        "raw": 4.0,
+        "hidden": [
+          7.999859508103615,
+          -0.8411919906082768,
+          0.9772988470438875
+        ],
+        "output": [
+          6.601964665755589,
+          -4.596797032899112
+        ]
+      },
+      {
+        "kind": "gelu",
+        "coordinate": 1,
+        "raw": -4.0,
+        "hidden": [
+          -0.3176160187834466,
+          7.024594819227126e-05,
+          0.9772988470438875
+        ],
+        "output": [
+          -1.294879742853238,
+          0.40320296710088743
+        ]
+      },
+      {
+        "kind": "gelu",
+        "coordinate": 1,
+        "raw": 0.0,
+        "hidden": [
+          -0.3176160187834466,
+          -0.0,
+          0.9772988470438875
+        ],
+        "output": [
+          -1.2949148658273342,
+          0.40313272115269516
+        ]
+      },
+      {
+        "kind": "gelu",
+        "coordinate": 1,
+        "raw": 1.0,
+        "hidden": [
+          -0.3176160187834466,
+          -0.8411919906082768,
+          0.9772988470438875
+        ],
+        "output": [
+          -1.7155108611314724,
+          -0.4380592694555816
+        ]
+      },
+      {
+        "kind": "gelu",
+        "coordinate": 1,
+        "raw": 4.0,
+        "hidden": [
+          -0.3176160187834466,
+          -3.9999297540518075,
+          0.9772988470438875
+        ],
+        "output": [
+          -3.294879742853238,
+          -3.5967970328991123
+        ]
+      },
+      {
+        "kind": "gelu",
+        "coordinate": 2,
+        "raw": -4.0,
+        "hidden": [
+          -0.3176160187834466,
+          -0.8411919906082768,
+          -3.512297409613563e-05
+        ],
+        "output": [
+          -0.7381768911134888,
+          -0.6823927619600775
+        ]
+      },
+      {
+        "kind": "gelu",
+        "coordinate": 2,
+        "raw": 0.0,
+        "hidden": [
+          -0.3176160187834466,
+          -0.8411919906082768,
+          0.0
+        ],
+        "output": [
+          -0.738212014087585,
+          -0.6823839812165535
+        ]
+      },
+      {
+        "kind": "gelu",
+        "coordinate": 2,
+        "raw": 1.0,
+        "hidden": [
+          -0.3176160187834466,
+          -0.8411919906082768,
+          0.4205959953041384
+        ],
+        "output": [
+          -1.1588080093917235,
+          -0.5772349823905188
+        ]
+      },
+      {
+        "kind": "gelu",
+        "coordinate": 2,
+        "raw": 4.0,
+        "hidden": [
+          -0.3176160187834466,
+          -0.8411919906082768,
+          1.9999648770259038
+        ],
+        "output": [
+          -2.7381768911134885,
+          -0.1823927619600776
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 0,
+        "raw": -4.0,
+        "hidden": [
+          -0.14388967969673247,
+          -0.7310585786300049,
+          0.8807970779778823
+        ],
+        "output": [
+          -1.3902160469896172,
+          -0.4389144692871681
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 0,
+        "raw": 0.0,
+        "hidden": [
+          0.0,
+          -0.7310585786300049,
+          0.8807970779778823
+        ],
+        "output": [
+          -1.2463263672928848,
+          -0.5108593091355343
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 0,
+        "raw": 1.0,
+        "hidden": [
+          1.4621171572600098,
+          -0.7310585786300049,
+          0.8807970779778823
+        ],
+        "output": [
+          0.21579078996712503,
+          -1.2419178877655392
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 0,
+        "raw": 4.0,
+        "hidden": [
+          7.856110320303268,
+          -0.7310585786300049,
+          0.8807970779778823
+        ],
+        "output": [
+          6.609783953010383,
+          -4.438914469287168
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 1,
+        "raw": -4.0,
+        "hidden": [
+          -0.5378828427399902,
+          0.07194483984836623,
+          0.8807970779778823
+        ],
+        "output": [
+          -1.3827075007936895,
+          0.5610855307128318
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 1,
+        "raw": 0.0,
+        "hidden": [
+          -0.5378828427399902,
+          -0.0,
+          0.8807970779778823
+        ],
+        "output": [
+          -1.4186799207178726,
+          0.48914069086446565
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 1,
+        "raw": 1.0,
+        "hidden": [
+          -0.5378828427399902,
+          -0.7310585786300049,
+          0.8807970779778823
+        ],
+        "output": [
+          -1.784209210032875,
+          -0.24191788776553924
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 1,
+        "raw": 4.0,
+        "hidden": [
+          -0.5378828427399902,
+          -3.928055160151634,
+          0.8807970779778823
+        ],
+        "output": [
+          -3.3827075007936895,
+          -3.4389144692871683
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 2,
+        "raw": -4.0,
+        "hidden": [
+          -0.5378828427399902,
+          -0.7310585786300049,
+          -0.03597241992418312
+        ],
+        "output": [
+          -0.8674397121308095,
+          -0.47111026224105557
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 2,
+        "raw": 0.0,
+        "hidden": [
+          -0.5378828427399902,
+          -0.7310585786300049,
+          0.0
+        ],
+        "output": [
+          -0.9034121320549926,
+          -0.4621171572600098
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 2,
+        "raw": 1.0,
+        "hidden": [
+          -0.5378828427399902,
+          -0.7310585786300049,
+          0.36552928931500245
+        ],
+        "output": [
+          -1.268941421369995,
+          -0.3707348349312592
+        ]
+      },
+      {
+        "kind": "silu",
+        "coordinate": 2,
+        "raw": 4.0,
+        "hidden": [
+          -0.5378828427399902,
+          -0.7310585786300049,
+          1.964027580075817
+        ],
+        "output": [
+          -2.8674397121308095,
+          0.028889737758944434
+        ]
+      }
+    ],
+    "masks": [
+      {
+        "layer": 1,
+        "allowed": [
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        ]
+      },
+      {
+        "layer": 2,
+        "allowed": [
+          [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true
+          ]
+        ]
+      },
+      {
+        "layer": 3,
+        "allowed": [
+          [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true
+          ]
+        ]
+      },
+      {
+        "layer": 4,
+        "allowed": [
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        ]
+      },
+      {
+        "layer": 5,
+        "allowed": [
+          [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true
+          ]
+        ]
+      },
+      {
+        "layer": 6,
+        "allowed": [
+          [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true
+          ]
+        ]
+      }
+    ],
+    "gate": {
+      "x": [
+        -4.0,
+        -1.0,
+        0.0,
+        2.0,
+        5.0
+      ],
+      "silu": [
+        -0.07194483984836623,
+        -0.2689414213699951,
+        0.0,
+        1.7615941559557646,
+        4.966535745378576
+      ],
+      "gelu": [
+        -7.024594819227126e-05,
+        -0.1588080093917233,
+        0.0,
+        1.954597694087775,
+        4.999999770820381
+      ]
+    }
+  }
+}

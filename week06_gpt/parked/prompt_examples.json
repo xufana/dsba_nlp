@@ -1,0 +1,82 @@
+{
+  "model": "gpt2",
+  "device": "CPU",
+  "dtype": "float32",
+  "decoding": "greedy",
+  "max_new_tokens": 16,
+  "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+  "examples": [
+    {
+      "key": "completion",
+      "label": "Продолжение",
+      "prompt": "The team won the championship. This news is about",
+      "output": " the future of the team.\n\n\"We're going to be a great",
+      "tokens": [
+        " the",
+        " future",
+        " of",
+        " the",
+        " team",
+        ".",
+        "\n",
+        "\n",
+        "\"",
+        "We",
+        "'re",
+        " going",
+        " to",
+        " be",
+        " a",
+        " great"
+      ]
+    },
+    {
+      "key": "instruction",
+      "label": "Инструкция",
+      "prompt": "Classify the news as sports or business.\nNews: The team won the championship.\nCategory:",
+      "output": " Sports\nNews: The team won the championship.\nCategory: Sports\nCategory",
+      "tokens": [
+        " Sports",
+        "\n",
+        "News",
+        ":",
+        " The",
+        " team",
+        " won",
+        " the",
+        " championship",
+        ".",
+        "\n",
+        "Category",
+        ":",
+        " Sports",
+        "\n",
+        "Category"
+      ]
+    },
+    {
+      "key": "examples",
+      "label": "Примеры",
+      "prompt": "News: Shares rose on the stock exchange.\nCategory: business\n\nNews: The player scored a goal.\nCategory: sports\n\nNews: The team won the championship.\nCategory:",
+      "output": " sports\n\nNews: The team won the championship.\n\nCategory: sports",
+      "tokens": [
+        " sports",
+        "\n",
+        "\n",
+        "News",
+        ":",
+        " The",
+        " team",
+        " won",
+        " the",
+        " championship",
+        ".",
+        "\n",
+        "\n",
+        "Category",
+        ":",
+        " sports"
+      ]
+    }
+  ]
+}

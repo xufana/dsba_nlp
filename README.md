@@ -11,6 +11,10 @@
 
 * [Занятие 3 — машинный перевод и трансформер](week03_attention_transformer/demo/week03_add.html): encoder–decoder, attention, Q/K/V, маски и устройство сети.
 * [Занятие 4 — практика](week04_practice/week04_practice.ipynb): классификатор, генератор на GRU и блок трансформера с SVG-схемами.
+* [Занятие 5 — BERT и развитие энкодеров](week05_bert/demo/week05_add.html): предобучение, головы задач, RoBERTa, ELECTRA, RoPE, нормы, gated FFN и ModernBERT.
+* [Занятие 6 — GPT и развитие генеративных моделей](week06_gpt/demo/week06_add.html): следующий токен, обучение, KV-cache, GQA, FlashAttention и MoE.
+* [Занятие 7 — PEFT и обучение по награде](week07_peft_alignment/demo/week07_add.html): linear probing, fine-tuning, LoRA, SFT, PPO, DPO, GRPO и RLVR.
+* [Занятие 8 — практика BERT, GPT и LoRA](week08_practice/week08_practice.ipynb): классификация, zero-shot, NER, QA, стадии OLMo и сохранение адаптеров; [интерактивы](week08_practice/demo/week08_add.html).
 
 [Ноутбуки и полные семинары](https://github.com/xufana/dsba_nlp/tree/autumn-2026) находятся в `autumn-2026`. Ноутбук занятия 4 находится в ADD-2026; ссылки на полный курс ведут в autumn-2026.
 
@@ -19,6 +23,8 @@
 В `weekNN_*/demo/add/`: `text/*.md` — текст, вопросы и короткий код; `body.html` — порядок блоков; `lesson.js` — SVG-схемы и расчёты. Метка `# @ключ` связывает строку Python с `data-f="ключ"` на схеме или формуле. Подробности размещаем в `<details class="optional">`.
 
 В `artifacts/demo_data.json` лежат используемые измерения из соответствующих артефактов `autumn-2026`, коммит `b0ae710`: таблица классификации, сравнение декодирования и примеры генерации. Код опытов и исходные данные доступны в той ветке. Учебные расчёты выполняются в браузере.
+
+В занятиях 5–6 исходный коммит записан в поле `source` артефакта. Их `export_demo_data.py` сохраняют эталоны PyTorch для численных проверок браузерных вычислений. Материал о форматах запросов и сохранённые генерации GPT-2 для следующего ноутбука находятся в `week06_gpt/parked/`.
 
 Общие стили и механика вопросов — в `demo_base/`; сборка и проверка — в `scripts/`. `build_demo.py` и `build_site.py` предоставляют общие функции сборки и шаблон сайта.
 
@@ -31,6 +37,11 @@ uv run python scripts/build_add_site.py
 node scripts/check_demo.js week01_text_representations week01_text_representations/demo/week01_add.html week01_text_representations/demo/add/check_steps.json
 node scripts/check_demo.js week02_language_modelling week02_language_modelling/demo/week02_add.html week02_language_modelling/demo/add/check_steps.json
 node scripts/check_demo.js week03_attention_transformer week03_attention_transformer/demo/week03_add.html week03_attention_transformer/demo/add/check_steps.json
+node scripts/check_demo.js week05_bert week05_bert/demo/week05_add.html week05_bert/demo/add/check_steps.json
+node scripts/check_demo.js week06_gpt week06_gpt/demo/week06_add.html week06_gpt/demo/add/check_steps.json
+node scripts/check_demo.js week07_peft_alignment week07_peft_alignment/demo/week07_add.html week07_peft_alignment/demo/add/check_steps.json
+node scripts/check_demo.js week08_practice week08_practice/demo/week08_add.html week08_practice/demo/add/check_steps.json
+.venv/bin/python scripts/check_add_practice.py
 ```
 
 Локальный курс: `/tmp/dsba_nlp/_site/add-2026/index.html`. Проверки и скриншоты: `/tmp/dsba_nlp/weekNN/check_out/`.

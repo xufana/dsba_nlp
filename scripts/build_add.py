@@ -11,7 +11,7 @@ import demo_text
 import quiz_text
 
 ROOT = Path(__file__).resolve().parent.parent
-WEEKS = ("week01_text_representations", "week02_language_modelling", "week03_attention_transformer")
+WEEKS = ("week01_text_representations", "week02_language_modelling", "week03_attention_transformer", "week05_bert", "week06_gpt", "week07_peft_alignment", "week08_practice")
 
 
 def code_panel(source):
@@ -56,9 +56,18 @@ def build(week):
     body += f'\n<script type="application/json" id="quiz-data">{embedded(qs)}</script>'
     body += f'\n<script type="application/json" id="add-data">{embedded(data)}</script>'
     js = ['base.js', 'quiz.js', 'add.js']
+    if week in ("week07_peft_alignment", "week08_practice"):
+        js.append('ru_labels.js')
+    if week in ("week05_bert", "week06_gpt"):
+        js.append('transformer.js')
     body += '\n<script>\n' + '\n'.join((ROOT / 'demo_base' / f).read_text() for f in js)
     body += '\n' + (src / 'lesson.js').read_text() + '\n</script>'
     head = build_demo.make_head((src / "head.html").read_text(), str(ROOT / "demo_base/add.css"))
+    if week in ("week05_bert", "week06_gpt"):
+        head += '<style>\n' + (ROOT / 'demo_base/transformer.css').read_text() + '\n</style>\n'
+    css = src / 'lesson.css'
+    if css.exists():
+        head += '<style>\n' + css.read_text() + '\n</style>\n'
     head += f'<meta name="quiz-store" content="add2026_week{num}">\n'
     page = build_demo.standalone(head, body).replace('<html lang="en">', '<html lang="ru">', 1)
     build_demo.write(str(wd / f'demo/week{num}_add.html'), page)

@@ -1,0 +1,9 @@
+{
+  "branch": "autumn-2026",
+  "commit": "e24968d5eaf0a7a721fd14c412bd7a98a3d335cf",
+  "paths": [
+    "week04_pretraining_transfer",
+    "week07_peft/week07_peft.ipynb",
+    "week08_training_alignment/week08_training_alignment.ipynb"
+  ]
+}

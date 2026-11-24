@@ -1,0 +1,242 @@
+<div class="shell"><aside class="rail"><div><div class="rail-mark">NLP @ HSE DSBA · ADD-2026</div><div class="rail-eq">Занятие 8<br>Практика BERT, GPT и LoRA</div></div><nav id="nav"></nav><div class="rail-btns"><button id="btn-reset">Сбросить ответы</button><button id="btn-theme">Тема</button><button id="btn-present">На доску</button></div><div id="quiz-progress" class="quiz-progress"></div><div class="rail-foot"><a href="../week07/">← Лекция PEFT и alignment</a><br><a href="week08_practice.ipynb" download>Скачать ноутбук</a></div></aside><main><div class="wrap"><section id="hero"><p class="eyebrow">Author: Daria Andreeva</p><h1>BERT, GPT и LoRA: практика</h1><p class="lede">{{inline:lede}}</p><div class="add-links"><a href="https://colab.research.google.com/github/xufana/dsba_nlp/blob/ADD-2026/week08_practice/week08_practice.ipynb">Открыть в Colab</a><a href="week08_practice.ipynb" download>Скачать ноутбук</a></div><div class="prose">{{text:intro}}</div></section><div id="copy-bert"><div class="tooltip" id="b-tip"></div><div class="score copy-score" id="b-score"></div><section id="b-stop">
+  <p class="eyebrow">Блок</p>
+  <h2>Данные для классификации: AG News</h2>
+  <div class="prose">
+    {{text:b-stop-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>AG News · исходный набор данных</span><span class="mono" id="b-data-split"></span></div>
+    <div class="panel-body" id="b-data-example"></div>
+  </div>
+  <h3>Результаты</h3>
+  <div class="prose">
+    {{text:b-stop-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>AG News · проверка на {bert_n_test} текстах</span></div>
+    <div class="panel-body tight scroll-x"><table class="results" id="b-results-0"></table></div>
+  </div>
+</section>
+<section id="b-bert">
+  <p class="eyebrow">Блок</p>
+  <h2>Представления BERT и zero-shot</h2>
+  <div class="prose">
+    {{text:b-bert-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>BERT · по схеме Alammar (2018)</span><span class="fig-states" id="b-fig-bert-btns"><button data-m="in" class="sel">вход</button><button data-m="mlm">MLM</button><button data-m="nsp">NSP</button></span></div>
+    <div class="panel-body"><div class="fig" id="b-fig-bert"></div>
+      <details class="variants"><summary>Код: какие позиции читает голова</summary><pre class="code" id="b-code-pretrain"></pre>
+        <div class="figline">Наведите на строку: схема переключится на соответствующую голову. Код <code>BertForPreTraining</code> ; маска создаётся через <code>DataCollatorForLanguageModeling</code>'s.</div></details></div>
+    <div class="panel-note" id="b-fig-bert-note"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>BERT-base · распределение параметров</span><span class="mono" id="b-body-config"></span></div>
+    <div class="panel-body" id="b-body-params"></div>
+    <div class="panel-note">{{inline:b-bert-note1}}</div>
+  </div>
+  <h3>MLM: выбранные позиции и замены токенов</h3>
+  <div class="prose">
+    {{text:b-bert-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Выход MLM · нажмите на токен</span><span class="fig-states" id="b-mlm-sents"></span></div>
+    <div class="panel-body"><div class="pieces" id="b-mlm-toks" style="margin-bottom:12px"></div><div class="grid-2"><div id="b-mlm-top"></div><div class="figline" id="b-mlm-say"></div></div></div>
+    <div class="panel-note">{{inline:b-bert-note2}}</div>
+  </div>
+  <details class="variants"><summary>Дополнительно: ELECTRA, T5 и RetroMAE</summary>
+    <div class="variant"><div class="fig" id="b-fig-electra"></div><div class="say">ELECTRA определяет, какие токены были заменены генератором.</div></div>
+    <div class="variant"><div class="fig" id="b-fig-t5"></div><div class="say">T5 восстанавливает удалённые фрагменты текста с помощью энкодера и декодера.</div></div>
+    <div class="variant"><div class="fig" id="b-fig-retromae"></div><div class="say">RetroMAE восстанавливает текст из вектора предложения и сильно замаскированного входа.</div></div>
+  </details>
+  <h3>Zero-shot классификация через маску</h3>
+  <div class="prose">
+    {{text:b-bert-p3}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Выберите слова классов · сохранённые вероятности {bert_n_test} новостей</span><span class="btnrow"><span class="mono" id="b-zs-pick-acc"></span><button class="primary" id="b-btn-zs-reveal">Открыть</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="b-bet-zs"><span class="q">{{inline:b-bet-zs}}</span></div>
+      <div class="zs-grid" id="b-zs-pick"></div>
+      <div id="b-zs-out" hidden style="margin-top:14px"><div class="grid-2"><div><div class="figcap">Качество по классам · строки: эталон, столбцы: предсказания</div><div id="b-zs-pick-out"></div><table class="conf" id="b-zs-conf" style="margin-top:10px"></table></div><div><div class="figcap">Частые предсказания на маске для World</div><div id="b-zs-top"></div></div></div></div>
+    </div>
+    <div class="panel-note" id="b-zs-note" hidden>{{inline:b-zs-note}}</div>
+  </div>
+  <h3>Получение вектора текста: <code>[CLS]</code> </h3>
+  <div class="prose">
+    {{text:b-bert-p4}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Pooler, [CLS], среднее · логистическая регрессия на {probe_n_train} текстов</span><span class="btnrow"><button class="primary" id="b-btn-probe-reveal">Открыть</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="b-bet-probe"><span class="q">{{inline:b-bet-probe}}</span></div>
+      <div id="b-probe-out" hidden></div>
+    </div>
+    <div class="panel-note" id="b-probe-note" hidden>{{inline:b-probe-note}}</div>
+  </div>
+  <h3>Таблица позиций</h3>
+  <div class="prose">
+    {{text:b-bert-p5}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Сходство векторов позиций 0–127</span></div>
+    <div class="panel-body"><div class="grid-2"><div id="b-pos-sim" style="max-width:420px"></div><div class="figline">A bright diagonal band: neighbouring positions got similar vectors, far ones didn't, and nobody wrote that down anywhere. It was learned from the one fact that nearby tokens tend to be related. Compare it with the sinusoidal picture from week 3 — the same structure, arrived at from data instead of from a formula.</div></div></div>
+  </div>
+</section>
+<section id="b-head">
+  <p class="eyebrow">Блок</p>
+  <h2>Форма выхода и функция ошибки</h2>
+  <div class="prose">
+    {{text:b-head-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Одни скрытые состояния и три головы</span><span class="fig-states" id="b-fig-heads-btns"><button data-m="seq" class="sel">текст</button><button data-m="tok">токен</button><button data-m="span">фрагмент</button></span></div>
+    <div class="panel-body"><div class="fig" id="b-fig-heads"></div></div>
+    <div class="panel-note" id="b-fig-heads-note"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Головы на PyTorch · формы тензоров</span><span class="mono">наведите на строку кода</span></div>
+    <div class="panel-body"><pre class="code" id="b-code-heads"></pre></div>
+    <div class="panel-note">{{inline:b-head-note1}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-body tight scroll-x"><table>
+      <thead><tr><th>task</th><th>читает из H</th><th>оценки</th><th>нормировка по</th><th>ошибка</th><th>исключено из ошибки</th></tr></thead>
+      <tbody>
+      <tr><td><b>классификация текста</b> (AG News)</td><td class="mono">H[:, 0] — [B, d]</td><td class="mono">[B, C]</td><td>C классам</td><td>ошибка один раз на текст</td><td>дополнение батча</td></tr>
+      <tr><td><b>классификация токенов</b> (NER)</td><td class="mono">каждый вектор — [B, L, d]</td><td class="mono">[B, L, C]</td><td>C classes, <em>в каждой позиции</em></td><td>ошибка на токен</td><td class="mono">-100: [CLS], [SEP], PAD, продолжения</td></tr>
+      <tr><td><b>извлечение фрагмента</b> (QA)</td><td class="mono">каждый вектор — [B, L, d]</td><td class="mono">[B, L, 2] → two [B, L]</td><td>L <strong>позиции</strong></td><td>две ошибки по позициям</td><td>токены вопроса и PAD</td></tr>
+      </tbody></table></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>What <code>transformers</code> does · the same lines, from the library source</span></div>
+    <div class="panel-body"><pre class="code" id="b-code-lib"></pre></div>
+    <div class="panel-note">{{inline:b-head-note2}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Counting the heads · against a body of <span id="b-body-n"></span> параметров</span></div>
+    <div class="panel-body"><div class="grid-2"><div id="b-head-counts"></div><div id="b-head-untrained"></div></div></div>
+    <div class="panel-note">{{inline:b-head-note3}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>The recipe · <code>transformers</code>, one head class per task, one dial function, one Trainer</span></div>
+    <div class="panel-body"><pre class="code" id="b-code-recipe" style="font-size:13px;white-space:pre-wrap"></pre></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Обучение головы · одна эпоха</span><span class="mono" id="b-ho-live-stats"></span></div>
+    <div class="panel-body" id="b-ho-live"></div>
+    <div class="panel-note">{{inline:b-head-note4}}</div>
+  </div>
+</section>
+<section id="b-dial">
+  <p class="eyebrow">Блок</p>
+  <h2>Голова, верхние блоки, вся модель</h2>
+  <div class="prose">
+    {{text:b-dial-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Линейная голова на каждом слое</span><span class="btnrow"><button class="primary" id="b-btn-layer-reveal">Открыть</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="b-bet-layer"><span class="q">{{inline:b-bet-layer}}</span></div>
+      <div class="reveal-wrap"><div class="veil" id="b-layer-veil">Качество по слоям: 0 — вход, 12 — последний блок</div><div id="b-layer-chart" hidden></div></div>
+    </div>
+    <div class="panel-note" id="b-layer-note" hidden>{{inline:b-layer-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Обучаемые части · <code>set_trainable(model, k)</code></span></div>
+    <div class="panel-body"><div class="dial"><div><div class="knob" id="b-dial-knob"></div><div id="b-dial-knob-stats" style="margin-top:14px"></div></div><div id="b-dial-knob-fig"></div></div><pre class="code" id="b-code-dial" style="margin-top:14px"></pre></div>
+    <div class="panel-note">{{inline:b-dial-note1}}</div>
+  </div>
+  <h3>Выбираем обучаемые части</h3>
+  <div class="prose">
+    {{text:b-dial-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Четыре режима, <span id="b-dial-n"></span> текстов, две эпохи</span><span class="btnrow"><span class="mono" id="b-dial-score"></span><button class="primary" id="b-btn-dial-reveal">Открыть</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="b-bet-dial-pass"><span class="q">{{inline:b-bet-dial-pass}}</span></div>
+      <div class="bet" id="b-bet-dial-gap"><span class="q">{{inline:b-bet-dial-gap}}</span></div>
+      <div id="b-dial-out" hidden>
+        <div class="scroll-x"><table id="b-dial-table"></table></div>
+        <div class="grid-2" style="margin-top:14px"><div><div class="figcap">Точность и число обучаемых параметров</div><div id="b-dial-chart"></div></div><div><div class="figcap">Время эпохи на устройстве исходного опыта</div><div id="b-dial-bill"></div></div></div>
+      </div>
+    </div>
+    <div class="panel-note" id="b-dial-note" hidden>{{inline:b-dial-note}}</div>
+  </div>
+</section>
+<section id="b-tasks">
+  <p class="eyebrow">Блок</p>
+  <h2>NER и извлечение ответа</h2>
+  <div class="prose">
+    {{text:b-tasks-p1}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>NER · слово → токены → метка → Linear(768, 9)</span><span class="fig-states" id="b-fig-ner-btns"><button data-m="ignore" class="sel">продолжения −100</button><button data-m="label">продолжения размечены</button></span></div>
+    <div class="panel-body"><div class="fig" id="b-fig-ner"></div></div>
+    <div class="panel-note" id="b-fig-ner-note"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Батч после collator · метки −100</span><span class="mono" id="b-coll-ner-stats"></span></div>
+    <div class="panel-body"><div class="fig" id="b-fig-coll-ner"></div><pre class="code" id="b-code-ner" style="margin-top:14px"></pre></div>
+    <div class="panel-note">{{inline:b-tasks-note1}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Только голова, <span id="b-ner-live-n"></span> предложений, одна эпоха</span><span class="btnrow"><button class="primary" id="b-btn-ner-reveal">Открыть</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="b-bet-ner"><span class="q">{{inline:b-bet-ner}}</span></div>
+      <div id="b-ner-out" hidden></div>
+    </div>
+    <div class="panel-note" id="b-ner-note" hidden>{{inline:b-ner-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Сравнение способов обучения</span><span class="mono" id="b-ner-art-n"></span></div>
+    <div class="panel-body"><div class="scroll-x"><table id="b-ner-table"></table></div>
+      <div class="btnrow" style="margin-top:14px"><span class="figcap" style="margin:0">Отложенные примеры ·</span><span class="fig-states" id="b-ner-preds-btns"><button data-m="pred" class="sel">вся модель</button><button data-m="predHeadOnly">только голова</button></span></div>
+      <div id="b-ner-preds" style="margin-top:8px"></div></div>
+    <div class="panel-note">{{inline:b-tasks-note2}}</div>
+  </div>
+  <h3>Начало и конец ответа</h3>
+  <div class="prose">
+    {{text:b-tasks-p2}}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Оценки начала и конца · обученная модель</span><span class="fig-states" id="b-qa-pick"></span></div>
+    <div class="panel-body"><div class="fig" id="b-fig-qa"></div></div>
+    <div class="panel-note" id="b-fig-qa-note">{{inline:b-fig-qa-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Один вопрос, окна по <span id="b-qa-win-sel"></span> токенов</span><span class="btnrow" id="b-qa-win-btns"></span></div>
+    <div class="panel-body" id="b-qa-windows"></div>
+    <div class="panel-note">{{inline:b-tasks-note3}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Батч после collator · <code>DataCollatorWithPadding</code></span><span class="mono" id="b-coll-qa-stats"></span></div>
+    <div class="panel-body"><div class="fig" id="b-fig-coll-qa"></div><pre class="code" id="b-code-qa" style="margin-top:14px"></pre></div>
+    <div class="panel-note">{{inline:b-tasks-note4}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Обучение только головы · <span id="b-qa-live-n"></span> вопросов, одна эпоха</span><span class="btnrow"><button class="primary" id="b-btn-qa-reveal">Открыть</button></span></div>
+    <div class="panel-body">
+      <div class="bet" id="b-bet-qa"><span class="q">{{inline:b-bet-qa}}</span></div>
+      <div id="b-qa-out" hidden></div>
+    </div>
+    <div class="panel-note" id="b-qa-note" hidden>{{inline:b-qa-note}}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Предсказания после полного дообучения</span></div>
+    <div class="panel-body" id="b-qa-preds"></div>
+    <div class="panel-note">{{inline:b-tasks-note5}}</div>
+  </div>
+</section>
+<section id="b-end">
+  <p class="eyebrow">Блок</p>
+  <h2>Сравнение классификаторов</h2>
+  <div class="panel">
+    <div class="panel-head"><span>AG News · проверка на {bert_n_test} текстах</span><span class="sorters" id="b-res-sort"><span class="mono" style="letter-spacing:.06em">порядок</span><button data-s="order" class="sel">обучаемые части</button><button data-s="acc">точность</button><button data-s="params">обучаемых</button><button data-s="s">время</button></span></div>
+    <div class="panel-body tight scroll-x"><table class="results" id="b-results-1"></table></div>
+  </div>
+  <div class="prose keep">
+    {{text:b-end-p1}}
+  </div>
+  </section>
+</div><section id="gpt"><h2>Одна модель после разных стадий обучения</h2><div class="prose slide">{{text:s-gpt}}</div><div class="panel"><div class="panel-body"><div class="add-controls"><label>Запрос <select id="stage-prompt"></select></label><label>Стадия <select id="stage-model"><option>base</option><option>SFT</option><option>DPO</option><option>RLVR</option></select></label></div><div id="stage-answer" class="answer-text"></div><div id="stage-conditions" class="small-note"></div></div></div><div class="prose">{{text:gpt-detail}}</div></section><section id="prompt"><h2>Инструкция и примеры в контексте</h2><div class="prose slide">{{text:s-prompt}}</div><div class="panel"><div class="panel-body"><div class="add-controls"><label>Формат <select id="prompt-format"></select></label><button id="prompt-reveal">Открыть продолжение</button></div><pre class="report" id="prompt-input"></pre><div id="prompt-output" class="answer-text" hidden></div><div id="prompt-conditions" class="small-note"></div></div></div><div class="prose">{{text:prompt-detail}}</div>{{quiz:q-context}}</section><section id="lora"><h2>LoRA: обучить, сохранить, загрузить</h2><div class="prose slide">{{text:s-lora}}</div><div class="panel"><div class="panel-body"><div id="lora-results"></div></div><div class="panel-note">{{text:lora-conditions}}</div></div><div class="prose">{{text:lora-detail}}</div><a href="../week07/#p-lora">Схема LoRA, ранг и обучаемые матрицы →</a></section><section id="design"><h2>Спроектируем систему</h2>{{quiz:q-design}}</section><section id="sources"><h2>Источники</h2><h3>References</h3><div class="prose footnote sources">{{text:end-refs}}</div></section></div></main></div>
